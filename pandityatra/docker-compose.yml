@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=pandityatra_db
+      - POSTGRES_USER=pandit_admin
+      - POSTGRES_PASSWORD=secure_password
+    ports:
+      - "5433:5432"
+    # ADD THIS HEALTHCHECK BLOCK
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pandit_admin -d pandityatra_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: ./backend
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
+      - DEBUG=1
+    # UPDATE THIS DEPENDS_ON BLOCK
+    depends_on:
+      db:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pandityatra.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:latest
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  pgadmin_data:

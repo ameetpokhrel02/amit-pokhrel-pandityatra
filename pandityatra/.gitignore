@@ -1,0 +1,77 @@
+# ========================================
+# PanditYatra - CLEAN .gitignore
+# ========================================
+
+# ===============================
+# 1. ENVIRONMENT / SECRETS
+# ===============================
+.env
+*.env
+*.env.local
+frontend/.env
+frontend/*.env.*
+
+# ===============================
+# 2. BACKEND (DJANGO)
+# ===============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+venv/
+env/
+.venv/
+
+db.sqlite3
+db.sqlite3-journal
+
+backend/staticfiles/
+backend/media/
+# Ignore backend apps (temporarily)
+pandityatra/backend/bookings/
+pandityatra/backend/kundali/
+pandityatra/backend/pandits/
+pandityatra/backend/payments/
+pandityatra/backend/samagri/
+pandityatra/backend/services/
+
+
+# If using logs
+*.log
+
+# ===============================
+# 3. FRONTEND (React + Vite)
+# ===============================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Ignore the UI folder (your request)
+frontend/src/components/ui/
+
+# Package managers
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+
+# ===============================
+# 4. DOCKER
+# ===============================
+docker-volumes/
+postgres_data/
+
+# ===============================
+# 5. EDITORS
+# ===============================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===============================
+# 6. OS FILES
+# ===============================
+.DS_Store
+Thumbs.db
