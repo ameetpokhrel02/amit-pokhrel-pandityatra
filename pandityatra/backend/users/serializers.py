@@ -1,10 +1,13 @@
 from rest_framework import serializers
 from .models import User
-# 🚨 CRITICAL FIX: Import the standard random string generator
 from django.utils.crypto import get_random_string 
 
 # Define the length of the random password (e.g., 20 characters)
 RANDOM_PASSWORD_LENGTH = 20
+
+# 🚨 NEW: Serializer for requesting OTP (Only needs phone number)
+class RequestOTPSerializer(serializers.Serializer):
+    phone_number = serializers.CharField(max_length=15)
 
 class UserRegisterSerializer(serializers.ModelSerializer):
     # Make email optional
@@ -52,18 +55,19 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         
         return user
 
-# This is the serializer that handles generating the tokens after OTP verification.
+# Existing: Serializer that handles generating the tokens after OTP verification.
+# Used for the new LoginOTPView
 class PhoneTokenSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=15)
     otp_code = serializers.CharField(max_length=6)
 
-# Serializer for password-based login
+# Existing: Serializer for password-based login
 class PasswordLoginSerializer(serializers.Serializer):
     """Serializer for password-based login."""
     phone_number = serializers.CharField(max_length=15)
     password = serializers.CharField(write_only=True, min_length=1)
 
-# Serializers for forgot password flow
+# Existing: Serializers for forgot password flow
 class ForgotPasswordRequestSerializer(serializers.Serializer):
     """Serializer for requesting password reset OTP."""
     phone_number = serializers.CharField(max_length=15, required=False)
@@ -100,11 +104,7 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Either phone_number or email is required.")
         return data
 
-# In backend/users/serializers.py
-
-# ... (rest of the file content) ...
-
-# Corrected UserSerializer
+# Corrected UserSerializer (moved to end for consistency)
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for outputting user profile data."""
     class Meta:

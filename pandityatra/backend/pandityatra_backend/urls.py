@@ -33,6 +33,11 @@ urlpatterns = [
     path('api/users/', include('users.urls')), 
     path('api/pandits/', include('pandits.urls')),
     path('api/services/', include('services.urls')), # This handles all routing for services
+    # ADD THIS LINE FOR THE AI PANDIT RECOMMENDER:
+    path('api/recommender/', include('recommender.urls')),
+
+    # ... existing paths (admin, recommender, etc.) ...
+    path('api/', include('bookings.urls')), # <--- ADD THIS LINE
 
     # NOTE: The paths for PujaListCreateView and PujaDetailView 
     #       MUST be defined in backend/services/urls.py, NOT here.

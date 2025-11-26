@@ -2,16 +2,18 @@
 
 from django.urls import path
 from .views import PanditListCreateView, PanditDetailView
-# 🚨 THIS IS THE CRITICAL MISSING IMPORT 🚨
-from services.views import PanditPujaListView 
-# ...
+# 🚨 ENSURE THIS IMPORT IS CORRECT AND COMPLETE 🚨
+from services.views import PanditPujaListView, PanditPujaDetailView 
 
 urlpatterns = [
-    # General Pandit endpoints
+    # Pandit Profile CRUD
     path('', PanditListCreateView.as_view(), name='pandit-list-create'),
     path('<int:pk>/', PanditDetailView.as_view(), name='pandit-detail'),
     
-    # 🚨 ADD THIS LINE FOR NESTED SERVICES
-    # Maps to /api/pandits/{pandit_pk}/services/
+    # Nested Services: List & Create
     path('<int:pandit_pk>/services/', PanditPujaListView.as_view(), name='pandit-services-list'),
+    
+    # Nested Services: Retrieve, Update, Destroy
+    # 🚨 CONFIRM THIS PATH IS PRESENT AND CORRECT 🚨
+    path('<int:pandit_pk>/services/<int:pk>/', PanditPujaDetailView.as_view(), name='pandit-services-detail'),
 ]

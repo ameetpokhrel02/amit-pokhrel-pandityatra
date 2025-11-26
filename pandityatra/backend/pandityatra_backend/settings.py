@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     'users',
     'pandits',
     'services',
+    'bookings',
+    'recommender', # <--- CORRECT: The string is just 'recommender'
 ]
 
 MIDDLEWARE = [
