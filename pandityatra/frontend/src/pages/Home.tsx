@@ -6,7 +6,8 @@ import {
   FeaturedPandits,
   PujaCategories,
   HowItWorks,
-  KundaliHighlight
+  KundaliHighlight,
+  AppDownloadSection
 } from '@/components/home';
 
 const HomePage: React.FC = () => {
@@ -29,6 +30,9 @@ const HomePage: React.FC = () => {
 
       {/* Kundali Highlight */}
       <KundaliHighlight />
+
+      {/* App Download Section */}
+      <AppDownloadSection />
 
       {/* Footer */}
       <Footer />

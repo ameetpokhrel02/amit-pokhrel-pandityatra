@@ -1,5 +1,15 @@
-export { default as HeroSection } from './HeroSection';
-export { default as FeaturedPandits } from './FeaturedPandits';
-export { default as PujaCategories } from './PujaCategories';
-export { default as HowItWorks } from './HowItWorks';
-export { default as KundaliHighlight } from './KundaliHighlight';
+import HeroSection from './HeroSection';
+import FeaturedPandits from './FeaturedPandits';
+import PujaCategories from './PujaCategories';
+import HowItWorks from './HowItWorks';
+import KundaliHighlight from './KundaliHighlight';
+import AppDownloadSection from './AppDownloadSection';
+
+export {
+    HeroSection,
+    FeaturedPandits,
+    PujaCategories,
+    HowItWorks,
+    KundaliHighlight,
+    AppDownloadSection
+};
