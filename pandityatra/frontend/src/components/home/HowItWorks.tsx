@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  FaUserCheck, 
-  FaCalendarAlt, 
-  FaVideo, 
+import {
+  FaUserCheck,
+  FaCalendarAlt,
+  FaVideo,
   FaDownload,
   FaPlay,
   FaCheckCircle,
@@ -13,9 +13,9 @@ import {
   FaClock,
   FaShoppingCart
 } from 'react-icons/fa';
-import { 
-  GiTempleDoor, 
-  GiPrayerBeads, 
+import {
+  GiTempleDoor,
+  GiPrayerBeads,
   GiIncense,
   GiScrollUnfurled
 } from 'react-icons/gi';
@@ -143,11 +143,10 @@ const HowItWorks: React.FC = () => {
             <Button
               key={step.id}
               variant={activeStep === step.id ? "default" : "outline"}
-              className={`transition-all duration-300 hover:scale-105 ${
-                activeStep === step.id 
-                  ? "bg-orange-500 hover:bg-orange-600" 
+              className={`transition-all duration-300 hover:scale-105 ${activeStep === step.id
+                  ? "bg-orange-500 hover:bg-orange-600"
                   : "hover:bg-orange-50 border-orange-200"
-              }`}
+                }`}
               onClick={() => setActiveStep(step.id)}
             >
               <span className="mr-2">{step.id}</span>
@@ -161,43 +160,39 @@ const HowItWorks: React.FC = () => {
           {/* Steps Cards */}
           <div className="space-y-6">
             {steps.map((step, index) => (
-              <Card 
+              <Card
                 key={step.id}
-                className={`transition-all duration-500 cursor-pointer hover:shadow-xl ${
-                  activeStep === step.id 
-                    ? `${step.borderColor} border-2 shadow-lg scale-105` 
+                className={`transition-all duration-500 cursor-pointer hover:shadow-xl ${activeStep === step.id
+                    ? `${step.borderColor} border-2 shadow-lg scale-105`
                     : "border hover:border-orange-200"
-                } animate-in fade-in slide-in-from-left-4`}
+                  } animate-in fade-in slide-in-from-left-4`}
                 style={{ animationDelay: `${index * 150}ms` }}
                 onClick={() => setActiveStep(step.id)}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
                     {/* Step Number */}
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-full ${step.bgColor} ${step.color} flex items-center justify-center font-bold text-lg transition-all duration-300 ${
-                      activeStep === step.id ? "scale-110" : ""
-                    }`}>
+                    <div className={`flex-shrink-0 w-12 h-12 rounded-full ${step.bgColor} ${step.color} flex items-center justify-center font-bold text-lg transition-all duration-300 ${activeStep === step.id ? "scale-110" : ""
+                      }`}>
                       {step.id}
                     </div>
 
                     {/* Content */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`${step.color} transition-transform duration-300 ${
-                          activeStep === step.id ? "scale-110" : ""
-                        }`}>
+                        <div className={`${step.color} transition-transform duration-300 ${activeStep === step.id ? "scale-110" : ""
+                          }`}>
                           {step.icon}
                         </div>
-                        <h3 className={`text-xl font-bold transition-colors duration-300 ${
-                          activeStep === step.id ? step.color : "text-gray-800"
-                        }`}>
+                        <h3 className={`text-xl font-bold transition-colors duration-300 ${activeStep === step.id ? step.color : "text-gray-800"
+                          }`}>
                           {step.title}
                         </h3>
                       </div>
                       <p className="text-gray-600 mb-4">
                         {step.description}
                       </p>
-                      
+
                       {/* Step Details */}
                       {activeStep === step.id && (
                         <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
@@ -263,8 +258,8 @@ const HowItWorks: React.FC = () => {
                     </div>
                   </div>
 
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     variant="secondary"
                     className="w-full bg-white text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-105"
                   >
@@ -280,7 +275,7 @@ const HowItWorks: React.FC = () => {
         {/* Features Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {features.map((feature, index) => (
-            <Card 
+            <Card
               key={index}
               className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105 hover:-translate-y-1 border-orange-100 animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${index * 100}ms` }}
@@ -317,16 +312,16 @@ const HowItWorks: React.FC = () => {
                 Join thousands of satisfied customers who have experienced authentic puja ceremonies from the comfort of their homes
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="secondary"
                   className="bg-white text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-110"
                 >
                   Book Your First Puja
                   <FaArrowRight className="h-4 w-4 ml-2" />
                 </Button>
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   variant="outline"
                   className="border-white text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
                 >

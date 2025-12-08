@@ -93,7 +93,7 @@ export async function requestLoginOtp(payload: { phone_number: string }) {
 }
 
 export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_code: string }) {
-    const url = `${API_BASE_URL}/users/login/`;
+    const url = `${API_BASE_URL}/users/login-otp/`;
     const resp = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
