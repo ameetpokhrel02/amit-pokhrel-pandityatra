@@ -12,6 +12,7 @@ import ForgotPassword from './pages/auth/forgot-password/ForgotPassword';
 import OTPVerification from './pages/auth/otp-verification/OTPVerification';
 import ChangePassword from './pages/auth/change-password/ChangePassword';
 import { PanditList } from './pages/Booking/PanditList';
+import PanditProfile from './pages/Booking/PanditProfile';
 import CustomerDashboard from './pages/Dashboard/CustomerDashboard';
 import PanditDashboard from './pages/Dashboard/PanditDashboard';
 
@@ -42,6 +43,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Public pandit profile */}
+          <Route path="/pandits/:id" element={<PanditProfile />} />
           <Route
             path="/dashboard"
             element={

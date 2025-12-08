@@ -7,6 +7,7 @@ import { LoadingSpinner } from '../../components/common/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { PanditServicesModal } from '@/components/PanditServicesModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 
 export const PanditList = () => {
     const [pandits, setPandits] = useState<Pandit[]>([]);
@@ -54,10 +55,15 @@ export const PanditList = () => {
                                 <p className="text-yellow-600 font-bold">Rating: {pandit.rating} / 5.0</p>
                                 <p className="text-muted-foreground italic line-clamp-3">{pandit.bio}</p>
                                 <div className="mt-4">
-                                    <PanditServicesModal 
+                                    <div className="flex gap-2">
+                                      <Link to={`/pandits/${pandit.id}`} className="no-underline">
+                                        <Button variant="ghost">View Profile</Button>
+                                      </Link>
+                                      <PanditServicesModal 
                                         panditId={pandit.id} 
                                         panditName={pandit.full_name}
-                                    />
+                                      />
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

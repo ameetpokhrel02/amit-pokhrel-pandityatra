@@ -31,6 +31,28 @@ export async function fetchPandits(): Promise<Pandit[]> {
     return data as Pandit[]; // Use type assertion
 }
 
+export async function fetchPandit(id: number): Promise<Pandit> {
+    const url = `${API_BASE_URL}/pandits/${id}/`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Failed to fetch pandit ${id}: ${resp.status} ${resp.statusText}`);
+    return await resp.json() as Pandit;
+}
+
+export interface Puja {
+    id: number;
+    title: string;
+    price: number;
+    duration_minutes?: number;
+    description?: string;
+}
+
+export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
+    const url = `${API_BASE_URL}/pandits/${panditId}/services/`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Failed to fetch services for pandit ${panditId}: ${resp.status} ${resp.statusText}`);
+    return await resp.json() as Puja[];
+}
+
 // ... rest of the file
 
 // ----------------------
