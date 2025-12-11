@@ -5,6 +5,7 @@ import type { Pandit, Puja } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { motion } from 'framer-motion';
 
 const PanditProfile: React.FC = () => {
   const { id } = useParams();
@@ -34,9 +35,17 @@ const PanditProfile: React.FC = () => {
   if (!pandit) return <div className="p-8 text-center">Pandit not found</div>;
 
   return (
-    <div className="container mx-auto p-6">
+    <motion.div className="container mx-auto p-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
+        <motion.div className="lg:col-span-1"
+          initial={{ x: -8, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.36 }}
+        >
           <Card>
             <CardHeader>
               <CardTitle>{pandit.full_name}</CardTitle>
@@ -51,33 +60,39 @@ const PanditProfile: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
-        <div className="lg:col-span-2">
+        <motion.div className="lg:col-span-2"
+          initial={{ x: 8, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.36 }}
+        >
           <h2 className="text-2xl font-semibold mb-4">Services</h2>
           <div className="space-y-4">
             {services.length === 0 && <div className="text-muted-foreground">No services listed.</div>}
             {services.map((s) => (
-              <Card key={s.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-medium">{s.title}</h3>
-                    <p className="text-sm text-muted-foreground">{s.description}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold">₹{s.price}</div>
-                    <div className="text-sm text-muted-foreground">{s.duration_minutes ?? '—'} mins</div>
-                    <div className="mt-2">
-                      <Button variant="outline" onClick={() => navigate('/booking?pandit=' + pid + '&service=' + s.id)}>Book</Button>
+              <motion.div key={s.id} whileHover={{ scale: 1.02 }} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
+                <Card className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium">{s.title}</h3>
+                      <p className="text-sm text-muted-foreground">{s.description}</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">₹{s.price}</div>
+                      <div className="text-sm text-muted-foreground">{s.duration_minutes ?? '—'} mins</div>
+                      <div className="mt-2">
+                        <Button variant="outline" onClick={() => navigate('/booking?pandit=' + pid + '&service=' + s.id)}>Book</Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </motion.div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

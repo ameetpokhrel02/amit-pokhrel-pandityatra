@@ -1,8 +1,6 @@
 // In frontend/src/lib/api.ts
 
-// Normalize base URL: remove trailing slashes if present
-const rawApiBase = import.meta.env.VITE_API_URL ?? '';
-const API_BASE_URL = rawApiBase.replace(/\/+$/g, '');
+import { buildUrl, authHeaders } from './helper';
 
 // 🚨 CRITICAL: Ensure 'export' is here for the interface 🚨
 export interface Pandit { 
@@ -20,7 +18,7 @@ export interface Pandit {
  * Fetches the list of all Pandits from the Django backend.
  */
 export async function fetchPandits(): Promise<Pandit[]> {
-    const url = `${API_BASE_URL}/pandits/`;
+    const url = buildUrl('/pandits/');
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -32,7 +30,7 @@ export async function fetchPandits(): Promise<Pandit[]> {
 }
 
 export async function fetchPandit(id: number): Promise<Pandit> {
-    const url = `${API_BASE_URL}/pandits/${id}/`;
+    const url = buildUrl(`/pandits/${id}/`);
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`Failed to fetch pandit ${id}: ${resp.status} ${resp.statusText}`);
     return await resp.json() as Pandit;
@@ -47,7 +45,7 @@ export interface Puja {
 }
 
 export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
-    const url = `${API_BASE_URL}/pandits/${panditId}/services/`;
+    const url = buildUrl(`/pandits/${panditId}/services/`);
     const resp = await fetch(url);
     if (!resp.ok) throw new Error(`Failed to fetch services for pandit ${panditId}: ${resp.status} ${resp.statusText}`);
     return await resp.json() as Puja[];
@@ -68,10 +66,10 @@ export interface RegisterPayload {
 }
 
 export async function registerUser(payload: RegisterPayload) {
-    const url = `${API_BASE_URL}/users/register/`;
+    const url = buildUrl('/users/register/');
     const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload),
     });
     if (!resp.ok) {
@@ -101,10 +99,10 @@ export interface LoginRequest {
 }
 
 export async function requestLoginOtp(payload: { phone_number: string }) {
-    const url = `${API_BASE_URL}/users/request-otp/`;
+    const url = buildUrl('/users/request-otp/');
     const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload),
     });
     if (!resp.ok) {
@@ -115,10 +113,10 @@ export async function requestLoginOtp(payload: { phone_number: string }) {
 }
 
 export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_code: string }) {
-    const url = `${API_BASE_URL}/users/login-otp/`;
+    const url = buildUrl('/users/login-otp/');
     const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload),
     });
     if (!resp.ok) {
@@ -129,10 +127,10 @@ export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_
 }
 
 export async function passwordLogin(payload: { phone_number: string; password: string }) {
-    const url = `${API_BASE_URL}/users/login-password/`;
+    const url = buildUrl('/users/login-password/');
     const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(payload),
     });
     if (!resp.ok) {
@@ -143,9 +141,9 @@ export async function passwordLogin(payload: { phone_number: string; password: s
 }
 
 export async function fetchProfile(token: string) {
-    const url = `${API_BASE_URL}/users/profile/`;
+    const url = buildUrl('/users/profile/');
     const resp = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: authHeaders(token),
     });
     if (!resp.ok) throw new Error(`Profile fetch failed: ${resp.status} ${resp.statusText}`);
     return await resp.json();
