@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { motion } from 'framer-motion';
+import AnimatedCard from '@/components/ui/AnimatedCard';
+import { fadeInUp, containerStagger, subtleHover } from '@/components/ui/motion-variants';
 
 const PanditProfile: React.FC = () => {
   const { id } = useParams();
@@ -41,12 +43,8 @@ const PanditProfile: React.FC = () => {
       transition={{ duration: 0.35 }}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div className="lg:col-span-1"
-          initial={{ x: -8, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.36 }}
-        >
-          <Card>
+        <motion.div className="lg:col-span-1" variants={fadeInUp}>
+          <AnimatedCard>
             <CardHeader>
               <CardTitle>{pandit.full_name}</CardTitle>
               <CardDescription>{pandit.expertise}</CardDescription>
@@ -59,20 +57,16 @@ const PanditProfile: React.FC = () => {
                 <Button onClick={() => navigate('/booking')}>Book a Puja</Button>
               </div>
             </CardContent>
-          </Card>
+          </AnimatedCard>
         </motion.div>
 
-        <motion.div className="lg:col-span-2"
-          initial={{ x: 8, opacity: 0 }}
-          animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 0.36 }}
-        >
+        <motion.div className="lg:col-span-2" variants={containerStagger}>
           <h2 className="text-2xl font-semibold mb-4">Services</h2>
           <div className="space-y-4">
             {services.length === 0 && <div className="text-muted-foreground">No services listed.</div>}
             {services.map((s) => (
-              <motion.div key={s.id} whileHover={{ scale: 1.02 }} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28 }}>
-                <Card className="p-4">
+              <motion.div key={s.id} variants={fadeInUp} whileHover={subtleHover}>
+                <AnimatedCard className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-lg font-medium">{s.title}</h3>
@@ -86,7 +80,7 @@ const PanditProfile: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                </Card>
+                </AnimatedCard>
               </motion.div>
             ))}
           </div>

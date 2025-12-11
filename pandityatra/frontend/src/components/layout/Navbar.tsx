@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
 import logo from '@/assets/images/logo.png';
 import { 
   FaUser, 
@@ -23,7 +24,8 @@ const Navbar: React.FC = () => {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [cartItemCount] = useState(3); // Mock cart count
+  const { items: cartItems, openDrawer } = useCart();
+  const cartItemCount = cartItems.length;
 
   const handleLogout = () => {
     logout();
@@ -75,15 +77,17 @@ const Navbar: React.FC = () => {
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
             {/* Shopping Cart */}
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               className="relative transition-all duration-300 hover:scale-105"
+              onClick={() => openDrawer()}
+              aria-label="Open cart"
             >
               <FaShoppingCart className="h-5 w-5" />
               {cartItemCount > 0 && (
-                <Badge 
-                  variant="destructive" 
+                <Badge
+                  variant="destructive"
                   className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs animate-pulse"
                 >
                   {cartItemCount}

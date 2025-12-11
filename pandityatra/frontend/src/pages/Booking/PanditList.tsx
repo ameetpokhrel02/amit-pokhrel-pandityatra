@@ -1,6 +1,6 @@
 // In frontend/src/pages/Booking/PanditList.tsx
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { fetchPandits } from '../../lib/api';
 import type { Pandit } from '../../lib/api';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'; 
@@ -9,11 +9,16 @@ import { PanditServicesModal } from '@/components/PanditServicesModal';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import MotionSearch from '@/components/ui/motion-search';
+import AnimatedCard from '@/components/ui/AnimatedCard';
+import { fadeInUp, containerStagger, subtleHover } from '@/components/ui/motion-variants';
 
 export const PanditList = () => {
     const [pandits, setPandits] = useState<Pandit[]>([]);
+    const [query, setQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const debounceRef = useRef<number | null>(null);
 
     useEffect(() => {
         const loadPandits = async () => {
@@ -31,6 +36,24 @@ export const PanditList = () => {
         loadPandits();
     }, []);
 
+        // Debounced query updater used by MotionSearch
+        const handleQuery = (q: string) => {
+            if (debounceRef.current) window.clearTimeout(debounceRef.current);
+            // small debounce so typing doesn't filter aggressively
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            debounceRef.current = window.setTimeout(() => setQuery(q), 180) as any;
+        };
+
+        const filtered = useMemo(() => {
+            if (!query) return pandits;
+            const q = query.toLowerCase();
+            return pandits.filter(p => (
+                p.full_name.toLowerCase().includes(q) ||
+                (p.expertise || '').toLowerCase().includes(q) ||
+                (p.language || '').toLowerCase().includes(q)
+            ));
+        }, [pandits, query]);
+
     if (isLoading) {
         return <div className="flex justify-center p-8"><LoadingSpinner /></div>;
     }
@@ -41,7 +64,12 @@ export const PanditList = () => {
     
     return (
         <div className="container mx-auto p-4">
-            <h1 className="text-3xl font-bold mb-6">Available Pandits ({pandits.length})</h1>
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                            <h1 className="text-3xl font-bold">Available Pandits ({filtered.length})</h1>
+                            <div className="flex items-center">
+                                <MotionSearch onSearch={handleQuery} />
+                            </div>
+                        </div>
                         <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
                             initial="hidden"
                             animate="visible"
@@ -50,15 +78,9 @@ export const PanditList = () => {
                                 visible: { transition: { staggerChildren: 0.06 } }
                             }}
                         >
-                                {pandits.map((pandit) => (
-                                        <motion.div key={pandit.id} className=""
-                                            variants={{
-                                                hidden: { opacity: 0, y: 6 },
-                                                visible: { opacity: 1, y: 0, transition: { duration: 0.28 } }
-                                            }}
-                                            whileHover={{ scale: 1.01 }}
-                                        >
-                                            <Card className="border-t-4 border-t-primary">
+                                {filtered.map((pandit) => (
+                                        <motion.div key={pandit.id} variants={fadeInUp} whileHover={subtleHover}>
+                                            <AnimatedCard className="border-t-4 border-t-primary">
                                                 <CardHeader>
                                                         <CardTitle className="text-xl">{pandit.full_name}</CardTitle>
                                                         <CardDescription>
@@ -82,7 +104,7 @@ export const PanditList = () => {
                                                                 </div>
                                                         </div>
                                                 </CardContent>
-                                            </Card>
+                                            </AnimatedCard>
                                         </motion.div>
                                 ))}
                         </motion.div>

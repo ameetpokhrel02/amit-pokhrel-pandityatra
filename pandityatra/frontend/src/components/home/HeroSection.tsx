@@ -15,6 +15,7 @@ import {
   FaPlay
 } from 'react-icons/fa';
 import { GiTempleDoor, GiPrayerBeads } from 'react-icons/gi';
+import MotionSearch from '@/components/ui/motion-search';
 
 const HeroSection: React.FC = () => {
   const { token } = useAuth();
@@ -78,6 +79,10 @@ const HeroSection: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-4 py-20 text-center">
+        {/* top-right quick search (click icon to open) */}
+        <div className="absolute top-6 right-6 z-20">
+          <MotionSearch onSearch={(q) => console.log('hero search:', q)} />
+        </div>
         <div className="max-w-4xl mx-auto">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-primary/20 backdrop-blur-sm border border-primary/30 rounded-full px-4 py-2 mb-6 animate-in fade-in slide-in-from-top-4">

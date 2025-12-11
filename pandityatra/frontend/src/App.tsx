@@ -1,10 +1,16 @@
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './hooks/useAuth';
+import { CartProvider } from './hooks/useCart';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Pages
 import HomePage from './pages/Home';
+import PujaCategories from './pages/Shop/PujaCategories';
+import Samagri from './pages/Shop/Samagri';
+import Books from './pages/Shop/Books';
+import CartPage from './pages/Shop/Cart';
+import CartDrawer from './components/shop/CartDrawer';
 import LoginPage from './pages/auth/Login';
 import RegisterPage from './pages/auth/Register';
 import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerification';
@@ -18,11 +24,16 @@ import PanditDashboard from './pages/Dashboard/PanditDashboard';
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <CartProvider>
+      <AuthProvider>
+        <BrowserRouter>
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
+          <Route path="/shop/pujas" element={<PujaCategories />} />
+          <Route path="/shop/samagri" element={<Samagri />} />
+          <Route path="/shop/books" element={<Books />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
@@ -65,8 +76,11 @@ function App() {
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        {/* Cart Drawer (global) */}
+        <CartDrawer />
+        </BrowserRouter>
+      </AuthProvider>
+    </CartProvider>
   );
 }
 
