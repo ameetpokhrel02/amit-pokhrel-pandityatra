@@ -7,12 +7,14 @@ interface Product {
   title: string;
   description?: string;
   price: number;
+  image?: string;
+  externalLink?: string;
 }
 
 const FALLBACK: Product[] = [
-  { id: 1, title: 'Ganesh Puja', description: 'Traditional Ganesh puja', price: 499 },
-  { id: 2, title: 'Satyanarayan Puja', description: 'Satyanarayan vrat and puja', price: 999 },
-  { id: 3, title: 'Navagraha Puja', description: 'Navagraha shanti', price: 1299 },
+  { id: 1, title: 'Ganesh Puja', description: 'Traditional Ganesh puja', price: 499, image: '/images/puja1.svg' },
+  { id: 2, title: 'Satyanarayan Puja', description: 'Satyanarayan vrat and puja', price: 999, image: '/images/puja2.svg' },
+  { id: 3, title: 'Navagraha Puja', description: 'Navagraha shanti', price: 1299, image: '/images/puja1.svg' },
 ];
 
 const PujaCategories: React.FC = () => {
@@ -50,7 +52,7 @@ const PujaCategories: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((p) => (
-            <ProductCard key={p.id} id={p.id} title={p.title} description={p.description} price={p.price} />
+            <ProductCard key={p.id} id={p.id} title={p.title} description={p.description} price={p.price} image={(p as any).image} externalLink={(p as any).externalLink} />
           ))}
         </div>
       )}

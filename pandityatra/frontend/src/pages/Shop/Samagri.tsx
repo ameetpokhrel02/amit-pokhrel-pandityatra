@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import ProductCard from '@/components/shop/ProductCard';
-import { useCart } from '@/hooks/useCart';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import { Loader2 } from 'lucide-react';
 
 interface Product {
   id: number;
   title: string;
   description?: string;
   price: number;
+  image?: string;
+  externalLink?: string;
 }
 
 const FALLBACK: Product[] = [
-  { id: 101, title: 'Puja Thali Set', description: 'Complete thali for small puja', price: 299 },
-  { id: 102, title: 'Incense Pack', description: 'Agarbatti and dhoop', price: 99 },
-  { id: 103, title: 'Camphor & Ghee', description: 'Camphor (Kapoor) and ghee pack', price: 199 },
+  { id: 101, title: 'Puja Thali Set', description: 'Complete thali for small puja', price: 299, image: '/images/puja1.svg' },
+  { id: 102, title: 'Incense Pack', description: 'Agarbatti and dhoop', price: 99, image: '/images/puja2.svg' },
+  { id: 103, title: 'Camphor & Ghee', description: 'Camphor (Kapoor) and ghee pack', price: 199, image: '/images/puja1.svg' },
 ];
 
 const Samagri: React.FC = () => {
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { items: cartItems } = useCart();
 
   useEffect(() => {
     let mounted = true;
@@ -40,20 +43,30 @@ const Samagri: React.FC = () => {
   }, []);
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Samagri (Puja Materials)</h1>
-        <div className="text-sm">Cart items: {cartItems.length}</div>
-      </div>
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {items.map((p) => (
-            <ProductCard key={p.id} id={p.id} title={p.title} description={p.description} price={p.price} />
-          ))}
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <Navbar />
+      <div className="flex-1 container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900">Puja Samagri</h1>
+            <p className="text-slate-600 mt-2">Authentic puja materials sourced for purity and tradition.</p>
+          </div>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
+            <span className="ml-2 text-slate-600">Loading samagri...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {items.map((p) => (
+              <ProductCard key={p.id} id={p.id} title={p.title} description={p.description} price={p.price} image={(p as any).image} externalLink={(p as any).externalLink} />
+            ))}
+          </div>
+        )}
+      </div>
+      <Footer />
     </div>
   );
 };

@@ -4,15 +4,15 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import logo from '@/assets/images/logo.png';
-import { 
-  FaUser, 
-  FaSignOutAlt, 
-  FaShoppingCart, 
-  FaBars, 
+import {
+  FaUser,
+  FaSignOutAlt,
+  FaShoppingCart,
+  FaBars,
   FaTimes,
-  FaChevronDown 
+  FaChevronDown
 } from 'react-icons/fa';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -36,7 +36,7 @@ const Navbar: React.FC = () => {
   const navigationLinks = [
     { name: 'Home', href: '/' },
     { name: 'Find Pandits', href: '/booking' },
-    { name: 'Puja Categories', href: '/categories' },
+    { name: 'Puja Categories', href: '/shop/pujas' },
     { name: 'Kundali', href: '/kundali' },
     { name: 'About', href: '/about' },
   ];
@@ -46,13 +46,14 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
           {/* Logo and Brand */}
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="flex items-center gap-3 hover:opacity-80 transition-opacity duration-300 group"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <img 
-              src={logo} 
-              alt="PanditYatra Logo" 
+            <img
+              src={logo}
+              alt="PanditYatra Logo"
               className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-110"
             />
             <h1 className="text-2xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
@@ -63,9 +64,9 @@ const Navbar: React.FC = () => {
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-6">
             {navigationLinks.map((link) => (
-              <Link 
+              <Link
                 key={link.name}
-                to={link.href} 
+                to={link.href}
                 className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors duration-300 relative group"
               >
                 {link.name}
@@ -100,8 +101,8 @@ const Navbar: React.FC = () => {
               <div className="hidden md:flex items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="flex items-center gap-2 transition-all duration-300 hover:scale-105"
                     >
                       <FaUser className="h-4 w-4" />
@@ -127,7 +128,7 @@ const Navbar: React.FC = () => {
                         My Bookings
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
+                    <DropdownMenuItem
                       onClick={handleLogout}
                       className="text-destructive focus:text-destructive"
                     >
@@ -140,15 +141,15 @@ const Navbar: React.FC = () => {
             ) : (
               <div className="hidden md:flex items-center gap-3">
                 <Link to="/login">
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="transition-all duration-300 hover:scale-105"
                   >
                     Login
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button 
+                  <Button
                     className="transition-all duration-300 hover:scale-105 hover:shadow-lg"
                   >
                     Sign Up
@@ -187,7 +188,7 @@ const Navbar: React.FC = () => {
                   {link.name}
                 </Link>
               ))}
-              
+
               {/* Mobile Auth Section */}
               <div className="border-t mt-2 pt-2">
                 {token ? (

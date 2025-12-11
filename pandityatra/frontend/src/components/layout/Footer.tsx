@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  FaFacebook, 
-  FaTwitter, 
-  FaInstagram, 
+import {
+  FaFacebook,
+  FaTwitter,
+  FaInstagram,
   FaLinkedin,
   FaEnvelope,
   FaPhone,
@@ -65,16 +66,20 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Brand Column */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3 group">
-              <img 
-                src={logo} 
-                alt="PanditYatra Logo" 
+            <Link
+              to="/"
+              className="flex items-center gap-3 group"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <img
+                src={logo}
+                alt="PanditYatra Logo"
                 className="h-8 w-auto object-contain transition-transform duration-300 group-hover:scale-110"
               />
               <span className="text-xl font-bold text-primary transition-colors duration-300 group-hover:text-primary/80">
                 PanditYatra
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-muted-foreground">
               Your trusted platform for authentic puja services and spiritual guidance.
             </p>
@@ -82,9 +87,9 @@ const Footer: React.FC = () => {
               {socialLinks.map((social, index) => {
                 const Icon = social.icon;
                 return (
-                  <a 
+                  <a
                     key={index}
-                    href={social.href} 
+                    href={social.href}
                     className="p-2 rounded-full bg-background hover:bg-primary hover:text-primary-foreground transition-all duration-300 transform hover:scale-110 hover:rotate-12"
                     aria-label={social.label}
                   >
@@ -101,7 +106,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               {footerLinks.services.map((link, index) => (
                 <li key={index}>
-                  <a 
+                  <a
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 inline-block hover:translate-x-1 group"
                   >
@@ -121,7 +126,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               {footerLinks.company.map((link, index) => (
                 <li key={index}>
-                  <a 
+                  <a
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-all duration-300 inline-block hover:translate-x-1 group"
                   >
@@ -152,8 +157,8 @@ const Footer: React.FC = () => {
                   required
                   disabled={loading || subscribed}
                 />
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={loading || subscribed}
                   className="shrink-0 transition-all duration-300 hover:scale-110 hover:shadow-lg"
                 >
