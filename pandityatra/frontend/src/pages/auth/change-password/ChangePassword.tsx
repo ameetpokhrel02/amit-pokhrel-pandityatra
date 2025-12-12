@@ -1,155 +1,130 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { resetPassword } from '../helper';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthLayout } from '@/components/layout/AuthLayout';
+import { Eye, EyeOff } from 'lucide-react';
 
-const ChangePassword: React.FC = () => {
-  const navigate = useNavigate();
+const ChangePasswordPage: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { resetPassword } = useAuth();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [phone_number, setPhoneNumber] = useState<string | undefined>(
-    location.state?.phone_number
-  );
-  const [email, setEmail] = useState<string | undefined>(location.state?.email);
-  const [otp_code, setOtpCode] = useState<string | undefined>(location.state?.otp_code);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const { phone_number, otp } = location.state || {};
 
   useEffect(() => {
-    // Redirect if no identifier or OTP provided
-    if ((!phone_number && !email) || !otp_code) {
-      navigate('/auth/forgot-password');
+    if (!phone_number || !otp) {
+      navigate('/login');
     }
-  }, [phone_number, email, otp_code, navigate]);
+  }, [phone_number, otp, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError(null);
-
-    // Validation
-    if (newPassword.length < 6) {
-      setError('Password must be at least 6 characters long');
-      return;
-    }
-
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords don't match");
       return;
     }
-
     setLoading(true);
-
     try {
-      const payload: any = {
-        otp_code: otp_code!,
-        new_password: newPassword,
-      };
-
-      if (phone_number) {
-        payload.phone_number = phone_number;
-      } else if (email) {
-        payload.email = email;
-      }
-
-      await resetPassword(payload);
+      await resetPassword(phone_number, otp, newPassword);
       setSuccess(true);
-
-      // Redirect to login after 2 seconds
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
       setError(err?.message || 'Failed to reset password');
-    } finally {
       setLoading(false);
     }
   };
 
+  if (success) {
+    return (
+      <AuthLayout title="Password Reset" subtitle="Success">
+        <div className="text-center space-y-4">
+          <Alert className="bg-green-50 text-green-800 border-green-200">
+            <AlertDescription>
+              Password has been reset successfully. Redirecting to login...
+            </AlertDescription>
+          </Alert>
+          <LoadingSpinner size={24} className="mx-auto text-primary" />
+        </div>
+      </AuthLayout>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Change Password</CardTitle>
-          <CardDescription>
-            Enter your new password
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {success ? (
-            <Alert>
-              <AlertDescription className="text-green-600">
-                Password updated successfully! Redirecting to login...
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Enter new password (min 6 characters)"
-                  type="password"
-                  required
-                />
-              </div>
+    <AuthLayout
+      title="Set New Password"
+      subtitle="Create a new strong password"
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="new-password">New Password</Label>
+          <div className="relative">
+            <Input
+              id="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              type={showPassword ? 'text' : 'password'}
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => {
-                    setConfirmPassword(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Confirm new password"
-                  type="password"
-                  required
-                />
-              </div>
+        <div className="space-y-2">
+          <Label htmlFor="confirm-password">Confirm Password</Label>
+          <div className="relative">
+            <Input
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm new password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        <Button
+          onClick={handleSubmit}
+          disabled={loading || !newPassword || !confirmPassword}
+          className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
+        >
+          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Reset Password'}
+        </Button>
 
-              <Button
-                type="submit"
-                disabled={loading || !newPassword || !confirmPassword}
-                className="w-full"
-              >
-                {loading ? <LoadingSpinner size={18} /> : 'Update Password'}
-              </Button>
-
-              <div className="text-center text-sm">
-                <button
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  className="text-primary hover:underline"
-                >
-                  Back to Login
-                </button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+      </div>
+    </AuthLayout>
   );
 };
 
-export default ChangePassword;
-
+export default ChangePasswordPage;

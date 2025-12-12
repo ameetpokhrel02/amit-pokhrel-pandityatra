@@ -1,156 +1,76 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { requestForgotPasswordOTP } from '../helper';
+import { useAuth } from '@/hooks/useAuth';
+import { AuthLayout } from '@/components/layout/AuthLayout';
 
-const ForgotPassword: React.FC = () => {
+const ForgotPasswordPage: React.FC = () => {
+  const { requestResetOtp } = useAuth();
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [usePhone, setUsePhone] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestOtp = async () => {
     setError(null);
     setLoading(true);
-
     try {
-      const payload: any = {};
-      if (usePhone) {
-        payload.phone_number = phone.trim();
-      } else {
-        payload.email = email.trim();
-      }
-
-      await requestForgotPasswordOTP(payload);
-      setSuccess(true);
-      
-      // Navigate to OTP verification with identifier
-      setTimeout(() => {
-        navigate('/auth/otp-verification', {
-          state: {
-            phone_number: usePhone ? phone.trim() : undefined,
-            email: usePhone ? undefined : email.trim(),
-          },
-        });
-      }, 1500);
+      await requestResetOtp(phone);
+      navigate('/otp-verification', {
+        state: { phone_number: phone, flow: 'reset_password' }
+      });
     } catch (err: any) {
-      setError(err?.message || 'Failed to send OTP');
-    } finally {
+      setError(err?.message || 'Failed to request OTP');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
-          <CardDescription>
-            Enter your phone number or email to receive an OTP
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {success ? (
-            <Alert>
-              <AlertDescription className="text-green-600">
-                OTP sent successfully! Redirecting to verification...
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Toggle between phone and email */}
-              <div className="flex gap-2 mb-4">
-                <Button
-                  type="button"
-                  variant={usePhone ? 'default' : 'outline'}
-                  onClick={() => {
-                    setUsePhone(true);
-                    setEmail('');
-                    setError(null);
-                  }}
-                  className="flex-1"
-                >
-                  Phone
-                </Button>
-                <Button
-                  type="button"
-                  variant={!usePhone ? 'default' : 'outline'}
-                  onClick={() => {
-                    setUsePhone(false);
-                    setPhone('');
-                    setError(null);
-                  }}
-                  className="flex-1"
-                >
-                  Email
-                </Button>
-              </div>
+    <AuthLayout
+      title="Forgot Password"
+      subtitle="Enter your phone to reset password"
+    >
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input
+            id="phone"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Enter phone number"
+            type="tel"
+            className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+          />
+        </div>
 
-              {usePhone ? (
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="98XXXXXXXX"
-                    type="tel"
-                    required
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
-                    type="email"
-                    required
-                  />
-                </div>
-              )}
+        <Button
+          onClick={handleRequestOtp}
+          disabled={loading || !phone}
+          className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
+        >
+          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}
+        </Button>
 
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-              <Button
-                type="submit"
-                disabled={loading || (usePhone ? !phone : !email)}
-                className="w-full"
-              >
-                {loading ? <LoadingSpinner size={18} /> : 'Send OTP'}
-              </Button>
-
-              <div className="text-center text-sm">
-                <button
-                  type="button"
-                  onClick={() => navigate('/login')}
-                  className="text-primary hover:underline"
-                >
-                  Back to Login
-                </button>
-              </div>
-            </form>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+        <div className="text-center text-sm text-gray-500 mt-4">
+          Remember your password?{' '}
+          <Link to="/login" className="font-bold text-primary hover:underline">
+            Login here
+          </Link>
+        </div>
+      </div>
+    </AuthLayout>
   );
 };
 
-export default ForgotPassword;
+export default ForgotPasswordPage;
 

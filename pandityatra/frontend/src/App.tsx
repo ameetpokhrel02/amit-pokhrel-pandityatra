@@ -7,7 +7,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 
 // Pages
 import HomePage from './pages/Home';
-import AboutUs from './pages/AboutUs';
+// import About from './pages/About'; // Removed About import
 import Samagri from './pages/Shop/Samagri';
 import Books from './pages/Shop/Books';
 import OpenCartRedirect from './pages/Shop/OpenCartRedirect';
@@ -29,61 +29,59 @@ function App() {
     <CartProvider>
       <AuthProvider>
         <BrowserRouter>
-          <ErrorBoundary>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/shop/pujas" element={<PujaCategories />} />
-              <Route path="/shop/puja" element={<Navigate to="/shop/pujas" replace />} />
-              <Route path="/shop/samagri" element={<Samagri />} />
-              <Route path="/shop/books" element={<Books />} />
-              <Route path="/cart" element={<OpenCartRedirect />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+        <ErrorBoundary>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/shop/pujas" element={<PujaCategories />} />
+          <Route path="/shop/samagri" element={<Samagri />} />
+          <Route path="/shop/books" element={<Books />} />
+          <Route path="/cart" element={<OpenCartRedirect />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Login OTP Verification */}
+          <Route path="/otp-verification" element={<LoginOTPVerification />} />
+          
+          {/* Forgot Password Flow */}
+          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/otp-verification" element={<OTPVerification />} />
+          <Route path="/auth/change-password" element={<ChangePassword />} />
 
-              {/* Login OTP Verification */}
-              <Route path="/otp-verification" element={<LoginOTPVerification />} />
+          {/* Protected Routes */}
+          <Route
+            path="/booking"
+            element={
+              <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                <PanditList />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public pandit profile */}
+          <Route path="/pandits/:id" element={<PanditProfile />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <CustomerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pandit/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={['pandit']}>
+                <PanditDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-              {/* Forgot Password Flow */}
-              <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-              <Route path="/auth/otp-verification" element={<OTPVerification />} />
-              <Route path="/auth/change-password" element={<ChangePassword />} />
-
-              {/* Protected Routes */}
-              <Route
-                path="/booking"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <PanditList />
-                  </ProtectedRoute>
-                }
-              />
-              {/* Public pandit profile */}
-              <Route path="/pandits/:id" element={<PanditProfile />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <CustomerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pandit/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditDashboard />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Catch all - redirect to home */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            {/* Cart Drawer (global) */}
-            <CartDrawer />
-          </ErrorBoundary>
+          {/* Catch all - redirect to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        {/* Cart Drawer (global) */}
+        <CartDrawer />
+        </ErrorBoundary>
         </BrowserRouter>
       </AuthProvider>
     </CartProvider>

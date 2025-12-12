@@ -6,12 +6,12 @@ import type { Pandit } from '../../lib/api';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner'; 
 import { Button } from '@/components/ui/button';
 import { PanditServicesModal } from '@/components/PanditServicesModal';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MotionSearch from '@/components/ui/motion-search';
 import AnimatedCard from '@/components/ui/AnimatedCard';
-import { fadeInUp, containerStagger, subtleHover } from '@/components/ui/motion-variants';
+import { fadeInUp, subtleHover } from '@/components/ui/motion-variants';
 
 export const PanditList = () => {
     const [pandits, setPandits] = useState<Pandit[]>([]);
