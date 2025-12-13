@@ -8,10 +8,12 @@ import {
   FaUser,
   FaSignOutAlt,
   FaShoppingCart,
+  FaRegHeart,
   FaBars,
   FaTimes,
   FaChevronDown
 } from 'react-icons/fa';
+import { useFavorites } from '@/hooks/useFavorites';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +26,10 @@ const Navbar: React.FC = () => {
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { items: cartItems, openDrawer } = useCart();
+  const { items: cartItems, openDrawer: openCartDrawer } = useCart();
+  const { items: favoriteItems, openDrawer: openFavoritesDrawer } = useFavorites();
   const cartItemCount = cartItems.length;
+  const favoritesCount = favoriteItems.length;
 
   const handleLogout = () => {
     logout();
@@ -77,15 +81,33 @@ const Navbar: React.FC = () => {
 
           {/* Right Side Actions */}
           <div className="flex items-center gap-3">
+            {/* Favorites */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative hover:bg-transparent group"
+              onClick={() => openFavoritesDrawer()}
+              aria-label="Open favorites"
+            >
+              <FaRegHeart className="h-5 w-5 hover:scale-110 transition-transform duration-300" />
+              {favoritesCount > 0 && (
+                <Badge
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center text-xs"
+                >
+                  {favoritesCount}
+                </Badge>
+              )}
+            </Button>
             {/* Shopping Cart */}
             <Button
               variant="ghost"
-              size="sm"
-              className="relative transition-all duration-300 hover:scale-105"
-              onClick={() => openDrawer()}
+              size="icon"
+              className="relative hover:bg-transparent group"
+              onClick={() => openCartDrawer()}
               aria-label="Open cart"
             >
-              <FaShoppingCart className="h-5 w-5" />
+              <FaShoppingCart className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
               {cartItemCount > 0 && (
                 <Badge
                   variant="destructive"

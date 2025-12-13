@@ -69,12 +69,11 @@ const PanditProfile: React.FC = () => {
                 <AnimatedCard className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-medium">{s.title}</h3>
-                      <p className="text-sm text-muted-foreground">{s.description}</p>
+                      <h3 className="text-lg font-medium">{s.name}</h3>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-semibold">₹{s.price}</div>
-                      <div className="text-sm text-muted-foreground">{s.duration_minutes ?? '—'} mins</div>
+                      <div className="text-lg font-semibold">₹{s.base_price}</div>
+                      <div className="text-sm text-muted-foreground">{s.description || 'No description'}</div>
                       <div className="mt-2">
                         <Button variant="outline" onClick={() => navigate('/booking?pandit=' + pid + '&service=' + s.id)}>Book</Button>
                       </div>

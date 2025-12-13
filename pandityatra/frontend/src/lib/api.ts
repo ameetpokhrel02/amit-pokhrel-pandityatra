@@ -1,9 +1,9 @@
-// In frontend/src/lib/api.ts
+import apiClient from './api-client';
 
-import { buildUrl, authHeaders } from './helper';
-
-// 🚨 CRITICAL: Ensure 'export' is here for the interface 🚨
-export interface Pandit { 
+// ----------------------
+// Pandit APIs
+// ----------------------
+export interface Pandit {
     id: number;
     full_name: string;
     expertise: string;
@@ -11,50 +11,81 @@ export interface Pandit {
     rating: number;
     bio: string;
     is_available: boolean;
-    // Add other fields from your model as needed
+    image?: string; // Added in case it's in the model
+    user?: number;
 }
 
-/**
- * Fetches the list of all Pandits from the Django backend.
- */
 export async function fetchPandits(): Promise<Pandit[]> {
-    const url = buildUrl('/pandits/');
-    const response = await fetch(url);
-
-    if (!response.ok) {
-        throw new Error(`Failed to fetch pandits (${response.status} ${response.statusText}) from ${url}`);
-    }
-
-    const data = await response.json();
-    return data as Pandit[]; // Use type assertion
+    const response = await apiClient.get('/pandits/');
+    return response.data;
 }
 
 export async function fetchPandit(id: number): Promise<Pandit> {
-    const url = buildUrl(`/pandits/${id}/`);
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Failed to fetch pandit ${id}: ${resp.status} ${resp.statusText}`);
-    return await resp.json() as Pandit;
+    const response = await apiClient.get(`/pandits/${id}/`);
+    return response.data;
 }
 
 export interface Puja {
     id: number;
-    title: string;
-    price: number;
-    duration_minutes?: number;
+    name: string; // Changed from title to name to match common convention, or use title if backend sends title
     description?: string;
+    base_price: number;
+    image?: string;
 }
 
 export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
-    const url = buildUrl(`/pandits/${panditId}/services/`);
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Failed to fetch services for pandit ${panditId}: ${resp.status} ${resp.statusText}`);
-    return await resp.json() as Puja[];
+    const response = await apiClient.get(`/pandits/${panditId}/services/`);
+    return response.data;
 }
 
-// ... rest of the file
+// ----------------------
+// Recommender APIs
+// ----------------------
+export interface RecommendedPandit extends Pandit {
+    recommendation_score: number;
+}
+
+export async function fetchRecommendations(): Promise<RecommendedPandit[]> {
+    const response = await apiClient.get('/recommender/pandits/');
+    return response.data;
+}
 
 // ----------------------
-// Auth API helpers
+// Booking APIs
+// ----------------------
+// Fetches ALL available pujas (catalog)
+export async function fetchAllPujas(): Promise<Puja[]> {
+    const response = await apiClient.get('/services/');
+    return response.data;
+}
+
+export interface Booking {
+    id: number;
+    user: number; // or object depending on serializer
+    pandit: number; // or object
+    pandit_name?: string; // helper for UI
+    status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED';
+    booking_date: string;
+    notes?: string;
+}
+
+export async function fetchBookings(): Promise<Booking[]> {
+    const response = await apiClient.get('/bookings/');
+    return response.data;
+}
+
+export async function createBooking(payload: Partial<Booking>) {
+    const response = await apiClient.post('/bookings/', payload);
+    return response.data;
+}
+
+export async function updateBookingStatus(id: number, status: string) {
+    const response = await apiClient.patch(`/bookings/${id}/update_status/`, { status });
+    return response.data;
+}
+
+// ----------------------
+// Auth APIs
 // ----------------------
 
 export interface RegisterPayload {
@@ -66,85 +97,63 @@ export interface RegisterPayload {
 }
 
 export async function registerUser(payload: RegisterPayload) {
-    const url = buildUrl('/users/register/');
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-    });
-    if (!resp.ok) {
-        const errorData = await resp.json().catch(() => ({}));
-        // Handle different error formats from Django REST Framework
-        let errorMessage = errorData.detail || errorData.message;
-        
-        // If it's a validation error object, extract field-specific errors
-        if (!errorMessage && typeof errorData === 'object') {
-            const fieldErrors = Object.entries(errorData)
+    try {
+        const response = await apiClient.post('/users/register/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function requestLoginOtp(payload: { phone_number: string }) {
+    try {
+        const response = await apiClient.post('/users/request-otp/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_code: string }) {
+    try {
+        const response = await apiClient.post('/users/login-otp/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function passwordLogin(payload: { phone_number: string; password: string }) {
+    try {
+        const response = await apiClient.post('/users/login-password/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function fetchProfile() {
+    // Interceptor handles the token, argument removed as it was unused
+    const response = await apiClient.get('/users/profile/');
+    return response.data;
+}
+
+// Helper to standardize error messages
+function handleApiError(error: any) {
+    if (error.response) {
+        const data = error.response.data;
+        if (data.detail) return new Error(data.detail);
+        if (data.message) return new Error(data.message);
+        // Flatten object errors
+        if (typeof data === 'object') {
+            const fieldErrors = Object.entries(data)
                 .map(([field, errors]: [string, any]) => {
                     const errorList = Array.isArray(errors) ? errors : [errors];
                     return `${field}: ${errorList.join(', ')}`;
                 })
                 .join('; ');
-            errorMessage = fieldErrors || `Register failed: ${resp.status} ${resp.statusText}`;
+            return new Error(fieldErrors);
         }
-        
-        throw new Error(errorMessage || `Register failed: ${resp.status} ${resp.statusText}`);
     }
-    return await resp.json();
-}
-
-export interface LoginRequest {
-    phone: string;
-    otp?: string; // some backends accept otp in same endpoint
-}
-
-export async function requestLoginOtp(payload: { phone_number: string }) {
-    const url = buildUrl('/users/request-otp/');
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-    });
-    if (!resp.ok) {
-        const errorData = await resp.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Request OTP failed: ${resp.status} ${resp.statusText}`);
-    }
-    return await resp.json();
-}
-
-export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_code: string }) {
-    const url = buildUrl('/users/login-otp/');
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-    });
-    if (!resp.ok) {
-        const errorData = await resp.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Verify OTP failed: ${resp.status} ${resp.statusText}`);
-    }
-    return await resp.json();
-}
-
-export async function passwordLogin(payload: { phone_number: string; password: string }) {
-    const url = buildUrl('/users/login-password/');
-    const resp = await fetch(url, {
-        method: 'POST',
-        headers: authHeaders(),
-        body: JSON.stringify(payload),
-    });
-    if (!resp.ok) {
-        const errorData = await resp.json().catch(() => ({}));
-        throw new Error(errorData.detail || `Login failed: ${resp.status} ${resp.statusText}`);
-    }
-    return await resp.json();
-}
-
-export async function fetchProfile(token: string) {
-    const url = buildUrl('/users/profile/');
-    const resp = await fetch(url, {
-        headers: authHeaders(token),
-    });
-    if (!resp.ok) throw new Error(`Profile fetch failed: ${resp.status} ${resp.statusText}`);
-    return await resp.json();
+    return error;
 }

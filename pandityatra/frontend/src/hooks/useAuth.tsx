@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (token) {
       setLoading(true);
-      api.fetchProfile(token)
+      api.fetchProfile()
         .then((u) => {
           setUser(u);
           if (u.role) {

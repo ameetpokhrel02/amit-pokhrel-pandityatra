@@ -48,7 +48,6 @@ frontend/dist/
 frontend/.vite/
 
 # Ignore the UI folder (your request)
-frontend/src/components/ui/
 
 # Package managers
 pnpm-lock.yaml

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User # Assuming User model is defined in users/models.py
 from django.utils.crypto import get_random_string 
 
 # Define the length of the random password (e.g., 20 characters)
@@ -30,7 +30,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         phone_number = validated_data['phone_number']
-        username = phone_number
+        # Assuming 'username' is used by the custom User model and defaults to phone_number
+        username = phone_number 
         email = validated_data.get('email', '').strip() if validated_data.get('email') else ''
         password = validated_data.get('password', '').strip() if validated_data.get('password') else ''
         
@@ -51,6 +52,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         if email:
             user_data['email'] = email
         
+        # Ensure we use the correct creation method for the custom user model
         user = User.objects.create_user(**user_data)
         
         return user

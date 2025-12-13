@@ -29,11 +29,16 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt', 
     
+    # Core Application Modules
     'users',
     'pandits',
     'services',
     'bookings',
-    'recommender', # <--- CORRECT: The string is just 'recommender'
+    
+    # Sprint 3 Modules: AI Pandit & Samagri
+    'recommender', # <-- COMMA ADDED HERE
+    'samagri',
+    'kundali', # <-- New Kundali app added
 ]
 
 MIDDLEWARE = [
@@ -49,7 +54,6 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'pandityatra_backend.urls'
 
-# 🛠️ FIXED: TEMPLATES block (Resolves admin.E403)
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -70,6 +74,8 @@ WSGI_APPLICATION = 'pandityatra_backend.wsgi.application'
 
 
 # Database
+# Uses DATABASE_URL environment variable provided by Docker Compose.
+# Falls back to SQLite if running locally without the environment variable.
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}', 
@@ -104,7 +110,6 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# 🛠️ FIXED: STATIC_URL setting (Resolves ImproperlyConfigured error)
 STATIC_URL = 'static/'
 
 # Default primary key field type
