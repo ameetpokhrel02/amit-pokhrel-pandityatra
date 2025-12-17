@@ -27,6 +27,7 @@ import PanditDashboard from './pages/Dashboard/PanditDashboard';
 import MyBookings from "./pages/MyBookings";
 import PanditRecommendations from "./pages/PanditRecommendations";
 
+// Main App Components
 function App() {
   return (
     <AuthProvider>
