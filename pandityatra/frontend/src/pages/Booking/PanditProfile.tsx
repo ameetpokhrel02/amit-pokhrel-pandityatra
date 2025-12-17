@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import AnimatedCard from '@/components/ui/AnimatedCard';
 import { fadeInUp, containerStagger, subtleHover } from '@/components/ui/motion-variants';
 
+// PanditProfile Component
 const PanditProfile: React.FC = () => {
   const { id } = useParams();
   const pid = Number(id);
@@ -31,6 +32,8 @@ const PanditProfile: React.FC = () => {
       .catch((err: any) => setError(err?.message || 'Failed to load'))
       .finally(() => setLoading(false));
   }, [pid]);
+
+  // Render loading, error, or pandit profile
 
   if (loading) return <div className="p-8 flex justify-center"><LoadingSpinner /></div>;
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
