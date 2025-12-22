@@ -1,1 +1,1 @@
-PanditYatra a AI Powered Rituals Platform
+# PanditYatra - AI Powered Rituals Platform
