@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
-import logo from '@/assets/images/logo.png';
+import logo from '@/assets/images/PanditYatralogo.png';
 import {
   FaUser,
   FaSignOutAlt,

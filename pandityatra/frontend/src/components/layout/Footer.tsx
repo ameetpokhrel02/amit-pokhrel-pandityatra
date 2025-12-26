@@ -14,7 +14,7 @@ import {
   FaYoutube,
   FaGithub
 } from 'react-icons/fa';
-import logo from '@/assets/images/logo.png';
+import logo from '@/assets/images/PanditYatralogo.png';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Footer: React.FC = () => {
@@ -183,11 +183,11 @@ const Footer: React.FC = () => {
             <div className="mt-6 space-y-3 text-sm text-muted-foreground">
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaPhone className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                <span>+977 98XXXXXXXX</span>
+                <span>+977 9847226995</span>
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaEnvelope className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                <span>info@pandityatra.com.np</span>
+                <span>pandityatra@gmail.com</span>
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaMapMarkerAlt className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
