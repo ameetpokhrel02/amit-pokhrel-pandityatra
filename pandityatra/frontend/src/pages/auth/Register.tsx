@@ -124,7 +124,7 @@ const RegisterPage: React.FC = () => {
               id="phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="98XXXXXXXX"
+              placeholder="9847226995"
               type="tel"
               required
               className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
@@ -137,7 +137,7 @@ const RegisterPage: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@example.com"
+              placeholder="pokhrelameet@gmail.com"
               type="email"
               className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
             />
