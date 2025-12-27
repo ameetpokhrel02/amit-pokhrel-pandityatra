@@ -12,6 +12,7 @@ from .serializers import (
     ForgotPasswordRequestSerializer, ForgotPasswordOTPVerifySerializer, ResetPasswordSerializer
 )
 from .otp_utils import send_local_otp, verify_local_otp 
+from pandits.models import Pandit # 🚨 Import for Admin Stats 
 
 
 class RegisterUserView(APIView):
@@ -32,22 +33,37 @@ class RegisterUserView(APIView):
 
 
 class RequestOTPView(APIView):
-    """Handles OTP request for login (for existing users)."""
+    """Handles OTP request for login (for existing users via Phone or Email)."""
     def post(self, request):
         phone_number = request.data.get('phone_number')
+        email = request.data.get('email')
         
-        if not phone_number:
+        if not phone_number and not email:
             return Response(
-                {"detail": "Phone number is required."},
+                {"detail": "Phone number or Email is required."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
-            user = User.objects.get(phone_number=phone_number)
-            # Send OTP for existing user
-            send_local_otp(phone_number)
+            if phone_number:
+                user = User.objects.get(phone_number=phone_number)
+                send_local_otp(phone_number=phone_number)
+                msg = "OTP sent to your phone number."
+            else:
+                # Handle potential duplicate emails (since email logic is new and not unique in DB)
+                # Use iexact for case-insensitive lookup
+                users = User.objects.filter(email__iexact=email)
+                if users.exists():
+                    user = users.first() # Pick the first one
+                else:
+                    raise User.DoesNotExist
+                
+                # For email login, we send OTP to email
+                send_local_otp(email=email)
+                msg = "OTP sent to your email address."
+
             return Response(
-                {"detail": "OTP sent successfully."},
+                {"detail": msg},
                 status=status.HTTP_200_OK
             )
         except User.DoesNotExist:
@@ -58,24 +74,41 @@ class RequestOTPView(APIView):
 
 
 class OTPVerifyAndTokenView(APIView):
-    """Verifies the OTP and returns JWT Access and Refresh Tokens."""
+    """Verifies the OTP (Phone or Email) and returns JWT Access and Refresh Tokens."""
     serializer_class = PhoneTokenSerializer
     
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # We need to manually handle validation or update serializer because 
+        # PhoneTokenSerializer enforces phone_number.
+        # Let's extract manually for flexibility or creating a new serializer is better.
+        # But to keep it minimal changes, we'll check fields directly.
+        phone_number = request.data.get('phone_number')
+        email = request.data.get('email')
+        otp_code = request.data.get('otp_code')
 
-        phone_number = serializer.validated_data['phone_number']
-        otp_code = serializer.validated_data['otp_code']
+        if not otp_code:
+             return Response({"detail": "OTP code is required."}, status=status.HTTP_400_BAD_REQUEST)
         
+        if not phone_number and not email:
+             return Response({"detail": "Phone number or Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            user = User.objects.get(phone_number=phone_number)
+            if phone_number:
+                user = User.objects.get(phone_number=phone_number)
+                verify_key = phone_number
+            else:
+                # Handle duplicates for verify too
+                users = User.objects.filter(email__iexact=email)
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+                
+                verify_key = email
         except User.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        is_valid, message = verify_local_otp(phone_number, otp_code)
+        is_valid, message = verify_local_otp(verify_key, otp_code)
         
         if is_valid: 
             refresh = RefreshToken.for_user(user)
@@ -99,11 +132,31 @@ class PasswordLoginView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        phone_number = serializer.validated_data['phone_number']
+        phone_number = serializer.validated_data.get('phone_number')
+        email = serializer.validated_data.get('email')
         password = serializer.validated_data['password']
         
         try:
-            user = User.objects.get(phone_number=phone_number)
+             # 🚨 Smart Logic: Check for email in phone_number field
+            if phone_number and '@' in phone_number:
+                email = phone_number
+                phone_number = None
+
+            if phone_number:
+                users = User.objects.filter(phone_number=phone_number)
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+            elif email:
+                users = User.objects.filter(email__iexact=email) # Case insensitive
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+            else:
+                 return Response({"detail": "Phone number or Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+
         except User.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -130,6 +183,7 @@ class ForgotPasswordRequestView(APIView):
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
+            print(f"DEBUG: Validation Errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = serializer.validated_data.get('phone_number')
@@ -137,26 +191,35 @@ class ForgotPasswordRequestView(APIView):
         
         try:
             if phone_number:
-                user = User.objects.get(phone_number=phone_number)
-                send_local_otp(phone_number)
-                return Response(
-                    {"detail": "OTP sent to your phone number."},
-                    status=status.HTTP_200_OK
-                )
-            elif email:
-                user = User.objects.get(email=email)
-                # For email, we'll use phone_number for OTP (since we use phone-based OTP system)
-                if user.phone_number:
-                    send_local_otp(user.phone_number)
+                # 🚨 Smart Fix: Check if phone_number is actually an email (frontend fallback)
+                if '@' in phone_number:
+                    # Reroute to email logic
+                    email = phone_number
+                    phone_number = None
+                else:
+                    user = User.objects.get(phone_number=phone_number)
+                    send_local_otp(phone_number)
                     return Response(
-                        {"detail": "OTP sent to your registered phone number."},
+                        {"detail": "OTP sent to your phone number."},
                         status=status.HTTP_200_OK
                     )
+            
+            # Note: Do not use 'elif' here because we might set email inside the if block above
+            if email:
+                # Handle duplicate emails
+                # Use iexact for case-insensitive lookup
+                users = User.objects.filter(email__iexact=email)
+                if users.exists():
+                    user = users.first()
                 else:
-                    return Response(
-                        {"detail": "No phone number found for this email."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    raise User.DoesNotExist
+                
+                # Send OTP to email directly, regardless of phone number existence
+                send_local_otp(email=email)
+                return Response(
+                    {"detail": "OTP sent to your email address."},
+                    status=status.HTTP_200_OK
+                )
         except User.DoesNotExist:
             return Response(
                 {"detail": "User not found."},
@@ -183,16 +246,22 @@ class ForgotPasswordOTPVerifyView(APIView):
                 user = User.objects.get(phone_number=phone_number)
                 verify_phone = phone_number
             elif email:
-                user = User.objects.get(email=email)
-                if not user.phone_number:
-                    return Response(
-                        {"detail": "No phone number found for this email."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                verify_phone = user.phone_number
+                # Handle duplicates
+                users = User.objects.filter(email__iexact=email)
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+                
+                verify_phone = user.phone_number # Can be None
+                # Use email as key if we are verifying via email flow
+                verify_key = email
             
             # Don't remove OTP yet - we need it for password reset
-            is_valid, message = verify_local_otp(verify_phone, otp_code, remove_after_verify=False)
+            # ✅ UPDATED: Validate against email if phone not present
+            # ✅ UPDATED: Validate against email if phone not present or if email flow
+            verify_key = verify_phone if (verify_phone and phone_number) else email
+            is_valid, message = verify_local_otp(verify_key, otp_code, remove_after_verify=False)
             
             if is_valid:
                 return Response(
@@ -226,19 +295,29 @@ class ResetPasswordView(APIView):
         
         try:
             if phone_number:
-                user = User.objects.get(phone_number=phone_number)
-                verify_phone = phone_number
-            elif email:
-                user = User.objects.get(email=email)
-                if not user.phone_number:
-                    return Response(
-                        {"detail": "No phone number found for this email."},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                verify_phone = user.phone_number
+                # 🚨 Smart Fix for Reset: Check if phone_number is email
+                if '@' in phone_number:
+                    email = phone_number
+                    phone_number = None
+                else:
+                    user = User.objects.get(phone_number=phone_number)
+                    verify_phone = phone_number
+
+            # Note: Do not use 'elif' here in case we re-routed from above
+            if email:
+                # Handle duplicates gracefully
+                users = User.objects.filter(email__iexact=email)
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+                
+                # We don't strictly need phone_number to reset password if we verified via email
+                verify_phone = user.phone_number if user.phone_number else None
             
             # Verify OTP first
-            is_valid, message = verify_local_otp(verify_phone, otp_code)
+            verify_key = verify_phone if (verify_phone and phone_number) else email
+            is_valid, message = verify_local_otp(verify_key, otp_code)
             
             if not is_valid:
                 return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
@@ -270,3 +349,39 @@ class ProfileView(APIView):
         # request.user is automatically set to the authenticated user by JWT middleware
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        """Allows updating mutable fields like full_name or email."""
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminStatsView(APIView):
+    """
+    Returns statistics for the Admin Dashboard.
+    Only accessible by Admin (superuser) users.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Check if user is admin
+        if not request.user.is_superuser and request.user.role != 'admin':
+            return Response(
+                {"detail": "You do not have permission to view admin stats."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        total_users = User.objects.count()
+        total_pandits = Pandit.objects.count()
+        pending_verifications = Pandit.objects.filter(is_verified=False).count()
+
+        return Response({
+            "total_users": total_users,
+            "total_pandits": total_pandits,
+            "pending_verifications": pending_verifications,
+            "system_status": "Healthy"
+        }, status=status.HTTP_200_OK)

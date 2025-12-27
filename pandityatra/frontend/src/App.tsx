@@ -22,6 +22,8 @@ import { PanditList } from './pages/Booking/PanditList';
 import PanditProfile from './pages/Booking/PanditProfile';
 import CustomerDashboard from './pages/Dashboard/CustomerDashboard';
 import PanditDashboard from './pages/Dashboard/PanditDashboard';
+import AdminDashboard from './pages/Dashboard/AdminDashboard';
+import EditProfile from './pages/Dashboard/Profile/EditProfile';
 
 
 function App() {
@@ -72,6 +74,30 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['pandit']}>
                     <PanditDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pandit/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['pandit']}>
+                    <EditProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <EditProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminDashboard />
                   </ProtectedRoute>
                 }
               />

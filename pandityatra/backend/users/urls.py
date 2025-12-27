@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     RegisterUserView, RequestOTPView, OTPVerifyAndTokenView, 
     PasswordLoginView, ForgotPasswordRequestView, ForgotPasswordOTPVerifyView, 
-    ResetPasswordView, ProfileView
+    ResetPasswordView, ProfileView, AdminStatsView
 )
 
 urlpatterns = [
@@ -23,4 +23,7 @@ urlpatterns = [
     path('forgot-password/', ForgotPasswordRequestView.as_view(), name='forgot-password-request'), # Request OTP
     path('forgot-password/verify-otp/', ForgotPasswordOTPVerifyView.as_view(), name='forgot-password-verify'), # Verify OTP
     path('forgot-password/reset/', ResetPasswordView.as_view(), name='reset-password'), # Set new password
+    
+    # Admin Stats
+    path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
 ]

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User # Assuming User model is defined in users/models.py
+from .models import User 
+from pandits.models import Pandit # 🚨 Enable Link
 from django.utils.crypto import get_random_string 
 
 # Define the length of the random password (e.g., 20 characters)
@@ -55,6 +56,17 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         # Ensure we use the correct creation method for the custom user model
         user = User.objects.create_user(**user_data)
         
+        # 🚨 Auto-Create Pandit Profile if role is 'pandit'
+        if user.role == 'pandit':
+            # Create a default profile
+            Pandit.objects.create(
+                user=user,
+                experience_years=0, # Default
+                language="Nepali, Hindi", # Default
+                expertise="General", # Default
+                bio="New Pandit Member"
+            )
+
         return user
 
 # Existing: Serializer that handles generating the tokens after OTP verification.
@@ -66,18 +78,29 @@ class PhoneTokenSerializer(serializers.Serializer):
 # Existing: Serializer for password-based login
 class PasswordLoginSerializer(serializers.Serializer):
     """Serializer for password-based login."""
-    phone_number = serializers.CharField(max_length=15)
+    phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True) # Relaxed constraint
+    email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=1)
-
-# Existing: Serializers for forgot password flow
-class ForgotPasswordRequestSerializer(serializers.Serializer):
-    """Serializer for requesting password reset OTP."""
-    phone_number = serializers.CharField(max_length=15, required=False)
-    email = serializers.EmailField(required=False)
     
     def validate(self, data):
         """Ensure either phone_number or email is provided."""
         if not data.get('phone_number') and not data.get('email'):
+            raise serializers.ValidationError("Either phone_number or email is required.")
+        return data
+
+# Existing: Serializers for forgot password flow
+class ForgotPasswordRequestSerializer(serializers.Serializer):
+    """Serializer for requesting password reset OTP."""
+    # Allow longer length (e.g. 50) to prevent validation errors if user sends a typo'd email as phone
+    phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True)
+    email = serializers.EmailField(required=False, allow_blank=True)
+    
+    def validate(self, data):
+        """Ensure either phone_number or email is provided."""
+        phone = data.get('phone_number')
+        email = data.get('email')
+        
+        if not phone and not email:
             raise serializers.ValidationError("Either phone_number or email is required.")
         return data
 
@@ -95,8 +118,8 @@ class ForgotPasswordOTPVerifySerializer(serializers.Serializer):
 
 class ResetPasswordSerializer(serializers.Serializer):
     """Serializer for resetting password after OTP verification."""
-    phone_number = serializers.CharField(max_length=15, required=False)
-    email = serializers.EmailField(required=False)
+    phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True) # Relaxed Constraint
+    email = serializers.EmailField(required=False, allow_blank=True)
     otp_code = serializers.CharField(max_length=6)
     new_password = serializers.CharField(write_only=True, min_length=6)
     

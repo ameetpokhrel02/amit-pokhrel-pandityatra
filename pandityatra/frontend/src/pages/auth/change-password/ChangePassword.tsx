@@ -21,13 +21,14 @@ const ChangePasswordPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const { phone_number, otp } = location.state || {};
+  const { phone_number, email, otp } = location.state || {};
+  const identifier = phone_number || email;
 
   useEffect(() => {
-    if (!phone_number || !otp) {
+    if (!identifier || !otp) {
       navigate('/login');
     }
-  }, [phone_number, otp, navigate]);
+  }, [identifier, otp, navigate]);
 
   const handleSubmit = async () => {
     setError(null);
@@ -37,7 +38,7 @@ const ChangePasswordPage: React.FC = () => {
     }
     setLoading(true);
     try {
-      await resetPassword(phone_number, otp, newPassword);
+      await resetPassword(identifier, otp, newPassword);
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {

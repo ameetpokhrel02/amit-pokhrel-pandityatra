@@ -21,7 +21,11 @@ class PanditSerializer(serializers.ModelSerializer):
             'user',        # The OneToOneField to User (often read-only/hidden in this context)
             'user_details',# The embedded User data
             'expertise', 
-            'experience_years', 
+            'experience_years',
+            'language',      # 🚨 Added
+            'bio',           # 🚨 Added
+            'rating',        # 🚨 Added
+            'is_available',  # 🚨 Added
             'is_verified', 
             'date_joined'
         )

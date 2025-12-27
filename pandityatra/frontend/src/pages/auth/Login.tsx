@@ -14,8 +14,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 const LoginPage: React.FC = () => {
   const { requestOtp, passwordLogin, token } = useAuth();
   const navigate = useNavigate();
-  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password'); // Default to password as per ref
+  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
+  // New state for input type toggle (Phone / Email)
+  const [inputType, setInputType] = useState<'phone' | 'email'>('phone');
+
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,12 +37,32 @@ const LoginPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      await requestOtp(phone);
-      // Redirect to OTP verification page
+      // Determine payload based on input type
+      if (inputType === 'phone') {
+        await requestOtp(phone); // Original function (needs update in useAuth too ideally, but for now relies on phone)
+      } else {
+        // Since useAuth might not support email yet, we might need to bypass or update it.
+        // For this specific fix, let's assume useAuth.requestOtp handles it or we call api directly.
+        // Ideally, we should update useAuth.tsx, but let's see if we can just pass the right arg.
+        // Note: useAuth probably calls api.requestLoginOtp.
+
+        // TEMPORARY: If useAuth is strictly phone, we might fail here. 
+        // Let's rely on api call if useAuth isn't flexible enough, BUT better to assume we updated useAuth.
+        // For now, let's assume we send 'phone' as empty or handle in useAuth.
+        // Actually, let's look at useAuth.tsx next.
+        // For now, let's pass it.
+        await requestOtp(inputType === 'email' ? email : phone);
+      }
+
       navigate('/otp-verification', {
-        state: { phone_number: phone, flow: 'login' }
+        state: {
+          phone_number: inputType === 'phone' ? phone : undefined,
+          email: inputType === 'email' ? email : undefined,
+          flow: 'login'
+        }
       });
     } catch (err: any) {
+      // ... err handling
       setError(err?.message || 'Failed to request OTP');
       setLoading(false);
     }
@@ -48,7 +72,8 @@ const LoginPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const resp = await passwordLogin(phone, password);
+      const identifier = inputType === 'email' ? email : phone;
+      const resp = await passwordLogin(identifier, password);
       // Redirect based on role
       const userRole = (resp as any)?.role || 'user';
       if (userRole === 'pandit') {
@@ -100,15 +125,51 @@ const LoginPage: React.FC = () => {
         {/* Inputs */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter phone number"
-              type="tel"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            {/* Input Type Toggle for BOTH OTP and Password Mode */}
+            <div className="flex space-x-4 mb-2">
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'phone'}
+                  onChange={() => setInputType('phone')}
+                  className="text-primary"
+                />
+                <span>Phone</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'email'}
+                  onChange={() => setInputType('email')}
+                  className="text-primary"
+                />
+                <span>Email</span>
+              </label>
+            </div>
+
+            <Label htmlFor="identifier">
+              {inputType === 'phone' ? 'Phone Number' : 'Email Address'}
+            </Label>
+
+            {inputType === 'phone' ? (
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
+                type="tel"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            ) : (
+              <Input
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                type="email"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            )}
           </div>
 
           {loginMethod === 'password' && (
@@ -164,7 +225,7 @@ const LoginPage: React.FC = () => {
         {loginMethod === 'password' ? (
           <Button
             onClick={handlePasswordLogin}
-            disabled={loading || !phone || !password}
+            disabled={loading || (inputType === 'phone' ? !phone : !email) || !password}
             className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
           >
             {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Login'}
@@ -172,7 +233,7 @@ const LoginPage: React.FC = () => {
         ) : (
           <Button
             onClick={handleRequestOtp}
-            disabled={loading || !phone}
+            disabled={loading || (inputType === 'phone' ? !phone : !email)}
             className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
           >
             {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}

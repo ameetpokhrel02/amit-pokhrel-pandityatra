@@ -37,7 +37,9 @@ urlpatterns = [
     path('api/recommender/', include('recommender.urls')),
 
     # ... existing paths (admin, recommender, etc.) ...
-    path('api/', include('bookings.urls')), # <--- ADD THIS LINE
+    path('api/', include('bookings.urls')),
+    path('api/samagri/', include('samagri.urls')),
+    path('api/kundali/', include('kundali.urls')),
 
     # NOTE: The paths for PujaListCreateView and PujaDetailView 
     #       MUST be defined in backend/services/urls.py, NOT here.

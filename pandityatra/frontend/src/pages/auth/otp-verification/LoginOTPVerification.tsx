@@ -18,14 +18,20 @@ const LoginOTPVerification: React.FC = () => {
   const [phone_number, setPhoneNumber] = useState<string | undefined>(
     location.state?.phone_number
   );
+  const [email, setEmail] = useState<string | undefined>(
+    location.state?.email
+  );
   const [flow, setFlow] = useState<string | undefined>(location.state?.flow);
 
+  // Identifier can be phone or email
+  const identifier = phone_number || email;
+
   useEffect(() => {
-    // Redirect if no phone number provided or wrong flow
-    if (!phone_number || flow !== 'login') {
+    // Redirect if no identifier provided or wrong flow
+    if (!identifier || flow !== 'login') {
       navigate('/login');
     }
-  }, [phone_number, flow, navigate]);
+  }, [identifier, flow, navigate]);
 
   const handleVerify = async () => {
     if (otp.length !== 6) {
@@ -37,7 +43,7 @@ const LoginOTPVerification: React.FC = () => {
     setLoading(true);
 
     try {
-      const resp = await verifyOtp(phone_number!, otp);
+      const resp = await verifyOtp(identifier!, otp);
       // Redirect based on role
       const userRole = (resp as any)?.role || 'user';
       if (userRole === 'pandit') {
@@ -56,7 +62,7 @@ const LoginOTPVerification: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      await requestOtp(phone_number!);
+      await requestOtp(identifier!);
       setError(null);
       // Show success message briefly
       setTimeout(() => {
@@ -75,7 +81,7 @@ const LoginOTPVerification: React.FC = () => {
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Verify OTP</CardTitle>
           <CardDescription>
-            Enter the 6-digit OTP sent to {phone_number}
+            Enter the 6-digit OTP sent to {identifier}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

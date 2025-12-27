@@ -11,9 +11,9 @@ type AuthContextValue = {
   user: any | null;
   loading: boolean;
   role: string | null;
-  requestOtp: (phone: string) => Promise<any>;
+  requestOtp: (identifier: string) => Promise<any>;
   requestResetOtp: (phone: string) => Promise<any>;
-  verifyOtp: (phone: string, otp: string) => Promise<any>; // Kept for backward compat, acts as login
+  verifyOtp: (identifier: string, otp: string) => Promise<any>; // Kept for backward compat, acts as login
   loginWithOtp: (phone: string, otp: string) => Promise<any>;
   verifyResetOtp: (phone: string, otp: string) => Promise<any>;
   passwordLogin: (phone: string, password: string) => Promise<any>;
@@ -49,19 +49,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [token]);
 
-  const requestOtp = async (phone: string) => {
-    // Check if this is for login or forgot password?
-    // Current usage in Login.tsx implies login OTP.
-    return api.requestLoginOtp({ phone_number: phone });
+  const requestOtp = async (identifier: string) => {
+    // Check if identifier looks like an email using simple regex or passed structure
+    // Ideally, Login.tsx should pass {email: ...} or {phone_number: ...}
+    // But maintaining signature for now, let's guess based on content.
+    const isEmail = identifier.includes('@');
+    return api.requestLoginOtp(
+      isEmail ? { email: identifier } : { phone_number: identifier }
+    );
   };
 
-  const requestResetOtp = async (phone: string) => {
-    return requestForgotPasswordOTP({ phone_number: phone });
+  const requestResetOtp = async (inputIdentifier: string) => {
+    const identifier = inputIdentifier.trim();
+    const isEmail = identifier.includes('@');
+    return requestForgotPasswordOTP(
+      isEmail ? { email: identifier } : { phone_number: identifier }
+    );
   };
 
-  const verifyOtp = async (phone: string, otp: string) => {
-    // Original verifyOtp implementation (Login)
-    const resp = await api.verifyOtpAndGetToken({ phone_number: phone, otp_code: otp });
+  const verifyOtp = async (identifier: string, otp: string) => {
+    // Determine if identifier is email
+    const isEmail = identifier.includes('@');
+    const payload = isEmail
+      ? { email: identifier, otp_code: otp }
+      : { phone_number: identifier, otp_code: otp };
+
+    const resp = await api.verifyOtpAndGetToken(payload);
     handleLoginSuccess(resp);
     return resp;
   };
@@ -70,12 +83,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return verifyOtp(phone, otp);
   };
 
-  const verifyResetOtp = async (phone: string, otp: string) => {
-    return verifyForgotPasswordOTP({ phone_number: phone, otp_code: otp });
+  const verifyResetOtp = async (identifier: string, otp: string) => {
+    const isEmail = identifier.includes('@');
+    const payload = isEmail
+      ? { email: identifier, otp_code: otp }
+      : { phone_number: identifier, otp_code: otp };
+    return verifyForgotPasswordOTP(payload);
   };
 
-  const passwordLogin = async (phone: string, password: string) => {
-    const resp = await api.passwordLogin({ phone_number: phone, password });
+  const passwordLogin = async (identifier: string, password: string) => {
+    const isEmail = identifier.trim().includes('@');
+    const payload = isEmail
+      ? { email: identifier.trim(), password }
+      : { phone_number: identifier.trim(), password };
+
+    // We can cast payload to any since the API type might be strict on phone_number
+    const resp = await api.passwordLogin(payload as any);
     handleLoginSuccess(resp);
     return resp;
   };
@@ -99,12 +122,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return api.registerUser(payload);
   };
 
-  const resetPassword = async (phone: string, otp: string, newPw: string) => {
-    return resetPasswordApi({
-      phone_number: phone,
-      otp_code: otp,
-      new_password: newPw
-    });
+  const resetPassword = async (identifier: string, otp: string, newPw: string) => {
+    const isEmail = identifier.trim().includes('@');
+    return resetPasswordApi(
+      isEmail
+        ? { email: identifier.trim(), otp_code: otp, new_password: newPw }
+        : { phone_number: identifier.trim(), otp_code: otp, new_password: newPw }
+    );
   };
 
   const logout = () => {

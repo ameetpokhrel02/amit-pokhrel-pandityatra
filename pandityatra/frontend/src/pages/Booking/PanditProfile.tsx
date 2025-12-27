@@ -49,7 +49,8 @@ const PanditProfile: React.FC = () => {
         <motion.div className="lg:col-span-1" variants={fadeInUp}>
           <AnimatedCard>
             <CardHeader>
-              <CardTitle>{pandit.full_name}</CardTitle>
+              {/* 🚨 Fix: Access full_name from nested user_details */}
+              <CardTitle>{pandit.user_details?.full_name || 'Pandit'}</CardTitle>
               <CardDescription>{pandit.expertise}</CardDescription>
             </CardHeader>
             <CardContent>
