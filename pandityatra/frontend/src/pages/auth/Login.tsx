@@ -246,11 +246,33 @@ const LoginPage: React.FC = () => {
           </Alert>
         )}
 
-        {/* Register Link */}
-        <div className="text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <Link to="/register" className="font-bold text-primary hover:underline">
-            Register here
+        {/* Register Link + Pandit Registration */}
+        <div className="space-y-3 text-center">
+          <div className="text-sm text-gray-500">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-bold text-primary hover:underline">
+              Register here
+            </Link>
+          </div>
+          
+          {/* Separator */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+          
+          {/* Register as Pandit Button */}
+          <Link to="/pandit/register">
+            <Button
+              variant="outline"
+              className="w-full h-12 text-base rounded-xl border-orange-200 hover:bg-orange-50"
+            >
+              Register as Pandit
+            </Button>
           </Link>
         </div>
       </div>
@@ -259,4 +281,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-

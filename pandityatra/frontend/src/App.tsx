@@ -18,11 +18,15 @@ import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerifica
 import ForgotPassword from './pages/auth/forgot-password/ForgotPassword';
 import OTPVerification from './pages/auth/otp-verification/OTPVerification';
 import ChangePassword from './pages/auth/change-password/ChangePassword';
+import PanditRegister from './pages/auth/PanditRegister';
 import { PanditList } from './pages/Booking/PanditList';
 import PanditProfile from './pages/Booking/PanditProfile';
+import BookingForm from './pages/Booking/BookingForm';
+import MyBookingsPage from './pages/Booking/MyBookings';
 import CustomerDashboard from './pages/Dashboard/CustomerDashboard';
 import PanditDashboard from './pages/Dashboard/PanditDashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
+import AdminVerificationDashboard from './pages/Dashboard/AdminVerification';
 import EditProfile from './pages/Dashboard/Profile/EditProfile';
 
 
@@ -41,6 +45,7 @@ function App() {
               <Route path="/cart" element={<CartPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/pandit/register" element={<PanditRegister />} />
 
               {/* Login OTP Verification */}
               <Route path="/otp-verification" element={<LoginOTPVerification />} />
@@ -55,8 +60,23 @@ function App() {
                 path="/booking"
                 element={
                   <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <PanditList />
+                    <BookingForm />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/my-bookings"
+                element={
+                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                    <MyBookingsPage />
+                  </ProtectedRoute>
+                }
+              />
+              {/* Pandit List (Public) */}
+              <Route
+                path="/pandits"
+                element={
+                  <PanditList />
                 }
               />
               {/* Public pandit profile */}
@@ -98,6 +118,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/verify-pandits"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminVerificationDashboard />
                   </ProtectedRoute>
                 }
               />

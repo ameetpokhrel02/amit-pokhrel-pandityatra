@@ -11,6 +11,13 @@ class BookingStatus(models.TextChoices):
     FAILED = 'FAILED', 'Payment Failed'
 
 
+class LocationChoices(models.TextChoices):
+    ONLINE = 'ONLINE', 'Online (Video Call)'
+    HOME = 'HOME', 'Customer Home'
+    TEMPLE = 'TEMPLE', 'Temple'
+    PANDIT_LOCATION = 'PANDIT_LOCATION', "Pandit's Location"
+
+
 class Booking(models.Model):
     """
     Represents a booking request made by a user for a specific Pandit and service.
@@ -27,10 +34,21 @@ class Booking(models.Model):
         on_delete=models.CASCADE, 
         related_name='pandit_appointments'
     )
+    service = models.ForeignKey(
+        'services.Puja',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bookings'
+    )
     
     # Service Details
     service_name = models.CharField(max_length=100)
-    service_location = models.CharField(max_length=255) # E.g., Online, Customer's Home, Temple
+    service_location = models.CharField(
+        max_length=20,
+        choices=LocationChoices.choices,
+        default=LocationChoices.ONLINE
+    ) # E.g., Online, Customer's Home, Temple
     
     # Timing and Status
     booking_date = models.DateField()
@@ -41,13 +59,22 @@ class Booking(models.Model):
         default=BookingStatus.PENDING
     )
     
+    # Additional Details
+    notes = models.TextField(blank=True, null=True, help_text="Customer special requests or notes")
+    samagri_required = models.BooleanField(default=True, help_text="Include samagri in booking")
+    
     # Financial Details
-    fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    service_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    samagri_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    total_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     payment_status = models.BooleanField(default=False) # True if payment is confirmed
+    payment_method = models.CharField(max_length=50, blank=True, null=True) # Khalti, Stripe, etc.
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    accepted_at = models.DateTimeField(blank=True, null=True)
+    completed_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         ordering = ['-booking_date', '-booking_time']

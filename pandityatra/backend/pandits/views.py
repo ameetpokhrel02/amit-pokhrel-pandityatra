@@ -1,10 +1,139 @@
 from rest_framework import generics, permissions, status
-# 🚨 FIX: ADD THIS IMPORT
-from rest_framework import serializers  # <--- CRITICAL IMPORT
+from rest_framework import serializers  
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from .models import Pandit
 from .serializers import PanditSerializer
-# Assuming you have defined the IsPanditOwnerOrAdmin permission from the previous step
+from .pandit_serializers import PanditRegistrationSerializer
+from users.models import User
+from users.otp_utils import send_local_otp
+
+
+# ============================================
+# PANDIT REGISTRATION & VERIFICATION VIEWS
+# ============================================
+
+class RegisterPanditView(generics.CreateAPIView):
+    """
+    Separate endpoint for Pandit registration with document upload.
+    Creates a User with role='pandit' and Pandit profile with PENDING status.
+    No authentication required - public registration.
+    """
+    serializer_class = PanditRegistrationSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        pandit = serializer.save()
+        
+        # Send OTP to phone for verification
+        send_local_otp(pandit.user.phone_number)
+        
+        return Response({
+            'detail': 'Pandit registration successful. Please verify your phone number with OTP.',
+            'phone_number': pandit.user.phone_number,
+            'status': 'pending_verification'
+        }, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def list_pending_pandits(request):
+    """
+    Admin only: List all pending pandit registrations awaiting verification.
+    """
+    if not (request.user.is_superuser or request.user.is_staff or request.user.role == 'admin'):
+        return Response(
+            {'detail': 'Only admins can view pending pandits'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    pending_pandits = Pandit.objects.filter(verification_status='PENDING').order_by('-date_joined')
+    serializer = PanditSerializer(pending_pandits, many=True, context={'request': request})
+    
+    return Response({
+        'count': pending_pandits.count(),
+        'results': serializer.data
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def verify_pandit(request, pandit_id):
+    """
+    Admin only: Approve a pandit's registration.
+    """
+    if not (request.user.is_superuser or request.user.is_staff or request.user.role == 'admin'):
+        return Response(
+            {'detail': 'Only admins can verify pandits'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        pandit = Pandit.objects.get(id=pandit_id)
+    except Pandit.DoesNotExist:
+        return Response(
+            {'detail': 'Pandit not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Update verification status
+    pandit.verification_status = 'APPROVED'
+    pandit.is_verified = True
+    pandit.verified_date = timezone.now()
+    pandit.verification_notes = request.data.get('notes', '')
+    pandit.save()
+    
+    serializer = PanditSerializer(pandit, context={'request': request})
+    
+    return Response({
+        'detail': f'Pandit {pandit.user.full_name} has been approved!',
+        'pandit': serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def reject_pandit(request, pandit_id):
+    """
+    Admin only: Reject a pandit's registration.
+    """
+    if not (request.user.is_superuser or request.user.is_staff or request.user.role == 'admin'):
+        return Response(
+            {'detail': 'Only admins can reject pandits'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    try:
+        pandit = Pandit.objects.get(id=pandit_id)
+    except Pandit.DoesNotExist:
+        return Response(
+            {'detail': 'Pandit not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Update verification status
+    pandit.verification_status = 'REJECTED'
+    pandit.is_verified = False
+    pandit.verification_notes = request.data.get('reason', 'No reason provided')
+    pandit.save()
+    
+    serializer = PanditSerializer(pandit, context={'request': request})
+    
+    return Response({
+        'detail': f'Pandit {pandit.user.full_name} has been rejected.',
+        'reason': pandit.verification_notes,
+        'pandit': serializer.data
+    }, status=status.HTTP_200_OK)
+
+
+# ============================================
+# EXISTING PANDIT VIEWS (KEEP AS IS)
+# ============================================
+
 
 class PanditListCreateView(generics.ListCreateAPIView):
     """

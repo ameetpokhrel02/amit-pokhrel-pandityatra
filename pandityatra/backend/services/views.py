@@ -12,11 +12,11 @@ from pandits.models import Pandit # Need Pandit model for the nested view logic
 # ----------------------------------------------------
 
 class PujaListCreateView(generics.ListCreateAPIView): 
-    # List (GET): All authenticated users can see the list.
+    # List (GET): All users (public access) can see the list.
     # Create (POST): Only Staff/Admin can add items to the master list.
     queryset = Puja.objects.all()
     serializer_class = PujaSerializer
-    permission_classes = [permissions.IsAuthenticated, IsStaffOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -29,11 +29,11 @@ class PujaListCreateView(generics.ListCreateAPIView):
 
 
 class PujaDetailView(generics.RetrieveUpdateDestroyAPIView):
-    # Retrieve (GET): All authenticated users can see the detail.
+    # Retrieve (GET): All users (public access) can see the detail.
     # Update/Destroy (PUT/PATCH/DELETE): Only Staff/Admin can modify/delete.
     queryset = Puja.objects.all()
     serializer_class = PujaSerializer
-    permission_classes = [permissions.IsAuthenticated, IsStaffOrReadOnly]
+    permission_classes = [IsStaffOrReadOnly]
 
 # ----------------------------------------------------
 # Nested Pandit-Specific Puja List (Pandit Owner Only)
