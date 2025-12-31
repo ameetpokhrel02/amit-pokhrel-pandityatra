@@ -28,6 +28,9 @@ import PanditDashboard from './pages/Dashboard/PanditDashboard';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
 import AdminVerificationDashboard from './pages/Dashboard/AdminVerification';
 import EditProfile from './pages/Dashboard/Profile/EditProfile';
+import ChatList from './pages/Chat/ChatList';
+import ChatRoom from './pages/Chat/ChatRoom';
+import FloatingChatWidget from './components/FloatingChatWidget';
 
 
 function App() {
@@ -130,11 +133,31 @@ function App() {
                 }
               />
 
+              {/* Chat Routes */}
+              <Route
+                path="/chat"
+                element={
+                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                    <ChatList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/chat/:roomId"
+                element={
+                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                    <ChatRoom roomId={0} />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Catch all - redirect to home */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             {/* Cart Drawer (global) */}
             <CartDrawer />
+            {/* Floating Chat Widget (global) */}
+            <FloatingChatWidget />
           </BrowserRouter>
         </AuthProvider>
       </FavoritesProvider>

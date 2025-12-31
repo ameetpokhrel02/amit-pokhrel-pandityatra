@@ -14,6 +14,7 @@ import {
     BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import logo from '@/assets/images/PanditYatralogo.png';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -60,7 +61,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             <div className="md:hidden">
                 {/* Mobile Header */}
                 <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b z-30 flex items-center justify-between px-4">
-                    <div className="font-bold text-xl text-primary">PanditYatra</div>
+                    <div className="flex items-center gap-2">
+                        <img 
+                            src={logo} 
+                            alt="PanditYatra" 
+                            className="h-8 w-auto object-contain"
+                        />
+                        <span className="font-bold text-lg text-primary">PanditYatra</span>
+                    </div>
                     <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                         {isSidebarOpen ? <X /> : <Menu />}
                     </Button>
@@ -81,12 +89,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                     ${isSidebarOpen ? 'block' : 'hidden md:block'}
                 `}
                     >
-                        {/* Logo Area */}
-                        <div className="h-16 flex items-center px-6 border-b">
-                            <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                        {/* Logo Area - Clickable to Home */}
+                        <Link to="/" className="h-16 flex items-center gap-3 px-6 border-b hover:bg-gray-50 transition-colors group">
+                            <img 
+                                src={logo} 
+                                alt="PanditYatra" 
+                                className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-110"
+                            />
+                            <span className="text-2xl font-bold text-primary group-hover:text-orange-600 transition-colors">
                                 PanditYatra
                             </span>
-                        </div>
+                        </Link>
 
                         {/* Navigation Links */}
                         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
@@ -135,6 +148,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
 
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 overflow-auto pt-16 md:pt-0">
+                {/* Top Navigation Bar (visible on mobile, optional on desktop) */}
+                <div className="md:hidden sticky top-0 z-20 bg-white border-b px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <img 
+                            src={logo} 
+                            alt="PanditYatra" 
+                            className="h-6 w-auto object-contain"
+                        />
+                        <span className="font-bold text-primary">PanditYatra</span>
+                    </div>
+                    <Link to="/" className="text-sm text-primary hover:underline">
+                        ← Home
+                    </Link>
+                </div>
+                
                 <div className="p-4 md:p-8 max-w-7xl mx-auto">
                     {children}
                 </div>

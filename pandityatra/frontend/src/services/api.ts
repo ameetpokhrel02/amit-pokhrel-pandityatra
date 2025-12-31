@@ -18,6 +18,8 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+export const api = apiClient;
+
 export const fetchPujas = async () => {
   try {
     const response = await apiClient.get('/services/');

@@ -4,3 +4,20 @@ psycopg2-binary
 django-cors-headers
 dj-database-url
 djangorestframework-simplejwt
+
+# Django Channels & WebSocket support
+channels[daphne]
+channels-redis
+
+# Redis for channel layers
+redis
+
+# Timezone support
+pytz
+
+# Payment gateways
+stripe
+requests  # For Khalti/eSewa API calls
+
+# Translation
+django-modeltranslation
