@@ -1,54 +1,30 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { Calendar, Users, LogOut, Settings } from 'lucide-react';
+import { Calendar, Users, Settings } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const PanditDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-primary">
-            PanditYatra
-          </Link>
-          <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground">
-              {user?.full_name || 'Pandit'}
-            </span>
-            <Button variant="ghost" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+    <DashboardLayout userRole="pandit">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Pandit Dashboard</h1>
+          <span className="text-muted-foreground">Welcome back, {user?.full_name || 'Pandit'}</span>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Pandit Dashboard</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <Calendar className="h-8 w-8 text-primary mb-2" />
               <CardTitle>My Bookings</CardTitle>
-              <CardDescription>View and manage your bookings</CardDescription>
+              <CardDescription>View and manage requests</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Pending requests</p>
             </CardContent>
           </Card>
 
@@ -56,44 +32,55 @@ const PanditDashboard: React.FC = () => {
             <CardHeader>
               <Users className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Services</CardTitle>
-              <CardDescription>Manage your puja services</CardDescription>
+              <CardDescription>Active puja listings</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
+              <div className="text-2xl font-bold">0</div>
+              <p className="text-xs text-muted-foreground">Active services</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
               <Settings className="h-8 w-8 text-primary mb-2" />
-              <CardTitle>Settings</CardTitle>
-              <CardDescription>Update your profile and preferences</CardDescription>
+              <CardTitle>Rating</CardTitle>
+              <CardDescription>Average customer rating</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
+              <div className="text-2xl font-bold">0.0</div>
+              <p className="text-xs text-muted-foreground">Based on 0 reviews</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Pandit Info */}
+        {/* Profile Summary */}
         <Card>
           <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
+            <CardTitle>Quick Profile View</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p><strong>Name:</strong> {user?.full_name || 'N/A'}</p>
-              <p><strong>Phone:</strong> {user?.phone_number || 'N/A'}</p>
-              <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Full Name</p>
+                <p className="font-medium">{user?.full_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone Number</p>
+                <p className="font-medium">{user?.phone_number || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{user?.email || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Role</p>
+                <p className="font-medium capitalize">{user?.role || 'Pandit'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

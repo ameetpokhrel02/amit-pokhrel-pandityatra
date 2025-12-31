@@ -11,7 +11,9 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 const ForgotPasswordPage: React.FC = () => {
   const { requestResetOtp } = useAuth();
   const navigate = useNavigate();
+  const [inputType, setInputType] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,9 +21,22 @@ const ForgotPasswordPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      await requestResetOtp(phone);
-      navigate('/otp-verification', {
-        state: { phone_number: phone, flow: 'reset_password' }
+
+      // Call requestResetOtp with correct payload (it sends {phone_number: ...})
+      // But we need to support email too. useAuth calls helper.requestForgotPasswordOTP({phone_number: phone})
+      // We need to update useAuth logic OR call helper directly here.
+      // Easiest is to update useAuth to be flexible like requestOtp.
+      // But for now, let's call requestResetOtp signature (which accepts phone string currently).
+      // We updated useAuth to accept identifier (phone string), but the implementation calls {phone_number: ...}
+      // Let's rely on useAuth update (which we will do next step).
+      await requestResetOtp(inputType === 'email' ? email : phone);
+
+      navigate('/auth/otp-verification', {
+        state: {
+          phone_number: inputType === 'phone' ? phone : undefined,
+          email: inputType === 'email' ? email : undefined,
+          flow: 'reset_password'
+        }
       });
     } catch (err: any) {
       setError(err?.message || 'Failed to request OTP');
@@ -32,24 +47,60 @@ const ForgotPasswordPage: React.FC = () => {
   return (
     <AuthLayout
       title="Forgot Password"
-      subtitle="Enter your phone to reset password"
+      subtitle="Enter your details to reset password"
     >
       <div className="space-y-4">
+        {/* Toggle */}
+        <div className="flex space-x-4 mb-2">
+          <label className="flex items-center space-x-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={inputType === 'phone'}
+              onChange={() => setInputType('phone')}
+              className="text-primary"
+            />
+            <span>Phone</span>
+          </label>
+          <label className="flex items-center space-x-2 text-sm cursor-pointer">
+            <input
+              type="radio"
+              checked={inputType === 'email'}
+              onChange={() => setInputType('email')}
+              className="text-primary"
+            />
+            <span>Email</span>
+          </label>
+        </div>
+
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input
-            id="phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Enter phone number"
-            type="tel"
-            className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-          />
+          <Label htmlFor="identifier">
+            {inputType === 'phone' ? 'Phone Number' : 'Email Address'}
+          </Label>
+
+          {inputType === 'phone' ? (
+            <Input
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter phone number"
+              type="tel"
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+            />
+          ) : (
+            <Input
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter email address"
+              type="email"
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+            />
+          )}
         </div>
 
         <Button
           onClick={handleRequestOtp}
-          disabled={loading || !phone}
+          disabled={loading || (inputType === 'phone' ? !phone : !email)}
           className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
         >
           {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}

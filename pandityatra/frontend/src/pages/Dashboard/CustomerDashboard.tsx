@@ -1,49 +1,28 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { BookOpen, Calendar, User, LogOut } from 'lucide-react';
+import { BookOpen, Calendar, User } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 const CustomerDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold text-primary">
-            PanditYatra
-          </Link>
-          <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground">
-              {user?.full_name || 'User'}
-            </span>
-            <Button variant="ghost" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+    <DashboardLayout userRole="user">
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <span className="text-muted-foreground">Welcome back, {user?.full_name || 'User'}</span>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card>
             <CardHeader>
               <BookOpen className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Book a Pandit</CardTitle>
-              <CardDescription>Find and book pandits for your puja services</CardDescription>
+              <CardDescription>Find and book pandits</CardDescription>
             </CardHeader>
             <CardContent>
               <Link to="/booking">
@@ -56,11 +35,11 @@ const CustomerDashboard: React.FC = () => {
             <CardHeader>
               <Calendar className="h-8 w-8 text-primary mb-2" />
               <CardTitle>My Bookings</CardTitle>
-              <CardDescription>View and manage your bookings</CardDescription>
+              <CardDescription>View upcoming ceremonies</CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full" disabled>
-                Coming Soon
+                View Bookings
               </Button>
             </CardContent>
           </Card>
@@ -69,11 +48,11 @@ const CustomerDashboard: React.FC = () => {
             <CardHeader>
               <User className="h-8 w-8 text-primary mb-2" />
               <CardTitle>Profile</CardTitle>
-              <CardDescription>Manage your account settings</CardDescription>
+              <CardDescription>Manage account settings</CardDescription>
             </CardHeader>
             <CardContent>
               <Button variant="outline" className="w-full" disabled>
-                Coming Soon
+                Edit Profile
               </Button>
             </CardContent>
           </Card>
@@ -82,18 +61,27 @@ const CustomerDashboard: React.FC = () => {
         {/* User Info */}
         <Card>
           <CardHeader>
-            <CardTitle>Account Information</CardTitle>
+            <CardTitle>Account Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              <p><strong>Name:</strong> {user?.full_name || 'N/A'}</p>
-              <p><strong>Phone:</strong> {user?.phone_number || 'N/A'}</p>
-              <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Full Name</p>
+                <p className="font-medium">{user?.full_name || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Phone Number</p>
+                <p className="font-medium">{user?.phone_number || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Email</p>
+                <p className="font-medium">{user?.email || 'N/A'}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

@@ -5,14 +5,23 @@ import apiClient from './api-client';
 // ----------------------
 export interface Pandit {
     id: number;
-    full_name: string;
+    user: number;
+    // 🚨 Nested user details from serializer
+    user_details: {
+        id: number;
+        full_name: string;
+        phone_number: string;
+        email: string;
+        profile_pic_url?: string;
+    };
     expertise: string;
+    experience_years: number;
     language: string;
-    rating: number;
+    rating: number; // Decimal in backend, number here
     bio: string;
     is_available: boolean;
-    image?: string; // Added in case it's in the model
-    user?: number;
+    is_verified: boolean;
+    date_joined: string;
 }
 
 export async function fetchPandits(): Promise<Pandit[]> {
@@ -105,7 +114,8 @@ export async function registerUser(payload: RegisterPayload) {
     }
 }
 
-export async function requestLoginOtp(payload: { phone_number: string }) {
+// Updated Payload to support email or phone
+export async function requestLoginOtp(payload: { phone_number?: string; email?: string }) {
     try {
         const response = await apiClient.post('/users/request-otp/', payload);
         return response.data;
@@ -114,7 +124,7 @@ export async function requestLoginOtp(payload: { phone_number: string }) {
     }
 }
 
-export async function verifyOtpAndGetToken(payload: { phone_number: string; otp_code: string }) {
+export async function verifyOtpAndGetToken(payload: { phone_number?: string; email?: string; otp_code: string }) {
     try {
         const response = await apiClient.post('/users/login-otp/', payload);
         return response.data;
@@ -135,6 +145,34 @@ export async function passwordLogin(payload: { phone_number: string; password: s
 export async function fetchProfile() {
     // Interceptor handles the token, argument removed as it was unused
     const response = await apiClient.get('/users/profile/');
+    return response.data;
+}
+
+// ----------------------
+// Admin APIs
+// ----------------------
+export interface AdminStats {
+    total_users: number;
+    total_pandits: number;
+    pending_verifications: number;
+    system_status: string;
+}
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+    const response = await apiClient.get('/users/admin/stats/');
+    return response.data;
+}
+
+// ----------------------
+// Profile APIs
+// ----------------------
+export async function updateUserProfile(data: any) {
+    const response = await apiClient.patch('/users/profile/', data);
+    return response.data;
+}
+
+export async function updatePanditProfile(id: number, data: any) {
+    const response = await apiClient.patch(`/pandits/${id}/`, data);
     return response.data;
 }
 

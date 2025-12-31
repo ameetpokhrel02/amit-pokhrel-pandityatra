@@ -1,6 +1,6 @@
 'use client'
 import * as React from 'react';
-import { useEffect, useRef, ReactNode, CSSProperties } from 'react';
+import { useEffect, useRef, type ReactNode, type CSSProperties } from 'react';
 
 interface GlowCardProps {
   children?: ReactNode;
@@ -26,9 +26,9 @@ const sizeMap = {
   lg: 'w-80 h-96'
 };
 
-const GlowCard: React.FC<GlowCardProps> = ({ 
-  children, 
-  className = '', 
+const GlowCard: React.FC<GlowCardProps> = ({
+  children,
+  className = '',
   glowColor = 'blue',
   size = 'md',
   width,
@@ -41,7 +41,7 @@ const GlowCard: React.FC<GlowCardProps> = ({
   useEffect(() => {
     const syncPointer = (e: PointerEvent) => {
       const { clientX: x, clientY: y } = e;
-      
+
       if (cardRef.current) {
         cardRef.current.style.setProperty('--x', x.toFixed(2));
         cardRef.current.style.setProperty('--xp', (x / window.innerWidth).toFixed(2));
