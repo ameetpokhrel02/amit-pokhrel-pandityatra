@@ -92,13 +92,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const passwordLogin = async (identifier: string, password: string) => {
-    const isEmail = identifier.trim().includes('@');
-    const payload = isEmail
-      ? { email: identifier.trim(), password }
-      : { phone_number: identifier.trim(), password };
+    const trimmed = identifier.trim();
+    let payload: any;
+    
+    if (trimmed.includes('@')) {
+      // Email login
+      payload = { email: trimmed, password };
+    } else if (/^\d+$/.test(trimmed)) {
+      // Phone login (all digits)
+      payload = { phone_number: trimmed, password };
+    } else {
+      // Username login (contains letters)
+      payload = { username: trimmed, password };
+    }
 
-    // We can cast payload to any since the API type might be strict on phone_number
-    const resp = await api.passwordLogin(payload as any);
+    const resp = await api.passwordLogin(payload);
     handleLoginSuccess(resp);
     return resp;
   };

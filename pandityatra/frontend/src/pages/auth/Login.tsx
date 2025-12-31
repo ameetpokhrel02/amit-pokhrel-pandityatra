@@ -12,26 +12,41 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const LoginPage: React.FC = () => {
-  const { requestOtp, passwordLogin, token } = useAuth();
+  const { requestOtp, passwordLogin, token, role } = useAuth();
   const navigate = useNavigate();
   const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
-  // New state for input type toggle (Phone / Email)
-  const [inputType, setInputType] = useState<'phone' | 'email'>('phone');
+  // New state for input type toggle (Phone / Email / Username)
+  const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('phone');
 
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in or after successful login
   useEffect(() => {
-    if (token) {
-      navigate('/dashboard', { replace: true });
+    if (token && (hasJustLoggedIn || !loading)) {
+      // If we just logged in, wait for role to be set, then redirect based on role
+      if (hasJustLoggedIn && role) {
+        if (role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else if (role === 'pandit') {
+          navigate('/pandit/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+        setHasJustLoggedIn(false);
+      } else if (!hasJustLoggedIn) {
+        // Already logged in from previous session
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [token, navigate]);
+  }, [token, role, navigate, hasJustLoggedIn, loading]);
 
   const handleRequestOtp = async () => {
     setError(null);
@@ -72,18 +87,12 @@ const LoginPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const identifier = inputType === 'email' ? email : phone;
-      const resp = await passwordLogin(identifier, password);
-      // Redirect based on role
-      const userRole = (resp as any)?.role || 'user';
-      if (userRole === 'pandit') {
-        navigate('/pandit/dashboard', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      const identifier = inputType === 'email' ? email : inputType === 'username' ? username : phone;
+      await passwordLogin(identifier, password);
+      // Set flag to trigger redirect in useEffect after context updates
+      setHasJustLoggedIn(true);
     } catch (err: any) {
       setError(err?.message || 'Login failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -145,10 +154,19 @@ const LoginPage: React.FC = () => {
                 />
                 <span>Email</span>
               </label>
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'username'}
+                  onChange={() => setInputType('username')}
+                  className="text-primary"
+                />
+                <span>Username</span>
+              </label>
             </div>
 
             <Label htmlFor="identifier">
-              {inputType === 'phone' ? 'Phone Number' : 'Email Address'}
+              {inputType === 'phone' ? 'Phone Number' : inputType === 'email' ? 'Email Address' : 'Username'}
             </Label>
 
             {inputType === 'phone' ? (
@@ -160,13 +178,22 @@ const LoginPage: React.FC = () => {
                 type="tel"
                 className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
               />
-            ) : (
+            ) : inputType === 'email' ? (
               <Input
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter email address"
                 type="email"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            ) : (
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                type="text"
                 className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
               />
             )}

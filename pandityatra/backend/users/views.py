@@ -134,15 +134,23 @@ class PasswordLoginView(APIView):
 
         phone_number = serializer.validated_data.get('phone_number')
         email = serializer.validated_data.get('email')
+        username = serializer.validated_data.get('username')
         password = serializer.validated_data['password']
         
         try:
-             # 🚨 Smart Logic: Check for email in phone_number field
+             # Smart Logic: Check for email in phone_number field
             if phone_number and '@' in phone_number:
                 email = phone_number
                 phone_number = None
 
-            if phone_number:
+            if username:
+                # Login by username
+                users = User.objects.filter(username=username)
+                if users.exists():
+                    user = users.first()
+                else:
+                    raise User.DoesNotExist
+            elif phone_number:
                 users = User.objects.filter(phone_number=phone_number)
                 if users.exists():
                     user = users.first()
@@ -155,12 +163,12 @@ class PasswordLoginView(APIView):
                 else:
                     raise User.DoesNotExist
             else:
-                 return Response({"detail": "Phone number or Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+                 return Response({"detail": "Phone number, email, or username is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         except User.DoesNotExist:
             return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Authenticate using username (which is phone_number) and password
+        # Authenticate using username and password
         authenticated_user = authenticate(username=user.username, password=password)
         
         if authenticated_user:
@@ -173,7 +181,7 @@ class PasswordLoginView(APIView):
                 'role': authenticated_user.role,  # Include role in response
             }, status=status.HTTP_200_OK)
         else:
-            return Response({"detail": "Invalid phone number or password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
 
 class ForgotPasswordRequestView(APIView):
     """Handles forgot password request - sends OTP to phone or email."""

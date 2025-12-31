@@ -133,7 +133,7 @@ export async function verifyOtpAndGetToken(payload: { phone_number?: string; ema
     }
 }
 
-export async function passwordLogin(payload: { phone_number: string; password: string }) {
+export async function passwordLogin(payload: { phone_number?: string; email?: string; username?: string; password: string }) {
     try {
         const response = await apiClient.post('/users/login-password/', payload);
         return response.data;

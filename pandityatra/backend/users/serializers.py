@@ -78,14 +78,15 @@ class PhoneTokenSerializer(serializers.Serializer):
 # Existing: Serializer for password-based login
 class PasswordLoginSerializer(serializers.Serializer):
     """Serializer for password-based login."""
-    phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True) # Relaxed constraint
+    phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True)
     email = serializers.EmailField(required=False, allow_blank=True)
+    username = serializers.CharField(max_length=150, required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, min_length=1)
     
     def validate(self, data):
-        """Ensure either phone_number or email is provided."""
-        if not data.get('phone_number') and not data.get('email'):
-            raise serializers.ValidationError("Either phone_number or email is required.")
+        """Ensure either phone_number, email, or username is provided."""
+        if not data.get('phone_number') and not data.get('email') and not data.get('username'):
+            raise serializers.ValidationError("Either phone_number, email, or username is required.")
         return data
 
 # Existing: Serializers for forgot password flow
