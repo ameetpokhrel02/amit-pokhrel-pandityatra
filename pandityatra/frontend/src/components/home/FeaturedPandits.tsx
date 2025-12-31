@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  FaStar, 
-  FaVideo, 
-  FaMapMarkerAlt, 
+import {
+  FaStar,
+  FaVideo,
+  FaMapMarkerAlt,
   FaLanguage,
   FaChevronLeft,
   FaChevronRight,
@@ -16,7 +16,11 @@ import {
 } from 'react-icons/fa';
 import { GiTempleDoor } from 'react-icons/gi';
 
-interface Pandit {
+import { fetchPandits } from '@/lib/api';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+
+// Local interface for display (mapped from API)
+interface DisplayPandit {
   id: number;
   name: string;
   image: string;
@@ -36,84 +40,40 @@ const FeaturedPandits: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
-  // Mock data for featured pandits
-  const featuredPandits: Pandit[] = [
-    {
-      id: 1,
-      name: "Pandit Rajesh Sharma",
-      image: "/src/assets/images/pandit6.png",
-      rating: 4.9,
-      reviewCount: 245,
-      experience: 15,
-      specializations: ["Ganesh Puja", "Marriage Ceremony", "Griha Pravesh"],
-      languages: ["Hindi", "Sanskrit", "English"],
-      location: "Kathmandu, Nepal",
-      isVerified: true,
-      isAvailable: true,
-      completedPujas: 1200,
-      startingPrice: 2500
-    },
-    {
-      id: 2,
-      name: "Pandit Suresh Acharya",
-      image: "/src/assets/images/pandit7.png",
-      rating: 4.8,
-      reviewCount: 189,
-      experience: 12,
-      specializations: ["Lakshmi Puja", "Durga Puja", "Kundali Reading"],
-      languages: ["Hindi", "Sanskrit", "Nepali"],
-      location: "Pokhara, Nepal",
-      isVerified: true,
-      isAvailable: true,
-      completedPujas: 950,
-      startingPrice: 2000
-    },
-    {
-      id: 3,
-      name: "Pandit Mahesh Pandey",
-      image: "/src/assets/images/pandit8.png",
-      rating: 4.9,
-      reviewCount: 312,
-      experience: 20,
-      specializations: ["Saraswati Puja", "Thread Ceremony", "Naming Ceremony"],
-      languages: ["Hindi", "Sanskrit", "English", "Nepali"],
-      location: "Lalitpur, Nepal",
-      isVerified: true,
-      isAvailable: false,
-      completedPujas: 1500,
-      startingPrice: 3000
-    },
-    {
-      id: 4,
-      name: "Pandit Ramesh Joshi",
-      image: "/src/assets/images/pandit9.png",
-      rating: 4.7,
-      reviewCount: 156,
-      experience: 10,
-      specializations: ["Ganesh Puja", "Lakshmi Puja", "Marriage Ceremony"],
-      languages: ["Hindi", "Sanskrit"],
-      location: "Bhaktapur, Nepal",
-      isVerified: true,
-      isAvailable: true,
-      completedPujas: 800,
-      startingPrice: 1800
-    },
-    {
-      id: 5,
-      name: "Pandit Krishna Bhatta",
-      image: "/src/assets/images/pandit10.png",
-      rating: 4.8,
-      reviewCount: 203,
-      experience: 18,
-      specializations: ["Durga Puja", "Griha Pravesh", "Kundali Reading"],
-      languages: ["Hindi", "Sanskrit", "English"],
-      location: "Chitwan, Nepal",
-      isVerified: true,
-      isAvailable: true,
-      completedPujas: 1100,
-      startingPrice: 2200
-    }
-  ];
+  const [pandits, setPandits] = useState<DisplayPandit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPandits = async () => {
+      try {
+        const data = await fetchPandits();
+        // Map API data to DisplayPandit format
+        const mapped: DisplayPandit[] = data.map(p => ({
+          id: p.id,
+          name: p.user_details.full_name || 'Pandit',
+          image: p.user_details.profile_pic_url || '/src/assets/images/placeholder_pandit.png', // Fallback
+          rating: p.rating || 0,
+          reviewCount: 0, // Placeholder
+          experience: p.experience_years,
+          specializations: p.expertise ? p.expertise.split(',').map(s => s.trim()) : [],
+          languages: p.language ? p.language.split(',').map(s => s.trim()) : [],
+          location: "Nepal", // Placeholder
+          isVerified: p.is_verified,
+          isAvailable: p.is_available,
+          completedPujas: 0, // Placeholder
+          startingPrice: 1100 // Placeholder
+        }));
+        setPandits(mapped);
+      } catch (err) {
+        console.error("Failed to fetch featured pandits", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadPandits();
+  }, []);
+
+  const featuredPandits = pandits; // Use state data
 
   const itemsPerSlide = 3;
   const totalSlides = Math.ceil(featuredPandits.length / itemsPerSlide);
@@ -121,7 +81,7 @@ const FeaturedPandits: React.FC = () => {
   // Auto-play functionality
   useEffect(() => {
     if (!isAutoPlaying) return;
-    
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % totalSlides);
     }, 4000);
@@ -172,7 +132,7 @@ const FeaturedPandits: React.FC = () => {
           >
             <FaChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -185,7 +145,7 @@ const FeaturedPandits: React.FC = () => {
           {/* Pandits Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-12">
             {getCurrentPandits().map((pandit, index) => (
-              <Card 
+              <Card
                 key={pandit.id}
                 className="group hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 border-0 shadow-lg bg-white/80 backdrop-blur-sm animate-in fade-in slide-in-from-bottom-4"
                 style={{ animationDelay: `${index * 150}ms` }}
@@ -193,13 +153,12 @@ const FeaturedPandits: React.FC = () => {
                 <CardHeader className="relative pb-2">
                   {/* Availability Badge */}
                   <div className="absolute top-4 right-4 z-10">
-                    <Badge 
+                    <Badge
                       variant={pandit.isAvailable ? "default" : "secondary"}
-                      className={`${
-                        pandit.isAvailable 
-                          ? "bg-green-500 hover:bg-green-600" 
+                      className={`${pandit.isAvailable
+                          ? "bg-green-500 hover:bg-green-600"
                           : "bg-gray-400"
-                      } transition-all duration-300`}
+                        } transition-all duration-300`}
                     >
                       {pandit.isAvailable ? "Available" : "Busy"}
                     </Badge>
@@ -230,13 +189,12 @@ const FeaturedPandits: React.FC = () => {
                     <div className="flex items-center justify-center gap-2 mb-3">
                       <div className="flex items-center gap-1">
                         {[...Array(5)].map((_, i) => (
-                          <FaStar 
-                            key={i} 
-                            className={`h-4 w-4 ${
-                              i < Math.floor(pandit.rating) 
-                                ? "text-yellow-400" 
+                          <FaStar
+                            key={i}
+                            className={`h-4 w-4 ${i < Math.floor(pandit.rating)
+                                ? "text-yellow-400"
                                 : "text-gray-300"
-                            }`} 
+                              }`}
                           />
                         ))}
                       </div>
@@ -315,9 +273,9 @@ const FeaturedPandits: React.FC = () => {
                         </Button>
                       </div>
                     </div>
-                    
+
                     <Link to={`/pandit/${pandit.id}`}>
-                      <Button 
+                      <Button
                         className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 hover:scale-105"
                         disabled={!pandit.isAvailable}
                       >
@@ -335,11 +293,10 @@ const FeaturedPandits: React.FC = () => {
             {[...Array(totalSlides)].map((_, index) => (
               <button
                 key={index}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide 
-                    ? "bg-orange-500 scale-125" 
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
+                    ? "bg-orange-500 scale-125"
                     : "bg-orange-200 hover:bg-orange-300"
-                }`}
+                  }`}
                 onClick={() => {
                   setCurrentSlide(index);
                   setIsAutoPlaying(false);
@@ -352,9 +309,9 @@ const FeaturedPandits: React.FC = () => {
         {/* View All Button */}
         <div className="text-center mt-12">
           <Link to="/booking">
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="border-orange-200 text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-105 hover:shadow-lg"
             >
               View All Pandits

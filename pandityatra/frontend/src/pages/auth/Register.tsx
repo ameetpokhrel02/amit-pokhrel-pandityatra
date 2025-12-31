@@ -37,6 +37,13 @@ const RegisterPage: React.FC = () => {
     }
   }, [token, navigate]);
 
+  // Redirect to dedicated pandit registration if pandit role is selected
+  useEffect(() => {
+    if (role === 'pandit') {
+      navigate('/pandit/register');
+    }
+  }, [role, navigate]);
+
   const handleRegister = async () => {
     setMessage(null);
     setError(null);

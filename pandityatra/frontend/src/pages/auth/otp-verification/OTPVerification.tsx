@@ -20,20 +20,21 @@ const OTPVerificationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { phone_number, flow } = location.state || {}; // flow: 'login' | 'reset_password'
+  const { phone_number, email, flow } = location.state || {}; // flow: 'login' | 'reset_password'
+  const identifier = phone_number || email;
 
   useEffect(() => {
-    if (!phone_number) {
+    if (!identifier) {
       navigate('/login');
     }
-  }, [phone_number, navigate]);
+  }, [identifier, navigate]);
 
   const handleVerify = async () => {
     setError(null);
     setLoading(true);
     try {
       if (flow === 'login') {
-        const resp = await loginWithOtp(phone_number, otp);
+        const resp = await loginWithOtp(identifier, otp);
         const userRole = (resp as any)?.role || 'user';
         if (userRole === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
@@ -42,9 +43,9 @@ const OTPVerificationPage: React.FC = () => {
         }
       } else {
         // flow === 'reset_password' or other
-        await verifyResetOtp(phone_number, otp);
+        await verifyResetOtp(identifier, otp);
         navigate('/auth/change-password', {
-          state: { phone_number, otp }
+          state: { phone_number, email, otp } // Pass both or identifier
         });
       }
     } catch (err: any) {
@@ -56,7 +57,7 @@ const OTPVerificationPage: React.FC = () => {
   return (
     <AuthLayout
       title="Verify OTP"
-      subtitle={`Enter the code sent to ${phone_number}`}
+      subtitle={`Enter the code sent to ${identifier}`}
     >
       <div className="space-y-6 flex flex-col items-center">
         <InputOTP

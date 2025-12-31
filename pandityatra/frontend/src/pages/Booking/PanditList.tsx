@@ -51,7 +51,7 @@ export const PanditList = () => {
         if (!query) return pandits;
         const q = query.toLowerCase();
         return pandits.filter(p => (
-            p.full_name.toLowerCase().includes(q) ||
+            (p.user_details.full_name || '').toLowerCase().includes(q) ||
             (p.expertise || '').toLowerCase().includes(q) ||
             (p.language || '').toLowerCase().includes(q)
         ));
@@ -85,7 +85,7 @@ export const PanditList = () => {
                     <motion.div key={pandit.id} variants={fadeInUp} whileHover={subtleHover}>
                         <AnimatedCard className="border-t-4 border-t-primary">
                             <CardHeader>
-                                <CardTitle className="text-xl">{pandit.full_name}</CardTitle>
+                                <CardTitle className="text-xl">{pandit.user_details.full_name}</CardTitle>
                                 <CardDescription>
                                     Expertise: {pandit.expertise} • Language: {pandit.language}
                                 </CardDescription>
@@ -101,7 +101,7 @@ export const PanditList = () => {
                                             </Link>
                                             <PanditServicesModal
                                                 panditId={pandit.id}
-                                                panditName={pandit.full_name}
+                                                panditName={pandit.user_details.full_name}
                                             />
                                             <Button
                                                 size="icon"
@@ -110,9 +110,9 @@ export const PanditList = () => {
                                                 onClick={() => toggleFavorite({
                                                     id: pandit.id,
                                                     type: 'pandit',
-                                                    name: pandit.full_name,
+                                                    name: pandit.user_details.full_name,
                                                     description: pandit.expertise,
-                                                    image: pandit.image
+                                                    image: pandit.user_details.profile_pic_url
                                                 })}
                                             >
                                                 {isFavorite(pandit.id) ? (

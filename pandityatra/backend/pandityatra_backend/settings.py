@@ -18,6 +18,7 @@ ALLOWED_HOSTS = []
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',  # Django Channels ASGI server (must be first)
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -25,6 +26,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
+    'channels',  # Django Channels for WebSocket support
+    
     # Required for API and JWT
     'rest_framework',
     'rest_framework_simplejwt', 
@@ -34,12 +37,36 @@ INSTALLED_APPS = [
     'pandits',
     'services',
     'bookings',
+    'payments',
+    'chat',  # Real-time chat
+    'reviews',  # Reviews and ratings
+    'notifications',  # Push notifications
     
     # Sprint 3 Modules: AI Pandit & Samagri
-    'recommender', # <-- COMMA ADDED HERE
+    'recommender',
     'samagri',
-    'kundali', # <-- New Kundali app added
+    'kundali',
 ]
+
+# Django Channels Configuration
+ASGI_APPLICATION = 'pandityatra_backend.asgi.application'
+
+# Channel Layers - Redis for WebSocket backend
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('redis', 6379)],  # Use 'localhost' for local dev, 'redis' for Docker
+        },
+    },
+}
+
+# For local development without Docker, use in-memory channel layer:
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "channels.layers.InMemoryChannelLayer"
+#     }
+# }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -102,11 +129,30 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# Internationalization
+# Internationalization & Localization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+
+# Support for English and Nepali
+LANGUAGES = [
+    ('en', 'English'),
+    ('ne', 'Nepali (नेपाली)'),
+]
+
+LOCALE_PATHS = [
+    os.path.join(BASE_DIR, 'locale'),
+]
+
+# Nepal timezone
+TIME_ZONE = 'Asia/Kathmandu'  # Nepal Standard Time (NST) UTC+5:45
+
+USE_I18N = True  # Enable internationalization
+USE_L10N = True  # Enable localization
+USE_TZ = True  # Use timezone-aware datetimes
+
+# Date/Time formats for Nepal
+DATE_FORMAT = 'Y-m-d'
+DATETIME_FORMAT = 'Y-m-d H:i:s'
+SHORT_DATE_FORMAT = 'Y-m-d'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -135,6 +181,16 @@ SIMPLE_JWT = {
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
 }
+
+# Email Configuration (Gmail SMTP)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# Get credentials from environment variables for security
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'pandityatra9@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # App Password needed here
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True

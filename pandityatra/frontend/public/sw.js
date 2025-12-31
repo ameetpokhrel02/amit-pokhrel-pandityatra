@@ -2,9 +2,6 @@
 const CACHE_NAME = 'pandityatra-v1';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/src/assets/images/logo.png',
   '/manifest.json'
 ];
 

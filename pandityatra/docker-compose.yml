@@ -10,11 +10,24 @@ services:
       - POSTGRES_PASSWORD=secure_password
     ports:
       - "5433:5432"
-    # ADD THIS HEALTHCHECK BLOCK
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pandit_admin -d pandityatra_db"]
       interval: 5s
       timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   web:
@@ -26,10 +39,14 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
+      - REDIS_URL=redis://redis:6379/0
       - DEBUG=1
-    # UPDATE THIS DEPENDS_ON BLOCK
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   pgadmin:
@@ -61,3 +78,4 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:

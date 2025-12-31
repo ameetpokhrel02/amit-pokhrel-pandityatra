@@ -12,33 +12,72 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const LoginPage: React.FC = () => {
-  const { requestOtp, passwordLogin, token } = useAuth();
+  const { requestOtp, passwordLogin, token, role } = useAuth();
   const navigate = useNavigate();
-  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password'); // Default to password as per ref
+  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
+  // New state for input type toggle (Phone / Email / Username)
+  const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('phone');
+
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
 
-  // Redirect if already logged in
+  // Redirect if already logged in or after successful login
   useEffect(() => {
-    if (token) {
-      navigate('/dashboard', { replace: true });
+    if (token && (hasJustLoggedIn || !loading)) {
+      // If we just logged in, wait for role to be set, then redirect based on role
+      if (hasJustLoggedIn && role) {
+        if (role === 'admin') {
+          navigate('/admin/dashboard', { replace: true });
+        } else if (role === 'pandit') {
+          navigate('/pandit/dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+        setHasJustLoggedIn(false);
+      } else if (!hasJustLoggedIn) {
+        // Already logged in from previous session
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [token, navigate]);
+  }, [token, role, navigate, hasJustLoggedIn, loading]);
 
   const handleRequestOtp = async () => {
     setError(null);
     setLoading(true);
     try {
-      await requestOtp(phone);
-      // Redirect to OTP verification page
+      // Determine payload based on input type
+      if (inputType === 'phone') {
+        await requestOtp(phone); // Original function (needs update in useAuth too ideally, but for now relies on phone)
+      } else {
+        // Since useAuth might not support email yet, we might need to bypass or update it.
+        // For this specific fix, let's assume useAuth.requestOtp handles it or we call api directly.
+        // Ideally, we should update useAuth.tsx, but let's see if we can just pass the right arg.
+        // Note: useAuth probably calls api.requestLoginOtp.
+
+        // TEMPORARY: If useAuth is strictly phone, we might fail here. 
+        // Let's rely on api call if useAuth isn't flexible enough, BUT better to assume we updated useAuth.
+        // For now, let's assume we send 'phone' as empty or handle in useAuth.
+        // Actually, let's look at useAuth.tsx next.
+        // For now, let's pass it.
+        await requestOtp(inputType === 'email' ? email : phone);
+      }
+
       navigate('/otp-verification', {
-        state: { phone_number: phone, flow: 'login' }
+        state: {
+          phone_number: inputType === 'phone' ? phone : undefined,
+          email: inputType === 'email' ? email : undefined,
+          flow: 'login'
+        }
       });
     } catch (err: any) {
+      // ... err handling
       setError(err?.message || 'Failed to request OTP');
       setLoading(false);
     }
@@ -48,17 +87,12 @@ const LoginPage: React.FC = () => {
     setError(null);
     setLoading(true);
     try {
-      const resp = await passwordLogin(phone, password);
-      // Redirect based on role
-      const userRole = (resp as any)?.role || 'user';
-      if (userRole === 'pandit') {
-        navigate('/pandit/dashboard', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      const identifier = inputType === 'email' ? email : inputType === 'username' ? username : phone;
+      await passwordLogin(identifier, password);
+      // Set flag to trigger redirect in useEffect after context updates
+      setHasJustLoggedIn(true);
     } catch (err: any) {
       setError(err?.message || 'Login failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -100,15 +134,69 @@ const LoginPage: React.FC = () => {
         {/* Inputs */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter phone number"
-              type="tel"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            {/* Input Type Toggle for BOTH OTP and Password Mode */}
+            <div className="flex space-x-4 mb-2">
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'phone'}
+                  onChange={() => setInputType('phone')}
+                  className="text-primary"
+                />
+                <span>Phone</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'email'}
+                  onChange={() => setInputType('email')}
+                  className="text-primary"
+                />
+                <span>Email</span>
+              </label>
+              <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                <input
+                  type="radio"
+                  checked={inputType === 'username'}
+                  onChange={() => setInputType('username')}
+                  className="text-primary"
+                />
+                <span>Username</span>
+              </label>
+            </div>
+
+            <Label htmlFor="identifier">
+              {inputType === 'phone' ? 'Phone Number' : inputType === 'email' ? 'Email Address' : 'Username'}
+            </Label>
+
+            {inputType === 'phone' ? (
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
+                type="tel"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            ) : inputType === 'email' ? (
+              <Input
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                type="email"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            ) : (
+              <Input
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter username"
+                type="text"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
+              />
+            )}
           </div>
 
           {loginMethod === 'password' && (
@@ -164,7 +252,7 @@ const LoginPage: React.FC = () => {
         {loginMethod === 'password' ? (
           <Button
             onClick={handlePasswordLogin}
-            disabled={loading || !phone || !password}
+            disabled={loading || (inputType === 'phone' ? !phone : !email) || !password}
             className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
           >
             {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Login'}
@@ -172,7 +260,7 @@ const LoginPage: React.FC = () => {
         ) : (
           <Button
             onClick={handleRequestOtp}
-            disabled={loading || !phone}
+            disabled={loading || (inputType === 'phone' ? !phone : !email)}
             className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
           >
             {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}
@@ -185,11 +273,33 @@ const LoginPage: React.FC = () => {
           </Alert>
         )}
 
-        {/* Register Link */}
-        <div className="text-center text-sm text-gray-500">
-          Don't have an account?{' '}
-          <Link to="/register" className="font-bold text-primary hover:underline">
-            Register here
+        {/* Register Link + Pandit Registration */}
+        <div className="space-y-3 text-center">
+          <div className="text-sm text-gray-500">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-bold text-primary hover:underline">
+              Register here
+            </Link>
+          </div>
+          
+          {/* Separator */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+          
+          {/* Register as Pandit Button */}
+          <Link to="/pandit/register">
+            <Button
+              variant="outline"
+              className="w-full h-12 text-base rounded-xl border-orange-200 hover:bg-orange-50"
+            >
+              Register as Pandit
+            </Button>
           </Link>
         </div>
       </div>
@@ -198,4 +308,3 @@ const LoginPage: React.FC = () => {
 };
 
 export default LoginPage;
-

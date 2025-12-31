@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import panditLogo from '@/assets/images/pandit_yartra.png';
+import panditLogo from '@/assets/images/PanditYatralogo.png';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
