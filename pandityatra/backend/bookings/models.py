@@ -85,3 +85,118 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"Booking {self.id} for {self.pandit.full_name} by {self.user.full_name}"
+    
+    def calculate_total_fee(self):
+        """Calculate total fee from service fee and samagri fee"""
+        self.total_fee = self.service_fee + self.samagri_fee
+        self.save()
+        return self.total_fee
+    
+    def get_samagri_items(self):
+        """Get all samagri items for this booking"""
+        return self.samagri_items.all()
+
+
+class BookingSamagriItem(models.Model):
+    """
+    Links samagri items to bookings with quantities and selections.
+    Tracks AI recommendations and user choices.
+    """
+    STATUS_CHOICES = [
+        ('RECOMMENDED', 'AI Recommended'),
+        ('SELECTED', 'User Selected'),
+        ('AUTO_ADDED', 'Auto Added'),
+        ('REMOVED', 'User Removed'),
+    ]
+    
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='samagri_items'
+    )
+    samagri_item = models.ForeignKey(
+        'samagri.SamagriItem',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='in_bookings'
+    )
+    
+    # Recommendation & Selection Tracking
+    recommendation = models.ForeignKey(
+        'recommender.SamagriRecommendation',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='booking_items'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='RECOMMENDED'
+    )
+    
+    # Quantity & Pricing
+    quantity = models.IntegerField(default=1)
+    unit = models.CharField(max_length=50, default='pcs')
+    unit_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00')
+    )
+    total_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        default=Decimal('0.00')
+    )
+    
+    # Flags
+    is_essential = models.BooleanField(
+        default=False,
+        help_text="Cannot be removed from booking"
+    )
+    is_optional = models.BooleanField(
+        default=True,
+        help_text="User can choose to include or exclude"
+    )
+    is_included = models.BooleanField(
+        default=True,
+        help_text="User chose to include this item"
+    )
+    
+    # Reason/Notes
+    reason = models.TextField(
+        blank=True,
+        help_text="Why this item is recommended"
+    )
+    user_notes = models.TextField(
+        blank=True,
+        help_text="User's notes about this item"
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('booking', 'samagri_item')
+        ordering = ['-is_essential', 'created_at']
+        indexes = [
+            models.Index(fields=['booking', 'is_included']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.booking.id} - {self.samagri_item.name} ({self.quantity})"
+    
+    def calculate_total_price(self):
+        """Calculate total price from unit price and quantity"""
+        self.total_price = self.unit_price * self.quantity
+        self.save()
+        return self.total_price
+    
+    def save(self, *args, **kwargs):
+        """Auto-calculate total price on save"""
+        if self.unit_price and self.quantity:
+            self.total_price = self.unit_price * self.quantity
+        super().save(*args, **kwargs)

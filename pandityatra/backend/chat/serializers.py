@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ChatRoom, Message
+from .models import ChatRoom, Message, ChatMessage
 from users.models import User
 from pandits.models import Pandit
 
@@ -51,3 +51,12 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     def get_unread_count(self, obj):
         user = self.context['request'].user
         return obj.messages.filter(is_read=False).exclude(sender=user).count()
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for guide mode messages (ChatMessage model)
+    """
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'user', 'mode', 'sender', 'content', 'content_ne', 'booking', 'pandit', 'timestamp', 'is_read']
+        read_only_fields = ['timestamp', 'user']

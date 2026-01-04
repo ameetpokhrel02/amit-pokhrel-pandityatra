@@ -21,3 +21,6 @@ requests  # For Khalti/eSewa API calls
 
 # Translation
 django-modeltranslation
+
+# OpenAI API for AI guide
+openai
