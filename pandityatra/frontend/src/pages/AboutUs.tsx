@@ -36,9 +36,11 @@ const AboutUs: React.FC = () => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
                         >
-                            <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
-                                Explore Services
-                            </Button>
+                            <Link to="/shop/pujas">
+                                <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
+                                    Explore Services
+                                </Button>
+                            </Link>
                         </motion.div>
                     </div>
                 </section>
@@ -141,13 +143,61 @@ const AboutUs: React.FC = () => {
                         </div>
 
                         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {/* Note: In a real app, these images would be actual temple images. Using placeholders or div colors for now. */}
-                            {['Pashupatinath', 'Muktinath', 'Manakamana', 'Janaki Mandir'].map((temple, i) => (
-                                <div key={i} className="group relative overflow-hidden rounded-xl aspect-[4/3] bg-slate-200">
-                                    <div className="absolute inset-0 bg-slate-300 animate-pulse" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex flex-col justify-end p-6 text-white translate-y-4 group-hover:translate-y-0 transition-transform">
-                                        <h3 className="font-bold text-lg">{temple}</h3>
-                                        <p className="text-sm text-white/80 opacity-0 group-hover:opacity-100 transition-opacity mt-1">Nepal</p>
+                            {[
+                                {
+                                    name: 'Pashupatinath',
+                                    location: 'Kathmandu, Nepal',
+                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Pashupatinath_Temple-2020.jpg/1200px-Pashupatinath_Temple-2020.jpg',
+                                    link: 'https://pashupatinathtemple.org/',
+                                    description: 'Sacred Hindu temple on the banks of Bagmati River'
+                                },
+                                {
+                                    name: 'Muktinath',
+                                    location: 'Mustang, Nepal',
+                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Muktinath_Temple.jpg/1200px-Muktinath_Temple.jpg',
+                                    link: 'https://www.muktinath.org.np/',
+                                    description: 'Sacred pilgrimage site at 3,710 meters altitude'
+                                },
+                                {
+                                    name: 'Manakamana',
+                                    location: 'Gorkha, Nepal',
+                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Manakamana_Temple.JPG/1200px-Manakamana_Temple.JPG',
+                                    link: 'https://en.wikipedia.org/wiki/Manakamana_Temple',
+                                    description: 'Temple of the wish-fulfilling goddess'
+                                },
+                                {
+                                    name: 'Janaki Mandir',
+                                    location: 'Janakpur, Nepal',
+                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Janaki_Mandir.jpg/1200px-Janaki_Mandir.jpg',
+                                    link: 'https://janakpurmun.gov.np/en/node/60',
+                                    description: 'Birthplace of Goddess Sita'
+                                }
+                            ].map((temple, i) => (
+                                <div key={i} className="group relative overflow-hidden rounded-xl aspect-[4/3] bg-slate-200 shadow-lg hover:shadow-xl transition-all">
+                                    <img 
+                                        src={temple.image} 
+                                        alt={temple.name}
+                                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.src = '/images/puja1.svg';
+                                        }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent flex flex-col justify-end p-6 text-white translate-y-4 group-hover:translate-y-0 transition-transform">
+                                        <h3 className="font-bold text-lg mb-1">{temple.name}</h3>
+                                        <p className="text-sm text-white/90 mb-3">{temple.location}</p>
+                                        <p className="text-xs text-white/70 opacity-0 group-hover:opacity-100 transition-opacity mb-3">
+                                            {temple.description}
+                                        </p>
+                                        <a
+                                            href={temple.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all w-fit"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Learn More <ArrowRight className="w-4 h-4" />
+                                        </a>
                                     </div>
                                 </div>
                             ))}
