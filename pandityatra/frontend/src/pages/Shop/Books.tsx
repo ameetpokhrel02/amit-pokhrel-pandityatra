@@ -1,5 +1,3 @@
-import React from 'react';
-
 const Books = () => {
     return (
         <div className="container mx-auto py-10">

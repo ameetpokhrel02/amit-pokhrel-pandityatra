@@ -6,14 +6,13 @@ import {
     SheetTitle,
     SheetDescription
 } from '@/components/ui/sheet';
-import { Heart, Trash2, ShoppingCart } from 'lucide-react';
+import { Heart, ShoppingCart } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
 
 const FavoritesDrawer: React.FC = () => {
-    const { items, removeItem, drawerOpen, closeDrawer } = useFavorites();
+    const { items, toggleFavorite, drawerOpen, closeDrawer } = useFavorites();
     const { addItem: addToCart } = useCart();
 
     const handleMoveToCart = (item: any) => {
@@ -21,9 +20,7 @@ const FavoritesDrawer: React.FC = () => {
             id: item.id,
             title: item.name,
             price: item.price || 0,
-            meta: { image: item.image }
         });
-        toast({ title: "Moved to Cart", description: `${item.name} moved to cart.` });
     };
 
     return (
@@ -40,13 +37,13 @@ const FavoritesDrawer: React.FC = () => {
                 </SheetHeader>
 
                 {items.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8 text-center bg-gray-50/50">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                            <Heart className="h-8 w-8 text-gray-300" />
+                    <div className="flex-1 flex flex-col items-center justify-center space-y-4 p-8 text-center bg-gray-50/50 dark:bg-gray-900/50">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                            <Heart className="h-8 w-8 text-gray-300 dark:text-gray-600" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-lg text-gray-900">No favorites yet</h3>
-                            <p className="text-sm text-gray-500 mt-1">Save items you love to find them later.</p>
+                            <h3 className="font-semibold text-lg text-gray-900 dark:text-white">No favorites yet</h3>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Save items you love to find them later.</p>
                         </div>
                         <Button variant="outline" onClick={closeDrawer} className="mt-4">
                             Browse Shop
@@ -56,24 +53,22 @@ const FavoritesDrawer: React.FC = () => {
                     <div className="flex-1 overflow-y-auto px-4 py-2">
                         <div className="space-y-4 pt-4 pb-10">
                             {items.map((item) => (
-                                <div key={item.id} className="flex gap-4 bg-white border rounded-lg p-3 hover:shadow-sm transition-shadow">
-                                    <div className="w-20 h-20 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
-                                        {item.image ? (
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No img</div>
+                                <div key={item.id} className="flex gap-4 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 hover:shadow-md dark:hover:shadow-lg transition-shadow">
+                                    <div className="flex-1">
+                                        <h4 className="font-medium text-sm text-gray-900 dark:text-white line-clamp-1">{item.name}</h4>
+                                        {item.price && (
+                                            <p className="text-sm font-semibold text-orange-600 dark:text-orange-400 mt-1">
+                                                ₹{Number(item.price).toLocaleString('en-IN')}
+                                            </p>
                                         )}
-                                    </div>
-                                    <div className="flex-1 flex flex-col justify-between">
-                                        <div>
-                                            <h4 className="font-medium text-sm text-gray-900 line-clamp-1">{item.name}</h4>
-                                            <p className="text-xs text-gray-500 capitalize">{item.type} • ₹{item.price?.toLocaleString()}</p>
-                                        </div>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 line-clamp-2">
+                                            {item.description}
+                                        </p>
 
-                                        <div className="flex items-center gap-2 mt-2">
+                                        <div className="flex items-center gap-2 mt-3">
                                             <Button
                                                 size="sm"
-                                                className="h-8 flex-1 text-xs"
+                                                className="h-8 flex-1 text-xs bg-orange-600 hover:bg-orange-700"
                                                 onClick={() => handleMoveToCart(item)}
                                             >
                                                 <ShoppingCart className="h-3 w-3 mr-1.5" />
@@ -82,10 +77,11 @@ const FavoritesDrawer: React.FC = () => {
                                             <Button
                                                 size="icon"
                                                 variant="outline"
-                                                className="h-8 w-8 text-gray-500 hover:text-red-500 hover:bg-red-50"
-                                                onClick={() => removeItem(item.id)}
+                                                className="h-8 w-8 text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                onClick={() => toggleFavorite(item)}
+                                                title="Remove from favorites"
                                             >
-                                                <Trash2 className="h-3 w-3" />
+                                                <Heart className="h-4 w-4 fill-current" />
                                             </Button>
                                         </div>
                                     </div>
@@ -100,3 +96,4 @@ const FavoritesDrawer: React.FC = () => {
 };
 
 export default FavoritesDrawer;
+

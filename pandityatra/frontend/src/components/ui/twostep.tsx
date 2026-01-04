@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
+import panditYatraLogo from '@/assets/images/PanditYatralogo.png';
 
 export default function TwoStep() {
   const [code, setCode] = useState<string[]>(new Array(5).fill(''));
@@ -84,15 +85,15 @@ export default function TwoStep() {
         <div className="relative z-10">
           <div className="flex justify-center mb-4 mt-8 sm:mt-4">
             <div className="w-40 h-40 flex items-center justify-center">
-                 {/* New Logo Image with Glow */}
+                 {/* PanditYatra Logo with Glow */}
                  <img 
-                    src="https://i.postimg.cc/SKSNJ5SQ/White-Letter-S-Logo-Instagram-Post.png" 
-                    alt="Logo" 
+                    src={panditYatraLogo} 
+                    alt="PanditYatra Logo" 
                     className="w-32 h-32 object-cover rounded-lg drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"
                     onError={(e) => { 
                       const target = e.target as HTMLImageElement;
                       target.onerror = null; 
-                      target.src='https://placehold.co/128x128/161B22/FFFFFF?text=S'; 
+                      target.src='https://placehold.co/128x128/161B22/FFFFFF?text=PanditYatra'; 
                     }}
                  />
             </div>

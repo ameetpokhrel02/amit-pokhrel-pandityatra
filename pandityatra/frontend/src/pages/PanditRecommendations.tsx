@@ -81,7 +81,7 @@ const PanditRecommendations: React.FC = () => {
                                     <CardHeader className="text-left pb-2">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <CardTitle className="text-xl font-bold mb-1">{pandit.full_name}</CardTitle>
+                                                <CardTitle className="text-xl font-bold mb-1">{pandit.user_details?.full_name || 'Pandit'}</CardTitle>
                                                 <div className="flex items-center text-yellow-500">
                                                     <Star className="h-4 w-4 fill-current mr-1" />
                                                     <span className="text-sm font-medium">{pandit.rating.toFixed(1)}</span>

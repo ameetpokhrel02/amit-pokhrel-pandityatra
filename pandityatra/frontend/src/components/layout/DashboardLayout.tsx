@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
+import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -26,6 +27,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
     // Define navigation items based on role
     const navItems = {
@@ -50,7 +52,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
 
     const currentNavItems = navItems[userRole as keyof typeof navItems] || navItems.user;
 
-    const handleLogout = () => {
+    const handleLogoutClick = () => {
+        setShowLogoutDialog(true);
+    };
+
+    const handleLogoutConfirm = () => {
         logout();
         navigate('/login');
     };
@@ -136,7 +142,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                             <Button
                                 variant="ghost"
                                 className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-                                onClick={handleLogout}
+                                onClick={handleLogoutClick}
                             >
                                 <LogOut size={20} className="mr-2" />
                                 Logout
@@ -167,6 +173,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                     {children}
                 </div>
             </main>
+
+            {/* Logout Confirmation Dialog */}
+            <LogoutConfirmationDialog
+                open={showLogoutDialog}
+                onOpenChange={setShowLogoutDialog}
+                onConfirm={handleLogoutConfirm}
+            />
         </div>
     );
 };

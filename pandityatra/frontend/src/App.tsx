@@ -12,6 +12,7 @@ import Samagri from './pages/Shop/Samagri';
 import Books from './pages/Shop/Books';
 import CartPage from './pages/Shop/Cart';
 import CartDrawer from './components/shop/CartDrawer';
+import FavoritesDrawer from './components/shop/FavoritesDrawer';
 import LoginPage from './pages/auth/Login';
 import RegisterPage from './pages/auth/Register';
 import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerification';
@@ -30,7 +31,9 @@ import AdminVerificationDashboard from './pages/Dashboard/AdminVerification';
 import EditProfile from './pages/Dashboard/Profile/EditProfile';
 import ChatList from './pages/Chat/ChatList';
 import ChatRoom from './pages/Chat/ChatRoom';
-import FloatingChatWidget from './components/FloatingChatWidget';
+import UnifiedChatWidget from './components/UnifiedChatWidget';
+import AboutUs from './pages/AboutUs';
+import OfflineKundali from './pages/Kundali/OfflineKundali';
 
 
 function App() {
@@ -42,6 +45,8 @@ function App() {
             <Routes>
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/kundali" element={<OfflineKundali />} />
               <Route path="/shop/pujas" element={<PujaCategories />} />
               <Route path="/shop/samagri" element={<Samagri />} />
               <Route path="/shop/books" element={<Books />} />
@@ -156,8 +161,10 @@ function App() {
             </Routes>
             {/* Cart Drawer (global) */}
             <CartDrawer />
-            {/* Floating Chat Widget (global) */}
-            <FloatingChatWidget />
+            {/* Favorites Drawer (global) */}
+            <FavoritesDrawer />
+            {/* Unified Chat Widget (global) - supports guide mode and interaction mode */}
+            <UnifiedChatWidget />
           </BrowserRouter>
         </AuthProvider>
       </FavoritesProvider>
