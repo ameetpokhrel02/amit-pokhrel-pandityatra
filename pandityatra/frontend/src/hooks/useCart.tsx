@@ -5,6 +5,7 @@ export interface CartItem {
   title: string;
   price: number;
   quantity: number;
+  image?: string;
   meta?: Record<string, any>;
 }
 

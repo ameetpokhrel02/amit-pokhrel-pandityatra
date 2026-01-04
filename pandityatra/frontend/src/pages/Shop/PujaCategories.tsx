@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { fetchPujas } from '../../services/api';
 import { motion } from 'framer-motion';
-import { Loader2, Heart, Clock, Users, Flame, Star, Zap } from 'lucide-react';
+import { Loader2, Heart, Clock, Users, Flame, Star, Zap, ShoppingCart, Eye, X } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useCart } from '@/hooks/useCart';
 
 interface Puja {
   id: number;
@@ -46,8 +50,10 @@ const PujaCategories = () => {
   const [pujas, setPujas] = useState<Puja[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [hovering, setHovering] = useState<number | null>(null);
+  const [selectedPuja, setSelectedPuja] = useState<Puja | null>(null);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { addItem } = useCart();
 
   useEffect(() => {
     const loadPujas = async () => {
@@ -68,15 +74,16 @@ const PujaCategories = () => {
     loadPujas();
   }, []);
 
-  const toggleFavorite = (pujaId: number) => {
-    setFavorites((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(pujaId)) {
-        updated.delete(pujaId);
-      } else {
-        updated.add(pujaId);
-      }
-      return updated;
+  useEffect(() => {
+    // Load favorites from localStorage on mount
+  }, []);
+
+  const handleAddToCart = (puja: Puja) => {
+    addItem({
+      id: puja.id,
+      title: puja.name || 'Puja Service',
+      price: puja.price,
+      image: pujaData[puja.name || '']?.image || '/images/puja1.svg',
     });
   };
 
@@ -100,17 +107,20 @@ const PujaCategories = () => {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-2xl font-bold mb-2">Puja Categories</h1>
-      <p className="text-gray-600 mb-8">Select a puja to book with our experienced pandits</p>
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <div className="flex-1">
+        <div className="container mx-auto py-10 px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">Puja Categories</h1>
+          <p className="text-gray-600 mb-8">Select a puja to book with our experienced pandits</p>
 
-      {pujas.length === 0 ? (
-        <div className="text-center py-10 text-gray-500">
-          <p>No pujas available at the moment.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pujas.map((puja) => {
+          {pujas.length === 0 ? (
+            <div className="text-center py-10 text-gray-500">
+              <p>No pujas available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pujas.map((puja) => {
             const pujaInfo = pujaData[puja.name || ''] || { 
               icon: <Star className="h-8 w-8" />, 
               image: '/images/puja1.svg' 
@@ -153,7 +163,13 @@ const PujaCategories = () => {
                   <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleFavorite(puja.id);
+                      toggleFavorite({
+                        id: puja.id,
+                        type: 'puja',
+                        name: puja.name || 'Puja',
+                        price: puja.price,
+                        description: puja.description,
+                      });
                     }}
                     className="absolute top-3 right-3 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow"
                     whileHover={{ scale: 1.1 }}
@@ -161,7 +177,7 @@ const PujaCategories = () => {
                   >
                     <Heart
                       className={`h-5 w-5 transition-colors ${
-                        favorites.has(puja.id)
+                        isFavorite(puja.id)
                           ? 'fill-red-500 text-red-500'
                           : 'text-gray-400'
                       }`}
@@ -209,21 +225,154 @@ const PujaCategories = () => {
                     </span>
                   </div>
 
-                  {/* Book Button */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold">
-                      Book Now
-                    </Button>
-                  </motion.div>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 pt-3">
+                    <motion.div
+                      className="flex-1"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button 
+                        variant="outline"
+                        className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+                        onClick={() => setSelectedPuja(puja)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Details
+                      </Button>
+                    </motion.div>
+                    <motion.div
+                      className="flex-1"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <Button 
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                        onClick={() => handleAddToCart(puja)}
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Add to Cart
+                      </Button>
+                    </motion.div>
+                  </div>
                 </div>
               </motion.div>
             );
           })}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Details Modal */}
+      {selectedPuja && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setSelectedPuja(null)}
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto"
+          >
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+                    {selectedPuja.name}
+                  </h2>
+                  <div className="flex items-center gap-2 text-orange-600">
+                    <Users className="h-5 w-5" />
+                    <span className="font-medium">{selectedPuja.pandit_name}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedPuja(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Description */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+                  Description
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+                  {selectedPuja.description}
+                </p>
+              </div>
+
+              {/* Details */}
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <div className="flex items-center gap-3 bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                  <Clock className="h-6 w-6 text-orange-600" />
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Duration</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {selectedPuja.duration_minutes} minutes
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <span className="text-2xl font-bold text-green-600">₹</span>
+                  <div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Price</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">
+                      {Number(selectedPuja.price).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 border-t border-gray-200 dark:border-gray-700 pt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    toggleFavorite({
+                      id: selectedPuja.id,
+                      type: 'puja',
+                      name: selectedPuja.name || 'Puja',
+                      price: selectedPuja.price,
+                      description: selectedPuja.description,
+                    });
+                  }}
+                >
+                  <Heart
+                    className={`h-5 w-5 mr-2 ${
+                      isFavorite(selectedPuja.id)
+                        ? 'fill-red-500 text-red-500'
+                        : 'text-gray-600'
+                    }`}
+                  />
+                  {isFavorite(selectedPuja.id) ? 'Remove from Favorites' : 'Add to Favorites'}
+                </Button>
+                <Button
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+                  onClick={() => {
+                    handleAddToCart(selectedPuja);
+                    setSelectedPuja(null);
+                  }}
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
       )}
+
+      <Footer />
     </div>
   );
 };

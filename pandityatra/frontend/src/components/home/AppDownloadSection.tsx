@@ -14,18 +14,18 @@ const AppDownloadSection: React.FC = () => {
     const y = useMotionValue(0);
 
     // Smooth spring animation for the movement
-    // Increased damping for smoother, less jittery feel
-    const mouseX = useSpring(x, { stiffness: 40, damping: 30 });
-    const mouseY = useSpring(y, { stiffness: 40, damping: 30 });
+    // Increased stiffness and reduced damping for faster, more responsive motion
+    const mouseX = useSpring(x, { stiffness: 150, damping: 20 });
+    const mouseY = useSpring(y, { stiffness: 150, damping: 20 });
 
     function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
         const { left, top, width, height } = currentTarget.getBoundingClientRect();
         const xPos = (clientX - left) / width - 0.5;
         const yPos = (clientY - top) / height - 0.5;
 
-        // Move up to 30px in either direction
-        x.set(xPos * 30);
-        y.set(yPos * 30);
+        // Move up to 50px in either direction for more noticeable effect
+        x.set(xPos * 50);
+        y.set(yPos * 50);
     }
 
     function handleMouseLeave() {
@@ -48,7 +48,7 @@ const AppDownloadSection: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, x: -50 }}
                             whileInView={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8 }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
                             viewport={{ once: true }}
                         >
                             <h2 className="text-4xl md:text-5xl font-bold text-dark-brown mb-4 leading-tight">
@@ -66,8 +66,9 @@ const AppDownloadSection: React.FC = () => {
                                 <motion.a
                                     href="#"
                                     className="bg-saffron text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:bg-orange-700 transition-colors shadow-lg hover:shadow-xl"
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, y: -3 }}
                                     whileTap={{ scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                                 >
                                     <img src={playstoreLogo} alt="Play Store" className="w-8 h-8 object-contain rounded-md brightness-0 invert" />
                                     <div className="text-left">
@@ -80,8 +81,9 @@ const AppDownloadSection: React.FC = () => {
                                 <motion.a
                                     href="#"
                                     className="bg-dark-brown text-white px-6 py-3 rounded-xl flex items-center space-x-3 hover:bg-brown-900 transition-colors shadow-lg hover:shadow-xl"
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, y: -3 }}
                                     whileTap={{ scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                                 >
                                     <img src={appleLogo} alt="App Store" className="w-8 h-8 object-contain rounded-md brightness-0 invert" />
                                     <div className="text-left">
@@ -94,8 +96,9 @@ const AppDownloadSection: React.FC = () => {
                                 <motion.a
                                     href="#"
                                     className="bg-white text-dark-brown px-6 py-3 rounded-xl flex items-center space-x-3 hover:bg-gray-50 transition-colors border-2 border-dark-brown/10 shadow-lg hover:shadow-xl"
-                                    whileHover={{ scale: 1.05 }}
+                                    whileHover={{ scale: 1.05, y: -3 }}
                                     whileTap={{ scale: 0.95 }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
                                 >
                                     <img src={pwaLogo} alt="PWA" className="w-8 h-8 object-contain rounded-md" />
                                     <div className="text-left">
@@ -130,13 +133,13 @@ const AppDownloadSection: React.FC = () => {
                             className="relative z-10"
                             initial={{ x: 100, opacity: 0 }}
                             whileInView={{ x: 0, opacity: 1 }}
-                            transition={{ duration: 1, type: "spring" }}
+                            transition={{ duration: 0.5, type: "spring", stiffness: 100, damping: 15 }}
                             viewport={{ once: true }}
                             style={{
                                 x: mouseX,
                                 y: mouseY,
-                                rotateX: useTransform(mouseY, [-30, 30], [5, -5]),
-                                rotateY: useTransform(mouseX, [-30, 30], [-5, 5]),
+                                rotateX: useTransform(mouseY, [-50, 50], [8, -8]),
+                                rotateY: useTransform(mouseX, [-50, 50], [-8, 8]),
                             }}
                         >
                             <img
@@ -149,9 +152,13 @@ const AppDownloadSection: React.FC = () => {
                             {/* Floating Badges - Parallax Effect (Counter Movement) */}
                             <motion.div
                                 className="absolute top-24 -left-16 bg-white p-4 rounded-xl shadow-xl flex items-center space-x-3 z-20"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3, duration: 0.4 }}
+                                viewport={{ once: true }}
                                 style={{
-                                    x: useTransform(mouseX, (val) => val * -1.5), // Moves opposite to phone
-                                    y: useTransform(mouseY, (val) => val * -1.5)
+                                    x: useTransform(mouseX, (val) => val * -2), // Moves opposite to phone
+                                    y: useTransform(mouseY, (val) => val * -2)
                                 }}
                             >
                                 <div className="bg-green-100 p-2 rounded-full">
@@ -165,9 +172,13 @@ const AppDownloadSection: React.FC = () => {
 
                             <motion.div
                                 className="absolute bottom-40 -right-12 bg-white p-4 rounded-xl shadow-xl z-20"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.5, duration: 0.4 }}
+                                viewport={{ once: true }}
                                 style={{
-                                    x: useTransform(mouseX, (val) => val * -1.2),
-                                    y: useTransform(mouseY, (val) => val * -1.2)
+                                    x: useTransform(mouseX, (val) => val * -1.8),
+                                    y: useTransform(mouseY, (val) => val * -1.8)
                                 }}
                             >
                                 <div className="flex items-center space-x-1 mb-1">
