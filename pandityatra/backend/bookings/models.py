@@ -67,8 +67,10 @@ class Booking(models.Model):
     service_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     samagri_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     total_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    total_fee_usd = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'), null=True, blank=True)
     payment_status = models.BooleanField(default=False) # True if payment is confirmed
     payment_method = models.CharField(max_length=50, blank=True, null=True) # Khalti, Stripe, etc.
+    video_room_url = models.URLField(max_length=500, blank=True, null=True, help_text="Video call link for online puja")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

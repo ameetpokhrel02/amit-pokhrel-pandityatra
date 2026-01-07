@@ -46,22 +46,22 @@ const KundaliHighlight: React.FC = () => {
       icon: <FaRocket className="h-6 w-6" />,
       title: "WebAssembly Powered",
       description: "Lightning-fast calculations",
-      color: "text-purple-500",
-      bgColor: "bg-purple-50"
-    },
-    {
-      icon: <FaShieldAlt className="h-6 w-6" />,
-      title: "Privacy First",
-      description: "Your data stays on your device",
-      color: "text-green-500",
-      bgColor: "bg-green-50"
+      color: "text-[#FF6F00]",
+      bgColor: "bg-[#FFF3E0]"
     },
     {
       icon: <FaDownload className="h-6 w-6" />,
-      title: "Instant Generation",
-      description: "Get results in seconds",
-      color: "text-primary",
-      bgColor: "bg-gray-50"
+      title: "Install as App",
+      description: "PWA support for all devices",
+      color: "text-[#3E2723]",
+      bgColor: "bg-[#EFEBE9]"
+    },
+    {
+      icon: <FaShieldAlt className="h-6 w-6" />,
+      title: "100% Private",
+      description: "Data stays on your device",
+      color: "text-green-600",
+      bgColor: "bg-green-50"
     }
   ];
 
@@ -82,19 +82,19 @@ const KundaliHighlight: React.FC = () => {
   ];
 
   return (
-    <section id="kundali-section" className="py-16 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
+    <section id="kundali-section" className="py-16 bg-[#F5F5F5] relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 text-white/10 animate-pulse">
+        <div className="absolute top-20 left-10 text-[#FF6F00]/10 animate-pulse">
           <GiStarFormation className="h-32 w-32" />
         </div>
-        <div className="absolute top-40 right-20 text-white/10 animate-bounce">
+        <div className="absolute top-40 right-20 text-[#FF6F00]/10 animate-bounce">
           <GiCrystalBall className="h-24 w-24" />
         </div>
-        <div className="absolute bottom-40 left-20 text-white/10 animate-pulse">
+        <div className="absolute bottom-40 left-20 text-[#FF6F00]/10 animate-pulse">
           <GiCrystalBall className="h-28 w-28" />
         </div>
-        <div className="absolute bottom-20 right-10 text-white/10 animate-spin" style={{ animationDuration: '20s' }}>
+        <div className="absolute bottom-20 right-10 text-[#FF6F00]/10 animate-spin" style={{ animationDuration: '20s' }}>
           <GiMagicSwirl className="h-36 w-36" />
         </div>
         
@@ -102,7 +102,7 @@ const KundaliHighlight: React.FC = () => {
         {[...Array(20)].map((_, i) => (
           <div
             key={i}
-            className="absolute w-2 h-2 bg-white/20 rounded-full animate-pulse"
+            className="absolute w-2 h-2 bg-[#FF6F00]/20 rounded-full animate-pulse"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -118,15 +118,16 @@ const KundaliHighlight: React.FC = () => {
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4 border border-white/20">
             <GiScrollUnfurled className="h-4 w-4 text-yellow-300" />
-            <span className="text-yellow-200 text-sm font-medium">Revolutionary Technology</span>
+            <FaStar className="h-4 w-4 text-[#FF6F00] animate-spin-slow" />
+            <span className="text-[#E65100] text-sm font-medium">Revolutionary Technology</span>
           </div>
-          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-white leading-tight">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 text-[#3E2723] leading-tight">
             World's First
-            <span className="block bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
+            <span className="block text-[#FF6F00] animate-pulse">
               Offline Kundali Generator
             </span>
           </h2>
-          <p className="text-xl md:text-2xl text-gray-200 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Experience the future of astrology with our groundbreaking WebAssembly-powered Kundali generator that works completely offline
           </p>
         </div>
@@ -136,15 +137,15 @@ const KundaliHighlight: React.FC = () => {
           {/* Left Side - Features */}
           <div className="space-y-8">
             {/* Unique Selling Points */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15 transition-all duration-300 hover:scale-105">
+            <Card className="bg-white shadow-xl border-[#FF6F00]/20 hover:border-[#FF6F00] transition-all duration-300 hover:scale-105">
               <CardContent className="p-8">
                 <div className="flex items-center gap-4 mb-6">
-                  <div className="p-3 bg-gradient-to-r from-primary/80 to-primary rounded-full">
-                    <FaRocket className="h-8 w-8 text-white" />
+                  <div className="p-3 bg-[#FFF3E0] rounded-full">
+                    <FaRocket className="h-8 w-8 text-[#FF6F00]" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">Revolutionary Technology</h3>
-                    <p className="text-gray-300">Powered by cutting-edge WebAssembly for unmatched performance</p>
+                    <h3 className="text-2xl font-bold mb-2 text-[#3E2723]">Revolutionary Technology</h3>
+                    <p className="text-gray-600">Powered by cutting-edge WebAssembly for unmatched performance</p>
                   </div>
                 </div>
                 
@@ -154,8 +155,8 @@ const KundaliHighlight: React.FC = () => {
                       key={index}
                       className={`p-4 rounded-lg transition-all duration-300 cursor-pointer ${
                         activeFeature === index 
-                          ? 'bg-white/20 scale-105 border border-white/30' 
-                          : 'bg-white/5 hover:bg-white/10'
+                          ? 'bg-[#FFF3E0] scale-105 border border-[#FF6F00]' 
+                          : 'bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setActiveFeature(index)}
                     >
@@ -164,8 +165,8 @@ const KundaliHighlight: React.FC = () => {
                       }`}>
                         {feature.icon}
                       </div>
-                      <h4 className="font-semibold text-sm mb-1">{feature.title}</h4>
-                      <p className="text-xs text-gray-300">{feature.description}</p>
+                      <h4 className={`font-semibold text-sm mb-1 ${activeFeature === index ? 'text-[#E65100]' : 'text-[#3E2723]'}`}>{feature.title}</h4>
+                      <p className="text-xs text-gray-500">{feature.description}</p>
                     </div>
                   ))}
                 </div>
@@ -173,21 +174,21 @@ const KundaliHighlight: React.FC = () => {
             </Card>
 
             {/* Benefits List */}
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/15 transition-all duration-300">
+            <Card className="bg-white shadow-lg border-none hover:shadow-xl transition-all duration-300">
               <CardContent className="p-8">
-                <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                  <GiCrystalBall className="h-6 w-6 text-purple-400" />
+                <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[#3E2723]">
+                  <GiCrystalBall className="h-6 w-6 text-[#FF6F00]" />
                   What You Get
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {benefits.map((benefit, index) => (
                     <div 
                       key={index}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 transition-all duration-300 animate-in fade-in slide-in-from-left-4"
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#FFF3E0] transition-all duration-300 animate-in fade-in slide-in-from-left-4"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <FaCheckCircle className="h-4 w-4 text-green-400 flex-shrink-0" />
-                      <span className="text-sm">{benefit}</span>
+                      <FaCheckCircle className="h-4 w-4 text-[#FF6F00] flex-shrink-0" />
+                      <span className="text-sm text-gray-700">{benefit}</span>
                     </div>
                   ))}
                 </div>
@@ -197,13 +198,13 @@ const KundaliHighlight: React.FC = () => {
 
           {/* Right Side - Demo/Visual */}
           <div className="relative">
-            <Card className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-sm border-white/30 text-white overflow-hidden hover:scale-105 transition-all duration-500">
+            <Card className="bg-white shadow-xl border-[#FF6F00]/10 overflow-hidden hover:scale-105 transition-all duration-500">
               <CardContent className="p-0 relative">
                 {/* Mock Kundali Interface */}
-                <div className="p-8">
+                <div className="p-8 bg-[#FFF8E1]">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold">Kundali Generator</h3>
-                    <Badge className="bg-green-500 hover:bg-green-600 animate-pulse">
+                    <h3 className="text-xl font-bold text-[#3E2723]">Kundali Generator</h3>
+                    <Badge className="bg-[#FF6F00] hover:bg-[#E65100] animate-pulse text-white">
                       <FaWifi className="h-3 w-3 mr-1" />
                       Offline Ready
                     </Badge>
@@ -211,10 +212,10 @@ const KundaliHighlight: React.FC = () => {
 
                   {/* Mock Chart */}
                   <div className="relative mb-6">
-                    <div className="w-48 h-48 mx-auto border-2 border-white/30 rounded-full relative overflow-hidden">
-                      <div className="absolute inset-4 border border-white/20 rounded-full">
-                        <div className="absolute inset-4 border border-white/10 rounded-full flex items-center justify-center">
-                          <GiCrystalBall className="h-16 w-16 text-purple-300 animate-pulse" />
+                    <div className="w-48 h-48 mx-auto border-2 border-[#FF6F00]/30 rounded-full relative overflow-hidden bg-white">
+                      <div className="absolute inset-4 border border-[#FF6F00]/20 rounded-full">
+                        <div className="absolute inset-4 border border-[#FF6F00]/10 rounded-full flex items-center justify-center">
+                          <GiCrystalBall className="h-16 w-16 text-[#FF6F00] animate-pulse" />
                         </div>
                       </div>
                       
@@ -238,21 +239,21 @@ const KundaliHighlight: React.FC = () => {
 
                   {/* Mock Details */}
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                      <span className="text-sm">Sun Sign</span>
-                      <Badge variant="outline" className="border-yellow-400 text-yellow-300">
+                    <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg border border-[#FF6F00]/10">
+                      <span className="text-sm text-[#3E2723]">Sun Sign</span>
+                      <Badge variant="outline" className="border-[#FF6F00] text-[#E65100]">
                         Leo ♌
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                      <span className="text-sm">Moon Sign</span>
-                      <Badge variant="outline" className="border-blue-400 text-blue-300">
+                    <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg border border-[#FF6F00]/10">
+                      <span className="text-sm text-[#3E2723]">Moon Sign</span>
+                      <Badge variant="outline" className="border-[#FF6F00] text-[#E65100]">
                         Cancer ♋
                       </Badge>
                     </div>
-                    <div className="flex justify-between items-center p-3 bg-white/10 rounded-lg">
-                      <span className="text-sm">Ascendant</span>
-                      <Badge variant="outline" className="border-green-400 text-green-300">
+                    <div className="flex justify-between items-center p-3 bg-white/60 rounded-lg border border-[#FF6F00]/10">
+                      <span className="text-sm text-[#3E2723]">Ascendant</span>
+                      <Badge variant="outline" className="border-[#FF6F00] text-[#E65100]">
                         Virgo ♍
                       </Badge>
                     </div>
@@ -260,20 +261,20 @@ const KundaliHighlight: React.FC = () => {
                 </div>
 
                 {/* Generation Status */}
-                <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 p-4 border-t border-white/20">
+                <div className="bg-[#F5F5F5] p-4 border-t border-[#FF6F00]/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium">Generated in 0.3 seconds • 100% Offline</span>
+                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-gray-600">Generated in 0.3 seconds • 100% Offline</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Floating Elements */}
-            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-primary/80 to-primary rounded-full p-3 animate-bounce">
+            <div className="absolute -top-4 -right-4 bg-[#FF6F00] rounded-full p-3 animate-bounce shadow-lg">
               <FaRocket className="h-6 w-6 text-white" />
             </div>
-            <div className="absolute -bottom-4 -left-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-full p-3 animate-pulse">
+            <div className="absolute -bottom-4 -left-4 bg-[#3E2723] rounded-full p-3 animate-pulse shadow-lg">
               <GiMagicSwirl className="h-6 w-6 text-white" />
             </div>
           </div>

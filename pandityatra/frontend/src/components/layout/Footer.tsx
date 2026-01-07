@@ -12,8 +12,12 @@ import {
   FaMapMarkerAlt,
   FaCheckCircle,
   FaYoutube,
-  FaGithub
+  FaGithub,
+  FaCreditCard,
+  FaLock,
+  FaWallet
 } from 'react-icons/fa';
+import { SiStripe } from 'react-icons/si';
 import logo from '@/assets/images/PanditYatralogo.png';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -194,6 +198,45 @@ const Footer: React.FC = () => {
                 <span>Kathmandu, Nepal</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        
+
+        {/* Payment Methods */}
+        <div className="border-t py-6">
+          <div className="flex flex-col items-center gap-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <FaLock className="h-3 w-3" />
+              Secure Payments
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              {/* Khalti Payment */}
+              <a
+                href="https://khalti.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full bg-gradient-to-br from-purple-600 to-purple-700 hover:shadow-lg transition-all duration-300 transform hover:scale-110 hover:rotate-12"
+                aria-label="Khalti Payment"
+              >
+                <FaWallet className="h-4 w-4 text-white" />
+              </a>
+
+              {/* Stripe Payment */}
+              <a
+                href="https://stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 hover:shadow-lg transition-all duration-300 transform hover:scale-110 hover:rotate-12"
+                aria-label="Stripe Payment"
+              >
+                <SiStripe className="h-4 w-4 text-white" />
+              </a>
+            </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <FaCreditCard className="h-3 w-3" />
+              All transactions encrypted & secured
+            </p>
           </div>
         </div>
 

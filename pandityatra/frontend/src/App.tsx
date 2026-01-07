@@ -32,6 +32,12 @@ import ChatList from './pages/Chat/ChatList';
 import ChatRoom from './pages/Chat/ChatRoom';
 import FloatingChatWidget from './components/FloatingChatWidget';
 
+// Payment Pages
+import PaymentPage from './pages/Payment/PaymentPage';
+import PaymentSuccess from './pages/Payment/PaymentSuccess';
+import PaymentFailure from './pages/Payment/PaymentFailure';
+import KhaltiVerify from './pages/Payment/KhaltiVerify';
+
 
 function App() {
   return (
@@ -75,6 +81,20 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Payment Routes */}
+              <Route
+                path="/payment/:bookingId"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <PaymentPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentFailure />} />
+              <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
+              
               {/* Pandit List (Public) */}
               <Route
                 path="/pandits"

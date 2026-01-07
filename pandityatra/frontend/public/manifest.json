@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/src/assets/images/logo.png",
+      "src": "/src/assets/images/PanditYatralogo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable any"
     },
     {
-      "src": "/src/assets/images/logo.png",
+      "src": "/src/assets/images/PanditYatralogo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable any"
