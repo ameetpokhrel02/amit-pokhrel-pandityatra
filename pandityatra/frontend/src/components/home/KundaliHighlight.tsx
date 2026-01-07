@@ -39,8 +39,8 @@ const KundaliHighlight: React.FC = () => {
       icon: <FaWifi className="h-6 w-6" />,
       title: "100% Offline",
       description: "Works without internet connection",
-      color: "text-blue-500",
-      bgColor: "bg-blue-50"
+      color: "text-[#FF6F00]",
+      bgColor: "bg-[#FFF3E0]"
     },
     {
       icon: <FaRocket className="h-6 w-6" />,
@@ -60,8 +60,8 @@ const KundaliHighlight: React.FC = () => {
       icon: <FaShieldAlt className="h-6 w-6" />,
       title: "100% Private",
       description: "Data stays on your device",
-      color: "text-green-600",
-      bgColor: "bg-green-50"
+      color: "text-[#3E2723]",
+      bgColor: "bg-[#EFEBE9]"
     }
   ];
 
