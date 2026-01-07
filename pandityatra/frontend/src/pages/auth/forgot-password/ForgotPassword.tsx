@@ -7,6 +7,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
+import { motion } from 'framer-motion';
+import { FaPhone, FaEnvelope } from 'react-icons/fa';
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 }
+};
 
 const ForgotPasswordPage: React.FC = () => {
   const { requestResetOtp } = useAuth();
@@ -49,7 +56,7 @@ const ForgotPasswordPage: React.FC = () => {
       title="Forgot Password"
       subtitle="Enter your details to reset password"
     >
-      <div className="space-y-4">
+      <motion.div className="space-y-4" variants={itemVariants}>
         {/* Toggle */}
         <div className="flex space-x-4 mb-2">
           <label className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -78,23 +85,33 @@ const ForgotPasswordPage: React.FC = () => {
           </Label>
 
           {inputType === 'phone' ? (
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter phone number"
-              type="tel"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaPhone className="w-5 h-5" />
+              </span>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Enter phone number"
+                type="tel"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+              />
+            </div>
           ) : (
-            <Input
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter email address"
-              type="email"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaEnvelope className="w-5 h-5" />
+              </span>
+              <Input
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                type="email"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+              />
+            </div>
           )}
         </div>
 
@@ -118,7 +135,7 @@ const ForgotPasswordPage: React.FC = () => {
             Login here
           </Link>
         </div>
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 };

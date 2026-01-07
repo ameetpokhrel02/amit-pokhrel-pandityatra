@@ -14,8 +14,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import { FaUser, FaUserTie } from 'react-icons/fa';
+import { FaUserTie } from 'react-icons/fa';
 import { Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { FaPhone, FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 }
+};
 
 const RegisterPage: React.FC = () => {
   const { register, token } = useAuth();
@@ -86,7 +93,7 @@ const RegisterPage: React.FC = () => {
       title="Create Account"
       subtitle="Get started with PanditYatra"
     >
-      <div className="space-y-5">
+      <motion.div className="space-y-5" variants={itemVariants}>
 
         {/* Role Selection */}
         <div className="space-y-2">
@@ -116,50 +123,68 @@ const RegisterPage: React.FC = () => {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
-            <Input
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Your full name"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaUser className="w-5 h-5" />
+              </span>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Your full name"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="9847226995"
-              type="tel"
-              required
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaPhone className="w-5 h-5" />
+              </span>
+              <Input
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="9847226995"
+                type="tel"
+                required
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="email">Email (Optional)</Label>
-            <Input
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="pokhrelameet@gmail.com"
-              type="email"
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary"
-            />
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaEnvelope className="w-5 h-5" />
+              </span>
+              <Input
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="pokhrelameet@gmail.com"
+                type="email"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="password">Password (Optional)</Label>
             <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                <FaLock className="w-5 h-5" />
+              </span>
               <Input
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Set a password"
                 type={showPassword ? 'text' : 'password'}
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pr-10"
+                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10 pr-10"
               />
               <button
                 type="button"
@@ -203,7 +228,7 @@ const RegisterPage: React.FC = () => {
             Login here
           </Link>
         </div>
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 };

@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import { BookOpen, Calendar, User } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { fetchBookings } from '@/lib/api';
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
+  const [bookingCount, setBookingCount] = useState(0);
+
+  useEffect(() => {
+    fetchBookings()
+      .then(data => setBookingCount(data.length))
+      .catch(console.error);
+  }, []);
 
   return (
     <DashboardLayout userRole="user">
@@ -35,12 +43,14 @@ const CustomerDashboard: React.FC = () => {
             <CardHeader>
               <Calendar className="h-8 w-8 text-primary mb-2" />
               <CardTitle>My Bookings</CardTitle>
-              <CardDescription>View upcoming ceremonies</CardDescription>
+              <CardDescription>You have {bookingCount} upcoming ceremonies</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                View Bookings
-              </Button>
+              <Link to="/my-bookings">
+                <Button variant="outline" className="w-full">
+                  View Bookings
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -51,9 +61,11 @@ const CustomerDashboard: React.FC = () => {
               <CardDescription>Manage account settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full" disabled>
-                Edit Profile
-              </Button>
+              <Link to="/dashboard/profile">
+                <Button variant="outline" className="w-full">
+                  Edit Profile
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

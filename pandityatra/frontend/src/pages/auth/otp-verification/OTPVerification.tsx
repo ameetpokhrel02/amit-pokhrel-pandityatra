@@ -10,6 +10,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
+import { motion } from 'framer-motion';
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 }
+};
 
 const OTPVerificationPage: React.FC = () => {
   const location = useLocation();
@@ -59,7 +65,7 @@ const OTPVerificationPage: React.FC = () => {
       title="Verify OTP"
       subtitle={`Enter the code sent to ${identifier}`}
     >
-      <div className="space-y-6 flex flex-col items-center">
+      <motion.div className="space-y-6 flex flex-col items-center" variants={itemVariants}>
         <InputOTP
           maxLength={6}
           value={otp}
@@ -95,7 +101,7 @@ const OTPVerificationPage: React.FC = () => {
             Resend
           </button>
         </div>
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 };

@@ -61,6 +61,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='booking',
             name='service_location',
-            field=models.CharField(choices=[('ONLINE', 'Online (Video Call)'), ('HOME', 'Customer Home'), ('TEMPLE', 'Temple'), ('PANDIT_LOCATION', "Pandit's Location")], default='ONLINE', max_length=20),
+            field=models.CharField(choices=[('ONLINE', 'Online (Video Call)'), ('HOME', 'Customer Home'), ('TEMPLE', 'Temple'), ('PANDIT_LOCATION', "Pandit's Location")], default='ONLINE', max_length=50),
         ),
     ]

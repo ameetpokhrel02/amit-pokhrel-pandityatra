@@ -8,6 +8,13 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Eye, EyeOff } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { FaLock } from 'react-icons/fa';
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { opacity: 1, x: 0 }
+};
 
 const ChangePasswordPage: React.FC = () => {
   const location = useLocation();
@@ -67,17 +74,20 @@ const ChangePasswordPage: React.FC = () => {
       title="Set New Password"
       subtitle="Create a new strong password"
     >
-      <div className="space-y-4">
+      <motion.div className="space-y-4" variants={itemVariants}>
         <div className="space-y-2">
           <Label htmlFor="new-password">New Password</Label>
           <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaLock className="w-5 h-5" />
+            </span>
             <Input
               id="new-password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
               type={showPassword ? 'text' : 'password'}
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pr-10"
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10 pr-10"
             />
             <button
               type="button"
@@ -92,13 +102,16 @@ const ChangePasswordPage: React.FC = () => {
         <div className="space-y-2">
           <Label htmlFor="confirm-password">Confirm Password</Label>
           <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaLock className="w-5 h-5" />
+            </span>
             <Input
               id="confirm-password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
               type={showConfirmPassword ? 'text' : 'password'}
-              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pr-10"
+              className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10 pr-10"
             />
             <button
               type="button"
@@ -123,7 +136,7 @@ const ChangePasswordPage: React.FC = () => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-      </div>
+      </motion.div>
     </AuthLayout>
   );
 };

@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Upload, FileText } from 'lucide-react';
+import { FaUser, FaPhone, FaEnvelope, FaLanguage, FaBriefcase } from 'react-icons/fa';
 import axios from 'axios';
 
 const PanditRegisterPage: React.FC = () => {
@@ -28,7 +29,7 @@ const PanditRegisterPage: React.FC = () => {
     bio: '',
     certification_file: null as File | null,
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -93,7 +94,7 @@ const PanditRegisterPage: React.FC = () => {
       submitData.append('language', formData.language.trim());
       submitData.append('experience_years', formData.experience_years);
       submitData.append('bio', formData.bio.trim());
-      
+
       if (formData.certification_file) {
         submitData.append('certification_file', formData.certification_file);
       } else {
@@ -114,7 +115,7 @@ const PanditRegisterPage: React.FC = () => {
       setSuccess(
         'Registration successful! Your documents are under review. We will contact you shortly.'
       );
-      
+
       // Redirect to login after 3 seconds
       setTimeout(() => navigate('/login'), 3000);
     } catch (err: any) {
@@ -131,43 +132,58 @@ const PanditRegisterPage: React.FC = () => {
         {/* Full Name */}
         <div className="space-y-1">
           <Label htmlFor="full_name">Full Name *</Label>
-          <Input
-            id="full_name"
-            name="full_name"
-            value={formData.full_name}
-            onChange={handleInputChange}
-            placeholder="Your full name"
-            className="h-10 rounded-lg border-gray-200 text-sm"
-            required
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaUser className="w-5 h-5" />
+            </span>
+            <Input
+              id="full_name"
+              name="full_name"
+              value={formData.full_name}
+              onChange={handleInputChange}
+              placeholder="Your full name"
+              className="h-10 rounded-lg border-gray-200 text-sm pl-10"
+              required
+            />
+          </div>
         </div>
 
         {/* Phone Number */}
         <div className="space-y-1">
           <Label htmlFor="phone_number">Phone Number *</Label>
-          <Input
-            id="phone_number"
-            name="phone_number"
-            value={formData.phone_number}
-            onChange={handleInputChange}
-            placeholder="9841234567"
-            className="h-10 rounded-lg border-gray-200 text-sm"
-            required
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaPhone className="w-5 h-5" />
+            </span>
+            <Input
+              id="phone_number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleInputChange}
+              placeholder="9841234567"
+              className="h-10 rounded-lg border-gray-200 text-sm pl-10"
+              required
+            />
+          </div>
         </div>
 
         {/* Email */}
         <div className="space-y-1">
           <Label htmlFor="email">Email (Optional)</Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            placeholder="your@email.com"
-            className="h-10 rounded-lg border-gray-200 text-sm"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaEnvelope className="w-5 h-5" />
+            </span>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="your@email.com"
+              className="h-10 rounded-lg border-gray-200 text-sm pl-10"
+            />
+          </div>
         </div>
 
         {/* Expertise */}
@@ -217,18 +233,23 @@ const PanditRegisterPage: React.FC = () => {
         {/* Experience Years */}
         <div className="space-y-1">
           <Label htmlFor="experience_years">Years of Experience *</Label>
-          <Input
-            id="experience_years"
-            name="experience_years"
-            type="number"
-            value={formData.experience_years}
-            onChange={handleInputChange}
-            placeholder="e.g., 10"
-            min="0"
-            max="100"
-            className="h-10 rounded-lg border-gray-200 text-sm"
-            required
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+              <FaBriefcase className="w-5 h-5" />
+            </span>
+            <Input
+              id="experience_years"
+              name="experience_years"
+              type="number"
+              value={formData.experience_years}
+              onChange={handleInputChange}
+              placeholder="e.g., 10"
+              min="0"
+              max="100"
+              className="h-10 rounded-lg border-gray-200 text-sm pl-10"
+              required
+            />
+          </div>
         </div>
 
         {/* Bio */}
@@ -249,11 +270,10 @@ const PanditRegisterPage: React.FC = () => {
           <Label htmlFor="certification_file">Certification/License *</Label>
           <label
             htmlFor="certification_file"
-            className={`flex items-center justify-center w-full h-32 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${
-              fileSelected
-                ? 'border-green-400 bg-green-50'
-                : 'border-orange-200 bg-orange-50 hover:bg-orange-100'
-            }`}
+            className={`flex items-center justify-center w-full h-32 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${fileSelected
+              ? 'border-green-400 bg-green-50'
+              : 'border-orange-200 bg-orange-50 hover:bg-orange-100'
+              }`}
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               {fileSelected ? (

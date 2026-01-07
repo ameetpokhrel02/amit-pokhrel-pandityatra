@@ -45,7 +45,7 @@ class Booking(models.Model):
     # Service Details
     service_name = models.CharField(max_length=100)
     service_location = models.CharField(
-        max_length=20,
+        max_length=50,
         choices=LocationChoices.choices,
         default=LocationChoices.ONLINE
     ) # E.g., Online, Customer's Home, Temple

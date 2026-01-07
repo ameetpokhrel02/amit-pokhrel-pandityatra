@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
+import panditAvatar from '@/assets/images/chat.png';
 
 interface UnifiedChatWidgetProps {
   bookingId?: string;
@@ -18,7 +19,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const {
     messages,
     isLoading,
@@ -47,9 +48,32 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Scroll Popup Logic
+  const [showPopup, setShowPopup] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!hasInteracted && !isOpen && window.scrollY > 300) {
+        setShowPopup(true);
+      } else {
+        setShowPopup(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasInteracted, isOpen]);
+
+  const handleOpen = () => {
+    setIsOpen(!isOpen);
+    setHasInteracted(true);
+    setShowPopup(false);
+  };
+
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
-    
+
     const message = inputValue;
     setInputValue('');
     await sendMessage(message);
@@ -82,19 +106,52 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
 
   return (
     <>
-      {/* Floating Button - Side positioned */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95"
-        title="Open chat"
-        aria-label="Toggle chat"
-      >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-      </button>
+      {/* Floating Avatar & Popup */}
+      <div className="fixed bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2">
+
+        {/* Helper Popup */}
+        {showPopup && (
+          <div className="animate-fade-in bg-white border border-gray-200 shadow-lg rounded-2xl rounded-br-none p-3 max-w-[200px] mb-2 relative">
+            <p className="text-sm text-gray-800 font-medium">👋 Namaste! Need help?</p>
+            <button
+              onClick={() => setHasInteracted(true)}
+              className="absolute -top-2 -left-2 bg-gray-200 rounded-full p-1 hover:bg-gray-300"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
+        {/* Avatar Button */}
+        <button
+          onClick={handleOpen}
+          className="relative group transition-transform hover:scale-105 active:scale-95"
+          title="Open chat"
+          aria-label="Toggle chat"
+        >
+          {isOpen ? (
+            <div className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-lg">
+              <X size={24} />
+            </div>
+          ) : (
+            <div className="relative w-16 h-20 sm:w-20 sm:h-24">
+              <img
+                src={panditAvatar}
+                alt="Pandit Helper"
+                className="w-full h-full object-contain drop-shadow-xl filter hover:brightness-110 transition-all"
+              />
+              <span className="absolute top-0 right-0 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+            </div>
+          )}
+        </button>
+      </div>
 
       {/* Chat Dialog - Side Drawer Style */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent 
+        <DialogContent
           className={cn(
             "flex flex-col p-0 border-0 rounded-2xl shadow-2xl bg-white",
             "fixed bottom-0 right-0 top-0",
@@ -114,8 +171,8 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                   {getModeLabel()}
                 </DialogTitle>
                 <DialogDescription className="text-xs sm:text-sm mt-1">
-                  {mode === 'guide' 
-                    ? 'Ask questions about PanditYatra services' 
+                  {mode === 'guide'
+                    ? 'Ask questions about PanditYatra services'
                     : 'Real-time communication with your pandit'}
                 </DialogDescription>
                 {mode === 'interaction' && (
@@ -148,9 +205,9 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
             {messages.length === 0 && (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-3 sm:space-y-4 px-2">
-                  <img 
-                    src={panditLogo} 
-                    alt="PanditYatra Logo" 
+                  <img
+                    src={panditLogo}
+                    alt="PanditYatra Logo"
                     className="w-16 sm:w-24 h-16 sm:h-24 mx-auto rounded-full shadow-lg border-4 border-orange-100"
                   />
                   <p className="text-gray-700 text-xs sm:text-sm font-medium leading-relaxed">{getWelcomeMessage()}</p>
