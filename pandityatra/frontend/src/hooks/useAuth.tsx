@@ -94,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const passwordLogin = async (identifier: string, password: string) => {
     const trimmed = identifier.trim();
     let payload: any;
-    
+
     if (trimmed.includes('@')) {
       // Email login
       payload = { email: trimmed, password };
@@ -120,6 +120,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem('token', (resp as any).access);
       setToken((resp as any).access);
     }
+
+    // 🚨 FIX: Store refresh token for auto-logout issue
+    if (resp && (resp as any).refresh) {
+      localStorage.setItem('refresh', (resp as any).refresh);
+    }
+
     if (resp && (resp as any).role) {
       localStorage.setItem('role', (resp as any).role);
       setRole((resp as any).role);
@@ -141,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refresh'); // 🚨 Clean up refresh token
     localStorage.removeItem('role');
     setToken(null);
     setUser(null);
