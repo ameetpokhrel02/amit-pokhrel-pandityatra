@@ -28,7 +28,9 @@ class Payment(models.Model):
     booking = models.OneToOneField(
         'bookings.Booking',
         on_delete=models.CASCADE,
-        related_name='payment'
+        related_name='payment',
+        null=True,
+        blank=True  # Allow null for standalone shopping
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -38,8 +40,11 @@ class Payment(models.Model):
     
     # Payment Details
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS)
-    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    amount_npr = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    amount_usd = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Primary amount charged
     currency = models.CharField(max_length=3, default='NPR')  # NPR or USD
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)  # Exchange rate at time of payment
     
     # Transaction Details
     transaction_id = models.CharField(max_length=100, unique=True, blank=True, null=True)

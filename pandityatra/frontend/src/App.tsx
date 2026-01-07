@@ -36,6 +36,12 @@ import UnifiedChatWidget from './components/UnifiedChatWidget';
 import AboutUs from './pages/AboutUs';
 import OfflineKundali from './pages/Kundali/OfflineKundali';
 
+// Payment Pages
+import PaymentPage from './pages/Payment/PaymentPage';
+import PaymentSuccess from './pages/Payment/PaymentSuccess';
+import PaymentFailure from './pages/Payment/PaymentFailure';
+import KhaltiVerify from './pages/Payment/KhaltiVerify';
+
 
 function App() {
   return (
@@ -81,6 +87,20 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Payment Routes */}
+              <Route
+                path="/payment/:bookingId"
+                element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <PaymentPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
+              <Route path="/payment/cancel" element={<PaymentFailure />} />
+              <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
+              
               {/* Pandit List (Public) */}
               <Route
                 path="/pandits"

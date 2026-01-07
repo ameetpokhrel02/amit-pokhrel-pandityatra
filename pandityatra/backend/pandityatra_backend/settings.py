@@ -5,6 +5,10 @@ import os
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta 
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -194,3 +198,19 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
+
+# Payment Gateway Configuration
+# Stripe (for international payments)
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+
+# Khalti (for NPR payments)
+KHALTI_SECRET_KEY = os.environ.get('KHALTI_SECRET_KEY', '')
+KHALTI_PUBLIC_KEY = os.environ.get('KHALTI_PUBLIC_KEY', '')
+
+# Daily.co (for video calls)
+DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')
+
+# Frontend URL (for payment redirects)
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')

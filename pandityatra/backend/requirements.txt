@@ -4,6 +4,7 @@ psycopg2-binary
 django-cors-headers
 dj-database-url
 djangorestframework-simplejwt
+python-dotenv
 
 # Django Channels & WebSocket support
 channels[daphne]
