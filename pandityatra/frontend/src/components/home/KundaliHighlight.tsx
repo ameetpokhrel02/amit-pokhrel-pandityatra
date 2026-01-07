@@ -285,14 +285,14 @@ const KundaliHighlight: React.FC = () => {
           {stats.map((stat, index) => (
             <Card 
               key={index}
-              className="bg-white/10 backdrop-blur-sm border-white/20 text-white text-center hover:bg-white/15 transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4"
+              className="bg-white shadow-md border-none text-center hover:bg-gray-50 transition-all duration-300 hover:scale-105 animate-in fade-in slide-in-from-bottom-4"
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <CardContent className="p-6">
-                <div className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary/80 to-primary bg-clip-text text-transparent">
+                <div className="text-3xl font-bold mb-2 text-[#E65100]">
                   {stat.number}
                 </div>
-                <div className="text-sm text-gray-300">{stat.label}</div>
+                <div className="text-sm text-gray-400">{stat.label}</div>
               </CardContent>
             </Card>
           ))}
@@ -300,23 +300,23 @@ const KundaliHighlight: React.FC = () => {
 
         {/* CTA Section */}
         <div className="text-center">
-          <Card className="max-w-4xl mx-auto bg-gradient-to-r from-white/20 to-white/10 backdrop-blur-sm border-white/30 text-white hover:scale-105 transition-all duration-300">
+          <Card className="max-w-4xl mx-auto bg-[#FAFAFA] shadow-sm border-none transition-all duration-300 hover:scale-105">
             <CardContent className="p-8">
               <div className="flex items-center justify-center gap-4 mb-6">
-                <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500 animate-pulse">
+                <Badge className="bg-[#FFE0B2] text-[#E65100] hover:bg-[#FFCC80] animate-pulse">
                   <FaStar className="h-3 w-3 mr-1" />
                   World's First Offline Kundali
                 </Badge>
-                <Badge className="bg-green-500 hover:bg-green-600">
+                <Badge className="bg-[#00C853] hover:bg-[#00E676] text-white">
                   <FaGlobe className="h-3 w-3 mr-1" />
                   Works Everywhere
                 </Badge>
               </div>
               
-              <h3 className="text-3xl md:text-4xl font-bold mb-4">
+              <h3 className="text-3xl md:text-4xl font-bold mb-4 text-[#3E2723]">
                 Experience the Future of Astrology
               </h3>
-              <p className="text-gray-200 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
+              <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
                 No internet? No problem! Generate detailed Kundali reports instantly, even in remote areas with poor connectivity. Perfect for pandits and astrology enthusiasts.
               </p>
               
@@ -324,7 +324,7 @@ const KundaliHighlight: React.FC = () => {
                 <Link to="/kundali">
                   <Button 
                     size="lg" 
-                    className="bg-gradient-to-r from-primary/80 to-primary hover:from-primary hover:to-primary/80 text-white transition-all duration-300 hover:scale-110 hover:shadow-xl"
+                    className="bg-[#FF6F00] hover:bg-[#E65100] text-white transition-all duration-300 hover:scale-110 hover:shadow-xl"
                   >
                     <GiScrollUnfurled className="h-5 w-5 mr-2" />
                     Try Kundali Generator
@@ -333,7 +333,7 @@ const KundaliHighlight: React.FC = () => {
                 <Button 
                   size="lg" 
                   variant="outline"
-                  className="border-white text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
+                  className="bg-[#ECEFF1] border-none text-[#546E7A] hover:bg-[#CFD8DC] transition-all duration-300 hover:scale-110"
                 >
                   <FaMobile className="h-5 w-5 mr-2" />
                   Download App
@@ -341,17 +341,17 @@ const KundaliHighlight: React.FC = () => {
               </div>
 
               {/* Trust Indicators */}
-              <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-gray-300">
+              <div className="flex flex-wrap justify-center items-center gap-6 mt-8 text-gray-400">
                 <div className="flex items-center gap-2">
-                  <FaShieldAlt className="h-4 w-4 text-green-400" />
+                  <FaShieldAlt className="h-4 w-4 text-[#00C853]" />
                   <span className="text-sm">Privacy Protected</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <FaClock className="h-4 w-4 text-blue-400" />
+                  <FaClock className="h-4 w-4 text-[#2979FF]" />
                   <span className="text-sm">Instant Results</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <FaCheckCircle className="h-4 w-4 text-yellow-400" />
+                  <FaCheckCircle className="h-4 w-4 text-[#FFD600]" />
                   <span className="text-sm">Vedic Accurate</span>
                 </div>
               </div>
