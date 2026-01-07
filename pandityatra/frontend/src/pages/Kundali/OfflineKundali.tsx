@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,52 +68,60 @@ const OfflineKundali: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md bg-white border-[#FF6F00]">
-          <DialogHeader>
-            <DialogTitle className="text-[#3E2723] flex items-center gap-2">
-              <FaUserAstronaut className="text-[#FF6F00]" /> Authentication Required
-            </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              You need to be logged in to access the Offline Kundali Generator.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center space-x-2">
-             <p className="text-sm text-[#3E2723]">Please login or register to continue.</p>
-          </div>
-          <DialogFooter className="sm:justify-start">
-            <Button 
-              type="button" 
-              className="bg-[#FF6F00] hover:bg-[#E65100] text-white"
-              onClick={() => navigate('/login')}
-            >
-              Login Now
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="border-[#FF6F00] text-[#FF6F00]"
-              onClick={() => navigate('/')}
-            >
-              Go Home
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center p-4 bg-[#F5F5F5]">
+          <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+            <DialogContent className="sm:max-w-md bg-white border-[#FF6F00]">
+              <DialogHeader>
+                <DialogTitle className="text-[#3E2723] flex items-center gap-2">
+                  <FaUserAstronaut className="text-[#FF6F00]" /> Authentication Required
+                </DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  You need to be logged in to access the Offline Kundali Generator.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex items-center space-x-2">
+                 <p className="text-sm text-[#3E2723]">Please login or register to continue.</p>
+              </div>
+              <DialogFooter className="sm:justify-start">
+                <Button 
+                  type="button" 
+                  className="bg-[#FF6F00] hover:bg-[#E65100] text-white"
+                  onClick={() => navigate('/login')}
+                >
+                  Login Now
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="border-[#FF6F00] text-[#FF6F00]"
+                  onClick={() => navigate('/')}
+                >
+                  Go Home
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] p-4 md:p-8">
-      {/* Header */}
-      <div className="max-w-4xl mx-auto mb-8 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#3E2723] mb-2 flex items-center justify-center gap-3">
-          <GiSolarSystem className="text-[#FF6F00]" /> Offline Kundali Generator
-        </h1>
-        <p className="text-gray-600">Generate detailed Vedic charts without internet connection.</p>
-      </div>
-
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="flex flex-col min-h-screen">
+      <Navbar />
+      <main className="flex-grow pt-20 bg-[#F5F5F5] p-4 md:p-8">
+        {/* Header */}
+        <div className="max-w-4xl mx-auto mb-8 text-center pt-8">
+          <h1 className="text-3xl md:text-4xl font-bold text-[#3E2723] mb-2 flex items-center justify-center gap-3">
+            <GiSolarSystem className="text-[#FF6F00]" /> Offline Kundali Generator
+          </h1>
+          <p className="text-gray-600">Generate detailed Vedic charts without internet connection.</p>
+        </div>
+  
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
         {/* Left Column: Form */}
         <div className="lg:col-span-1 space-y-6">
           <Card className="border-none shadow-lg">
@@ -222,6 +232,8 @@ const OfflineKundali: React.FC = () => {
           </Card>
         </div>
       </div>
+      </main>
+      <Footer />
     </div>
   );
 };
