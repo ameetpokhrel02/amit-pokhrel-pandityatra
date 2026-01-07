@@ -18,6 +18,7 @@ import { FaUserTie } from 'react-icons/fa';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FaPhone, FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -27,6 +28,7 @@ const itemVariants = {
 const RegisterPage: React.FC = () => {
   const { register, token } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -74,10 +76,20 @@ const RegisterPage: React.FC = () => {
 
       await register(payload);
       if (password && password.trim()) {
+        toast({
+          title: "Registration Successful!",
+          description: "Your account has been created. Redirecting to login...",
+          variant: "default",
+        });
         setMessage('Registered successfully! You can now login.');
         // Optional: redirect after short delay?
         setTimeout(() => navigate('/login'), 2000);
       } else {
+        toast({
+          title: "Registration Successful!",
+          description: "OTP sent to your phone. Please login with the OTP.",
+          variant: "default",
+        });
         setMessage('Registered successfully. OTP sent to your phone. Please login with the OTP.');
         setTimeout(() => navigate('/login'), 3000);
       }

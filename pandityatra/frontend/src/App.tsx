@@ -4,6 +4,7 @@ import { AuthProvider } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 import { FavoritesProvider } from './hooks/useFavorites';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
+import { Toaster } from '@/components/ui/toaster';
 
 // Pages
 import HomePage from './pages/Home';
@@ -165,6 +166,8 @@ function App() {
             <FavoritesDrawer />
             {/* Unified Chat Widget (global) - supports guide mode and interaction mode */}
             <UnifiedChatWidget />
+            {/* Toast notifications */}
+            <Toaster />
           </BrowserRouter>
         </AuthProvider>
       </FavoritesProvider>

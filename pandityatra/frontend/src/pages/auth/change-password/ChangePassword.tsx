@@ -10,6 +10,7 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { FaLock } from 'react-icons/fa';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -20,6 +21,7 @@ const ChangePasswordPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { resetPassword } = useAuth();
+  const { toast } = useToast();
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,11 @@ const ChangePasswordPage: React.FC = () => {
     setLoading(true);
     try {
       await resetPassword(identifier, otp, newPassword);
+            toast({
+              title: "Password Changed Successfully!",
+              description: "Your password has been updated. Redirecting to login...",
+              variant: "default",
+            });
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {

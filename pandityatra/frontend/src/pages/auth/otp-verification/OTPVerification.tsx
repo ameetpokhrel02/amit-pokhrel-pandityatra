@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -21,6 +22,7 @@ const OTPVerificationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { verifyResetOtp, loginWithOtp } = useAuth();
+  const { toast } = useToast();
 
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);

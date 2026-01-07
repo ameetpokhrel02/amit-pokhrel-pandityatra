@@ -12,6 +12,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { motion } from 'framer-motion';
 import { FaPhone, FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -25,6 +26,7 @@ const itemVariants = {
 const LoginPage: React.FC = () => {
   const { requestOtp, passwordLogin, token, role } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
   // New state for input type toggle (Phone / Email / Username)
   const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('phone');
@@ -86,6 +88,11 @@ const LoginPage: React.FC = () => {
         await requestOtp(inputType === 'email' ? email : phone);
       }
 
+      toast({
+        title: "OTP Sent!",
+        description: `Verification code sent to your ${inputType}. Please check and enter it.`,
+        variant: "default",
+      });
       navigate('/otp-verification', {
         state: {
           phone_number: inputType === 'phone' ? phone : undefined,
@@ -106,6 +113,12 @@ const LoginPage: React.FC = () => {
     try {
       const identifier = inputType === 'email' ? email : inputType === 'username' ? username : phone;
       await passwordLogin(identifier, password);
+      // Show success toast
+      toast({
+        title: "Login Successful!",
+        description: "Welcome back! Redirecting to your dashboard...",
+        variant: "default",
+      });
       // Set flag to trigger redirect in useEffect after context updates
       setHasJustLoggedIn(true);
     } catch (err: any) {

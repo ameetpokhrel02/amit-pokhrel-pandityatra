@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -18,6 +19,7 @@ const LoginOTPVerification: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { verifyOtp, requestOtp } = useAuth();
+  const { toast } = useToast();
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,11 @@ const LoginOTPVerification: React.FC = () => {
 
     try {
       const resp = await verifyOtp(identifier!, otp);
+      toast({
+        title: "Login Successful!",
+        description: "OTP verified. Redirecting to dashboard...",
+        variant: "default",
+      });
       // Redirect based on role
       const userRole = (resp as any)?.role || 'user';
       if (userRole === 'admin') {
@@ -71,6 +78,11 @@ const LoginOTPVerification: React.FC = () => {
     setLoading(true);
     try {
       await requestOtp(identifier!);
+      toast({
+        title: "OTP Resent!",
+        description: "A new verification code has been sent.",
+        variant: "default",
+      });
       setError(null);
       // Show success message briefly
       setTimeout(() => {

@@ -16,9 +16,11 @@ import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Upload, FileText } from 'lucide-react';
 import { FaUser, FaPhone, FaEnvelope, FaLanguage, FaBriefcase } from 'react-icons/fa';
 import axios from 'axios';
+import { useToast } from '@/hooks/use-toast';
 
 const PanditRegisterPage: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     full_name: '',
     phone_number: '',
@@ -111,6 +113,12 @@ const PanditRegisterPage: React.FC = () => {
           },
         }
       );
+
+      toast({
+        title: "Registration Submitted!",
+        description: "Your documents are under review. We will contact you shortly.",
+        variant: "default",
+      });
 
       setSuccess(
         'Registration successful! Your documents are under review. We will contact you shortly.'

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { motion } from 'framer-motion';
 import { FaPhone, FaEnvelope } from 'react-icons/fa';
+import { useToast } from '@/hooks/use-toast';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -17,6 +18,7 @@ const itemVariants = {
 
 const ForgotPasswordPage: React.FC = () => {
   const { requestResetOtp } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [inputType, setInputType] = useState<'phone' | 'email'>('phone');
   const [phone, setPhone] = useState('');
@@ -37,6 +39,12 @@ const ForgotPasswordPage: React.FC = () => {
       // We updated useAuth to accept identifier (phone string), but the implementation calls {phone_number: ...}
       // Let's rely on useAuth update (which we will do next step).
       await requestResetOtp(inputType === 'email' ? email : phone);
+
+      toast({
+        title: 'OTP Sent! ',
+        description: 'Please check your messages for the verification code.',
+        variant: 'default',
+      });
 
       navigate('/auth/otp-verification', {
         state: {
