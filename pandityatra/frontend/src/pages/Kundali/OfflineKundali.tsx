@@ -13,7 +13,8 @@ import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
 import PWALogo from '@/assets/images/PWA.png';
 
 const OfflineKundali: React.FC = () => {
-  const { isAuthenticated, login } = useAuth();
+  const { token } = useAuth();
+  const isAuthenticated = !!token;
   const navigate = useNavigate();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
