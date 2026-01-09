@@ -35,12 +35,16 @@ import ChatRoom from './pages/Chat/ChatRoom';
 import UnifiedChatWidget from './components/UnifiedChatWidget';
 import AboutUs from './pages/AboutUs';
 import OfflineKundali from './pages/Kundali/OfflineKundali';
+import BackToTop from './components/common/BackToTop';
 
 // Payment Pages
 import PaymentPage from './pages/Payment/PaymentPage';
 import PaymentSuccess from './pages/Payment/PaymentSuccess';
 import PaymentFailure from './pages/Payment/PaymentFailure';
 import KhaltiVerify from './pages/Payment/KhaltiVerify';
+
+// Video Call Page
+import PujaRoom from '@/pages/Video/PujaRoom';
 
 
 function App() {
@@ -87,7 +91,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              
+
               {/* Payment Routes */}
               <Route
                 path="/payment/:bookingId"
@@ -100,7 +104,10 @@ function App() {
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentFailure />} />
               <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
-              
+
+              //video Call Route
+              <Route path="/puja-room/:id" element={<PujaRoom />} />
+
               {/* Pandit List (Public) */}
               <Route
                 path="/pandits"
@@ -138,6 +145,14 @@ function App() {
                 path="/dashboard/profile"
                 element={
                   <ProtectedRoute allowedRoles={['user']}>
+                    <EditProfile />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
                     <EditProfile />
                   </ProtectedRoute>
                 }
@@ -184,6 +199,8 @@ function App() {
             <CartDrawer />
             {/* Favorites Drawer (global) */}
             <FavoritesDrawer />
+            {/* Back To Top (global) */}
+            <BackToTop />
             {/* Unified Chat Widget (global) - supports guide mode and interaction mode */}
             <UnifiedChatWidget />
             {/* Toast notifications */}

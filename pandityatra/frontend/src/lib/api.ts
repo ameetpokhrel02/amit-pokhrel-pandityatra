@@ -55,8 +55,13 @@ export interface RecommendedPandit extends Pandit {
 }
 
 export async function fetchRecommendations(): Promise<RecommendedPandit[]> {
-    const response = await apiClient.get('/recommender/pandits/');
-    return response.data;
+    // TODO: Backend endpoint /recommender/pandits/ does not exist yet.
+    // The current recommender app only supports Samagri recommendations.
+    // Returning empty array for now to prevent 404 errors.
+    console.warn('fetchRecommendations: Backend endpoint missing. Returning empty array.');
+    return [];
+    // const response = await apiClient.get('/recommender/pandits/');
+    // return response.data;
 }
 
 // ----------------------
@@ -174,6 +179,37 @@ export async function updateUserProfile(data: any) {
 export async function updatePanditProfile(id: number, data: any) {
     const response = await apiClient.patch(`/pandits/${id}/`, data);
     return response.data;
+}
+
+// ----------------------
+// Samagri/Shop APIs
+// ----------------------
+export interface SamagriItem {
+    id: number;
+    name: string;
+    description: string;
+    price: number;
+    category?: number; // category ID
+    stock_quantity: number;
+    image?: string;
+    is_available: boolean;
+}
+
+export interface SamagriCategory {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+export async function fetchSamagriItems(params?: any): Promise<SamagriItem[]> {
+    const response = await apiClient.get('/samagri/items/', { params });
+    // Handle pagination result if it exists (Django Rest Framework default)
+    return response.data.results || response.data;
+}
+
+export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
+    const response = await apiClient.get('/samagri/categories/');
+    return response.data.results || response.data;
 }
 
 // Helper to standardize error messages

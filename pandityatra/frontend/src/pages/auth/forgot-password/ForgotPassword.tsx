@@ -103,7 +103,7 @@ const ForgotPasswordPage: React.FC = () => {
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="Enter phone number"
                 type="tel"
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+                className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
               />
             </div>
           ) : (
@@ -117,7 +117,7 @@ const ForgotPasswordPage: React.FC = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter email address"
                 type="email"
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+                className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
               />
             </div>
           )}

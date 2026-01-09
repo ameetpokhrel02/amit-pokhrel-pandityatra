@@ -132,9 +132,8 @@ export function useChat(bookingId?: string): UseChat {
       try {
         if (mode === 'guide') {
           // Quick Chat API call
-          const response = await api.post('/chat/', {
-            message: content,
-            mode: 'guide',
+          const response = await api.post('/services/ai-guide/', {
+            prompt: content,
           });
 
           const aiMessage: ChatMessageType = {

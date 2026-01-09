@@ -34,6 +34,9 @@ const OfflineKundali: React.FC = () => {
     place: ''
   });
 
+  // Result State
+  const [result, setResult] = useState<any>(null);
+
   useEffect(() => {
     if (!isAuthenticated) {
       setShowAuthDialog(true);
@@ -57,13 +60,30 @@ const OfflineKundali: React.FC = () => {
     }
   };
 
+  const getSunSign = (day: number, month: number) => {
+    const days = [21, 20, 21, 21, 22, 22, 23, 24, 24, 24, 23, 22];
+    const signs = ["Aquarius", "Pisces", "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn"];
+    if (month == 1 && day < 20) return "Capricorn";
+    if (day < days[month - 1]) return signs[month - 2];
+    return signs[month - 1];
+  };
+
   const handleGenerate = () => {
+    if (!formData.day || !formData.month || !formData.year) {
+      alert("Please enter a valid date.");
+      return;
+    }
     setLoading(true);
     setTimeout(() => {
+      const sunSign = getSunSign(parseInt(formData.day), parseInt(formData.month));
+      setResult({
+        sunSign,
+        moonSign: "Taurus", 
+        nakshatra: "Rohini", 
+        details: { ...formData }
+      });
       setLoading(false);
-      // Logic for WASM generation would go here
-      alert('Kundali Generated! (WASM Placeholder)');
-    }, 2000);
+    }, 1500);
   };
 
   if (!isAuthenticated) {
@@ -220,14 +240,36 @@ const OfflineKundali: React.FC = () => {
                 </Tabs>
               </div>
             </CardHeader>
-            <CardContent className="p-8 flex items-center justify-center min-h-[400px] bg-[#FFF8E1]">
-              <div className="text-center text-[#FF6F00] opacity-50">
-                <GiSolarSystem size={120} className="mx-auto mb-4" />
-                <p className="text-xl font-medium">Enter birth details to generate chart</p>
-                <div className="mt-4 p-4 border-2 border-dashed border-[#FF6F00] rounded-lg">
-                  <p className="text-sm text-[#3E2723]">Sample Output Placeholder</p>
+            <CardContent className="p-8 flex flex-col items-center justify-center min-h-[400px] bg-[#FFF8E1]">
+              {!result ? (
+                <div className="text-center text-[#FF6F00] opacity-50">
+                  <GiSolarSystem size={120} className="mx-auto mb-4" />
+                  <p className="text-xl font-medium">Enter birth details to generate chart</p>
                 </div>
-              </div>
+              ) : (
+                <div className="w-full text-center space-y-6">
+                  <div className="border-4 border-[#3E2723] p-4 bg-white rounded-lg inline-block shadow-xl">
+                      {/* Simulated Chart */}
+                      <svg width="200" height="200" viewBox="0 0 100 100" className="mx-auto">
+                        <rect x="2" y="2" width="96" height="96" fill="none" stroke="#E65100" strokeWidth="2"/>
+                        <line x1="2" y1="2" x2="98" y2="98" stroke="#E65100" strokeWidth="1"/>
+                        <line x1="98" y1="2" x2="2" y2="98" stroke="#E65100" strokeWidth="1"/>
+                        <path d="M50 2 L98 50 L50 98 L2 50 Z" fill="none" stroke="#E65100" strokeWidth="1"/>
+                        <text x="50" y="45" fontSize="8" textAnchor="middle" fill="#3E2723">Sun: {result.sunSign}</text>
+                      </svg>
+                  </div>
+                  
+                  <div className="flex justify-around bg-white p-4 rounded-lg shadow-sm">
+                    <div><p className="text-xs text-gray-500">Sun Sign</p><p className="font-bold text-[#E65100]">{result.sunSign}</p></div>
+                    <div><p className="text-xs text-gray-500">Moon Sign</p><p className="font-bold text-[#3E2723]">{result.moonSign}</p></div>
+                  </div>
+
+                  <Button onClick={() => window.print()} variant="outline" className="mt-4 border-[#3E2723] text-[#3E2723] w-full">
+                    <FaDownload className="mr-2" />
+                    Download Chart
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

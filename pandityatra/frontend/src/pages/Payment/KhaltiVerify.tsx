@@ -10,14 +10,15 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { verifyKhaltiPayment } from '@/lib/payment-api';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const KhaltiVerify: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
-  
+
   const [verifying, setVerifying] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,112 +34,127 @@ const KhaltiVerify: React.FC = () => {
     if (!pidx || !token) {
       setError('Invalid payment parameters');
       setVerifying(false);
-      setTimeout(() => navigate('/payment/cancel'), 2000);
+      setTimeout(() => navigate('/payment/cancel'), 3000);
       return;
     }
 
     // Check if Khalti indicated failure
     if (status === 'failed' || status === 'cancelled') {
-      setError('Payment was cancelled');
+      setError('Payment was cancelled or failed at Khalti.');
       setVerifying(false);
-      setTimeout(() => navigate('/payment/cancel'), 2000);
+      setTimeout(() => navigate('/payment/cancel'), 3000);
       return;
     }
 
     try {
       const result = await verifyKhaltiPayment(pidx, token);
-      
+
       if (result.success) {
         setSuccess(true);
-        
+        setVerifying(false);
+
         // Store booking ID for success page
         sessionStorage.setItem('pending_booking_id', result.booking_id.toString());
-        
+
         toast({
-          title: 'Payment Successful!',
-          description: 'Your puja booking has been confirmed',
+          title: 'Payment Verified!',
+          description: 'Redirecting to confirmation...',
           variant: 'default',
         });
-        
+
         // Redirect to success page
         setTimeout(() => {
           navigate('/payment/success');
         }, 1500);
       } else {
-        throw new Error('Payment verification failed');
+        throw new Error('Payment verification returned failure status.');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Verification failed');
+      console.error("Verification Error:", err);
+      setError(err.response?.data?.error || err.message || 'Verification failed. Please contact support.');
       toast({
         title: 'Verification Failed',
-        description: 'Could not verify your payment',
+        description: 'Could not verify your payment.',
         variant: 'destructive',
       });
-      
-      setTimeout(() => navigate('/payment/cancel'), 2000);
-    } finally {
       setVerifying(false);
+      setTimeout(() => navigate('/payment/cancel'), 4000);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <Card className="max-w-md w-full">
-        <CardContent className="pt-8 pb-6 px-6">
-          <div className="text-center space-y-6">
-            {verifying && (
-              <>
-                <LoadingSpinner size={60} className="mx-auto text-purple-600" />
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Verifying Payment
-                  </h2>
-                  <p className="text-gray-600">
-                    Please wait while we confirm your Khalti payment...
-                  </p>
-                </div>
-              </>
-            )}
+    <div className="min-h-screen bg-orange-50/30 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md"
+      >
+        <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl">
+          <div className={`h-1.5 w-full ${success ? 'bg-green-500' : error ? 'bg-red-500' : 'bg-purple-500 animate-pulse'}`} />
+          <CardContent className="pt-12 pb-12 px-8 text-center space-y-6">
 
-            {!verifying && success && (
-              <>
-                <div className="flex justify-center">
-                  <div className="rounded-full bg-green-100 p-4">
-                    <CheckCircle className="w-16 h-16 text-green-600" />
+            <AnimatePresence mode="wait">
+              {verifying && (
+                <motion.div
+                  key="verifying"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="space-y-6"
+                >
+                  <LoadingSpinner size={64} className="mx-auto text-purple-600" />
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Verifying Payment</h2>
+                    <p className="text-gray-500 mt-2">Connecting to Khalti...</p>
                   </div>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Payment Verified!
-                  </h2>
-                  <p className="text-gray-600">
-                    Redirecting to confirmation page...
-                  </p>
-                </div>
-              </>
-            )}
+                </motion.div>
+              )}
 
-            {!verifying && error && (
-              <>
-                <div className="flex justify-center">
-                  <div className="rounded-full bg-red-100 p-4">
-                    <XCircle className="w-16 h-16 text-red-600" />
+              {!verifying && success && (
+                <motion.div
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="space-y-6"
+                >
+                  <div className="flex justify-center">
+                    <div className="rounded-full bg-green-100 p-5">
+                      <CheckCircle className="w-16 h-16 text-green-600" />
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Verification Failed
-                  </h2>
-                  <p className="text-gray-600">{error}</p>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Redirecting to payment page...
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Payment Verified!</h2>
+                    <p className="text-gray-500 mt-2">Redirecting you to the confirmation page...</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {!verifying && error && (
+                <motion.div
+                  key="error"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="space-y-6"
+                >
+                  <div className="flex justify-center">
+                    <div className="rounded-full bg-red-100 p-5">
+                      <XCircle className="w-16 h-16 text-red-600" />
+                    </div>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Verification Failed</h2>
+                    <p className="text-red-500 mt-2 font-medium bg-red-50 p-3 rounded-lg border border-red-100 text-sm">
+                      {error}
+                    </p>
+                    <p className="text-gray-400 text-sm mt-4">Redirecting back...</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 };

@@ -14,8 +14,8 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, MapPin, Clock, DollarSign } from 'lucide-react';
-import axios from 'axios';
 import { motion } from 'framer-motion';
+import apiClient from '@/lib/api-client';
 
 interface Pandit {
   id: number;
@@ -46,6 +46,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+
 
   const [formData, setFormData] = useState({
     pandit: panditId || '',
@@ -83,7 +84,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   const fetchPandits = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/pandits/', {
+      const response = await apiClient.get('/pandits/', {
         params: { is_verified: true }
       });
       setPandits(response.data.results || response.data);
@@ -95,7 +96,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   const fetchServices = async (panditId: number) => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/services/`, {
+      const response = await apiClient.get(`/services/`, {
         params: { pandit: panditId }
       });
       setServices(response.data.results || response.data);
@@ -108,15 +109,13 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const fetchAvailableSlots = async () => {
     try {
       setSlotsLoading(true);
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get(
-        'http://localhost:8000/api/bookings/available_slots/',
+      const response = await apiClient.get(
+        '/bookings/available_slots/',
         {
           params: {
             pandit_id: formData.pandit,
             date: formData.booking_date,
           },
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         }
       );
       setAvailableSlots(response.data.available_slots || []);
@@ -165,16 +164,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         notes: formData.notes,
       };
 
-      const response = await axios.post(
-        'http://localhost:8000/api/bookings/',
-        submitData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      await apiClient.post('/bookings/', submitData);
 
       setSuccess('Booking created successfully! Waiting for pandit confirmation.');
       setTimeout(() => {
@@ -182,8 +172,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         navigate('/my-bookings');
       }, 2000);
     } catch (err: any) {
-      const errorMsg = err.response?.data?.detail || err.response?.data?.non_field_errors?.[0] || err.message || 'Booking failed';
-      setError(errorMsg);
+      console.error('Booking failed:', err);
+      const errorMsg =
+        err.response?.data?.detail ||
+        err.response?.data?.non_field_errors?.[0] ||
+        (typeof err.response?.data === 'string' ? err.response?.data : null) ||
+        err.message ||
+        'Booking failed';
+
+      // Handle array of errors
+      if (typeof errorMsg === 'object') {
+        setError(Object.values(errorMsg).flat().join(', '));
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }

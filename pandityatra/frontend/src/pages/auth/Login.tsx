@@ -210,7 +210,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter phone number"
                   type="tel"
-                  className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
                 />
               </div>
             ) : inputType === 'email' ? (
@@ -224,7 +224,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter email address"
                   type="email"
-                  className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
                 />
               </div>
             ) : (
@@ -238,7 +238,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
                   type="text"
-                  className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
+                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
                 />
               </div>
             )}
@@ -257,7 +257,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   type={showPassword ? 'text' : 'password'}
-                  className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10 pr-10"
+                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10 pr-10"
                 />
                 <button
                   type="button"
@@ -302,19 +302,30 @@ const LoginPage: React.FC = () => {
           {loginMethod === 'password' ? (
             <Button
               onClick={handlePasswordLogin}
-              disabled={loading || (inputType === 'phone' ? !phone : !email) || !password}
+              disabled={
+                    loading ||
+                    (inputType === 'phone' && !phone) ||
+                    (inputType === 'email' && !email) ||
+                    (inputType === 'username' && !username) ||
+                    !password
+            }
               className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
             >
-              {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Login'}
-            </Button>
+          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Login'}
+           </Button>
           ) : (
             <Button
               onClick={handleRequestOtp}
-              disabled={loading || (inputType === 'phone' ? !phone : !email)}
+              disabled={
+                    loading ||
+                    (inputType === 'phone' && !phone) ||
+                    (inputType === 'email' && !email) ||
+                    (inputType === 'username' && !username)
+            }
               className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
             >
-              {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}
-            </Button>
+          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}
+           </Button>
           )}
 
           {error && (

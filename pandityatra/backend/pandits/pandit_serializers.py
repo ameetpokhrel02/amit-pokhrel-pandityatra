@@ -8,6 +8,7 @@ class PanditRegistrationSerializer(serializers.Serializer):
     """Separate serializer for Pandit registration with document upload"""
     phone_number = serializers.CharField(max_length=15)
     full_name = serializers.CharField(max_length=150)
+    password = serializers.CharField(write_only=True, min_length=6, required=True)
     expertise = serializers.CharField(max_length=255)
     language = serializers.CharField(max_length=50)
     experience_years = serializers.IntegerField(min_value=0, max_value=100)
@@ -23,12 +24,16 @@ class PanditRegistrationSerializer(serializers.Serializer):
     
     def create(self, validated_data):
         """Create user and pandit profile with PENDING verification status"""
-        # Create User
+        # Extract password
+        password = validated_data.pop('password')
+        
+        # Create User with password
         user = User.objects.create_user(
             username=validated_data['phone_number'],
             phone_number=validated_data['phone_number'],
             full_name=validated_data['full_name'],
             email=validated_data.get('email', ''),
+            password=password,  # Set the password
             role='pandit'  # Set role to pandit
         )
         

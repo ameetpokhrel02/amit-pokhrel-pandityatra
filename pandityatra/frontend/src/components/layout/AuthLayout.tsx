@@ -12,70 +12,61 @@ interface AuthLayoutProps {
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
     // Animation Variants
     const containerVariants = {
-        hidden: { opacity: 0, y: 20 },
+        hidden: { opacity: 0, y: 30 },
         visible: {
             opacity: 1,
             y: 0,
             transition: {
-                duration: 0.6,
-                ease: "easeOut" as any,
-                when: "beforeChildren",
-                staggerChildren: 0.1
+                duration: 0.8,
+                ease: [0.22, 1, 0.36, 1] as any,
+                staggerChildren: 0.15
             }
         }
     };
 
     const itemVariants = {
-        hidden: { opacity: 0, y: 10 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
-    };
-
-    const logoVariants = {
-        float: {
-            y: [0, -10, 0],
-            transition: {
-                duration: 4,
-                repeat: Infinity,
-                ease: "easeInOut" as any as any
-            }
+        hidden: { opacity: 0, y: 15 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.5, ease: "easeOut" as any }
         }
     };
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
 
-            {/* Background Elements (Optional for extra flair) */}
+            {/* Background Elements */}
             <motion.div
                 className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-3xl"
-                animate={{ scale: [1, 1.2, 1], x: [0, 50, 0] }}
-                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ scale: [1, 1.1, 1], x: [0, 30, 0] }}
+                transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
             />
             <motion.div
                 className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-200/20 rounded-full blur-3xl"
-                animate={{ scale: [1, 1.2, 1], x: [0, -50, 0] }}
-                transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                animate={{ scale: [1, 1.1, 1], x: [0, -30, 0] }}
+                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
             />
 
             <motion.div
                 initial="hidden"
                 animate="visible"
                 variants={containerVariants}
-                className="w-full max-w-md z-10"
+                className="w-full max-w-lg z-10 p-4 sm:p-0"
             >
-                <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-md dark:bg-gray-900/90 overflow-hidden">
-                    <CardContent className="pt-8 px-8 pb-8">
-                        <div className="flex flex-col items-center mb-6 text-center space-y-4">
-                            {/* Logo Section */}
-                            <motion.div
-                                className="flex items-center gap-4 mb-2"
-                                variants={logoVariants}
-                                animate="float"
-                            >
-                                <img
-                                    src={panditLogo}
-                                    alt="PanditYatra Logo"
-                                    className="h-24 w-auto object-contain drop-shadow-sm"
-                                />
+                <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl dark:bg-gray-900/80 overflow-hidden ring-1 ring-orange-100/50">
+                    <CardContent className="pt-10 px-8 pb-10">
+                        <div className="flex flex-col items-center mb-8 text-center space-y-4">
+                            {/* Logo Section - Matching Navbar Style */}
+                            <motion.div variants={itemVariants} className="relative group">
+                                <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-700" />
+                                <div className="relative w-20 h-20 bg-white dark:bg-gray-800 rounded-full p-4 shadow-sm ring-1 ring-orange-100">
+                                    <img
+                                        src={panditLogo}
+                                        alt="PanditYatra Logo"
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
                             </motion.div>
 
                             {/* Title Section */}

@@ -40,6 +40,12 @@ export const fetchPujaById = async (id: number) => {
   }
 };
 
+// Video call related API calls
+export const createVideoRoom = async (bookingId: number) => {
+  const response = await api.get(`/video/room/${bookingId}/`);
+  return response.data
+};
+
 export const fetchPanditServices = async (panditId: number) => {
   try {
     const response = await apiClient.get(`/pandits/${panditId}/services/`);

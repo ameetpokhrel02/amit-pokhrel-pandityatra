@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, Clock, MapPin, User, DollarSign, X } from 'lucide-react';
-import axios from 'axios';
+import apiClient from '@/lib/api-client';
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -50,14 +50,7 @@ const MyBookingsPage: React.FC = () => {
         return;
       }
 
-      const response = await axios.get(
-        'http://localhost:8000/api/bookings/my_bookings/',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.get('/bookings/my_bookings/');
       setBookings(response.data);
       setError(null);
     } catch (err: any) {
@@ -76,15 +69,7 @@ const MyBookingsPage: React.FC = () => {
     try {
       setCancellingId(bookingId);
       const token = localStorage.getItem('access_token');
-      await axios.patch(
-        `http://localhost:8000/api/bookings/${bookingId}/cancel/`,
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        }
-      );
+      await apiClient.patch(`/bookings/${bookingId}/cancel/`);
       fetchBookings();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to cancel booking');
@@ -116,7 +101,7 @@ const MyBookingsPage: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      
+
       <main className="flex-1 container mx-auto py-10 px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -196,7 +181,7 @@ const MyBookingsPage: React.FC = () => {
                               <p className="font-semibold">{new Date(booking.booking_date).toLocaleDateString()}</p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-3">
                             <Clock className="h-4 w-4 text-gray-600" />
                             <div>
@@ -298,6 +283,14 @@ const MyBookingsPage: React.FC = () => {
                             className="flex-1"
                           >
                             Leave Review
+                          </Button>
+                        )}
+                        {booking.payment_status && (
+                          <Button
+                            onClick={() => navigate(`/puja/${booking.id}`)}
+                            className="bg-orange-500 hover:bg-orange-600 flex-1"
+                          >
+                            Join Puja
                           </Button>
                         )}
                       </div>

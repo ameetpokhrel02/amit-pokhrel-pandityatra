@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Required for API and JWT
     'rest_framework',
     'rest_framework_simplejwt', 
+    'channels_redis',  # Redis backend for Channels
     
     # Core Application Modules
     'users',
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
     'recommender',
     'samagri',
     'kundali',
+    'video',  # Video call integration
 ]
 
 # Django Channels Configuration

@@ -86,9 +86,9 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     }
   };
 
-  if (!token || !user) {
-    return null;
-  }
+  // if (!token || !user) {
+  //   return null;
+  // }
 
   const getModeLabel = () => {
     if (mode === 'guide') {
@@ -125,27 +125,25 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
         {/* Avatar Button */}
         <button
           onClick={handleOpen}
-          className="relative group transition-transform hover:scale-105 active:scale-95"
+          className="relative group transition-transform hover:scale-105 active:scale-95 border-none outline-none focus:outline-none focus:ring-0"
           title="Open chat"
           aria-label="Toggle chat"
         >
-          {isOpen ? (
-            <div className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white shadow-lg">
-              <X size={24} />
-            </div>
-          ) : (
-            <div className="relative w-16 h-20 sm:w-20 sm:h-24">
-              <img
-                src={panditAvatar}
-                alt="Pandit Helper"
-                className="w-full h-full object-contain drop-shadow-xl filter hover:brightness-110 transition-all"
-              />
+          <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white shadow-lg transition-colors ${isOpen ? 'bg-orange-600' : 'bg-orange-500 hover:bg-orange-600'
+            }`}>
+            {isOpen ? (
+              <X size={28} />
+            ) : (
+              <MessageCircle size={32} />
+            )}
+            {/* Status Indicator */}
+            {!isOpen && (
               <span className="absolute top-0 right-0 flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
               </span>
-            </div>
-          )}
+            )}
+          </div>
         </button>
       </div>
 

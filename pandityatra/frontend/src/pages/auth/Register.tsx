@@ -14,30 +14,27 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import { FaUserTie } from 'react-icons/fa';
+import { FaUser, FaUserTie, FaPhone, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
 import { Eye, EyeOff } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { FaPhone, FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-
-const itemVariants = {
-  hidden: { opacity: 0, x: -20 },
-  visible: { opacity: 1, x: 0 }
-};
 
 const RegisterPage: React.FC = () => {
   const { register, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [role, setRole] = useState<'user' | 'pandit' | ''>('');
+
+  // Form fields
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'user' | 'pandit'>('user');
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -46,53 +43,34 @@ const RegisterPage: React.FC = () => {
     }
   }, [token, navigate]);
 
-  // Redirect to dedicated pandit registration if pandit role is selected
+  // Auto-redirect for Pandit
   useEffect(() => {
     if (role === 'pandit') {
-      navigate('/pandit/register');
+      navigate('/pandit/register', { replace: true });
     }
   }, [role, navigate]);
 
   const handleRegister = async () => {
-    setMessage(null);
     setError(null);
     setLoading(true);
     try {
       const payload: any = {
         full_name: fullName.trim(),
         phone_number: phone.trim(),
-        role: role,  // Include role in registration
+        role: 'user',
       };
-
-      // Only include email if it's provided and not empty
-      if (email && email.trim()) {
-        payload.email = email.trim();
-      }
-
-      // Only include password if it's provided and not empty
-      if (password && password.trim()) {
-        payload.password = password.trim();
-      }
+      if (email.trim()) payload.email = email.trim();
+      if (password.trim()) payload.password = password.trim();
 
       await register(payload);
-      if (password && password.trim()) {
-        toast({
-          title: "Registration Successful!",
-          description: "Your account has been created. Redirecting to login...",
-          variant: "default",
-        });
-        setMessage('Registered successfully! You can now login.');
-        // Optional: redirect after short delay?
-        setTimeout(() => navigate('/login'), 2000);
-      } else {
-        toast({
-          title: "Registration Successful!",
-          description: "OTP sent to your phone. Please login with the OTP.",
-          variant: "default",
-        });
-        setMessage('Registered successfully. OTP sent to your phone. Please login with the OTP.');
-        setTimeout(() => navigate('/login'), 3000);
-      }
+
+      toast({
+        title: "Account Created!",
+        description: password ? "You can now login with your password." : "OTP sent to your phone.",
+        variant: "default",
+      });
+
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
       setError(err?.message || 'Registration failed');
     } finally {
@@ -102,143 +80,162 @@ const RegisterPage: React.FC = () => {
 
   return (
     <AuthLayout
-      title="Create Account"
-      subtitle="Get started with PanditYatra"
+      title={role === 'user' ? "Create Account" : "Join PanditYatra"}
+      subtitle={role === 'user' ? "Fill in your details below" : "Choose how you want to register"}
     >
-      <motion.div className="space-y-5" variants={itemVariants}>
+      <motion.div className="space-y-5">
 
-        {/* Role Selection */}
+        {/* Role Selection (Always visible) */}
         <div className="space-y-2">
-          <Label htmlFor="role">I want to register as</Label>
+          <Label className="text-gray-700 font-medium">I want to register as:</Label>
           <Select value={role} onValueChange={(value: 'user' | 'pandit') => setRole(value)}>
-            <SelectTrigger id="role" className="w-full h-12 rounded-xl border-gray-200 focus:ring-primary">
-              <SelectValue placeholder="Select account type" />
+            <SelectTrigger className="w-full h-12 rounded-xl bg-gray-50/50 border-orange-100 focus:ring-orange-500">
+              <SelectValue placeholder="Select your role..." />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="user">
                 <div className="flex items-center gap-2">
-                  <FaUser className="h-4 w-4 text-primary" />
-                  <span>User</span>
+                  <FaUser className="w-4 h-4 text-blue-500" />
+                  <span>Customer / User</span>
                 </div>
               </SelectItem>
               <SelectItem value="pandit">
                 <div className="flex items-center gap-2">
-                  <FaUserTie className="h-4 w-4 text-primary" />
-                  <span>Pandit</span>
+                  <FaUserTie className="w-4 h-4 text-orange-500" />
+                  <span>Pandit / Priest</span>
                 </div>
               </SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Form Fields */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full Name</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaUser className="w-5 h-5" />
-              </span>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Your full name"
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
-              />
-            </div>
-          </div>
+        {/* User Registration Form (Shows when 'user' is selected) */}
+        <AnimatePresence>
+          {role === 'user' && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4 overflow-hidden"
+            >
+              {/* Full Name */}
+              <div className="space-y-1">
+                <Label htmlFor="fullName">Full Name *</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <FaUser className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Your full name"
+                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaPhone className="w-5 h-5" />
-              </span>
-              <Input
-                id="phone"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="9847226995"
-                type="tel"
-                required
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
-              />
-            </div>
-          </div>
+              {/* Phone */}
+              <div className="space-y-1">
+                <Label htmlFor="phone">Phone Number *</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <FaPhone className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="98XXXXXXXX"
+                    type="tel"
+                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                    required
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email (Optional)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaEnvelope className="w-5 h-5" />
-              </span>
-              <Input
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="pokhrelameet@gmail.com"
-                type="email"
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10"
-              />
-            </div>
-          </div>
+              {/* Email */}
+              <div className="space-y-1">
+                <Label htmlFor="email">Email (Optional)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <FaEnvelope className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    type="email"
+                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                  />
+                </div>
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="password">Password (Optional)</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                <FaLock className="w-5 h-5" />
-              </span>
-              <Input
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Set a password"
-                type={showPassword ? 'text' : 'password'}
-                className="h-12 rounded-xl border-gray-200 focus-visible:ring-primary pl-10 pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              {/* Password */}
+              <div className="space-y-1">
+                <Label htmlFor="password">Password (Optional)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <FaLock className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Create a password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500">Leave blank to use OTP login only.</p>
+              </div>
+
+              {/* Submit */}
+              <Button
+                onClick={handleRegister}
+                disabled={loading || !phone || !fullName}
+                className="w-full h-12 text-base rounded-xl bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20"
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Set a password to duplicate login methods (OTP is default).
-            </p>
-          </div>
-        </div>
+                {loading ? <LoadingSpinner size={20} className="text-white" /> : (
+                  <div className="flex items-center gap-2">
+                    Create Account <FaArrowRight size={14} />
+                  </div>
+                )}
+              </Button>
 
-        <Button
-          onClick={handleRegister}
-          disabled={loading || !phone || !fullName}
-          className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
-        >
-          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Create Account'}
-        </Button>
+              {error && (
+                <Alert variant="destructive" className="rounded-xl">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {message && (
-          <Alert className="bg-green-50 text-green-800 border-green-200">
-            <AlertDescription>
-              {message}
-            </AlertDescription>
-          </Alert>
+        {/* Hint when no role selected */}
+        {!role && (
+          <p className="text-center text-sm text-gray-500 py-4">
+            Select a role above to continue.
+          </p>
         )}
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <div className="text-center text-sm text-gray-500">
-          Already have an account?{' '}
-          <Link to="/login" className="font-bold text-primary hover:underline">
-            Login here
-          </Link>
+        {/* Back to Login */}
+        <div className="pt-4 text-center border-t border-gray-100">
+          <p className="text-sm text-gray-500">
+            Already have an account?{' '}
+            <Link to="/login" className="font-bold text-orange-600 hover:underline">
+              Login here
+            </Link>
+          </p>
         </div>
       </motion.div>
     </AuthLayout>
@@ -246,4 +243,3 @@ const RegisterPage: React.FC = () => {
 };
 
 export default RegisterPage;
-

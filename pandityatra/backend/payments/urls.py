@@ -1,22 +1,13 @@
 """
 Payment URLs
 """
-from django.urls import path
+from django.urls import path, include
 from . import views
+from payments.webhooks.stripe import stripe_webhook
+from payments.webhooks.khalti import khalti_webhook
 
 urlpatterns = [
     # Payment initiation
-    path('create/', views.CreatePaymentIntentView.as_view(), name='create-payment'),
-    
-    # Webhooks
-    path('webhook/stripe/', views.StripeWebhookView.as_view(), name='stripe-webhook'),
-    
-    # Khalti verification
-    path('khalti/verify/', views.KhaltiVerifyView.as_view(), name='khalti-verify'),
-    
-    # Payment status
-    path('status/<int:booking_id>/', views.GetPaymentStatusView.as_view(), name='payment-status'),
-    
-    # Exchange rate
-    path('exchange-rate/', views.ExchangeRateView.as_view(), name='exchange-rate'),
+    path("webhooks/stripe/", stripe_webhook),
+    path("webhooks/khalti/", khalti_webhook),
 ]

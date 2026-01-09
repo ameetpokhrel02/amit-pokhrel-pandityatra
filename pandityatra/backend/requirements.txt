@@ -25,3 +25,7 @@ django-modeltranslation
 
 # OpenAI API for AI guide
 openai
+
+# Video call integration
+
+requests

@@ -1,3 +1,5 @@
+import os
+import openai
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework import serializers 
@@ -5,6 +7,9 @@ from .models import Puja
 from .serializers import PujaSerializer
 from .permissions import IsStaffOrReadOnly
 from pandits.models import Pandit # Need Pandit model for the nested view logic
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
 # ----------------------------------------------------
 # General Puja Management (Admin/Staff only)
@@ -103,3 +108,44 @@ class PanditPujaDetailView(generics.RetrieveUpdateDestroyAPIView): # 🚨 NEW CL
             # Check if the user is authenticated, is a pandit, AND is the owner of the puja's pandit profile
             if not (user.is_authenticated and user.role == 'pandit' and user == obj.pandit.user):
                 raise PermissionDenied("You do not have permission to modify this service.")
+
+class AIGuideView(APIView):
+    """
+    API View to handle AI Guide Bot requests.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        prompt = request.data.get("prompt")
+        if not prompt:
+            return Response({"error": "Prompt is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        api_key = os.environ.get("OPENAI_API_KEY")
+        if not api_key:
+            # Fallback mock response if no key is set
+            return Response({
+                "response": "I can help you Book a Puja, Find a Pandit, or Setup Payment. (AI Key Missing)"
+            }, status=status.HTTP_200_OK)
+
+        try:
+            from openai import OpenAI
+            client = OpenAI(api_key=api_key)
+
+            system_instruction = (
+                "You are the PanditYatra AI Guide. "
+                "Help users with: booking pujas, finding pandits (Ramesh, etc), and payments. "
+                "Keep answers short and helpful."
+            )
+
+            completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            answer = completion.choices[0].message.content
+            return Response({"response": answer}, status=status.HTTP_200_OK)
+        
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

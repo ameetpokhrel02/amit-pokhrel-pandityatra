@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   FaUserCheck,
   FaCalendarAlt,
@@ -11,14 +12,18 @@ import {
   FaCheckCircle,
   FaArrowRight,
   FaClock,
-  FaShoppingCart
+  FaShoppingCart,
+  FaOm
 } from 'react-icons/fa';
 import {
   GiTempleDoor,
   GiPrayerBeads,
   GiIncense,
-  GiScrollUnfurled
+  GiScrollUnfurled,
+  GiChakram,
+  GiLotus
 } from 'react-icons/gi';
+import heroImage from '@/assets/images/HowPandit.png';
 
 interface Step {
   id: number;
@@ -33,19 +38,16 @@ interface Step {
 
 const HowItWorks: React.FC = () => {
   const [activeStep, setActiveStep] = useState(1);
+  const { scrollYProgress } = useScroll();
+  const y1 = useTransform(scrollYProgress, [0, 1], [0, 50]);
 
   const steps: Step[] = [
     {
       id: 1,
       title: "Choose Pandit & Puja",
       description: "Select your preferred pandit and ceremony type from our verified experts",
-      icon: <FaUserCheck className="h-8 w-8" />,
-      details: [
-        "Browse 500+ verified pandits",
-        "Filter by location, language & expertise",
-        "Read reviews and ratings",
-        "Compare prices and availability"
-      ],
+      icon: <FaUserCheck className="h-6 w-6" />,
+      details: ["Browse 500+ verified pandits", "Filter by location, language & expertise"],
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200"
@@ -53,14 +55,9 @@ const HowItWorks: React.FC = () => {
     {
       id: 2,
       title: "Select Date & Samagri",
-      description: "Pick your preferred date, time and choose from our curated samagri packages",
-      icon: <FaCalendarAlt className="h-8 w-8" />,
-      details: [
-        "Choose convenient date & time",
-        "Select samagri package or customize",
-        "Add special requirements",
-        "Confirm booking with secure payment"
-      ],
+      description: "Pick your preferred date and samagri package",
+      icon: <FaCalendarAlt className="h-6 w-6" />,
+      details: ["Choose convenient date & time", "Select samagri package or customize"],
       color: "text-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200"
@@ -68,268 +65,215 @@ const HowItWorks: React.FC = () => {
     {
       id: 3,
       title: "Join Live Video Puja",
-      description: "Participate in your personalized puja ceremony through high-quality video call",
-      icon: <FaVideo className="h-8 w-8" />,
-      details: [
-        "HD video call with your pandit",
-        "Real-time interaction and guidance",
-        "Follow along with mantras",
-        "Ask questions during ceremony"
-      ],
+      description: "Participate in your ceremony via high-quality video call",
+      icon: <FaVideo className="h-6 w-6" />,
+      details: ["HD video call with your pandit", "Real-time interaction and guidance"],
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200"
     },
     {
       id: 4,
-      title: "Receive Recording & Kundali",
-      description: "Get your puja recording and personalized Kundali report for future reference",
-      icon: <FaDownload className="h-8 w-8" />,
-      details: [
-        "Download HD puja recording",
-        "Receive detailed Kundali report",
-        "Get mantras and instructions PDF",
-        "Access lifetime in your account"
-      ],
+      title: "Receive Recording",
+      description: "Get your puja recording and Kundali report",
+      icon: <FaDownload className="h-6 w-6" />,
+      details: ["Download HD puja recording", "Receive detailed Kundali report"],
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200"
     }
   ];
 
-  const features = [
-    {
-      icon: <FaClock className="h-6 w-6" />,
-      title: "24/7 Availability",
-      description: "Book pujas anytime, anywhere"
-    },
-    {
-      icon: <FaCheckCircle className="h-6 w-6" />,
-      title: "100% Authentic",
-      description: "Traditional rituals by verified pandits"
-    },
-    {
-      icon: <FaShoppingCart className="h-6 w-6" />,
-      title: "Complete Packages",
-      description: "Samagri included in every booking"
-    },
-    {
-      icon: <GiScrollUnfurled className="h-6 w-6" />,
-      title: "Digital Records",
-      description: "Lifetime access to recordings & reports"
-    }
+  const floatingIcons = [
+    { Icon: FaOm, delay: 0, x: '10%', y: '10%' },
+    { Icon: GiLotus, delay: 2, x: '85%', y: '15%' },
+    { Icon: GiPrayerBeads, delay: 1, x: '15%', y: '80%' },
+    { Icon: GiChakram, delay: 3, x: '80%', y: '70%' },
   ];
 
   return (
-    <section className="py-16 bg-gradient-to-b from-orange-50/30 to-white">
-      <div className="container mx-auto px-4">
-        {/* Section Header */}
+    <section className="py-20 relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-slate-900 dark:via-slate-900 dark:to-orange-900/20">
+
+      {/* Background Animated Elements */}
+      <div className="absolute inset-0 pointer-events-none">
+        {floatingIcons.map((item, index) => (
+          <motion.div
+            key={index}
+            className="absolute text-orange-200 dark:text-orange-900/30 opacity-60"
+            style={{ left: item.x, top: item.y }}
+            animate={{
+              y: [0, -20, 0],
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 5,
+              repeat: Infinity,
+              delay: item.delay,
+              ease: "easeInOut"
+            }}
+          >
+            <item.Icon className="h-16 w-16" />
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4">
-            <GiPrayerBeads className="h-4 w-4 text-orange-500" />
-            <span className="text-orange-700 text-sm font-medium">Simple Process</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4"
+          >
+            <GiPrayerBeads className="h-4 w-4 text-orange-500 animate-spin-slow" />
+            <span className="text-orange-700 text-sm font-medium">Simple 4-Step Process</span>
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent"
+          >
             How It Works
-          </h2>
+          </motion.h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Experience authentic puja ceremonies in just four simple steps
+            Experience authentic puja ceremonies from comfort of your home
           </p>
         </div>
 
-        {/* Steps Navigation */}
-        <div className="flex flex-wrap justify-center gap-4 mb-12">
-          {steps.map((step) => (
-            <Button
-              key={step.id}
-              variant={activeStep === step.id ? "default" : "outline"}
-              className={`transition-all duration-300 hover:scale-105 ${activeStep === step.id
-                  ? "bg-orange-500 hover:bg-orange-600"
-                  : "hover:bg-orange-50 border-orange-200"
-                }`}
-              onClick={() => setActiveStep(step.id)}
-            >
-              <span className="mr-2">{step.id}</span>
-              {step.title}
-            </Button>
-          ))}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-        {/* Steps Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
-          {/* Steps Cards */}
+          {/* Left Side: Steps */}
           <div className="space-y-6">
             {steps.map((step, index) => (
-              <Card
+              <motion.div
                 key={step.id}
-                className={`transition-all duration-500 cursor-pointer hover:shadow-xl ${activeStep === step.id
-                    ? `${step.borderColor} border-2 shadow-lg scale-105`
-                    : "border hover:border-orange-200"
-                  } animate-in fade-in slide-in-from-left-4`}
-                style={{ animationDelay: `${index * 150}ms` }}
-                onClick={() => setActiveStep(step.id)}
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
               >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    {/* Step Number */}
-                    <div className={`flex-shrink-0 w-12 h-12 rounded-full ${step.bgColor} ${step.color} flex items-center justify-center font-bold text-lg transition-all duration-300 ${activeStep === step.id ? "scale-110" : ""
-                      }`}>
-                      {step.id}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`${step.color} transition-transform duration-300 ${activeStep === step.id ? "scale-110" : ""
-                          }`}>
-                          {step.icon}
-                        </div>
-                        <h3 className={`text-xl font-bold transition-colors duration-300 ${activeStep === step.id ? step.color : "text-gray-800"
-                          }`}>
+                <Card
+                  className={`cursor-pointer transition-all duration-300 border-l-4 overflow-hidden ${activeStep === step.id
+                    ? "border-orange-500 shadow-xl bg-orange-50/50 dark:bg-slate-800"
+                    : "border-transparent hover:bg-orange-50/30 dark:hover:bg-slate-800/50"
+                    }`}
+                  onClick={() => setActiveStep(step.id)}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg transition-colors ${activeStep === step.id ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-500"
+                        }`}>
+                        {step.id}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className={`text-xl font-bold mb-1 ${activeStep === step.id ? "text-orange-900 dark:text-orange-100" : "text-gray-700 dark:text-gray-300"}`}>
                           {step.title}
                         </h3>
-                      </div>
-                      <p className="text-gray-600 mb-4">
-                        {step.description}
-                      </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{step.description}</p>
 
-                      {/* Step Details */}
-                      {activeStep === step.id && (
-                        <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                          {step.details.map((detail, idx) => (
-                            <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                              <FaCheckCircle className={`h-4 w-4 ${step.color}`} />
-                              <span>{detail}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                        <motion.div
+                          initial={false}
+                          animate={{ height: activeStep === step.id ? 'auto' : 0, opacity: activeStep === step.id ? 1 : 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="pt-2 border-t border-orange-100 dark:border-slate-700 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {step.details.map((d, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs text-gray-500 dark:text-slate-400">
+                                <FaCheckCircle className="text-orange-500" /> {d}
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      </div>
+                      {activeStep === step.id && <FaArrowRight className="text-orange-500 mt-2" />}
                     </div>
-
-                    {/* Arrow for active step */}
-                    {activeStep === step.id && (
-                      <div className={`${step.color} animate-in zoom-in`}>
-                        <FaArrowRight className="h-5 w-5" />
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
 
-          {/* Visual Representation */}
-          <div className="relative">
-            <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 shadow-2xl overflow-hidden">
-              <CardContent className="p-8 relative">
-                {/* Background Pattern */}
-                <div className="absolute inset-0 opacity-10">
-                  <div className="absolute top-4 right-4">
-                    <GiTempleDoor className="h-24 w-24" />
-                  </div>
-                  <div className="absolute bottom-4 left-4">
-                    <GiIncense className="h-20 w-20" />
-                  </div>
-                </div>
+          {/* Right Side: Animated Image & Visuals */}
+          <div className="relative flex justify-center items-center h-[500px]">
+            {/* Rotating Aura */}
+            <motion.div
+              className="absolute w-[350px] h-[350px] md:w-[450px] md:h-[450px] rounded-full bg-gradient-to-r from-orange-400/20 to-amber-300/20 blur-3xl"
+              animate={{
+                scale: [1, 1.1, 1],
+                rotate: [0, -90, 0],
+                opacity: [0.4, 0.7, 0.4]
+              }}
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            />
 
-                <div className="relative z-10">
-                  <div className="text-center mb-8">
-                    <div className="inline-flex items-center gap-2 bg-white/20 rounded-full px-4 py-2 mb-4">
-                      <FaPlay className="h-4 w-4" />
-                      <span className="text-sm font-medium">Watch Demo</span>
-                    </div>
-                    <h3 className="text-2xl font-bold mb-4">
-                      Experience the Magic
-                    </h3>
-                    <p className="text-orange-100 leading-relaxed">
-                      See how thousands of families have connected with their spiritual roots through our platform
-                    </p>
-                  </div>
+            {/* Rotating Ring */}
+            <motion.div
+              className="absolute w-[320px] h-[320px] md:w-[420px] md:h-[420px] rounded-full border border-orange-400/30 border-dashed"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            />
 
-                  {/* Demo Stats */}
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
-                      <div className="text-2xl font-bold mb-1">15 min</div>
-                      <div className="text-orange-200 text-sm">Avg. Setup Time</div>
-                    </div>
-                    <div className="text-center p-4 bg-white/10 rounded-lg backdrop-blur-sm">
-                      <div className="text-2xl font-bold mb-1">HD Quality</div>
-                      <div className="text-orange-200 text-sm">Video & Audio</div>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="lg"
-                    variant="secondary"
-                    className="w-full bg-white text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-105"
-                  >
-                    <FaPlay className="h-5 w-5 mr-2" />
-                    Watch How It Works
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {features.map((feature, index) => (
-            <Card
-              key={index}
-              className="text-center hover:shadow-lg transition-all duration-300 hover:scale-105 hover:-translate-y-1 border-orange-100 animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 100}ms` }}
+            {/* Main Image */}
+            {/* Main Image Container */}
+            <motion.div
+              className="relative z-10 w-full max-w-[350px] aspect-[4/5] bg-gradient-to-b from-orange-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-3xl border-4 border-orange-500 dark:border-orange-400 shadow-2xl overflow-hidden flex items-end justify-center"
+              style={{ y: y1 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
             >
-              <CardContent className="p-6">
-                <div className="text-orange-500 mb-4 flex justify-center transition-transform duration-300 hover:scale-110">
-                  {feature.icon}
-                </div>
-                <h3 className="font-semibold mb-2 text-gray-800">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+              <motion.img
+                src={heroImage}
+                alt="How it works guide"
+                className="w-full h-full object-cover"
+                initial={{ y: 50, opacity: 0, scale: 1 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{
+                  scale: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+                  y: { delay: 0.3, duration: 0.5 },
+                  opacity: { delay: 0.3, duration: 0.5 }
+                }}
+              />
+            </motion.div>
+
+            {/* Floating Info Cards */}
+            <motion.div
+              className="absolute top-10 right-0 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg border border-orange-100 dark:border-slate-700 max-w-[160px] z-20"
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="bg-green-100 p-1.5 rounded-full"><FaVideo className="text-green-600 w-3 h-3" /></div>
+                <span className="font-bold text-xs">Live Interaction</span>
+              </div>
+              <p className="text-[10px] text-gray-500">Connect face-to-face with Pandits</p>
+            </motion.div>
+
+            <motion.div
+              className="absolute bottom-10 left-0 bg-white dark:bg-slate-800 p-3 rounded-xl shadow-lg border border-orange-100 dark:border-slate-700 max-w-[160px] z-20"
+              animate={{ y: [0, 15, 0] }}
+              transition={{ duration: 7, repeat: Infinity, delay: 1, ease: "easeInOut" }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="bg-purple-100 p-1.5 rounded-full"><GiScrollUnfurled className="text-purple-600 w-3 h-3" /></div>
+                <span className="font-bold text-xs">Digital Kundali</span>
+              </div>
+              <p className="text-[10px] text-gray-500">Get detailed reports instantly</p>
+            </motion.div>
+          </div>
+
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="max-w-3xl mx-auto bg-gradient-to-r from-orange-500 to-orange-600 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-8">
-              <div className="flex items-center justify-center gap-4 mb-6">
-                <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500">
-                  <FaCheckCircle className="h-3 w-3 mr-1" />
-                  Trusted by 10,000+ families
-                </Badge>
-              </div>
-              <h3 className="text-3xl font-bold mb-4">
-                Ready to Begin Your Spiritual Journey?
-              </h3>
-              <p className="text-orange-100 mb-8 text-lg leading-relaxed">
-                Join thousands of satisfied customers who have experienced authentic puja ceremonies from the comfort of their homes
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  className="bg-white text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-110"
-                >
-                  Book Your First Puja
-                  <FaArrowRight className="h-4 w-4 ml-2" />
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-white text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
-                >
-                  Explore Pandits
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Bottom CTA */}
+        <div className="mt-16 text-center">
+          <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+            Start Your Spiritual Journey
+          </Button>
         </div>
       </div>
     </section>
