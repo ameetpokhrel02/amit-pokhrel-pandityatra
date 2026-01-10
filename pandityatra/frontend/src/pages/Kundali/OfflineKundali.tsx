@@ -13,6 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
 import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
 import PWALogo from '@/assets/images/PWA.png';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+//
 
 const OfflineKundali: React.FC = () => {
   const { token } = useAuth();
@@ -67,6 +69,8 @@ const OfflineKundali: React.FC = () => {
     if (day < days[month - 1]) return signs[month - 2];
     return signs[month - 1];
   };
+
+  //
 
   const handleGenerate = () => {
     if (!formData.day || !formData.month || !formData.year) {
@@ -208,7 +212,6 @@ const OfflineKundali: React.FC = () => {
               </Button>
             </CardContent>
           </Card>
-
           {/* PWA Install Card */}
           <Card className="border-[#FF6F00] border-2 shadow-md bg-white">
             <CardContent className="p-4 flex items-center justify-between">
