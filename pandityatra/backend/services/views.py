@@ -1,5 +1,4 @@
 import os
-import openai
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework import serializers 
@@ -10,6 +9,24 @@ from pandits.models import Pandit # Need Pandit model for the nested view logic
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from .ai_chat import ask_pandityatra_ai
+
+class AIChatView(APIView):
+    """
+    API View for PanditYatra AI Chat.
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        prompt = request.data.get('prompt')
+        if not prompt:
+            return Response({'error': 'Prompt is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            response_text = ask_pandityatra_ai(prompt)
+            return Response({'response': response_text}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ----------------------------------------------------
 # General Puja Management (Admin/Staff only)

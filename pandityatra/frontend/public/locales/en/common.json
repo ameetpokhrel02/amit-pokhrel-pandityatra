@@ -1,0 +1,32 @@
+{
+  "welcome": "Welcome to PanditYatra",
+  "find_pandit": "Find Pandit",
+  "login": "Login",
+  "signup": "Sign Up",
+  "dashboard": "Dashboard",
+  "profile": "Profile",
+  "settings": "Settings",
+  "logout": "Logout",
+  "search_placeholder": "Search for pujas, pandits...",
+  "home": "Home",
+  "shop": "Shop",
+  "welcome_title": "Illuminate Your Spiritual Path",
+  "welcome_subtitle": "Connect with authentic Pandits for personalized pujas, astrology readings, and spiritual guidance. Live & interactive.",
+  "find_match": "Find Pandits",
+  "book_puja": "Book a Puja",
+  "get_started": "Get Started",
+  "watch_demo": "Watch Demo",
+  "search_main_placeholder": "Search for services...",
+  "puja_type": "Puja Type",
+  "date_select": "Select Date",
+  "average_rating": "4.9/5 Average Rating",
+  "live_or_person": "Live Video or In-Person",
+  "best_choice": "Best Choice",
+  "review_quote": "The pandit was extremely knowledgeable and the puja felt very divine.",
+  "platform_badge": "#1 Platform for Vedic Ceremonies",
+  "features": {
+    "verified_pandits": "Verified Pandits",
+    "secure_payments": "Secure Payments",
+    "live_streaming": "Live Streaming"
+  }
+}

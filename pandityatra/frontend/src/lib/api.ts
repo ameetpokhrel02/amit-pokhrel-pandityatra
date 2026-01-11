@@ -1,6 +1,40 @@
 import apiClient from './api-client';
 
 // ----------------------
+// Payments APIs
+// ----------------------
+export interface Payment {
+    id: number;
+    payment_method: string;
+    amount_npr: string;
+    amount_usd: string;
+    amount: string;
+    currency: string;
+    transaction_id: string;
+    status: string;
+    created_at: string;
+    booking: number;
+    booking_details?: {
+        id: number;
+        pandit_name: string;
+    };
+    user_details?: {
+        full_name: string;
+        email: string;
+    };
+}
+
+export async function fetchAdminPayments(): Promise<Payment[]> {
+    const response = await apiClient.get('/payments/admin/');
+    return response.data;
+}
+
+export async function refundPayment(id: number) {
+    const response = await apiClient.post(`/payments/${id}/refund/`);
+    return response.data;
+}
+
+// ----------------------
 // Pandit APIs
 // ----------------------
 export interface Pandit {
@@ -21,6 +55,8 @@ export interface Pandit {
     bio: string;
     is_available: boolean;
     is_verified: boolean;
+    verification_status: string;
+    certification_file?: string;
     date_joined: string;
 }
 
@@ -44,6 +80,24 @@ export interface Puja {
 
 export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
     const response = await apiClient.get(`/pandits/${panditId}/services/`);
+    return response.data;
+}
+
+// ----------------------
+// Pandit Verification APIs (Admin)
+// ----------------------
+export async function fetchPendingPandits(): Promise<Pandit[]> {
+    const response = await apiClient.get('/pandits/admin/pending/');
+    return response.data;
+}
+
+export async function verifyPandit(id: number, notes?: string) {
+    const response = await apiClient.post(`/pandits/admin/verify/${id}/`, { notes });
+    return response.data;
+}
+
+export async function rejectPandit(id: number, reason?: string) {
+    const response = await apiClient.post(`/pandits/admin/reject/${id}/`, { reason });
     return response.data;
 }
 
@@ -76,11 +130,17 @@ export async function fetchAllPujas(): Promise<Puja[]> {
 export interface Booking {
     id: number;
     user: number; // or object depending on serializer
+    user_full_name?: string; // from serializer
     pandit: number; // or object
     pandit_name?: string; // helper for UI
+    pandit_full_name?: string; // from serializer
     status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED';
     booking_date: string;
+    booking_time?: string;
     notes?: string;
+    total_fee?: number;
+    payment_status?: boolean;
+    payment_method?: string;
 }
 
 export async function fetchBookings(): Promise<Booking[]> {
@@ -95,6 +155,12 @@ export async function createBooking(payload: Partial<Booking>) {
 
 export async function updateBookingStatus(id: number, status: string) {
     const response = await apiClient.patch(`/bookings/${id}/update_status/`, { status });
+    return response.data;
+}
+
+export async function adminCancelBooking(id: number) {
+    // Calls the specialized admin view that handles refunds
+    const response = await apiClient.post(`/admin/refund-cancel/${id}/`);
     return response.data;
 }
 

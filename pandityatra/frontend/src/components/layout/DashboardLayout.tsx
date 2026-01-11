@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,7 +12,8 @@ import {
     X,
     Calendar,
     Wallet,
-    BookOpen
+    BookOpen,
+    DollarSign
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
@@ -45,7 +47,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         ],
         admin: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
-            { icon: User, label: 'Users', path: '/admin/users' },
+            { icon: Users, label: 'Users', path: '/admin/users' },
+            { icon: AlertTriangle, label: 'Pandit Verification', path: '/admin/pandits' },
+            { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
+            { icon: Wallet, label: 'Payments', path: '/admin/payments' },
+            { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' }, // Added Payouts
             { icon: Settings, label: 'Settings', path: '/admin/settings' },
         ]
     };

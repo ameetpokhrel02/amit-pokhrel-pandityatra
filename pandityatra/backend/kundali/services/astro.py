@@ -19,70 +19,60 @@ NAKSHATRAS = [
     "Purva Bhadrapada","Uttara Bhadrapada","Revati"
 ]
 
+# -------------------------
+# Helpers
+# -------------------------
+
 def get_rashi(lon):
     return int(lon // 30)
 
 def get_nakshatra(lon):
     return NAKSHATRAS[int(lon // (13.333333))]
 
-def calculate_planets(dob, time, lat, lon):
+def get_house_from_longitude(planet_lon, cusps):
+    """
+    Returns which of 12 houses a planet belongs to.
+    """
+    for i in range(12):
+        start = cusps[i]
+        end = cusps[(i + 1) % 12]
+
+        # Normal case
+        if start <= end:
+            if start <= planet_lon < end:
+                return i + 1
+        else:
+            # Wrap around Pisces → Aries
+            if planet_lon >= start or planet_lon < end:
+                return i + 1
+
+    return 12
+
+# -------------------------
+# Main Chart Calculator
+# -------------------------
+
+def calculate_chart(dob, time, lat, lon):
+    # Convert to Julian Day
     dt = datetime.strptime(f"{dob} {time}", "%Y-%m-%d %H:%M")
     jd = swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60)
 
     swe.set_topo(lon, lat, 0)
 
-    data = {}
-
-    for name, pid in PLANETS.items():
-        lon = swe.calc_ut(jd, pid)[0][0]
-        data[name] = {
-            "longitude": lon,
-            "rashi": get_rashi(lon),
-            "nakshatra": get_nakshatra(lon),
-            "house": 1,  # placeholder (we'll add houses next)
-        }
-
-    return data
-
-def calculate_houses(jd, lat, lon):
-    cusps = swe.houses(jd, lat, lon)
-    return cusps, ascmc
-
-def find_house(planet_lon, cusps):
-    for i in range(12):
-        start = cusps[i]
-        end = cusps[(i + 1) % 12]
-
-        #Handle zodiac wrap-around (pisces to aries)
-        if start < end:
-            if start <= planet_lon < end:
-                return i + 1
-            
-        else:  # wrap around case
-            if planet_lon >= start or planet_lon < end:
-                return i + 1
-    return 12
-
-def calculate_chart(dob, time, lat, lon):
-    dt = datetime.strptime(f"{dob} {time}", "%Y-%m-%d %H:%M")
-    jd =swe.julday(dt.year, dt.month, dt.day, dt.hour + dt.minute / 60 )
-
-    swe.set_topo(lon, lat, 0)
-
-    planets ={}
-    for name, pid in PLANETS.items():
-         planeet_lon = swe.calc_ut(jd, pid)[0][0]
-         planets[name] = planeet_lon
-
+    # House cusps + Ascendant
     cusps, ascmc = swe.houses(jd, lat, lon)
 
     planet_data = {}
-    for name, lon in planets.items():
+
+    for name, pid in PLANETS.items():
+        pl_lon = swe.calc_ut(jd, pid)[0][0]
+
         planet_data[name] = {
-            "longitude": lon,
-            "rashi": get_rashi(lon // 30),
-            "nakshatra": get_nakshatra(lon),
-            "house": find_house(lon, cusps),
+            "longitude": pl_lon,
+            "rashi": get_rashi(pl_lon),
+            "nakshatra": get_nakshatra(pl_lon),
+            "house": get_house_from_longitude(pl_lon, cusps),
         }
+
 
     return planet_data, cusps, ascmc

@@ -72,6 +72,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'id', 'user_full_name', 'pandit', 'pandit_full_name', 'pandit_expertise',
             'service_name', 'service_location', 'booking_date', 'booking_time', 
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status',
+            'payment_method',
             'service_duration', 'created_at'
         ]
         read_only_fields = fields

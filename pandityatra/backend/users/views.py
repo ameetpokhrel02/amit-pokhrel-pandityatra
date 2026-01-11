@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated  # 🚨 NEW: For security
+from rest_framework.decorators import api_view, permission_classes # 🚨 Fix: Import decorators
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
@@ -393,3 +394,70 @@ class AdminStatsView(APIView):
             "pending_verifications": pending_verifications,
             "system_status": "Healthy"
         }, status=status.HTTP_200_OK)
+# ----------------------------------------------------
+# 📌 ADMIN: USER MANAGEMENT
+# ----------------------------------------------------
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_get_users(request):
+    """
+    Return list of all users (role='user' usually, or all non-admins).
+    """
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+    
+    # Filter only regular users
+    users = User.objects.filter(role='user').order_by('-date_joined')
+    serializer = UserSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_toggle_user_status(request, user_id):
+    """
+    Block/Unblock a user.
+    """
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+    
+    try:
+        user_obj = User.objects.get(id=user_id)
+        # Flip is_active
+        user_obj.is_active = not user_obj.is_active
+        user_obj.save()
+        status_msg = "activated" if user_obj.is_active else "blocked"
+        return Response({"message": f"User {user_obj.phone_number} has been {status_msg}."})
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+
+# ----------------------------------------------------
+# 📌 ADMIN: PLATFORM SETTINGS
+# ----------------------------------------------------
+from .serializers import PlatformSettingSerializer
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def admin_platform_settings(request):
+    """
+    GET: Retrieve current platform settings (commission, etc.)
+    POST: Update settings
+    """
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+
+    # Use Singleton load() method
+    setting_obj = PlatformSetting.load()
+
+    if request.method == 'GET':
+        serializer = PlatformSettingSerializer(setting_obj)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        # Partial update
+        serializer = PlatformSettingSerializer(setting_obj, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)

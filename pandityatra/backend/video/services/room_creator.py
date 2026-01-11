@@ -16,6 +16,15 @@ def ensure_video_room_for_booking(booking):
         room_url=room_url,
         status="scheduled"
     )
+    return  video_room
 
-    return video_room
+# Closely link room to booking
+def close_video_room(booking):
+    from video.models import VideoRoom
+    room = VideoRoom.objects.filter(booking=booking).first()
+    if room and room.status != "closed":
+        room.status = "closed"
+        room.save()
+
+    return room
     

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,7 +10,20 @@ import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 
 const LanguageSelector: React.FC = () => {
-    const [language, setLanguage] = React.useState('English');
+    const { i18n } = useTranslation();
+
+    const changeLanguage = (lng: string) => {
+        i18n.changeLanguage(lng);
+    };
+
+    const currentLanguage = i18n.language || 'en';
+
+    // Map language codes to display names
+    const languages = [
+        { code: 'en', name: 'English' },
+        { code: 'ne', name: 'नेपाली' },
+        { code: 'hi', name: 'हिंदी' },
+    ];
 
     return (
         <DropdownMenu>
@@ -20,15 +34,15 @@ const LanguageSelector: React.FC = () => {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-32">
-                <DropdownMenuItem onClick={() => setLanguage('English')}>
-                    English {language === 'English' && '✓'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('Nepali')}>
-                    नेपाली {language === 'Nepali' && '✓'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('Hindi')}>
-                    हिंदी {language === 'Hindi' && '✓'}
-                </DropdownMenuItem>
+                {languages.map((lang) => (
+                    <DropdownMenuItem 
+                        key={lang.code} 
+                        onClick={() => changeLanguage(lang.code)}
+                        className={currentLanguage === lang.code ? 'bg-orange-50 text-orange-600' : ''}
+                    >
+                        {lang.name} {currentLanguage === lang.code && '✓'}
+                    </DropdownMenuItem>
+                ))}
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -1,51 +1,73 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './hooks/useAuth'
+import { CartProvider } from './hooks/useCart'
+import { FavoritesProvider } from './hooks/useFavorites'
+import { ProtectedRoute } from './components/common/ProtectedRoute'
+import { Toaster } from '@/components/ui/toaster'
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './hooks/useAuth';
-import { CartProvider } from './hooks/useCart';
-import { FavoritesProvider } from './hooks/useFavorites';
-import { ProtectedRoute } from './components/common/ProtectedRoute';
-import { Toaster } from '@/components/ui/toaster';
+// Public Pages
+import HomePage from './pages/Home'
+import AboutUs from './pages/AboutUs'
+import OfflineKundali from './pages/Kundali/OfflineKundali'
 
-// Pages
-import HomePage from './pages/Home';
-import PujaCategories from './pages/Shop/PujaCategories';
-import Samagri from './pages/Shop/Samagri';
-import Books from './pages/Shop/Books';
-import CartPage from './pages/Shop/Cart';
-import CartDrawer from './components/shop/CartDrawer';
-import FavoritesDrawer from './components/shop/FavoritesDrawer';
-import LoginPage from './pages/auth/Login';
-import RegisterPage from './pages/auth/Register';
-import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerification';
-import ForgotPassword from './pages/auth/forgot-password/ForgotPassword';
-import OTPVerification from './pages/auth/otp-verification/OTPVerification';
-import ChangePassword from './pages/auth/change-password/ChangePassword';
-import PanditRegister from './pages/auth/PanditRegister';
-import { PanditList } from './pages/Booking/PanditList';
-import PanditProfile from './pages/Booking/PanditProfile';
-import BookingForm from './pages/Booking/BookingForm';
-import MyBookingsPage from './pages/Booking/MyBookings';
-import CustomerDashboard from './pages/Dashboard/CustomerDashboard';
-import PanditDashboard from './pages/Dashboard/PanditDashboard';
-import AdminDashboard from './pages/Dashboard/AdminDashboard';
-import AdminVerificationDashboard from './pages/Dashboard/AdminVerification';
-import EditProfile from './pages/Dashboard/Profile/EditProfile';
-import ChatList from './pages/Chat/ChatList';
-import ChatRoom from './pages/Chat/ChatRoom';
-import UnifiedChatWidget from './components/UnifiedChatWidget';
-import AboutUs from './pages/AboutUs';
-import OfflineKundali from './pages/Kundali/OfflineKundali';
-import BackToTop from './components/common/BackToTop';
+// Shop
+import PujaCategories from './pages/Shop/PujaCategories'
+import Samagri from './pages/Shop/Samagri'
+import Books from './pages/Shop/Books'
+import CartPage from './pages/Shop/Cart'
 
-// Payment Pages
-import PaymentPage from './pages/Payment/PaymentPage';
-import PaymentSuccess from './pages/Payment/PaymentSuccess';
-import PaymentFailure from './pages/Payment/PaymentFailure';
-import KhaltiVerify from './pages/Payment/KhaltiVerify';
+// Auth
+import LoginPage from './pages/auth/Login'
+import RegisterPage from './pages/auth/Register'
+import PanditRegister from './pages/auth/PanditRegister'
+import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerification'
+import ForgotPassword from './pages/auth/forgot-password/ForgotPassword'
+import OTPVerification from './pages/auth/otp-verification/OTPVerification'
+import ChangePassword from './pages/auth/change-password/ChangePassword'
 
-// Video Call Page
-import PujaRoom from '@/pages/Video/PujaRoom';
+// Booking
+import { PanditList } from './pages/Booking/PanditList'
+import PanditProfile from './pages/Booking/PanditProfile'
+import BookingForm from './pages/Booking/BookingForm'
+import MyBookingsPage from './pages/Booking/MyBookings'
 
+// Dashboards (NEW STRUCTURE)
+import CustomerDashboard from './pages/customer/CustomerDashboard'
+import PanditDashboard from './pages/pandit/PanditDashboard'
+import PanditEarnings from './pages/pandit/PanditEarnings'
+import PanditServices from './pages/pandit/PanditServices' // 🆕
+import PanditBookings from './pages/pandit/PanditBookings'
+import PanditPrivateProfile from './pages/pandit/PanditProfile'
+
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminPandits from './pages/admin/AdminPandits'
+import AdminBookings from './pages/admin/AdminBookings'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminPayments from './pages/admin/AdminPayments'
+import AdminPayouts from './pages/admin/AdminPayouts'
+import AdminSettings from './pages/admin/AdminSettings'
+
+// Profile
+import EditProfile from './pages/customer/Profile'
+
+// Chat
+import ChatList from './pages/Chat/ChatList'
+import ChatRoom from './pages/Chat/ChatRoom'
+
+// Payment
+import PaymentPage from './pages/Payment/PaymentPage'
+import PaymentSuccess from './pages/Payment/PaymentSuccess'
+import PaymentFailure from './pages/Payment/PaymentFailure'
+import KhaltiVerify from './pages/Payment/KhaltiVerify'
+
+// Video
+import PujaRoom from './pages/Video/PujaRoom'
+
+// Global UI
+import CartDrawer from './components/shop/CartDrawer'
+import FavoritesDrawer from './components/shop/FavoritesDrawer'
+import UnifiedChatWidget from './components/UnifiedChatWidget'
+import BackToTop from './components/common/BackToTop'
 
 function App() {
   return (
@@ -54,7 +76,8 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
-              {/* Public Routes */}
+
+              {/* 🌍 Public */}
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutUs />} />
               <Route path="/kundali" element={<OfflineKundali />} />
@@ -62,154 +85,152 @@ function App() {
               <Route path="/shop/samagri" element={<Samagri />} />
               <Route path="/shop/books" element={<Books />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/pandits" element={<PanditList />} />
+              <Route path="/pandits/:id" element={<PanditProfile />} />
+
+              {/* 🔐 Auth */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/pandit/register" element={<PanditRegister />} />
-
-              {/* Login OTP Verification */}
               <Route path="/otp-verification" element={<LoginOTPVerification />} />
-
-              {/* Forgot Password Flow */}
               <Route path="/auth/forgot-password" element={<ForgotPassword />} />
               <Route path="/auth/otp-verification" element={<OTPVerification />} />
               <Route path="/auth/change-password" element={<ChangePassword />} />
 
-              {/* Protected Routes */}
-              <Route
-                path="/booking"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <BookingForm />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/my-bookings"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <MyBookingsPage />
-                  </ProtectedRoute>
-                }
-              />
+              {/* 👤 Customer */}
+              <Route path="/dashboard" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <CustomerDashboard />
+                </ProtectedRoute>
+              } />
 
-              {/* Payment Routes */}
-              <Route
-                path="/payment/:bookingId"
-                element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <PaymentPage />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/my-bookings" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <MyBookingsPage />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/booking" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <BookingForm />
+                </ProtectedRoute>
+              } />
+
+              {/* 🧑‍🕉️ Pandit */}
+              <Route path="/pandit/dashboard" element={
+                <ProtectedRoute allowedRoles={['pandit']}>
+                  <PanditDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/pandit/earnings" element={
+                <ProtectedRoute allowedRoles={['pandit']}>
+                  <PanditEarnings />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/pandit/services" element={
+                <ProtectedRoute allowedRoles={['pandit']}>
+                  <PanditServices />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/pandit/bookings" element={
+                <ProtectedRoute allowedRoles={['pandit']}>
+                  <PanditBookings />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/pandit/profile" element={
+                <ProtectedRoute allowedRoles={['pandit']}>
+                  <PanditPrivateProfile />
+                </ProtectedRoute>
+              } />
+
+
+              {/* 👑 Admin */}
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/pandits" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPandits />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/bookings" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminBookings />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/users" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminUsers />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/payments" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPayments />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/payouts" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPayouts />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/settings" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminSettings />
+                </ProtectedRoute>
+              } />
+
+              {/* 💳 Payments */}
+              <Route path="/payment/:bookingId" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <PaymentPage />
+                </ProtectedRoute>
+              } />
               <Route path="/payment/success" element={<PaymentSuccess />} />
               <Route path="/payment/cancel" element={<PaymentFailure />} />
               <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
 
-              //video Call Route
+              {/* 🎥 Video */}
               <Route path="/puja-room/:id" element={<PujaRoom />} />
 
-              {/* Pandit List (Public) */}
-              <Route
-                path="/pandits"
-                element={
-                  <PanditList />
-                }
-              />
-              {/* Public pandit profile */}
-              <Route path="/pandits/:id" element={<PanditProfile />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <CustomerDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pandit/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pandit/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <EditProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <EditProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
-                    <EditProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/verify-pandits"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminVerificationDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* 💬 Chat */}
+              <Route path="/chat" element={
+                <ProtectedRoute allowedRoles={['user','pandit']}>
+                  <ChatList />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/:roomId" element={
+                <ProtectedRoute allowedRoles={['user','pandit']}>
+                  <ChatRoom roomId={0} />
+                </ProtectedRoute>
+              } />
 
-              {/* Chat Routes */}
-              <Route
-                path="/chat"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <ChatList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat/:roomId"
-                element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <ChatRoom roomId={0} />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Catch all - redirect to home */}
+              {/* ❌ Catch all */}
               <Route path="*" element={<Navigate to="/" replace />} />
+
             </Routes>
-            {/* Cart Drawer (global) */}
+
             <CartDrawer />
-            {/* Favorites Drawer (global) */}
             <FavoritesDrawer />
-            {/* Back To Top (global) */}
             <BackToTop />
-            {/* Unified Chat Widget (global) - supports guide mode and interaction mode */}
             <UnifiedChatWidget />
-            {/* Toast notifications */}
             <Toaster />
           </BrowserRouter>
         </AuthProvider>
       </FavoritesProvider>
     </CartProvider>
-  );
+  )
 }
 
-export default App;
+export default App

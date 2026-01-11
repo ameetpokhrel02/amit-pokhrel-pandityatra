@@ -2,6 +2,7 @@
 Payment Views - Stripe and Khalti Integration
 """
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view, permission_classes # 🆕 Added decorators
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +13,7 @@ import stripe
 import logging
 
 from .models import Payment, PaymentWebhook
+from .serializers import PaymentSerializer # 🆕 Added Serializer
 from .utils import (
     convert_npr_to_usd, 
     convert_usd_to_npr,
@@ -20,7 +22,9 @@ from .utils import (
     get_recommended_gateway,
     create_video_room,
     initiate_khalti_payment,
-    verify_khalti_payment
+    verify_khalti_payment,
+    refund_stripe,
+    refund_khalti
 )
 from bookings.models import Booking
 
@@ -264,6 +268,9 @@ class StripeWebhookView(APIView):
             booking.payment_method = 'STRIPE'
             booking.status = 'ACCEPTED'
             
+            # 🚨 Save transaction ID for refunds
+            booking.transaction_id = session['id']
+            
             # Create video room for online puja
             if booking.service_location == 'ONLINE':
                 room_url = create_video_room(
@@ -317,6 +324,10 @@ class KhaltiVerifyView(APIView):
                 booking.payment_status = True
                 booking.payment_method = 'KHALTI'
                 booking.status = 'ACCEPTED'
+                
+                # 🚨 Save transaction ID for refunds
+                # pidx IS the transaction id for khalti refunds
+                booking.transaction_id = pidx
                 
                 # Create video room for online puja
                 if booking.service_location == 'ONLINE':
@@ -420,3 +431,137 @@ class ExchangeRateView(APIView):
         
         return Response(response_data)
 
+
+# ---------------------------
+# ADMIN: Payment Ledger
+# ---------------------------
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_payments(request):
+    """
+    List all payments for Admin Ledger
+    """
+    # Check permissions
+    if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+        return Response({"detail": "Admin only"}, status=403)
+    
+    payments = Payment.objects.all().select_related('booking', 'booking__pandit', 'booking__pandit__user', 'user').order_by('-created_at')
+    serializer = PaymentSerializer(payments, many=True)
+    return Response(serializer.data)
+
+# ---------------------------
+# ADMIN: Refund Payment
+# ---------------------------
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def refund_payment(request, payment_id):
+    """
+    Process refund for a specific payment
+    """
+    if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+        return Response({"detail": "Admin only"}, status=403)
+        
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        
+        if payment.status == 'REFUNDED':
+            return Response({"detail": "Payment already refunded"}, status=400)
+            
+        # Call refund logic
+        success = False
+        if payment.payment_method == 'STRIPE':
+             success = refund_stripe(payment.transaction_id)
+        elif payment.payment_method == 'KHALTI':
+             success = refund_khalti(payment.transaction_id)
+        else:
+             return Response({"detail": "Refund not supported for this method"}, status=400)
+             
+        if success:
+            payment.status = 'REFUNDED'
+            payment.refunded_at = timezone.now()
+            payment.save()
+            return Response({"detail": "Refund successful"})
+        else:
+             return Response({"detail": "Refund failed at gateway"}, status=400)
+             
+    except Payment.DoesNotExist:
+        return Response({"detail": "Payment not found"}, status=404)
+
+
+# ===============================
+# ADMIN WALLET & PAYOUT APIS
+# ===============================
+from .models import PanditWithdrawal
+from pandits.models import Pandit
+from rest_framework.permissions import IsAdminUser
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated]) # Should be IsAdminUser in prod, but using IsAuthenticated + check
+def approve_withdrawal(request, id):
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+        
+    try:
+        withdrawal = PanditWithdrawal.objects.get(id=id)
+    except PanditWithdrawal.DoesNotExist:
+        return Response({"error": "Withdrawal not found"}, status=404)
+
+    if withdrawal.status != "PENDING":
+        return Response({"error": "Withdrawal already processed"}, status=400)
+
+    # Deduct from wallet
+    wallet = withdrawal.pandit.wallet
+    if wallet.available_balance < withdrawal.amount:
+        return Response({"error": "Insufficient wallet balance"}, status=400)
+
+    wallet.available_balance -= withdrawal.amount
+    wallet.total_withdrawn += withdrawal.amount
+    wallet.save()
+
+    withdrawal.status = "APPROVED"
+    withdrawal.processed_at = timezone.now()
+    withdrawal.save()
+
+    return Response({"success": True})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_payouts(request):
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+
+    data = []
+    # Get all Pandits with wallets
+    for p in Pandit.objects.select_related('wallet', 'user').all():
+        # Handle case where wallet might be missing (should exist via signal)
+        if hasattr(p, 'wallet'):
+            wallet = p.wallet
+            data.append({
+                "pandit_id": p.id,
+                "pandit_name": p.user.full_name,
+                "email": p.user.email,
+                "total_earned": wallet.total_earned,
+                "available": wallet.available_balance,
+                "withdrawn": wallet.total_withdrawn,
+                "pending_withdrawals": p.withdrawals.filter(status="PENDING").count()
+            })
+            
+    return Response(data)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def admin_withdrawal_requests(request):
+    """List of all withdrawal requests for Admin"""
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+        
+    withdrawals = PanditWithdrawal.objects.select_related('pandit__user').order_by('-created_at')
+    data = [{
+        "id": w.id,
+        "pandit_name": w.pandit.user.full_name,
+        "amount": w.amount,
+        "status": w.status,
+        "date": w.created_at
+    } for w in withdrawals]
+    return Response(data)

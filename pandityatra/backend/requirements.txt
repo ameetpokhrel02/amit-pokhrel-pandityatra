@@ -1,31 +1,39 @@
 Django
 djangorestframework
-psycopg2-binary
-django-cors-headers
-dj-database-url
 djangorestframework-simplejwt
+
+# Database
+psycopg2-binary
+dj-database-url
+
+# Environment variables
 python-dotenv
 
-# Django Channels & WebSocket support
-channels[daphne]
-channels-redis
+# CORS
+django-cors-headers
 
-# Redis for channel layers
+# WebSockets (Chat + Video signaling)
+channels
+daphne
+channels-redis
 redis
 
-# Timezone support
+# Timezone
 pytz
 
-# Payment gateways
+# Payments
 stripe
-requests  # For Khalti/eSewa API calls
-
-# Translation
-django-modeltranslation
-
-# OpenAI API for AI guide
-openai
-
-# Video call integration
-
 requests
+
+# Kundali / Astrology
+pyswisseph
+
+# File uploads (Pandit certificates, profile photos)
+pillow
+
+# Filtering & admin queries
+django-filter
+
+# Production server
+gunicorn
+whitenoise
