@@ -2,7 +2,9 @@ from django.urls import path
 from .views import (
     RegisterUserView, RequestOTPView, OTPVerifyAndTokenView, 
     PasswordLoginView, ForgotPasswordRequestView, ForgotPasswordOTPVerifyView, 
-    ResetPasswordView, ProfileView, AdminStatsView
+    ResetPasswordView, ProfileView, AdminStatsView,
+    # 🚨 ADMIN VIEWS (Added)
+    admin_get_users, admin_toggle_user_status, admin_platform_settings
 )
 
 urlpatterns = [
@@ -26,4 +28,11 @@ urlpatterns = [
     
     # Admin Stats
     path('admin/stats/', AdminStatsView.as_view(), name='admin-stats'),
+
+    # 🚨 ADMIN: User Management
+    path('admin/users/', admin_get_users, name='admin-users'),
+    path('admin/users/<int:user_id>/toggle-status/', admin_toggle_user_status, name='admin-user-toggle'),
+
+    # 🚨 ADMIN: Settings
+    path('admin/settings/', admin_platform_settings, name='admin-settings'),
 ]

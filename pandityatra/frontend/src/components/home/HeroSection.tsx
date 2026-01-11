@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +41,7 @@ import MotionSearch from '@/components/ui/motion-search';
 import heroPandit from '@/assets/images/hero 3-Photoroom.png';
 
 const HeroSection: React.FC = () => {
+  const { t } = useTranslation();
   const { token } = useAuth();
   const [searchData, setSearchData] = useState({
     pujaType: '',
@@ -124,18 +126,18 @@ const HeroSection: React.FC = () => {
         >
           <div className="inline-flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 border border-orange-200 text-orange-700 dark:text-orange-300 px-4 py-2 rounded-full text-sm font-semibold">
             <GiCandleLight className="animate-pulse" />
-            <span>#1 Platform for Vedic Ceremonies</span>
+            <span>{t('platform_badge')}</span>
           </div>
 
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-tight text-slate-900 dark:text-white">
-            Illuminate Your <br />
+            {t('welcome_title').split(' ').slice(0, -2).join(' ')} <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
-              Spiritual Path
+              {t('welcome_title').split(' ').slice(-2).join(' ')}
             </span>
           </h1>
 
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-300 max-w-xl mx-auto lg:mx-0">
-            Connect with authentic Pandits for personalized pujas, astrology readings, and spiritual guidance. Live & interactive.
+            {t('welcome_subtitle')}
           </p>
 
           <Card className="p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-xl border-orange-100/50 dark:border-orange-500/20">
@@ -144,7 +146,7 @@ const HeroSection: React.FC = () => {
                 <SelectTrigger className="h-12 bg-transparent border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <GiTempleDoor className="text-orange-500" />
-                    <SelectValue placeholder="Puja Type" />
+                    <SelectValue placeholder={t('puja_type')} />
                   </div>
                 </SelectTrigger>
                 <SelectContent>
@@ -167,24 +169,24 @@ const HeroSection: React.FC = () => {
                 onClick={handleSearch}
                 className="h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-transform hover:scale-105"
               >
-                <FaSearch className="mr-2" /> Find Pandits
+                <FaSearch className="mr-2" /> {t('find_match')}
               </Button>
             </div>
             <div className="mt-3 flex items-center justify-between text-xs text-slate-500 px-1">
-              <span className="flex items-center gap-1"><FaVideo /> Live Video or In-Person</span>
-              <span className="flex items-center gap-1"><FaStar className="text-yellow-400" /> 4.9/5 Average Rating</span>
+              <span className="flex items-center gap-1"><FaVideo /> {t('live_or_person')}</span>
+              <span className="flex items-center gap-1"><FaStar className="text-yellow-400" /> {t('average_rating')}</span>
             </div>
           </Card>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
             <Link to="/booking">
               <Button size="lg" className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800">
-                Get Started
+                {t('get_started')}
               </Button>
             </Link>
             <Link to="/about">
               <Button variant="outline" size="lg" className="w-full sm:w-auto border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
-                <FaPlay className="mr-2 text-orange-500" /> Watch Demo
+                <FaPlay className="mr-2 text-orange-500" /> {t('watch_demo')}
               </Button>
             </Link>
           </div>
@@ -237,9 +239,9 @@ const HeroSection: React.FC = () => {
           >
             <div className="flex items-center gap-2 mb-2">
               <div className="bg-green-100 text-green-600 p-1 rounded-full"><FaStar size={12} /></div>
-              <span className="font-bold text-sm">Best Choice</span>
+              <span className="font-bold text-sm">{t('best_choice')}</span>
             </div>
-            <p className="text-xs text-slate-500">"The pandit was extremely knowledgeable and the puja felt very divine."</p>
+            <p className="text-xs text-slate-500">"{t('review_quote')}"</p>
           </motion.div>
         </div>
       </div>

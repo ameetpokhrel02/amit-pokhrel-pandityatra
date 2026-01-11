@@ -1,34 +1,50 @@
 from rest_framework import serializers
-from .models import Pandit
-from users.serializers import UserSerializer # Assuming UserSerializer is in users app
+from .models import Pandit, PanditService
+from users.serializers import UserSerializer
+from services.serializers import PujaSerializer
+from services.models import Puja
 
 class PanditSerializer(serializers.ModelSerializer):
-    # 1. READ-ONLY: Inherit User details for display
-    # This embeds the associated user's details (full_name, phone_number, etc.) 
-    # directly into the Pandit profile response, making it easier to read.
     user_details = UserSerializer(source='user', read_only=True)
-
-    # 2. READ/WRITE: We only need the user ID for creation/update
-    # However, since the `user` field is a OneToOneField, it is best managed 
-    # automatically when creating the Pandit profile for the logged-in user.
     
     class Meta:
         model = Pandit
-        # Include all fields from the Pandit model. 
-        # Ensure these fields match your Pandit model definition.
         fields = (
             'id', 
-            'user',        # The OneToOneField to User (often read-only/hidden in this context)
-            'user_details',# The embedded User data
+            'user',
+            'user_details',
             'expertise', 
             'experience_years',
-            'language',      # 🚨 Added
-            'bio',           # 🚨 Added
-            'rating',        # 🚨 Added
-            'is_available',  # 🚨 Added
+            'language',
+            'bio',
+            'rating',
+            'is_available',
             'is_verified', 
+            'verification_status',
+            'certification_file',
             'date_joined'
         )
         read_only_fields = ('id', 'user_details', 'date_joined', 'user') 
-        # Note: We set 'user' as read-only because we will link it automatically 
-        # in the view based on the logged-in user (request.user).
+
+class PanditSimpleSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source='user.full_name', read_only=True)
+    email = serializers.CharField(source='user.email', read_only=True)
+    
+    class Meta:
+        model = Pandit
+        fields = ['id', 'full_name', 'email']
+
+class PanditServiceSerializer(serializers.ModelSerializer):
+    puja_details = PujaSerializer(source='puja', read_only=True)
+    puja_id = serializers.PrimaryKeyRelatedField(
+        queryset=Puja.objects.all(), source='puja', write_only=True
+    )
+
+    class Meta:
+        model = PanditService
+        fields = [
+            'id', 'pandit', 'puja_id', 'puja_details', 
+            'custom_price', 'duration_minutes', 'is_active', 
+            'is_online', 'is_offline'
+        ]
+        read_only_fields = ['id', 'pandit']

@@ -1,171 +1,202 @@
-from rest_framework import viewsets, permissions, status, generics
+from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
-from datetime import timedelta
+from datetime import datetime, timedelta
+from decimal import Decimal # 🚨 ADDED
 
 from .models import Booking, BookingStatus
+
 from .serializers import (
-    BookingCreateSerializer, BookingListSerializer, BookingDetailSerializer,
-    BookingStatusUpdateSerializer, BookingSerializer
+    BookingCreateSerializer,
+    BookingListSerializer,
+    BookingDetailSerializer,
+    BookingSerializer
 )
 from pandits.models import Pandit
-from users.models import User 
+
 
 class BookingViewSet(viewsets.ModelViewSet):
     """
-    Handles CRUD operations for Bookings, restricted by user role.
-    Customers: Create and view their own bookings
-    Pandits: View bookings for them and update status
-    Admin: View all bookings
+    Customers → create & view own bookings
+    Pandits   → manage bookings assigned to them
+    Admin     → full control (view, cancel, refund)
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    # ---------------------------
+    # QUERYSET FILTERING
+    # ---------------------------
     def get_queryset(self):
         user = self.request.user
-        
-        # Superuser/Staff can see all bookings
-        if user.is_superuser or user.is_staff:
-            return Booking.objects.all().select_related('user', 'pandit', 'service')
-        
-        # Pandit role sees bookings made for them
-        elif user.role == 'pandit':
-            return Booking.objects.filter(pandit__user=user).select_related('user', 'pandit', 'service')
-            
-        # Customer ('user') role sees only their own bookings
-        else:
-            return Booking.objects.filter(user=user).select_related('user', 'pandit', 'service')
 
+        # Admin sees everything
+        if user.is_superuser or user.is_staff or user.role == "admin":
+            return Booking.objects.all().select_related("user", "pandit", "service")
+
+        # Pandit sees his bookings
+        if user.role == "pandit":
+            return Booking.objects.filter(pandit__user=user).select_related("user", "pandit", "service")
+
+        # Customer sees own bookings
+        return Booking.objects.filter(user=user).select_related("user", "pandit", "service")
+
+    # ---------------------------
+    # SERIALIZER
+    # ---------------------------
     def get_serializer_class(self):
-        """Choose serializer based on action"""
-        if self.action == 'create':
+        if self.action == "create":
             return BookingCreateSerializer
-        elif self.action == 'list':
+        elif self.action == "list":
             return BookingListSerializer
-        elif self.action in ['retrieve', 'update', 'partial_update']:
+        elif self.action in ["retrieve", "update", "partial_update"]:
             return BookingDetailSerializer
         return BookingSerializer
 
+    # ---------------------------
+    # CREATE BOOKING
+    # ---------------------------
     def perform_create(self, serializer):
-        """Only customers can create a booking"""
-        if self.request.user.role != 'user':
-            raise permissions.PermissionDenied("Only customers can create bookings.")
-        serializer.save(user=self.request.user, status=BookingStatus.PENDING)
+        user = self.request.user
 
-    @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAuthenticated])
+        if user.role != "user":
+            raise permissions.PermissionDenied("Only customers can create bookings.")
+
+        pandit = serializer.validated_data["pandit"]
+
+        # 🚨 Only verified pandits can receive bookings
+        if not pandit.is_verified:
+            raise permissions.PermissionDenied("This Pandit is not verified by admin.")
+
+        serializer.save(user=user, status=BookingStatus.PENDING)
+
+    # ---------------------------
+    # PANDIT UPDATE STATUS
+    # ---------------------------
+    @action(detail=True, methods=["patch"])
     def update_status(self, request, pk=None):
-        """Pandits can accept, complete, or cancel bookings"""
         booking = self.get_object()
         user = request.user
-        
-        # Permission check: Only the assigned pandit can update status
-        if user.role != 'pandit' or booking.pandit.user != user:
+
+        if user.role != "pandit" or booking.pandit.user != user:
+            return Response({"detail": "Not your booking"}, status=403)
+
+        new_status = request.data.get("status")
+
+        valid_transitions = {
+            BookingStatus.PENDING: [BookingStatus.ACCEPTED, BookingStatus.CANCELLED],
+            BookingStatus.ACCEPTED: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+        }
+
+        if new_status not in valid_transitions.get(booking.status, []):
             return Response(
-                {"detail": "Permission denied. You are not the assigned Pandit."}, 
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": f"Invalid status transition from {booking.status} to {new_status}"},
+                status=400
             )
-        
-        # Validate new status
-        new_status = request.data.get('status')
-        if new_status not in [BookingStatus.ACCEPTED, BookingStatus.COMPLETED, BookingStatus.CANCELLED]:
-            return Response(
-                {"detail": "Invalid status value."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # State transition validation
-        current_status = booking.status
-        if current_status == BookingStatus.COMPLETED:
-            return Response(
-                {"detail": "Cannot change status of a completed booking."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        if current_status == BookingStatus.CANCELLED:
-            return Response(
-                {"detail": "Cannot change status of a cancelled booking."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # Update status and timestamp
+
         booking.status = new_status
+
         if new_status == BookingStatus.ACCEPTED:
             booking.accepted_at = timezone.now()
-        elif new_status == BookingStatus.COMPLETED:
+        if new_status == BookingStatus.COMPLETED:
             booking.completed_at = timezone.now()
-        
-        booking.save()
-        serializer = BookingDetailSerializer(booking)
-        return Response(serializer.data)
+            
+            # Credit Pandit earnings (Wallet System)
+            pandit_wallet = booking.pandit.wallet
+            pandit_share = booking.total_fee * Decimal("0.80") # 80% Share
+            
+            pandit_wallet.total_earned += pandit_share
+            pandit_wallet.available_balance += pandit_share
+            pandit_wallet.save()
 
-    @action(detail=True, methods=['patch'], permission_classes=[permissions.IsAuthenticated])
+        booking.save()
+        return Response(BookingDetailSerializer(booking).data)
+
+
+    # ---------------------------
+    # CUSTOMER CANCEL
+    # ---------------------------
+    @action(detail=True, methods=["patch"])
     def cancel(self, request, pk=None):
-        """Allow customers to cancel pending bookings"""
         booking = self.get_object()
         user = request.user
-        
-        # Permission: Only the customer who created the booking can cancel
-        if booking.user != user and user.role != 'admin':
-            return Response(
-                {"detail": "You can only cancel your own bookings."}, 
-                status=status.HTTP_403_FORBIDDEN
-            )
-        
-        # Only pending bookings can be cancelled
+
+        if booking.user != user:
+            return Response({"detail": "You can cancel only your own booking"}, status=403)
+
         if booking.status != BookingStatus.PENDING:
-            return Response(
-                {"detail": f"Cannot cancel a {booking.status} booking."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
+            return Response({"detail": "Only pending bookings can be cancelled"}, status=400)
+
         booking.status = BookingStatus.CANCELLED
+        booking.cancelled_by = "user"
         booking.save()
-        
-        serializer = BookingDetailSerializer(booking)
-        return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+        return Response(BookingDetailSerializer(booking).data)
+
+    # ---------------------------
+    # ADMIN CANCEL + REFUND
+    # ---------------------------
+    @action(detail=True, methods=["post"])
+    def admin_cancel(self, request, pk=None):
+        booking = self.get_object()
+        user = request.user
+
+        if not (user.is_superuser or user.is_staff or user.role == "admin"):
+            return Response({"detail": "Admin only"}, status=403)
+
+        if booking.status in [BookingStatus.CANCELLED, BookingStatus.COMPLETED]:
+            return Response({"detail": "Cannot cancel this booking"}, status=400)
+
+        booking.status = BookingStatus.CANCELLED
+        booking.cancelled_by = "admin"
+        booking.save()
+
+        # 🔔 TODO: Call Stripe/Khalti refund API here
+        # refund_payment(booking)
+
+        return Response({
+            "detail": "Booking cancelled by admin",
+            "booking_id": booking.id,
+            "refund_pending": True
+        })
+
+    # ---------------------------
+    # USER BOOKINGS
+    # ---------------------------
+    @action(detail=False, methods=["get"])
     def my_bookings(self, request):
-        """Get current user's bookings"""
-        bookings = self.get_queryset()
-        serializer = BookingListSerializer(bookings, many=True)
+        serializer = BookingListSerializer(self.get_queryset(), many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
+    # ---------------------------
+    # AVAILABLE SLOTS
+    # ---------------------------
+    @action(detail=False, methods=["get"])
     def available_slots(self, request):
-        """Get available time slots for a pandit on a specific date"""
-        pandit_id = request.query_params.get('pandit_id')
-        booking_date = request.query_params.get('date')
-        
+        pandit_id = request.query_params.get("pandit_id")
+        booking_date = request.query_params.get("date")
+
         if not pandit_id or not booking_date:
-            return Response(
-                {"detail": "pandit_id and date are required."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            pandit = Pandit.objects.get(id=pandit_id)
-        except Pandit.DoesNotExist:
-            return Response(
-                {"detail": "Pandit not found."}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # Get booked time slots for this pandit on the date
-        booked_slots = Booking.objects.filter(
+            return Response({"detail": "pandit_id and date required"}, status=400)
+
+        pandit = Pandit.objects.filter(id=pandit_id, is_verified=True).first()
+        if not pandit:
+            return Response({"detail": "Pandit not found or not verified"}, status=404)
+
+        booked = Booking.objects.filter(
             pandit=pandit,
             booking_date=booking_date,
             status__in=[BookingStatus.PENDING, BookingStatus.ACCEPTED]
-        ).values_list('booking_time', flat=True)
-        
-        # Generate available slots (e.g., every 1 hour from 8 AM to 8 PM)
-        from datetime import time, datetime, timedelta
-        available_slots = []
-        current_time = time(8, 0)  # Start at 8 AM
-        end_time = time(20, 0)  # End at 8 PM
-        
-        while current_time < end_time:
-            if current_time not in booked_slots:
-                available_slots.append(current_time.strftime('%H:%M'))
-            current_time = (datetime.combine(timezone.now().date(), current_time) + timedelta(hours=1)).time()
-        
-        return Response({"available_slots": available_slots})
+        ).values_list("booking_time", flat=True)
+
+        from datetime import time
+        slots = []
+        t = time(8, 0)
+        end = time(20, 0)
+
+        while t < end:
+            if t not in booked:
+                slots.append(t.strftime("%H:%M"))
+            t = (datetime.combine(timezone.now().date(), t) + timedelta(hours=1)).time()
+
+        return Response({"available_slots": slots})

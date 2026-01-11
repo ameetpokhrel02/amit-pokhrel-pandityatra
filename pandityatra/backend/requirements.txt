@@ -29,3 +29,17 @@ openai
 # Video call integration
 
 requests
+
+# For handling CORS
+django-cors-headers 
+
+# For kundali generation
+pyswisseph  
+
+# For handling file uploads
+django-storages
+boto3  # If using AWS S3 for storage
+
+dj-database-url
+
+pillow

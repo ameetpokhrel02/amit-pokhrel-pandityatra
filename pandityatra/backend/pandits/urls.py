@@ -1,28 +1,39 @@
-# In backend/pandits/urls.py
-
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
-    PanditListCreateView, PanditDetailView, 
-    RegisterPanditView, list_pending_pandits, verify_pandit, reject_pandit
+    RegisterPanditView, list_pending_pandits, verify_pandit, reject_pandit, 
+    request_withdrawal, get_pandit_wallet, get_pandit_withdrawals,
+    PanditServiceViewSet, PujaCatalogView,
+    pandit_dashboard_stats, toggle_availability
 )
-# 🚨 ENSURE THIS IMPORT IS CORRECT AND COMPLETE 🚨
-from services.views import PanditPujaListView, PanditPujaDetailView 
+from .admin_views import approve_withdrawal, list_withdrawals, admin_pandit_earnings
+
+router = DefaultRouter()
+router.register(r'my-services', PanditServiceViewSet, basename='pandit-services')
 
 urlpatterns = [
-    # Pandit Registration & Verification
-    path('register/', RegisterPanditView.as_view(), name='pandit-register'),
-    path('pending/', list_pending_pandits, name='list-pending-pandits'),
-    path('<int:pandit_id>/verify/', verify_pandit, name='verify-pandit'),
-    path('<int:pandit_id>/reject/', reject_pandit, name='reject-pandit'),
+    # Router for services management
+    path('', include(router.urls)),
+
+    # Dashboard Stats
+    path('dashboard/stats/', pandit_dashboard_stats),
+    path('dashboard/toggle-availability/', toggle_availability),
     
-    # Pandit Profile CRUD
-    path('', PanditListCreateView.as_view(), name='pandit-list-create'),
-    path('<int:pk>/', PanditDetailView.as_view(), name='pandit-detail'),
-    
-    # Nested Services: List & Create
-    path('<int:pandit_pk>/services/', PanditPujaListView.as_view(), name='pandit-services-list'),
-    
-    # Nested Services: Retrieve, Update, Destroy
-    # 🚨 CONFIRM THIS PATH IS PRESENT AND CORRECT 🚨
-    path('<int:pandit_pk>/services/<int:pk>/', PanditPujaDetailView.as_view(), name='pandit-services-detail'),
+    # Info / Catalog
+    path('services/catalog/', PujaCatalogView.as_view(), name='puja-catalog'),
+
+    # Pandit Public/User
+    path("register/", RegisterPanditView.as_view()),
+    # Pandit Financials
+    path("wallet/", get_pandit_wallet),
+    path("withdrawals/", get_pandit_withdrawals),
+    path("withdrawal/request/", request_withdrawal),
+
+    # Admin
+    path("admin/pending/", list_pending_pandits),
+    path("admin/verify/<int:pandit_id>/", verify_pandit),
+    path("admin/reject/<int:pandit_id>/", reject_pandit),
+    path("admin/withdrawals/", list_withdrawals),
+    path("admin/withdrawals/<int:withdrawal_id>/approve/", approve_withdrawal),
+    path("admin/earnings/<int:pandit_id>/", admin_pandit_earnings),
 ]

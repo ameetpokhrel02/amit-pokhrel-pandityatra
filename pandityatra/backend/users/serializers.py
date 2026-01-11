@@ -145,3 +145,10 @@ class UserSerializer(serializers.ModelSerializer):
             'date_joined'
         )
         read_only_fields = fields
+# 🚨 ADMIN: Platform Settings
+from .models import PlatformSetting
+
+class PlatformSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlatformSetting
+        fields = '__all__'

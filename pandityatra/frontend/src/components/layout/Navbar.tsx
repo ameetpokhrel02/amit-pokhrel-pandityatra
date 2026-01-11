@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +37,7 @@ import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, Book
 import LanguageSelector from './LanguageSelector';
 
 const Navbar: React.FC = () => {
+  const { t } = useTranslation();
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,9 +67,9 @@ const Navbar: React.FC = () => {
 
   // Common Navigation Items
   const navItems = [
-    { name: 'Home', path: '/', icon: <Home className="w-4 h-4" /> },
+    { name: t('home'), path: '/', icon: <Home className="w-4 h-4" /> },
     { name: 'Offline Kundali', path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
-    { name: 'Shop', path: '/shop/samagri', icon: <ShoppingBagIcon /> },
+    { name: t('shop'), path: '/shop/samagri', icon: <ShoppingBagIcon /> },
   ];
 
   // Logout Confirmation Dialog Component
@@ -160,7 +162,7 @@ const Navbar: React.FC = () => {
             ))}
 
             <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
-              <Link to="/booking">Find Pandit</Link>
+              <Link to="/booking">{t('find_pandit')}</Link>
             </Button>
 
             <LanguageSelector />
@@ -204,11 +206,11 @@ const Navbar: React.FC = () => {
 
                   <DropdownMenuSeparator className="bg-orange-100" />
 
-                  {user.role === 'pandit' && (
+                   {user.role === 'pandit' && (
                     <>
                       <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
                         <Link to="/pandit/dashboard" className="cursor-pointer gap-2">
-                          <LayoutDashboard className="w-4 h-4" /> Dashboard
+                          <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
@@ -235,7 +237,7 @@ const Navbar: React.FC = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
                     <Link to="/profile" className="cursor-pointer gap-2">
-                      <User className="w-4 h-4" /> Profile
+                      <User className="w-4 h-4" /> {t('profile')}
                     </Link>
                   </DropdownMenuItem>
 
@@ -245,17 +247,17 @@ const Navbar: React.FC = () => {
                     onClick={() => setLogoutDialogOpen(true)}
                     className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer gap-2"
                   >
-                    <LogOut className="w-4 h-4" /> Logout
+                    <LogOut className="w-4 h-4" /> {t('logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center gap-2">
                 <Button variant="ghost" asChild className="hover:text-orange-600 hover:bg-orange-50">
-                  <Link to="/login">Login</Link>
+                  <Link to="/login">{t('login')}</Link>
                 </Button>
                 <Button asChild className="bg-gray-900 text-white hover:bg-gray-800 rounded-lg">
-                  <Link to="/register">Sign Up</Link>
+                  <Link to="/register">{t('signup')}</Link>
                 </Button>
               </div>
             )}
