@@ -74,8 +74,18 @@ services:
     depends_on:
       db:
         condition: service_healthy
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    restart: always
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
 
 volumes:
   postgres_data:
   pgadmin_data:
   redis_data:
+  ollama_data:
+ 
