@@ -6,7 +6,6 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from .models import ChatRoom, Message, ChatMessage
 from .serializers import ChatRoomSerializer, MessageSerializer
-import openai
 import os
 from django.conf import settings
 
