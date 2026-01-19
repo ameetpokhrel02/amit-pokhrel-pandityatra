@@ -3,6 +3,7 @@ from .models import Pandit, PanditService
 from users.serializers import UserSerializer
 from services.serializers import PujaSerializer
 from services.models import Puja
+from reviews.serializers import ReviewSerializer
 
 class PanditSerializer(serializers.ModelSerializer):
     user_details = UserSerializer(source='user', read_only=True)
@@ -48,3 +49,19 @@ class PanditServiceSerializer(serializers.ModelSerializer):
             'is_online', 'is_offline'
         ]
         read_only_fields = ['id', 'pandit']
+
+class PanditDetailSerializer(PanditSerializer):
+    # Alias fields to match requested JSON structure
+    user = UserSerializer(read_only=True) # Overrides 'user' PK field from base class
+    services = PanditServiceSerializer(many=True, read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+    
+    # Aliases
+    average_rating = serializers.DecimalField(source='rating', max_digits=3, decimal_places=2, read_only=True)
+    total_reviews = serializers.IntegerField(source='reviews.count', read_only=True)
+
+    class Meta(PanditSerializer.Meta):
+        fields = (
+            'id', 'user', 'bio', 'expertise', 'language', 'experience_years', 
+            'is_verified', 'services', 'average_rating', 'total_reviews', 'reviews'
+        )

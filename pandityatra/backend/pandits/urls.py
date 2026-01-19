@@ -4,12 +4,14 @@ from .views import (
     RegisterPanditView, list_pending_pandits, verify_pandit, reject_pandit, 
     request_withdrawal, get_pandit_wallet, get_pandit_withdrawals,
     PanditServiceViewSet, PujaCatalogView,
-    pandit_dashboard_stats, toggle_availability
+    pandit_dashboard_stats, toggle_availability,
+    PanditViewSet
 )
 from .admin_views import approve_withdrawal, list_withdrawals, admin_pandit_earnings
 
 router = DefaultRouter()
 router.register(r'my-services', PanditServiceViewSet, basename='pandit-services')
+router.register(r'', PanditViewSet, basename='pandits')
 
 urlpatterns = [
     # Router for services management

@@ -58,6 +58,30 @@ export interface Pandit {
     verification_status: string;
     certification_file?: string;
     date_joined: string;
+    // New Aggregated Fields
+    services?: PanditService[];
+    reviews?: PanditReview[];
+    review_count?: number;
+}
+
+export interface PanditService {
+    id: number;
+    pandit: number;
+    puja_details: Puja;
+    custom_price: string; // Decimal string from backend
+    duration_minutes: number;
+    is_active: boolean;
+    is_online: boolean;
+    is_offline: boolean;
+}
+
+export interface PanditReview {
+    id: number;
+    customer_name: string;
+    customer_avatar: string | null;
+    rating: number;
+    comment: string;
+    created_at: string;
 }
 
 export async function fetchPandits(): Promise<Pandit[]> {
@@ -160,7 +184,7 @@ export async function updateBookingStatus(id: number, status: string) {
 
 export async function adminCancelBooking(id: number) {
     // Calls the specialized admin view that handles refunds
-    const response = await apiClient.post(`/admin/refund-cancel/${id}/`);
+    const response = await apiClient.post(`/bookings/${id}/admin_cancel/`);
     return response.data;
 }
 

@@ -147,17 +147,27 @@ class BookingViewSet(viewsets.ModelViewSet):
         if booking.status in [BookingStatus.CANCELLED, BookingStatus.COMPLETED]:
             return Response({"detail": "Cannot cancel this booking"}, status=400)
 
+        # 🔔 Refund Logic (Ported from admin_views.py)
+        refund_successful = False
+        if booking.payment_status and booking.transaction_id:
+            from payments.utils import refund_stripe, refund_khalti
+            
+            if booking.payment_method == "STRIPE":
+                refund_successful = refund_stripe(booking.transaction_id)
+            elif booking.payment_method == "KHALTI":
+                refund_successful = refund_khalti(booking.transaction_id)
+                
+            if not refund_successful:
+                 return Response({"detail": "Refund failed at gateway. Cancellation aborted."}, status=400)
+
         booking.status = BookingStatus.CANCELLED
         booking.cancelled_by = "admin"
         booking.save()
 
-        # 🔔 TODO: Call Stripe/Khalti refund API here
-        # refund_payment(booking)
-
         return Response({
-            "detail": "Booking cancelled by admin",
+            "detail": "Booking cancelled and refunded by admin",
             "booking_id": booking.id,
-            "refund_pending": True
+            "refund_processed": refund_successful
         })
 
     # ---------------------------

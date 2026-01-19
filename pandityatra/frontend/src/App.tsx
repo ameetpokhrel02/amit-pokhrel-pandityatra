@@ -26,9 +26,11 @@ import OTPVerification from './pages/auth/otp-verification/OTPVerification'
 import ChangePassword from './pages/auth/change-password/ChangePassword'
 
 // Booking
+// Booking
 import { PanditList } from './pages/Booking/PanditList'
-import PanditProfile from './pages/Booking/PanditProfile'
+import PanditProfile from './pages/find-pandit/PanditProfile'
 import BookingForm from './pages/Booking/BookingForm'
+import ReviewForm from './pages/Booking/ReviewForm'
 import MyBookingsPage from './pages/Booking/MyBookings'
 
 // Dashboards (NEW STRUCTURE)
@@ -113,6 +115,12 @@ function App() {
               <Route path="/booking" element={
                 <ProtectedRoute allowedRoles={['user']}>
                   <BookingForm />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/booking/:id/review" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <ReviewForm />
                 </ProtectedRoute>
               } />
 
@@ -206,12 +214,12 @@ function App() {
 
               {/* 💬 Chat */}
               <Route path="/chat" element={
-                <ProtectedRoute allowedRoles={['user','pandit']}>
+                <ProtectedRoute allowedRoles={['user', 'pandit']}>
                   <ChatList />
                 </ProtectedRoute>
               } />
               <Route path="/chat/:roomId" element={
-                <ProtectedRoute allowedRoles={['user','pandit']}>
+                <ProtectedRoute allowedRoles={['user', 'pandit']}>
                   <ChatRoom roomId={0} />
                 </ProtectedRoute>
               } />

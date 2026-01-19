@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions, status, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
@@ -7,7 +7,7 @@ from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
 from .models import Pandit, PanditService
-from .serializers import PanditSerializer, PanditServiceSerializer
+from .serializers import PanditSerializer, PanditServiceSerializer, PanditDetailSerializer
 from .pandit_serializers import PanditRegistrationSerializer
 from payments.models import PanditWithdrawal
 from services.models import Puja
@@ -332,3 +332,41 @@ def toggle_availability(request):
     pandit.save()
     
     return Response({"is_available": pandit.is_available})
+
+
+# ---------------------------
+# PUBLIC: Search & Profile
+# ---------------------------
+class PanditViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Public API to list and retrieve Pandits.
+    Optimized for the profile page.
+    """
+    queryset = Pandit.objects.filter(
+        verification_status='APPROVED', 
+        is_verified=True,
+        is_available=True
+    ).select_related('user').prefetch_related(
+        'services', 'services__puja', 'reviews', 'reviews__customer'
+    ).order_by('-rating')
+    
+    permission_classes = [permissions.AllowAny]
+
+    @api_view(['GET'])
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'])
+    def profile(self, request, pk=None):
+        """
+        Custom endpoint: GET /api/pandits/:id/profile/
+        Returns the detailed profile structure.
+        """
+        pandit = self.get_object()
+        serializer = PanditDetailSerializer(pandit)
+        return Response(serializer.data)
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'profile']:
+            return PanditDetailSerializer
+        return PanditSerializer

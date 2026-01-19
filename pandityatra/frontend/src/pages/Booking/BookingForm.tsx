@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -43,14 +43,19 @@ interface BookingFormProps {
 
 const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookingSuccess }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as { panditId?: number; serviceId?: number; serviceName?: string; price?: string } | null;
+
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
+  // State for custom price if passed from service card
+  const [customPrice, setCustomPrice] = useState<number | null>(state?.price ? parseFloat(state.price) : null);
 
   const [formData, setFormData] = useState({
-    pandit: panditId || '',
-    service: serviceId || '',
+    pandit: panditId || state?.panditId || '',
+    service: serviceId || state?.serviceId || '',
     booking_date: '',
     booking_time: '',
     service_location: 'ONLINE',
@@ -130,7 +135,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   const calculateFees = () => {
     const selectedService = services.find(s => s.id === Number(formData.service));
-    const serviceFee = selectedService?.price || 0;
+    // Use customPrice if available (from PanditProfile), otherwise fallback to service base price
+    const serviceFee = customPrice !== null ? customPrice : (selectedService?.price || 0);
     const sammagriFee = formData.samagri_required ? 500 : 0;
     return { serviceFee, sammagriFee, total: serviceFee + sammagriFee };
   };

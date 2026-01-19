@@ -33,3 +33,23 @@ class PaymentWebhookAdmin(admin.ModelAdmin):
     list_display = ['id', 'payment_method', 'processed', 'created_at']
     list_filter = ['payment_method', 'processed', 'created_at']
     readonly_fields = ['created_at']
+
+from .models import PanditWithdrawal
+
+@admin.register(PanditWithdrawal)
+class PanditWithdrawalAdmin(admin.ModelAdmin):
+    list_display = ('pandit', 'amount', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    actions = ['approve_withdrawal', 'reject_withdrawal']
+
+    @admin.action(description='Approve Withdrawal')
+    def approve_withdrawal(self, request, queryset):
+        # Add logic to actually process bank transfer here (manual or auto)
+        queryset.update(status='APPROVED')
+        self.message_user(request, "Withdrawals approved.")
+
+    @admin.action(description='Reject Withdrawal')
+    def reject_withdrawal(self, request, queryset):
+        queryset.update(status='REJECTED')
+        # Logic to refund money back to wallet would go here
+        self.message_user(request, "Withdrawals rejected.")

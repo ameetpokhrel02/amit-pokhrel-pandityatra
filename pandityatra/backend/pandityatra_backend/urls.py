@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/kundali/', include('kundali.urls')),
     path('api/chat/', include('chat.urls')),  # Chat endpoints
     path('api/payments/', include('payments.urls')),  # Payment endpoints
+    path('api/reviews/', include('reviews.urls')), # Review endpoints
 
     # Video call endpoints
     path('api/video/', include('video.urls')),
