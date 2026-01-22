@@ -1,39 +1,20 @@
-Django
-djangorestframework
-djangorestframework-simplejwt
+asgiref==3.8.1
+Django==5.1.2
+django-cors-headers==4.5.0
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+gunicorn==23.0.0
+Pillow==11.0.0
+psycopg2-binary==2.9.9
+PyJWT==2.9.0
+python-dotenv==1.0.1
+pytz==2024.2
+sqlparse==0.5.1
+stripe==10.12.0
+whitenoise==6.7.0
+requests==2.32.3
+openai==1.54.0
 
-# Database
-psycopg2-binary
-dj-database-url
-
-# Environment variables
-python-dotenv
-
-# CORS
-django-cors-headers
-
-# WebSockets (Chat + Video signaling)
-channels
-daphne
-channels-redis
-redis
-
-# Timezone
-pytz
-
-# Payments
-stripe
-requests
-
-# Kundali / Astrology
-pyswisseph
-
-# File uploads (Pandit certificates, profile photos)
-pillow
-
-# Filtering & admin queries
-django-filter
-
-# Production server
-gunicorn
-whitenoise
+# Auth
+dj-rest-auth==2.2.8
+django-allauth==0.58.2

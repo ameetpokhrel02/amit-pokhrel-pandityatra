@@ -31,7 +31,7 @@ import { PanditList } from './pages/Booking/PanditList'
 import PanditProfile from './pages/find-pandit/PanditProfile'
 import BookingForm from './pages/Booking/BookingForm'
 import ReviewForm from './pages/Booking/ReviewForm'
-import MyBookingsPage from './pages/Booking/MyBookings'
+import MyBookingsPage from './pages/customer/MyBookings'
 
 // Dashboards (NEW STRUCTURE)
 import CustomerDashboard from './pages/customer/CustomerDashboard'

@@ -20,6 +20,7 @@ type AuthContextValue = {
   register: (payload: api.RegisterPayload) => Promise<any>;
   resetPassword: (phone: string, otp: string, newPw: string) => Promise<any>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -45,9 +46,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setRole(null);
         })
+        .catch(() => {
+          setUser(null);
+          setRole(null);
+        })
         .finally(() => setLoading(false));
     }
   }, [token]);
+
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const u = await api.fetchProfile();
+      setUser(u);
+      if (u.role) setRole(u.role);
+    } catch (error) {
+      console.error("Failed to refresh user", error);
+    }
+  };
 
   const requestOtp = async (identifier: string) => {
     // Check if identifier looks like an email using simple regex or passed structure
@@ -165,7 +181,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       passwordLogin,
       register,
       resetPassword,
-      logout
+      logout,
+      refreshUser
     }}>
       {children}
     </AuthContext.Provider>

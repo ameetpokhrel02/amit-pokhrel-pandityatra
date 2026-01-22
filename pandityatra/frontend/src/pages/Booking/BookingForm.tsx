@@ -49,6 +49,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [samagriRequirements, setSamagriRequirements] = useState<any[]>([]);
 
   // State for custom price if passed from service card
   const [customPrice, setCustomPrice] = useState<number | null>(state?.price ? parseFloat(state.price) : null);
@@ -87,6 +88,12 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     }
   }, [formData.pandit, formData.booking_date]);
 
+  useEffect(() => {
+    if (formData.service) {
+      fetchRequirements(Number(formData.service));
+    }
+  }, [formData.service]);
+
   const fetchPandits = async () => {
     try {
       const response = await apiClient.get('/pandits/', {
@@ -108,6 +115,17 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     } catch (err) {
       console.error('Failed to fetch services:', err);
       setError('Failed to load services');
+    }
+  };
+
+  const fetchRequirements = async (serviceId: number) => {
+    try {
+      const response = await apiClient.get('/samagri/requirements/', {
+        params: { puja: serviceId }
+      });
+      setSamagriRequirements(response.data.results || response.data);
+    } catch (err) {
+      console.error("Failed to load samagri requirements", err);
     }
   };
 
@@ -360,15 +378,38 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             </div>
 
             {/* Samagri Checkbox */}
-            <div className="flex items-center space-x-2 bg-orange-50 p-4 rounded-lg">
-              <Checkbox
-                id="samagri_required"
-                checked={formData.samagri_required}
-                onCheckedChange={(checked) => handleInputChange('samagri_required', checked)}
-              />
-              <Label htmlFor="samagri_required" className="text-sm cursor-pointer">
-                Include Samagri (Puja Materials) - ₹500
-              </Label>
+            {/* Samagri & Requirements */}
+            <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="samagri"
+                  checked={formData.samagri_required}
+                  onCheckedChange={(checked) => handleInputChange('samagri_required', checked)}
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <Label htmlFor="samagri" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                    Include Samagri Kit (+₹500)
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    We will arrange all necessary items for the puja.
+                  </p>
+                </div>
+              </div>
+
+              {/* 🍂 Samagri List (Story Gap Fill) */}
+              {formData.samagri_required && samagriRequirements.length > 0 && (
+                <div className="mt-3 pl-6 border-l-2 border-orange-200">
+                  <p className="text-xs font-semibold text-orange-800 mb-2">Recommended Items Included:</p>
+                  <ul className="grid grid-cols-2 gap-2">
+                    {samagriRequirements.map((req: any) => (
+                      <li key={req.id} className="text-xs text-gray-700 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-orange-400 rounded-full inline-block"></span>
+                        {req.samagri_item.name} ({req.quantity} {req.unit})
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
 
             {/* Notes */}

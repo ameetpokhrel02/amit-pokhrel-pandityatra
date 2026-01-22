@@ -64,7 +64,7 @@ export default function PanditServices() {
     const [availablePujas, setAvailablePujas] = useState<Puja[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddOpen, setIsAddOpen] = useState(false);
-    
+
     // Form State
     const [selectedPujaId, setSelectedPujaId] = useState<string>("");
     const [price, setPrice] = useState("");
@@ -111,20 +111,76 @@ export default function PanditServices() {
                 is_offline: isOffline,
                 is_active: true
             });
-            
+
             toast({ title: "Success", description: "Service added successfully" });
             setIsAddOpen(false);
             fetchData(); // Refresh
-            
+
             // Reset form
             setSelectedPujaId("");
             setPrice("");
             setDuration("");
         } catch (error: any) {
-            toast({ 
-                title: "Error", 
-                description: error.response?.data?.detail || "Failed to add service", 
-                variant: "destructive" 
+            toast({
+                title: "Error",
+                description: error.response?.data?.detail || "Failed to add service",
+                variant: "destructive"
+            });
+        }
+    };
+
+    // Edit State
+    const [editServiceId, setEditServiceId] = useState<number | null>(null);
+
+    const handleEdit = (service: PanditService) => {
+        setEditServiceId(service.id);
+        setSelectedPujaId(service.puja_details.id.toString());
+        setPrice(service.custom_price);
+        setDuration(service.duration_minutes.toString());
+        setIsOnline(service.is_online);
+        setIsOffline(service.is_offline);
+        setIsAddOpen(true);
+    };
+
+    const handleSaveService = async () => {
+        if (!selectedPujaId || !price || !duration) {
+            toast({ title: "Error", description: "All fields are required", variant: "destructive" });
+            return;
+        }
+
+        try {
+            const payload = {
+                puja_id: selectedPujaId,
+                custom_price: price,
+                duration_minutes: duration,
+                is_online: isOnline,
+                is_offline: isOffline,
+                is_active: true
+            };
+
+            if (editServiceId) {
+                // Update existing
+                await apiClient.patch(`/pandits/my-services/${editServiceId}/`, payload);
+                toast({ title: "Success", description: "Service updated successfully" });
+            } else {
+                // Create new
+                await apiClient.post("/pandits/my-services/", payload);
+                toast({ title: "Success", description: "Service added successfully" });
+            }
+
+            setIsAddOpen(false);
+            setEditServiceId(null);
+            fetchData(); // Refresh
+
+            // Reset form
+            setSelectedPujaId("");
+            setPrice("");
+            setDuration("");
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.response?.data?.detail || "Failed to save service",
+                variant: "destructive"
             });
         }
     };
@@ -150,6 +206,16 @@ export default function PanditServices() {
         }
     };
 
+    const handleDialogClose = (open: boolean) => {
+        setIsAddOpen(open);
+        if (!open) {
+            setEditServiceId(null);
+            setSelectedPujaId("");
+            setPrice("");
+            setDuration("");
+        }
+    };
+
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
 
     return (
@@ -160,19 +226,25 @@ export default function PanditServices() {
                         <h1 className="text-3xl font-bold tracking-tight">My Services</h1>
                         <p className="text-muted-foreground">Manage the Pujas you offer and your pricing.</p>
                     </div>
-                    <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <Dialog open={isAddOpen} onOpenChange={handleDialogClose}>
                         <DialogTrigger asChild>
                             <Button><Plus className="mr-2 h-4 w-4" /> Add Service</Button>
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>Add New Service</DialogTitle>
-                                <DialogDescription>Select a Puja from the catalog to offer.</DialogDescription>
+                                <DialogTitle>{editServiceId ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+                                <DialogDescription>
+                                    {editServiceId ? 'Update your service details.' : 'Select a Puja from the catalog to offer.'}
+                                </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 py-4">
                                 <div className="space-y-2">
                                     <Label>Puja Type</Label>
-                                    <Select value={selectedPujaId} onValueChange={onPujaSelect}>
+                                    <Select
+                                        value={selectedPujaId}
+                                        onValueChange={onPujaSelect}
+                                        disabled={!!editServiceId} // Disable changing puja type on edit
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select Puja" />
                                         </SelectTrigger>
@@ -185,40 +257,40 @@ export default function PanditServices() {
                                         </SelectContent>
                                     </Select>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label>Your Price (₹)</Label>
-                                        <Input 
-                                            type="number" 
-                                            value={price} 
-                                            onChange={e => setPrice(e.target.value)} 
+                                        <Input
+                                            type="number"
+                                            value={price}
+                                            onChange={e => setPrice(e.target.value)}
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Duration (Minutes)</Label>
-                                        <Input 
-                                            type="number" 
-                                            value={duration} 
-                                            onChange={e => setDuration(e.target.value)} 
+                                        <Input
+                                            type="number"
+                                            value={duration}
+                                            onChange={e => setDuration(e.target.value)}
                                         />
                                     </div>
                                 </div>
 
                                 <div className="flex items-center space-x-4">
                                     <div className="flex items-center space-x-2">
-                                        <Switch checked={isOnline} onCheckedChange={setIsOnline} id="online-mode"/>
+                                        <Switch checked={isOnline} onCheckedChange={setIsOnline} id="online-mode" />
                                         <Label htmlFor="online-mode">Online</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Switch checked={isOffline} onCheckedChange={setIsOffline} id="offline-mode"/>
+                                        <Switch checked={isOffline} onCheckedChange={setIsOffline} id="offline-mode" />
                                         <Label htmlFor="offline-mode">In-Person</Label>
                                     </div>
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
-                                <Button onClick={handleAddService}>Save Service</Button>
+                                <Button variant="outline" onClick={() => handleDialogClose(false)}>Cancel</Button>
+                                <Button onClick={handleSaveService}>{editServiceId ? 'Update Service' : 'Save Service'}</Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -273,9 +345,14 @@ export default function PanditServices() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(service.id)}>
-                                                    <Trash2 className="h-4 w-4 text-red-500" />
-                                                </Button>
+                                                <div className="flex justify-end gap-2">
+                                                    <Button variant="outline" size="sm" onClick={() => handleEdit(service)}>
+                                                        Edit
+                                                    </Button>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(service.id)}>
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
