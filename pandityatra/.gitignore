@@ -29,12 +29,6 @@ db.sqlite3-journal
 backend/staticfiles/
 backend/media/
 # Ignore backend apps (temporarily)
-pandityatra/backend/bookings/
-pandityatra/backend/kundali/
-pandityatra/backend/pandits/
-pandityatra/backend/payments/
-pandityatra/backend/samagri/
-pandityatra/backend/services/
 
 
 # If using logs
@@ -74,4 +68,4 @@ postgres_data/
 # ===============================
 .DS_Store
 Thumbs.db
-docs/
+docs
