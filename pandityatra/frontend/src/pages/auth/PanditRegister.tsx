@@ -141,11 +141,11 @@ const PanditRegisterPage: React.FC = () => {
     <AuthLayout title="Register as Pandit" subtitle="Share your expertise with seekers">
       <form onSubmit={handleRegister} className="space-y-4">
         {/* Full Name */}
-        <div className="space-y-1">
-          <Label htmlFor="full_name">Full Name *</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              <FaUser className="w-5 h-5" />
+        <div className="space-y-2">
+          <Label htmlFor="full_name" className="text-gray-600 font-semibold px-1">Full Name *</Label>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+              <FaUser className="w-4 h-4" />
             </span>
             <Input
               id="full_name"
@@ -153,37 +153,18 @@ const PanditRegisterPage: React.FC = () => {
               value={formData.full_name}
               onChange={handleInputChange}
               placeholder="Your full name"
-              className="h-10 rounded-lg bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
-              required
-            />
-          </div>
-        </div>
-
-        {/* Phone Number */}
-        <div className="space-y-1">
-          <Label htmlFor="phone_number">Phone Number *</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              <FaPhone className="w-5 h-5" />
-            </span>
-            <Input
-              id="phone_number"
-              name="phone_number"
-              value={formData.phone_number}
-              onChange={handleInputChange}
-              placeholder="9841234567"
-              className="h-10 rounded-lg bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
               required
             />
           </div>
         </div>
 
         {/* Email */}
-        <div className="space-y-1">
-          <Label htmlFor="email">Email (Optional)</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-              <FaEnvelope className="w-5 h-5" />
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+              <FaEnvelope className="w-4 h-4" />
             </span>
             <Input
               id="email"
@@ -192,16 +173,35 @@ const PanditRegisterPage: React.FC = () => {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="your@email.com"
-              className="h-10 rounded-lg bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Phone Number */}
+        <div className="space-y-2">
+          <Label htmlFor="phone_number" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+              <FaPhone className="w-4 h-4" />
+            </span>
+            <Input
+              id="phone_number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleInputChange}
+              placeholder="9841234567"
+              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
             />
           </div>
         </div>
 
         {/* Password */}
-        <div className="space-y-1">
-          <Label htmlFor="password">Password *</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password *</Label>
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
             </span>
             <Input
@@ -211,14 +211,14 @@ const PanditRegisterPage: React.FC = () => {
               value={formData.password}
               onChange={handleInputChange}
               placeholder="Create a strong password"
-              className="h-10 rounded-lg bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10 pr-10"
+              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
               required
               minLength={6}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
             >
               {showPassword ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" x2="23" y1="1" y2="23" /></svg>
@@ -227,7 +227,7 @@ const PanditRegisterPage: React.FC = () => {
               )}
             </button>
           </div>
-          <p className="text-xs text-gray-500">Minimum 6 characters</p>
+          <p className="text-xs text-gray-500 px-1">Minimum 6 characters</p>
         </div>
 
         {/* Expertise */}
@@ -365,12 +365,12 @@ const PanditRegisterPage: React.FC = () => {
         <Button
           type="submit"
           disabled={loading || !fileSelected}
-          className="w-full h-11 text-base rounded-lg bg-orange-600 hover:bg-orange-700"
+          className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none mt-6"
         >
           {loading ? (
-            <LoadingSpinner size={20} className="text-white" />
+            <LoadingSpinner size={24} className="text-white" />
           ) : (
-            'Submit for Verification'
+            'Apply for Verification'
           )}
         </Button>
 

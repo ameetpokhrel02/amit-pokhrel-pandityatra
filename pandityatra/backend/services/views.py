@@ -77,7 +77,7 @@ class PanditPujaListView(generics.ListCreateAPIView):
         except Pandit.DoesNotExist:
             raise NotFound(detail="Pandit not found.")
         
-        return Puja.objects.filter(pandit=pandit)
+        return Puja.objects.filter(pandit_offerings__pandit=pandit)
 
     def perform_create(self, serializer):
         pandit_pk = self.kwargs.get('pandit_pk')

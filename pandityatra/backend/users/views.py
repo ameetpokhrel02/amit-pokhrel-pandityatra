@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view, permission_classes # 🚨 Fix: I
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
-from .models import User
+from .models import User, PlatformSetting
 # 🚨 UPDATED IMPORT: Include UserSerializer and PasswordLoginSerializer
 from .serializers import (
     UserRegisterSerializer, PhoneTokenSerializer, UserSerializer, PasswordLoginSerializer,
@@ -23,11 +23,11 @@ class RegisterUserView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             
-            phone_number = user.phone_number
-            send_local_otp(phone_number) 
+            email = user.email
+            send_local_otp(email=email) 
             
             return Response(
-                {"detail": "User registered. OTP sent for verification."},
+                {"detail": "User registered. OTP sent to your email for verification."},
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -461,3 +461,26 @@ def admin_platform_settings(request):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+
+class ContactView(APIView):
+    """
+    Handles Contact Form submissions.
+    """
+    def post(self, request):
+        name = request.data.get('name')
+        email = request.data.get('email')
+        subject = request.data.get('subject', 'New Contact Form Submission')
+        message = request.data.get('message')
+
+        if not name or not email or not message:
+            return Response(
+                {"detail": "Name, Email, and Message are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Prepare for email sending (Logic can be added later in settings/SMTP)
+        return Response(
+            {"detail": "Thank you for reaching out! We will get back to you soon."},
+            status=status.HTTP_200_OK
+        )

@@ -12,8 +12,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, MapPin, Clock, DollarSign } from 'lucide-react';
+import { Loader2, MapPin, Clock, DollarSign, Sparkles, Bot, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
 import { useLocation as useGeoLocation } from '@/hooks/useLocation';
@@ -77,8 +78,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   // Fetch pandits
   useEffect(() => {
-    fetchPandits();
-  }, []);
+    fetchPandits(state?.serviceId);
+  }, [state?.serviceId]);
 
   // Fetch services when pandit changes
   useEffect(() => {
@@ -100,12 +101,21 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     }
   }, [formData.service]);
 
-  const fetchPandits = async () => {
+  const fetchPandits = async (serviceId?: number) => {
     try {
       const response = await apiClient.get('/pandits/', {
-        params: { is_verified: true }
+        params: {
+          is_verified: true,
+          service_id: serviceId
+        }
       });
-      setPandits(response.data.results || response.data);
+      const data = response.data.results || response.data;
+      setPandits(data);
+
+      // Auto-select pandit if only one is available for this service
+      if (serviceId && data.length === 1 && !formData.pandit) {
+        handleInputChange('pandit', data[0].id);
+      }
     } catch (err) {
       console.error('Failed to fetch pandits:', err);
       setError('Failed to load pandits');
@@ -245,7 +255,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto p-4"
+      className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8"
     >
       <Card>
         <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50">
@@ -427,28 +437,63 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                 </div>
               </div>
 
-              {/* 🍂 Samagri List (Story Gap Fill) */}
+              {/* AI Samagri Suggestions */}
               {formData.samagri_required && samagriRequirements.length > 0 && (
-                <div className="mt-3 pl-6 border-l-2 border-orange-200">
-                  <p className="text-xs font-semibold text-orange-800 mb-2">Recommended Items Included:</p>
-                  <ul className="grid grid-cols-2 gap-2">
+                <div className="mt-4 space-y-3 bg-white/50 p-4 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Sparkles className="w-12 h-12 text-orange-500" />
+                  </div>
+
+                  <div className="flex items-center justify-between relative z-10">
+                    <p className="text-sm font-bold text-orange-900 flex items-center gap-2">
+                      <Bot className="w-4 h-4 text-orange-600" />
+                      AI Recommended Samagri
+                    </p>
+                    <Badge variant="outline" className="bg-orange-100/50 text-orange-700 border-orange-200">
+                      Smart Selection
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 relative z-10">
                     {samagriRequirements.map((req: any) => (
-                      <li key={req.id} className="text-xs text-gray-700 flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 bg-orange-400 rounded-full inline-block"></span>
-                        {req.samagri_item.name} ({req.quantity} {req.unit})
-                      </li>
+                      <div key={req.id} className="flex items-center justify-between bg-white p-2 rounded-lg border border-orange-50 hover:border-orange-200 transition-colors shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span className="text-orange-600 font-bold text-xs">{req.samagri_item.name?.charAt(0)}</span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-gray-800">{req.samagri_item.name}</p>
+                            <p className="text-[10px] text-gray-500">{req.quantity} {req.unit} • ₹{req.samagri_item.price}</p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Logic to "Remove" from this specific list ( Anita's "I have it" logic)
+                            setSamagriRequirements(prev => prev.filter(r => r.id !== req.id));
+                          }}
+                          className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                          title="I have this item"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="default"
                     size="sm"
                     onClick={handleAddAllToCart}
-                    className="mt-3 w-full border-orange-200 text-orange-700 hover:bg-orange-100 h-8 text-xs"
+                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold h-10 shadow-lg shadow-orange-200 mt-2 flex items-center justify-center gap-2 group"
                   >
-                    <ShoppingCart className="w-3 h-3 mr-2" />
-                    Add All to Cart (Standalone Shop Flow)
+                    <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Add All to Cart
                   </Button>
+                  <p className="text-[10px] text-center text-gray-400 italic">Anita's Journey: Remove items you already have. Everything else goes to your cart.</p>
                 </div>
               )}
             </div>

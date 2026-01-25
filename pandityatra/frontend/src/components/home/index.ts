@@ -4,6 +4,7 @@ import PujaCategories from './PujaCategories';
 import HowItWorks from './HowItWorks';
 import KundaliHighlight from './KundaliHighlight';
 import AppDownloadSection from './AppDownloadSection';
+import ShopByCategory from './ShopByCategory';
 
 export {
     HeroSection,
@@ -11,5 +12,6 @@ export {
     PujaCategories,
     HowItWorks,
     KundaliHighlight,
-    AppDownloadSection
+    AppDownloadSection,
+    ShopByCategory
 };

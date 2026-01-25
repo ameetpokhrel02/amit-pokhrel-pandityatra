@@ -12,7 +12,8 @@ import {
     ArrowUpDown,
     ChevronLeft,
     ChevronRight,
-    Star
+    Star,
+    X
 } from 'lucide-react';
 import {
     Select,
@@ -48,6 +49,7 @@ const Samagri = () => {
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
+    const [selectedItem, setSelectedItem] = useState<SamagriItem | null>(null);
 
     useEffect(() => {
         loadData();
@@ -270,7 +272,7 @@ const Samagri = () => {
                                                 <Button
                                                     variant="secondary"
                                                     className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm"
-                                                    onClick={() => toast({ title: "Quick View", description: "This feature is coming soon!" })}
+                                                    onClick={() => setSelectedItem(item)}
                                                 >
                                                     <Eye className="w-4 h-4" /> View
                                                 </Button>
@@ -325,6 +327,96 @@ const Samagri = () => {
             </main>
 
             <Footer />
+
+            {/* Quick View Modal */}
+            <AnimatePresence>
+                {selectedItem && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setSelectedItem(null)}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row"
+                        >
+                            {/* Product Image */}
+                            <div className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative">
+                                <button
+                                    onClick={() => setSelectedItem(null)}
+                                    className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors md:hidden"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+
+                                {selectedItem.image ? (
+                                    <img
+                                        src={selectedItem.image}
+                                        alt={selectedItem.name}
+                                        className="w-full h-auto object-contain max-h-[300px] drop-shadow-2xl"
+                                    />
+                                ) : (
+                                    <ShoppingBag className="w-32 h-32 text-orange-200" />
+                                )}
+                            </div>
+
+                            {/* Product Details */}
+                            <div className="md:w-1/2 p-8 flex flex-col">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100 border-none mb-2">
+                                            {categories.find(c => c.id === selectedItem.category)?.name || 'Samagri'}
+                                        </Badge>
+                                        <h2 className="text-3xl font-bold text-gray-900 font-playfair">{selectedItem.name}</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedItem(null)}
+                                        className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    >
+                                        <X className="w-6 h-6 text-gray-400" />
+                                    </button>
+                                </div>
+
+                                <div className="flex items-center gap-3 mb-6">
+                                    <span className="text-3xl font-bold text-orange-600">₹{selectedItem.price}</span>
+                                    {selectedItem.stock_quantity > 0 ? (
+                                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                            In Stock ({selectedItem.stock_quantity})
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="destructive">Out of Stock</Badge>
+                                    )}
+                                </div>
+
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h4>
+                                    <p className="text-gray-600 leading-relaxed mb-6">
+                                        {selectedItem.description || "Authentic and pure puja samagri curated for your sacred rituals. High quality and traditionally prepared."}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={() => { handleAddToCart(selectedItem); setSelectedItem(null); }}
+                                        disabled={selectedItem.stock_quantity === 0}
+                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-orange-600/20 gap-3"
+                                    >
+                                        <ShoppingCart className="w-6 h-6" /> Add to Cart
+                                    </Button>
+                                    <p className="text-center text-xs text-gray-400 italic">
+                                        Free delivery on orders above ₹1000
+                                    </p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
         </div>
     );

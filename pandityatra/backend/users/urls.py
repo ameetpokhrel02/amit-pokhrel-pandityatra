@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     RegisterUserView, RequestOTPView, OTPVerifyAndTokenView, 
     PasswordLoginView, ForgotPasswordRequestView, ForgotPasswordOTPVerifyView, 
-    ResetPasswordView, ProfileView, AdminStatsView,
+    ResetPasswordView, ProfileView, AdminStatsView, ContactView,
     # 🚨 ADMIN VIEWS (Added)
     admin_get_users, admin_toggle_user_status, admin_platform_settings
 )
@@ -20,6 +20,9 @@ urlpatterns = [
     
     # User Profile
     path('profile/', ProfileView.as_view(), name='profile'),
+    
+    # Contact Form
+    path('contact/', ContactView.as_view(), name='contact'),
     
     # Forgot Password Flow
     path('forgot-password/', ForgotPasswordRequestView.as_view(), name='forgot-password-request'), # Request OTP

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ import logo from '@/assets/images/PanditYatralogo.png';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Footer: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,16 +42,15 @@ const Footer: React.FC = () => {
 
   const footerLinks = {
     services: [
-      { name: 'Puja Services', href: '/booking' },
-      { name: 'Marriage Ceremonies', href: '/booking' },
-      { name: 'Griha Pravesh', href: '/booking' },
-      { name: 'Kundali Services', href: '/kundali' },
+      { name: t('puja_samagri'), href: '/shop/samagri' },
+      { name: t('book_puja'), href: '/booking' },
+      { name: 'Offline Kundali', href: '/kundali' },
     ],
     company: [
-      { name: 'About Us', href: '#' },
-      { name: 'Contact', href: '#' },
-      { name: 'Privacy Policy', href: '#' },
-      { name: 'Terms of Service', href: '#' },
+      { name: t('about'), href: '/about' },
+      { name: t('contact'), href: '/contact' },
+      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Terms of Service', href: '/terms' },
     ],
   };
 
@@ -106,7 +107,7 @@ const Footer: React.FC = () => {
 
           {/* Services Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">Services</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('common:services', 'Services')}</h3>
             <ul className="space-y-2">
               {footerLinks.services.map((link, index) => (
                 <li key={index}>
@@ -126,7 +127,7 @@ const Footer: React.FC = () => {
 
           {/* Company Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">Company</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('common:company', 'Company')}</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link, index) => (
                 <li key={index}>
@@ -146,9 +147,9 @@ const Footer: React.FC = () => {
 
           {/* Newsletter Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">Newsletter</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('common:newsletter', 'Newsletter')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Subscribe to get updates on new services and offers.
+              {t('common:newsletter_desc', 'Subscribe to get updates on new services and offers.')}
             </p>
             <form onSubmit={handleNewsletterSubmit} className="space-y-3">
               <div className="flex gap-2">
@@ -191,7 +192,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaEnvelope className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                <span>pandityatra@gmail.com</span>
+                <span>pandityatra9@gmail.com</span>
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaMapMarkerAlt className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
@@ -201,14 +202,14 @@ const Footer: React.FC = () => {
           </div>
         </div>
 
-        
+
 
         {/* Payment Methods */}
         <div className="border-t py-6">
           <div className="flex flex-col items-center gap-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <FaLock className="h-3 w-3" />
-              Secure Payments
+              {t('common:features.secure_payments')}
             </p>
             <div className="flex items-center justify-center gap-4">
               {/* Khalti Payment */}

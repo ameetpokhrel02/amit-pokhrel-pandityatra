@@ -342,15 +342,24 @@ class PanditViewSet(viewsets.ReadOnlyModelViewSet):
     Public API to list and retrieve Pandits.
     Optimized for the profile page.
     """
-    queryset = Pandit.objects.filter(
-        verification_status='APPROVED', 
-        is_verified=True,
-        is_available=True
-    ).select_related('user').prefetch_related(
-        'services', 'services__puja', 'reviews', 'reviews__customer'
-    ).order_by('-rating')
-    
     permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        # Base Queryset from class attribute
+        queryset = Pandit.objects.filter(
+            verification_status='APPROVED', 
+            is_verified=True,
+            is_available=True
+        ).select_related('user').prefetch_related(
+            'services', 'services__puja', 'reviews', 'reviews__customer'
+        ).order_by('-rating')
+
+        # Filter by service ID if provided
+        service_id = self.request.query_params.get('service_id')
+        if service_id:
+            queryset = queryset.filter(services__puja_id=service_id).distinct()
+            
+        return queryset
 
     @api_view(['GET'])
     def retrieve(self, request, *args, **kwargs):

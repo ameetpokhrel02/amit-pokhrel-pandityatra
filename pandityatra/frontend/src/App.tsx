@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/toaster'
 // Public Pages
 import HomePage from './pages/Home'
 import AboutUs from './pages/AboutUs'
+import Contact from './pages/Contact'
 import OfflineKundali from './pages/Kundali/OfflineKundali'
 
 // Shop
@@ -69,7 +70,7 @@ import PujaRoom from './pages/Video/PujaRoom'
 // Global UI
 import CartDrawer from './components/shop/CartDrawer'
 import FavoritesDrawer from './components/shop/FavoritesDrawer'
-import UnifiedChatWidget from './components/UnifiedChatWidget'
+import AIGuideBot from './components/AIGuideBot'
 import BackToTop from './components/common/BackToTop'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 
@@ -84,6 +85,7 @@ function App() {
               {/* 🌍 Public */}
               <Route path="/" element={<HomePage />} />
               <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/kundali" element={<OfflineKundali />} />
               <Route path="/shop/pujas" element={<PujaCategories />} />
               <Route path="/shop/samagri" element={<Samagri />} />
@@ -239,7 +241,7 @@ function App() {
             <CartDrawer />
             <FavoritesDrawer />
             <BackToTop />
-            <UnifiedChatWidget />
+            <AIGuideBot />
             <PWAInstallPrompt />
             <Toaster />
           </BrowserRouter>

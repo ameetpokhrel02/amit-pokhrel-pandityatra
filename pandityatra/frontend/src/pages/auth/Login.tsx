@@ -29,7 +29,7 @@ const LoginPage: React.FC = () => {
   const { toast } = useToast();
   const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
   // New state for input type toggle (Phone / Email / Username)
-  const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('phone');
+  const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('email');
 
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -200,9 +200,9 @@ const LoginPage: React.FC = () => {
             </Label>
 
             {inputType === 'phone' ? (
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <FaPhone className="w-5 h-5" />
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <FaPhone className="w-4 h-4" />
                 </span>
                 <Input
                   id="phone"
@@ -210,13 +210,13 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Enter phone number"
                   type="tel"
-                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
                 />
               </div>
             ) : inputType === 'email' ? (
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <FaEnvelope className="w-5 h-5" />
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <FaEnvelope className="w-4 h-4" />
                 </span>
                 <Input
                   id="email"
@@ -224,13 +224,13 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter email address"
                   type="email"
-                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
                 />
               </div>
             ) : (
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <FaUser className="w-5 h-5" />
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <FaUser className="w-4 h-4" />
                 </span>
                 <Input
                   id="username"
@@ -238,7 +238,7 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
                   type="text"
-                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
                 />
               </div>
             )}
@@ -246,10 +246,10 @@ const LoginPage: React.FC = () => {
 
           {loginMethod === 'password' && (
             <div className="space-y-2">
-              <Label htmlFor="password-login">Password</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
-                  <FaLock className="w-5 h-5" />
+              <Label htmlFor="password-login" className="text-gray-600 font-semibold px-1">Password</Label>
+              <div className="relative group">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <FaLock className="w-4 h-4" />
                 </span>
                 <Input
                   id="password-login"
@@ -257,12 +257,12 @@ const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
                   type={showPassword ? 'text' : 'password'}
-                  className="h-12 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10 pr-10"
+                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -303,29 +303,29 @@ const LoginPage: React.FC = () => {
             <Button
               onClick={handlePasswordLogin}
               disabled={
-                    loading ||
-                    (inputType === 'phone' && !phone) ||
-                    (inputType === 'email' && !email) ||
-                    (inputType === 'username' && !username) ||
-                    !password
-            }
-              className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
+                loading ||
+                (inputType === 'phone' && !phone) ||
+                (inputType === 'email' && !email) ||
+                (inputType === 'username' && !username) ||
+                !password
+              }
+              className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
             >
-          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Login'}
-           </Button>
+              {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Sign In'}
+            </Button>
           ) : (
             <Button
               onClick={handleRequestOtp}
               disabled={
-                    loading ||
-                    (inputType === 'phone' && !phone) ||
-                    (inputType === 'email' && !email) ||
-                    (inputType === 'username' && !username)
-            }
-              className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
+                loading ||
+                (inputType === 'phone' && !phone) ||
+                (inputType === 'email' && !email) ||
+                (inputType === 'username' && !username)
+              }
+              className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
             >
-          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Request OTP'}
-           </Button>
+              {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Receive OTP'}
+            </Button>
           )}
 
           {error && (

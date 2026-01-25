@@ -1,7 +1,9 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
+import sideImage from '@/assets/images/pANDIT VIBING.png';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { X, Calendar, User, CheckCircle2 } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
@@ -10,83 +12,131 @@ interface AuthLayoutProps {
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
-    // Animation Variants
-    const containerVariants = {
-        hidden: { opacity: 0, y: 30 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: {
-                duration: 0.8,
-                ease: [0.22, 1, 0.36, 1] as any,
-                staggerChildren: 0.15
-            }
-        }
-    };
-
-    const itemVariants = {
-        hidden: { opacity: 0, y: 15 },
-        visible: {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.5, ease: "easeOut" as any }
-        }
-    };
+    const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-gray-900 dark:to-gray-800 overflow-hidden">
-
-            {/* Background Elements */}
+        <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans">
+            {/* Main Outer Container */}
             <motion.div
-                className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/20 rounded-full blur-3xl"
-                animate={{ scale: [1, 1.1, 1], x: [0, 30, 0] }}
-                transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-            />
-            <motion.div
-                className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-200/20 rounded-full blur-3xl"
-                animate={{ scale: [1, 1.1, 1], x: [0, -30, 0] }}
-                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-            />
-
-            <motion.div
-                initial="hidden"
-                animate="visible"
-                variants={containerVariants}
-                className="w-full max-w-lg z-10 p-4 sm:p-0"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="w-full max-w-6xl min-h-[90vh] lg:min-h-0 lg:aspect-[16/10] bg-white rounded-3xl lg:rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row relative ring-4 lg:ring-8 ring-white/50"
             >
-                <Card className="border-0 shadow-2xl bg-white/80 backdrop-blur-xl dark:bg-gray-900/80 overflow-hidden ring-1 ring-orange-100/50">
-                    <CardContent className="pt-10 px-8 pb-10">
-                        <div className="flex flex-col items-center mb-8 text-center space-y-4">
-                            {/* Logo Section - Matching Navbar Style */}
-                            <motion.div variants={itemVariants} className="relative group">
-                                <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-700" />
-                                <div className="relative w-20 h-20 bg-white dark:bg-gray-800 rounded-full p-4 shadow-sm ring-1 ring-orange-100">
-                                    <img
-                                        src={panditLogo}
-                                        alt="PanditYatra Logo"
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                            </motion.div>
+                {/* Close Button / Go Home */}
+                <button
+                    onClick={() => navigate('/')}
+                    className="absolute top-6 right-6 z-50 bg-gray-100 hover:bg-gray-200 text-gray-500 p-2 rounded-full transition-colors"
+                >
+                    <X size={20} />
+                </button>
 
-                            {/* Title Section */}
-                            <motion.div className="space-y-1" variants={itemVariants}>
-                                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                                    {title || 'Welcome'}
-                                </h1>
-                                <p className="text-muted-foreground text-sm">
-                                    {subtitle || 'Please login here'}
-                                </p>
-                            </motion.div>
+                {/* Left Side: Form Section */}
+                <div className="w-full lg:w-[45%] p-8 sm:p-12 lg:p-16 flex flex-col justify-between relative overflow-y-auto custom-scrollbar">
+                    <div className="space-y-12">
+                        {/* Brand Logo */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center p-1.5">
+                                <img src={panditLogo} alt="PanditYatra" className="w-full h-full object-contain" />
+                            </div>
+                            <span className="text-xl font-bold text-[#2D2D2D]">PanditYatra</span>
                         </div>
 
-                        {/* Main Content */}
-                        <motion.div variants={itemVariants}>
+                        {/* Welcome Text */}
+                        <div className="space-y-3">
+                            <h1 className="text-4xl font-extrabold text-[#1A1A1A] tracking-tight leading-tight">
+                                {title || 'Welcome Back'}
+                            </h1>
+                            <p className="text-gray-500 text-lg">
+                                {subtitle || 'Ready for your sacred journey? Entry awaits.'}
+                            </p>
+                        </div>
+
+                        {/* Content Area */}
+                        <div className="mt-8">
                             {children}
+                        </div>
+                    </div>
+
+                    {/* Footer Info (Anita's Reference) */}
+                    <div className="pt-8 flex justify-between items-center text-xs text-gray-400">
+                        <span>© 2026 PanditYatra Inc.</span>
+                        <div className="flex gap-4">
+                            <a href="#" className="hover:text-orange-500 underline underline-offset-4">Terms</a>
+                            <a href="#" className="hover:text-orange-500 underline underline-offset-4">Privacy</a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Visual Section */}
+                <div className="hidden lg:block w-[55%] relative p-8">
+                    {/* Main Image Container */}
+                    <div className="w-full h-full rounded-[2rem] overflow-hidden relative shadow-2xl group ring-4 ring-orange-50/20">
+                        <img
+                            src={sideImage}
+                            alt="The Sacred Vibe"
+                            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+                        {/* Floating Glassmorphism Elements (Reflecting Reference Image Style) */}
+
+                        {/* 1. Daily Task/Calendar Card */}
+                        <motion.div
+                            initial={{ x: 50, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.5, duration: 0.8 }}
+                            className="absolute top-10 right-10 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl w-64 shadow-xl"
+                        >
+                            <div className="flex justify-between items-start mb-3">
+                                <p className="text-[10px] font-bold text-white/60 tracking-widest uppercase">Upcoming Puja</p>
+                                <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
+                            </div>
+                            <p className="text-sm font-semibold text-white mb-2">Ganesh Vandana Ritual</p>
+                            <p className="text-xs text-white/70">09:30 AM - 11:00 AM IST</p>
                         </motion.div>
-                    </CardContent>
-                </Card>
+
+                        {/* 2. Team/Pandit Status Card */}
+                        <motion.div
+                            initial={{ x: -30, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            transition={{ delay: 0.7, duration: 0.8 }}
+                            className="absolute middle right-10 top-40 flex flex-col gap-2"
+                        >
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="w-12 h-12 rounded-full border-2 border-white ring-4 ring-black/10 overflow-hidden shadow-lg transform hover:scale-110 transition-transform">
+                                    <img src={`https://i.pravatar.cc/150?u=${i * 10}`} alt="avatar" />
+                                </div>
+                            ))}
+                        </motion.div>
+
+                        {/* 3. Bottom Action/Verification Card */}
+                        <motion.div
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.9, duration: 0.8 }}
+                            className="absolute bottom-10 left-10 right-10 bg-white p-5 rounded-3xl shadow-2xl flex items-center gap-4 border border-orange-50"
+                        >
+                            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
+                                <Calendar size={24} />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="text-sm font-bold text-gray-900 leading-tight">Sacred Meeting Confirmed</h4>
+                                <p className="text-xs text-gray-500">Connecting with Ramesh Shastri Ji</p>
+                            </div>
+                            <div className="flex -space-x-2">
+                                <div className="w-8 h-8 rounded-full border-2 border-white bg-green-500 flex items-center justify-center text-white shadow-md">
+                                    <CheckCircle2 size={16} />
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
             </motion.div>
+
+            {/* Background Decorative Rings (matching ref aesthetic) */}
+            <div className="fixed top-0 left-0 w-full h-full -z-10 pointer-events-none overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150%] aspect-square bg-gradient-to-br from-orange-200/20 via-white to-blue-200/20 rounded-full blur-[120px]" />
+            </div>
         </div>
     );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -47,6 +48,7 @@ const Navbar: React.FC = () => {
   const cartItemCount = cartItems.length;
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { isInstallable, installPWA } = usePWA();
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -70,8 +72,10 @@ const Navbar: React.FC = () => {
   // Common Navigation Items
   const navItems = [
     { name: t('home'), path: '/', icon: <Home className="w-4 h-4" /> },
+    { name: t('about'), path: '/about', icon: <User className="w-4 h-4" /> },
     { name: 'Offline Kundali', path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
     { name: t('shop'), path: '/shop/samagri', icon: <ShoppingBagIcon /> },
+    { name: t('contact'), path: '/contact', icon: <User className="w-4 h-4" /> },
   ];
 
   // Logout Confirmation Dialog Component
@@ -138,30 +142,76 @@ const Navbar: React.FC = () => {
           </Link>
 
           {/* Center: Search Bar (Desktop) */}
-          <div className="hidden md:flex flex-1 max-w-md mx-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search pandits or occasions..."
-              className="pl-10 h-10 bg-gray-50/50 border-orange-200/50 focus-visible:ring-orange-500 rounded-full"
-            />
+          <div className="hidden md:flex flex-1 items-center justify-end relative">
+            <motion.div
+              initial={false}
+              animate={{
+                width: isSearchExpanded ? '100%' : '40px',
+                maxWidth: isSearchExpanded ? '600px' : '40px'
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="relative group"
+            >
+              <Search
+                className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10 ${isSearchExpanded ? 'text-orange-500' : 'text-gray-500'
+                  }`}
+                onClick={() => setIsSearchExpanded(true)}
+              />
+              <Input
+                placeholder={isSearchExpanded ? t('search_placeholder') : ""}
+                onFocus={() => setIsSearchExpanded(true)}
+                onBlur={(e) => {
+                  // If clicking the clear button, don't collapse immediately or let the click happen
+                  if (!e.relatedTarget?.classList.contains('search-clear')) {
+                    setIsSearchExpanded(false);
+                  }
+                }}
+                className={`pl-10 h-10 w-full bg-gray-100/50 dark:bg-gray-800/50 border-transparent focus:border-orange-200 focus:bg-white dark:focus:bg-gray-900 focus-visible:ring-orange-500 rounded-full transition-all cursor-pointer ${!isSearchExpanded ? 'placeholder:text-transparent' : ''
+                  }`}
+              />
+              {isSearchExpanded && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="search-clear absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsSearchExpanded(false);
+                  }}
+                >
+                  <LogOut className="w-4 h-4 rotate-90" /> {/* Mimicking a close/collapse icon if X isn't available, or just use X if I had it */}
+                </motion.button>
+              )}
+            </motion.div>
           </div>
 
           {/* Right: Actions */}
           <div className="hidden lg:flex items-center gap-3">
             {/* Common Text Links */}
-            {navItems.map(item => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-full transition-colors ${isActive(item.path)
-                  ? 'text-orange-600 bg-orange-50'
-                  : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
-                  }`}
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </Link>
-            ))}
+            <AnimatePresence>
+              {!isSearchExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-center gap-3"
+                >
+                  {navItems.map(item => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-full transition-colors ${isActive(item.path)
+                        ? 'text-orange-600 bg-orange-50'
+                        : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
+                        }`}
+                    >
+                      {item.icon}
+                      <span>{item.name}</span>
+                    </Link>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
               <Link to="/booking">{t('find_pandit')}</Link>
@@ -292,95 +342,103 @@ const Navbar: React.FC = () => {
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="w-6 h-6" />
+                <Button variant="ghost" size="icon" className="hover:bg-orange-50">
+                  <Menu className="w-6 h-6 text-gray-700" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[300px] sm:w-[350px]">
-                <SheetHeader className="text-left border-b pb-4 mb-4">
-                  <SheetTitle className="flex items-center gap-2 font-playfair text-orange-600">
+              <SheetContent side="left" className="w-[85%] sm:w-[350px] p-0 border-r-orange-100">
+                <SheetHeader className="text-left border-b border-orange-100 p-6 bg-orange-50/30">
+                  <SheetTitle className="flex items-center gap-2 font-playfair text-xl text-orange-600">
                     <img src={logo} alt="Logo" className="w-8 h-8" />
                     PanditYatra
                   </SheetTitle>
                 </SheetHeader>
 
-                <div className="flex flex-col gap-4">
-                  {/* Mobile Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <Input placeholder="Search..." className="pl-10 bg-gray-50" />
-                  </div>
+                <div className="flex flex-col h-[calc(100vh-80px)] overflow-y-auto">
+                  <div className="p-6 space-y-6">
+                    {/* Mobile Search */}
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <Input
+                        placeholder="Search for pujas..."
+                        className="pl-10 h-12 bg-gray-50 border-orange-100 rounded-xl focus-visible:ring-orange-500"
+                      />
+                    </div>
 
-                  <div className="flex flex-col gap-2">
-                    {navItems.map(item => (
-                      <Link
-                        key={item.path}
-                        to={item.path}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${isActive(item.path) ? 'bg-orange-50 text-orange-600' : 'hover:bg-gray-50'
-                          }`}
-                      >
-                        {item.icon}
-                        {item.name}
+                    <nav className="flex flex-col gap-1">
+                      {navItems.map(item => (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${isActive(item.path)
+                            ? 'bg-orange-100 text-orange-700'
+                            : 'text-gray-600 hover:bg-orange-50'
+                            }`}
+                        >
+                          <span className="text-orange-500">{item.icon}</span>
+                          {item.name}
+                        </Link>
+                      ))}
+                    </nav>
+
+                    <Button asChild className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg shadow-orange-200 font-bold">
+                      <Link to="/booking" className="flex items-center justify-center gap-2">
+                        <User className="w-4 h-4" />
+                        Find My Pandit
                       </Link>
-                    ))}
-                    <Link
-                      to="/booking"
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium bg-orange-600 text-white shadow-sm mt-2"
-                    >
-                      <User className="w-4 h-4" />
-                      Find Pandit
-                    </Link>
-                  </div>
+                    </Button>
 
-                  {token && user ? (
-                    <div className="border-t pt-4 mt-2">
-                      <p className="text-xs font-semibold text-gray-500 uppercase px-4 mb-2">Account</p>
-                      <div className="flex items-center gap-3 px-4 mb-4">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.profile_image} />
-                          <AvatarFallback>{user.full_name?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium">{user.full_name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                    {token && user ? (
+                      <div className="border-t border-orange-100 pt-6 mt-2 space-y-4">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Account Portal</p>
+                        <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                          <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
+                            <AvatarImage src={user.profile_image} />
+                            <AvatarFallback className="bg-orange-200 text-orange-700 font-bold">{user.full_name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col overflow-hidden">
+                            <span className="text-sm font-bold truncate text-gray-900">{user.full_name}</span>
+                            <span className="text-[10px] text-gray-500 truncate font-medium">{user.email}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-1">
+                          {user.role === 'pandit' && (
+                            <Link to="/pandit/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-orange-50 text-gray-700">
+                              <LayoutDashboard className="w-4 h-4 text-orange-500" /> Dashboard
+                            </Link>
+                          )}
+                          {(user.role === 'admin' || user.is_superuser) && (
+                            <Link to="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-600 hover:bg-purple-50">
+                              <LayoutDashboard className="w-4 h-4" /> Admin Panel
+                            </Link>
+                          )}
+                          <Link to="/my-bookings" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-orange-50 text-gray-700">
+                            <BookOpen className="w-4 h-4 text-orange-500" /> My Bookings
+                          </Link>
+                          <button
+                            onClick={() => setLogoutDialogOpen(true)}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-50 text-left transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" /> Logout
+                          </button>
                         </div>
                       </div>
+                    ) : (
+                      <div className="border-t border-orange-100 pt-6 mt-2 flex flex-col gap-3">
+                        <Button asChild variant="outline" className="w-full h-12 rounded-xl border-orange-200 text-orange-700 hover:bg-orange-50 font-bold">
+                          <Link to="/login">Sign In</Link>
+                        </Button>
+                        <Button asChild className="w-full h-12 rounded-xl bg-gray-900 text-white hover:bg-black font-bold shadow-lg">
+                          <Link to="/register">Create Account</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
 
-                      {user.role === 'pandit' && (
-                        <Link to="/pandit/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-50">
-                          <LayoutDashboard className="w-4 h-4" /> Dashboard
-                        </Link>
-                      )}
-                      {user.role === 'user' && (
-                        <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-50">
-                          <LayoutDashboard className="w-4 h-4" /> Dashboard
-                        </Link>
-                      )}
-                      {(user.role === 'admin' || user.is_superuser) && (
-                        <Link to="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-purple-600 hover:bg-purple-50">
-                          <LayoutDashboard className="w-4 h-4" /> Admin Panel
-                        </Link>
-                      )}
-                      <Link to="/my-bookings" className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium hover:bg-gray-50">
-                        <BookOpen className="w-4 h-4" /> My Bookings
-                      </Link>
-                      <button
-                        onClick={() => setLogoutDialogOpen(true)}
-                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 text-left"
-                      >
-                        <LogOut className="w-4 h-4" /> Logout
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="border-t pt-4 mt-2 flex flex-col gap-2">
-                      <Button asChild variant="outline" className="w-full justify-start">
-                        <Link to="/login">Login</Link>
-                      </Button>
-                      <Button asChild className="w-full justify-start bg-orange-600 hover:bg-orange-700">
-                        <Link to="/register">Sign Up</Link>
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-auto p-8 text-center text-[10px] text-gray-400 font-medium">
+                    PanditYatra v1.0 • Built for Sacred Connection
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

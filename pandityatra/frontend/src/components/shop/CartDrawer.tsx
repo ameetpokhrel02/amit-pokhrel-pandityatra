@@ -46,7 +46,10 @@ const CartDrawer: React.FC = () => {
               <Button
                 variant="outline"
                 className="border-orange-500 text-orange-600 hover:bg-orange-50 rounded-full"
-                onClick={() => closeDrawer()}
+                onClick={() => {
+                  closeDrawer();
+                  navigate('/');
+                }}
               >
                 Browse Shop
               </Button>

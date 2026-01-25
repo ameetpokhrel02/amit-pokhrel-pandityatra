@@ -5,7 +5,7 @@ import apiClient from "@/lib/api-client"
 import { DailyProvider } from "@daily-co/daily-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import UnifiedChatWidget from "@/components/UnifiedChatWidget"
+import ChatSidebar from "@/components/ChatSidebar"
 
 export default function PujaRoom() {
   const { id } = useParams()
@@ -27,12 +27,12 @@ export default function PujaRoom() {
   return (
     <DailyProvider url={roomUrl}>
       <motion.div
-        className="h-screen flex bg-background overflow-hidden"
+        className="min-h-screen flex flex-col lg:flex-row bg-background overflow-y-auto lg:overflow-hidden"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
         {/* Video Area */}
-        <div className="w-[70%] p-4 bg-black">
+        <div className="w-full lg:w-[70%] aspect-video lg:h-full p-4 bg-black">
           <Card className="h-full bg-slate-900 overflow-hidden relative border-none">
             {/* The DailyProvider handles the underlying call. 
                  In a full impl, we'd use useParticipant hooks to render specific streams.
@@ -57,7 +57,7 @@ export default function PujaRoom() {
         </div>
 
         {/* Info + Chat Area */}
-        <div className="w-[30%] p-4 flex flex-col gap-4 border-l">
+        <div className="w-full lg:w-[30%] h-[500px] lg:h-full p-4 flex flex-col gap-4 border-l">
           <Card className="flex-1 p-4 relative flex flex-col border-none shadow-none">
             <h2 className="text-xl font-bold text-[#3E2723] mb-2">Live Puja Portal</h2>
             <div className="flex-1 rounded-lg bg-orange-50/30 border border-orange-100 p-4 relative">
@@ -72,9 +72,9 @@ export default function PujaRoom() {
                 </div>
               </div>
 
-              {/* Unified Chat Widget Integration */}
-              <div className="absolute bottom-4 left-4 right-4">
-                <UnifiedChatWidget bookingId={id} />
+              {/* Chat Sidebar Integration */}
+              <div className="absolute inset-0 top-[120px]">
+                <ChatSidebar bookingId={id!} />
               </div>
             </div>
           </Card>

@@ -12,7 +12,7 @@ class User(AbstractUser):
     # 1. CRITICAL FIX: Re-adding the full_name field
     full_name = models.CharField(max_length=150, blank=True, null=True)
     
-    # 2. Phone Number field
+    # 2. Phone Number field (Optional now)
     phone_number = models.CharField(
         max_length=15, 
         unique=True, 
@@ -20,6 +20,10 @@ class User(AbstractUser):
         blank=True, 
         null=True 
     ) 
+    
+    # 3. Email field (Mandatory for Login/OTP)
+    email = models.EmailField(unique=True, blank=False, null=False)
+    
     profile_pic_url = models.URLField(blank=True, null=True)
     
     # 3. Roles
@@ -31,8 +35,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
 
     # 4. Configuration: Ensure fields are included
-    # Note: email is optional, so we only require phone_number and full_name
-    REQUIRED_FIELDS = ['phone_number', 'full_name'] 
+    # Note: email is now mandatory, phone is optional
+    REQUIRED_FIELDS = ['email', 'full_name'] 
     
     def __str__(self):
         return f"{self.username} ({self.role})"

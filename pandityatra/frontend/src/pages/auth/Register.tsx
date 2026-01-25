@@ -56,17 +56,17 @@ const RegisterPage: React.FC = () => {
     try {
       const payload: any = {
         full_name: fullName.trim(),
-        phone_number: phone.trim(),
+        email: email.trim(),
         role: 'user',
       };
-      if (email.trim()) payload.email = email.trim();
+      if (phone.trim()) payload.phone_number = phone.trim();
       if (password.trim()) payload.password = password.trim();
 
       await register(payload);
 
       toast({
         title: "Account Created!",
-        description: password ? "You can now login with your password." : "OTP sent to your phone.",
+        description: password ? "You can now login with your password." : "OTP sent to your email.",
         variant: "default",
       });
 
@@ -119,10 +119,10 @@ const RegisterPage: React.FC = () => {
               className="space-y-4 overflow-hidden"
             >
               {/* Full Name */}
-              <div className="space-y-1">
-                <Label htmlFor="fullName">Full Name *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-gray-600 font-semibold px-1">Full Name *</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
                     <FaUser className="w-4 h-4" />
                   </span>
                   <Input
@@ -130,36 +130,17 @@ const RegisterPage: React.FC = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Your full name"
-                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-1">
-                <Label htmlFor="phone">Phone Number *</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <FaPhone className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="98XXXXXXXX"
-                    type="tel"
-                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
                     required
                   />
                 </div>
               </div>
 
               {/* Email */}
-              <div className="space-y-1">
-                <Label htmlFor="email">Email (Optional)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
                     <FaEnvelope className="w-4 h-4" />
                   </span>
                   <Input
@@ -168,16 +149,35 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     type="email"
-                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Phone */}
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                    <FaPhone className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="98XXXXXXXX"
+                    type="tel"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
                   />
                 </div>
               </div>
 
               {/* Password */}
-              <div className="space-y-1">
-                <Label htmlFor="password">Password (Optional)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password (Optional)</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
                     <FaLock className="w-4 h-4" />
                   </span>
                   <Input
@@ -186,28 +186,28 @@ const RegisterPage: React.FC = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Create a password"
                     type={showPassword ? 'text' : 'password'}
-                    className="h-11 rounded-xl bg-gray-50/50 border-orange-100 focus-visible:ring-orange-500 pl-10 pr-10"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500">Leave blank to use OTP login only.</p>
+                <p className="text-xs text-gray-500 px-1">Leave blank to use OTP login only.</p>
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <Button
                 onClick={handleRegister}
-                disabled={loading || !phone || !fullName}
-                className="w-full h-12 text-base rounded-xl bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20"
+                disabled={loading || !email || !fullName}
+                className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none mt-4"
               >
-                {loading ? <LoadingSpinner size={20} className="text-white" /> : (
+                {loading ? <LoadingSpinner size={24} className="text-white" /> : (
                   <div className="flex items-center gap-2">
-                    Create Account <FaArrowRight size={14} />
+                    Join PanditYatra <FaArrowRight size={14} />
                   </div>
                 )}
               </Button>

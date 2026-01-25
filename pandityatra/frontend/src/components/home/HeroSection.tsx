@@ -179,8 +179,8 @@ const HeroSection: React.FC = () => {
           </Card>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-            <Link to="/booking">
-              <Button size="lg" className="w-full sm:w-auto bg-slate-900 text-white hover:bg-slate-800">
+            <Link to="/register">
+              <Button size="lg" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-10 rounded-full font-bold">
                 {t('get_started')}
               </Button>
             </Link>
@@ -193,7 +193,7 @@ const HeroSection: React.FC = () => {
         </motion.div>
 
         {/* Right Side: Hero Image with Animations */}
-        <div className="relative flex justify-center items-center h-[500px] lg:h-[700px]">
+        <div className="relative flex justify-center items-center h-[400px] sm:h-[500px] lg:h-[700px] order-first lg:order-last">
           {/* Rotating Orange Aura/Glow */}
           <motion.div
             className="absolute w-[350px] h-[350px] md:w-[500px] md:h-[500px] rounded-full bg-gradient-to-r from-orange-400/30 to-amber-300/30 blur-3xl"

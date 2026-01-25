@@ -10,7 +10,8 @@ import {
   PujaCategories,
   HowItWorks,
   KundaliHighlight,
-  AppDownloadSection
+  AppDownloadSection,
+  ShopByCategory
 } from '@/components/home';
 
 const HomePage: React.FC = () => {
@@ -38,6 +39,9 @@ const HomePage: React.FC = () => {
 
       {/* Featured/Top-Rated Pandits */}
       <FeaturedPandits />
+
+      {/* Shop By Category Section */}
+      <ShopByCategory />
 
       {/* Popular Puja Categories */}
       <PujaCategories />

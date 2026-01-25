@@ -3,15 +3,38 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
 from django.conf import settings
-from .models import SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus
+from .models import SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus, SamagriCategory, PujaSamagriRequirement
 from .serializers import (
     SamagriCategorySerializer, 
     SamagriItemSerializer, 
     ShopOrderSerializer,
-    ShopCheckoutSerializer
+    ShopCheckoutSerializer,
+    PujaSamagriRequirementSerializer
 )
 from payments.utils import initiate_khalti_payment, convert_npr_to_usd
 import stripe
+
+class SamagriCategoryViewSet(viewsets.ModelViewSet):
+    queryset = SamagriCategory.objects.all()
+    serializer_class = SamagriCategorySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+class SamagriItemViewSet(viewsets.ModelViewSet):
+    queryset = SamagriItem.objects.all()
+    serializer_class = SamagriItemSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = SamagriItem.objects.all()
+        category_id = self.request.query_params.get('category')
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
+
+class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
+    queryset = PujaSamagriRequirement.objects.all()
+    serializer_class = PujaSamagriRequirementSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
 class ShopCheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -20,7 +43,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
     def initiate(self, request):
         serializer = ShopCheckoutSerializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=status.status.HTTP_400_BAD_REQUEST)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         data = serializer.validated_data
         cart_items = data['items']
@@ -109,4 +132,4 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_MESSAGE)
+        return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -99,6 +99,7 @@ export interface Puja {
     name: string; // Changed from title to name to match common convention, or use title if backend sends title
     description?: string;
     base_price: number;
+    base_duration_minutes?: number;
     image?: string;
 }
 
@@ -268,6 +269,14 @@ export async function updateUserProfile(data: any) {
 
 export async function updatePanditProfile(id: number, data: any) {
     const response = await apiClient.patch(`/pandits/${id}/`, data);
+    return response.data;
+}
+
+// ----------------------
+// Contact API
+// ----------------------
+export async function submitContactForm(payload: { name: string; email: string; subject?: string; message: string }) {
+    const response = await apiClient.post('/users/contact/', payload);
     return response.data;
 }
 

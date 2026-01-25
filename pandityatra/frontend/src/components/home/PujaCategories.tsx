@@ -1,284 +1,189 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { 
-  FaRing, 
-  FaHome, 
-  FaBaby, 
+import { Loader2 } from 'lucide-react';
+import {
+  FaRing,
+  FaHome,
+  FaBaby,
   FaGraduationCap,
   FaStar,
   FaArrowRight
 } from 'react-icons/fa';
-import { 
-  GiTempleDoor, 
-  GiPrayerBeads, 
-  GiLotusFlower,
-  GiCandles,
-  GiIncense,
-  GiMeditation
+import {
+  GiTempleDoor,
+  GiPrayerBeads,
+  GiLotusFlower
 } from 'react-icons/gi';
+import { fetchAllPujas, type Puja } from '@/lib/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface PujaCategory {
-  id: number;
-  name: string;
-  icon: React.ReactNode;
-  image: string;
-  startingPrice: number;
-  description: string;
-  popularityRank: number;
-  estimatedDuration: string;
-  isPopular: boolean;
-  gradient: string;
-}
+const iconsMap: Record<string, React.ReactNode> = {
+  "Ganesh Puja": <GiTempleDoor className="h-8 w-8" />,
+  "Lakshmi Puja": <GiLotusFlower className="h-8 w-8" />,
+  "Marriage Ceremony": <FaRing className="h-8 w-8" />,
+  "Griha Pravesh": <FaHome className="h-8 w-8" />,
+  "Naming Ceremony": <FaBaby className="h-8 w-8" />,
+  "Thread Ceremony": <FaGraduationCap className="h-8 w-8" />,
+  "Durga Puja": <GiPrayerBeads className="h-8 w-8" />,
+  "Saraswati Puja": <GiLotusFlower className="h-8 w-8" />,
+};
+
+const gradients = [
+  "from-orange-500 to-amber-600",
+  "from-amber-600 to-orange-500",
+  "from-pink-500 to-red-600",
+  "from-emerald-500 to-teal-600",
+  "from-blue-500 to-indigo-600",
+  "from-purple-500 to-fuchsia-600",
+  "from-rose-500 to-orange-600",
+  "from-cyan-500 to-blue-600",
+];
 
 const PujaCategories: React.FC = () => {
-  const categories: PujaCategory[] = [
-    {
-      id: 1,
-      name: "Ganesh Puja",
-      icon: <GiTempleDoor className="h-8 w-8" />,
-      image: "/src/assets/images/religious.png",
-      startingPrice: 2500,
-      description: "Remove obstacles and bring prosperity",
-      popularityRank: 1,
-      estimatedDuration: "45-60 mins",
-      isPopular: true,
-      gradient: "from-primary to-primary/80"
-    },
-    {
-      id: 2,
-      name: "Lakshmi Puja",
-      icon: <GiLotusFlower className="h-8 w-8" />,
-      image: "/src/assets/images/aarati.png",
-      startingPrice: 3000,
-      description: "Attract wealth and abundance",
-      popularityRank: 2,
-      estimatedDuration: "60-75 mins",
-      isPopular: true,
-      gradient: "from-primary/80 to-primary"
-    },
-    {
-      id: 3,
-      name: "Marriage Ceremony",
-      icon: <FaRing className="h-8 w-8" />,
-      image: "/src/assets/images/marriage.png",
-      startingPrice: 15000,
-      description: "Sacred wedding rituals and blessings",
-      popularityRank: 3,
-      estimatedDuration: "3-4 hours",
-      isPopular: true,
-      gradient: "from-pink-400 to-red-500"
-    },
-    {
-      id: 4,
-      name: "Griha Pravesh",
-      icon: <FaHome className="h-8 w-8" />,
-      image: "/src/assets/images/grahiaprabesh.png",
-      startingPrice: 5000,
-      description: "House warming and blessing ceremony",
-      popularityRank: 4,
-      estimatedDuration: "90-120 mins",
-      isPopular: false,
-      gradient: "from-green-400 to-blue-500"
-    },
-    {
-      id: 5,
-      name: "Naming Ceremony",
-      icon: <FaBaby className="h-8 w-8" />,
-      image: "/src/assets/images/naming.png",
-      startingPrice: 3500,
-      description: "Namkaran ritual for newborns",
-      popularityRank: 5,
-      estimatedDuration: "60-90 mins",
-      isPopular: false,
-      gradient: "from-blue-400 to-purple-500"
-    },
-    {
-      id: 6,
-      name: "Thread Ceremony",
-      icon: <FaGraduationCap className="h-8 w-8" />,
-      image: "/src/assets/images/rakhi.png",
-      startingPrice: 8000,
-      description: "Sacred thread initiation ceremony",
-      popularityRank: 6,
-      estimatedDuration: "2-3 hours",
-      isPopular: false,
-      gradient: "from-indigo-400 to-purple-600"
-    },
-    {
-      id: 7,
-      name: "Durga Puja",
-      icon: <GiCandles className="h-8 w-8" />,
-      image: "/src/assets/images/religious.png",
-      startingPrice: 4000,
-      description: "Divine mother worship for protection",
-      popularityRank: 7,
-      estimatedDuration: "75-90 mins",
-      isPopular: true,
-      gradient: "from-red-400 to-pink-500"
-    },
-    {
-      id: 8,
-      name: "Saraswati Puja",
-      icon: <GiIncense className="h-8 w-8" />,
-      image: "/src/assets/images/aarati.png",
-      startingPrice: 2800,
-      description: "Goddess of knowledge and wisdom",
-      popularityRank: 8,
-      estimatedDuration: "45-60 mins",
-      isPopular: false,
-      gradient: "from-cyan-400 to-blue-500"
-    }
-  ];
+  const { t } = useTranslation();
+  const [pujas, setPujas] = useState<Puja[]>([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadPujas = async () => {
+      try {
+        const data = await fetchAllPujas();
+        // If it's a paginated response, handle properly
+        const results = Array.isArray(data) ? data : (data as any).results || [];
+        setPujas(results.slice(0, 8));
+      } catch (error) {
+        console.error("Failed to load pujas", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPujas();
+  }, []);
+
+  const handleBookNow = (pujaId: number, pujaName: string) => {
+    navigate('/booking', { state: { serviceId: pujaId, serviceName: pujaName } });
+  };
 
   return (
-    <section className="py-16 bg-gradient-to-b from-white to-gray-50/30">
-      <div className="container mx-auto px-4">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2 mb-4">
-            <GiPrayerBeads className="h-4 w-4 text-primary" />
-            <span className="text-primary text-sm font-medium">Sacred Ceremonies</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-            Popular Puja Categories
+    <section className="py-20 bg-orange-50/30 overflow-hidden">
+      <div className="container mx-auto px-4 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100 border-none mb-4 px-4 py-1.5 rounded-full text-sm font-bold">
+            {t('sacred_ceremonies')}
+          </Badge>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 font-playfair mb-6">
+            {t('popular_puja_categories').split(' ').slice(0, 2).join(' ')} <span className="text-orange-600">{t('popular_puja_categories').split(' ').slice(2).join(' ')}</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose from our wide range of traditional ceremonies and spiritual services
+          <p className="text-gray-500 text-lg md:text-xl max-w-2xl mx-auto mb-16">
+            {t('puja_cat_subtitle')}
           </p>
-        </div>
+        </motion.div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {categories.map((category, index) => (
-            <Card 
-              key={category.id}
-              className="group relative overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105 hover:-translate-y-2 border-0 shadow-lg cursor-pointer animate-in fade-in slide-in-from-bottom-4"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              {/* Background Image */}
-              <div 
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                style={{ backgroundImage: `url(${category.image})` }}
-              />
-              
-              {/* Gradient Overlay */}
-              <div className={`absolute inset-0 bg-gradient-to-t ${category.gradient} opacity-80 group-hover:opacity-90 transition-opacity duration-300`} />
-              
-              {/* Popular Badge */}
-              {category.isPopular && (
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500 animate-pulse">
-                    <FaStar className="h-3 w-3 mr-1" />
-                    Popular
-                  </Badge>
-                </div>
-              )}
-
-              <CardContent className="relative z-10 p-6 h-full flex flex-col justify-between text-white">
-                {/* Icon and Title */}
-                <div>
-                  <div className="text-white/90 mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                    {category.icon}
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-yellow-200 transition-colors duration-300">
-                    {category.name}
-                  </h3>
-                  <p className="text-white/90 text-sm mb-4 leading-relaxed">
-                    {category.description}
-                  </p>
-                </div>
-
-                {/* Details */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/80">Duration:</span>
-                    <span className="font-medium">{category.estimatedDuration}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-white/80 text-sm">Starting from</span>
-                      <div className="text-2xl font-bold text-yellow-200">
-                        ₹{category.startingPrice.toLocaleString()}
-                      </div>
-                    </div>
-                    <Button 
-                      size="sm" 
-                      variant="secondary"
-                      className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 transition-all duration-300 hover:scale-110"
-                    >
-                      Book Now
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Hover Effect Arrow */}
-                <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0">
-                  <FaArrowRight className="h-5 w-5 text-yellow-200" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <div className="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="text-3xl font-bold text-primary mb-2">50+</div>
-            <div className="text-gray-600 text-sm">Puja Types</div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="w-12 h-12 animate-spin text-orange-600" />
+            <p className="text-orange-600 font-bold animate-pulse">{t('fetching_rituals')}</p>
           </div>
-          <div className="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="text-3xl font-bold text-primary mb-2">10K+</div>
-            <div className="text-gray-600 text-sm">Ceremonies Done</div>
-          </div>
-          <div className="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="text-3xl font-bold text-primary mb-2">500+</div>
-            <div className="text-gray-600 text-sm">Expert Pandits</div>
-          </div>
-          <div className="text-center p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-            <div className="text-3xl font-bold text-primary mb-2">4.9★</div>
-            <div className="text-gray-600 text-sm">Average Rating</div>
-          </div>
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <AnimatePresence>
+              {pujas.map((puja, index) => {
+                const icon = iconsMap[puja.name] || <GiTempleDoor className="h-8 w-8" />;
+                const gradient = gradients[index % gradients.length];
+                const isPopular = index < 3; // First 3 are "Popular"
 
-        {/* CTA Section */}
-        <div className="text-center">
-          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-primary to-primary/80 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105">
-            <CardContent className="p-8">
-              <GiMeditation className="h-12 w-12 mx-auto mb-4 text-primary-foreground/80" />
-              <h3 className="text-2xl font-bold mb-4">
-                Can't Find Your Ceremony?
-              </h3>
-              <p className="text-primary-foreground/80 mb-6 leading-relaxed">
-                We offer personalized puja services for all occasions. 
-                Contact our experts to create a custom ceremony just for you.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link to="/custom-puja">
-                  <Button 
-                    size="lg" 
-                    variant="secondary"
-                    className="bg-white text-primary hover:bg-gray-50 transition-all duration-300 hover:scale-110"
+                return (
+                  <motion.div
+                    key={puja.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, type: 'spring', stiffness: 100 }}
+                    whileHover={{ y: -10 }}
                   >
-                    Request Custom Puja
-                  </Button>
-                </Link>
-                <Link to="/contact">
-                  <Button 
-                    size="lg" 
-                    variant="outline"
-                    className="border-white text-white hover:bg-white/10 transition-all duration-300 hover:scale-110"
-                  >
-                    Contact Expert
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    <Card className="group relative h-[400px] overflow-hidden border-none rounded-[2.5rem] shadow-xl hover:shadow-2xl transition-all duration-500 cursor-default">
+                      {/* Background Image / Gradient */}
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-90 group-hover:opacity-95 transition-opacity duration-500`} />
+
+                      {/* Decorative Image */}
+                      {puja.image && (
+                        <img
+                          src={puja.image}
+                          alt={puja.name}
+                          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30 group-hover:scale-110 transition-transform duration-1000"
+                        />
+                      )}
+
+                      {/* Popular Badge */}
+                      {isPopular && (
+                        <div className="absolute top-6 right-6 z-20">
+                          <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 px-3 py-1 rounded-full flex items-center gap-1">
+                            <FaStar className="w-3 h-3 text-yellow-300" />
+                            <span className="text-[10px] font-bold tracking-widest uppercase">{t('best_choice')}</span>
+                          </Badge>
+                        </div>
+                      )}
+
+                      <CardContent className="relative h-full z-10 p-8 flex flex-col justify-between text-white">
+                        <div className="space-y-4">
+                          <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                            <div className="text-white drop-shadow-lg scale-110">
+                              {icon}
+                            </div>
+                          </div>
+
+                          <div className="text-left">
+                            <h3 className="text-2xl font-bold font-playfair leading-tight group-hover:text-amber-200 transition-colors mb-2">
+                              {puja.name}
+                            </h3>
+                            <p className="text-white/80 text-sm line-clamp-3 leading-relaxed font-medium">
+                              {puja.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-6">
+                          <div className="flex justify-between items-center border-t border-white/20 pt-6">
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-0.5">{t('starting_from')}</p>
+                              <p className="text-3xl font-black text-white">₹{Math.round(puja.base_price)}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-0.5">{t('duration')}</p>
+                              <p className="font-bold text-sm bg-white/10 px-2 py-0.5 rounded-lg border border-white/10">
+                                {puja.base_duration_minutes} {t('common:mins', 'mins')}
+                              </p>
+                            </div>
+                          </div>
+
+                          <Button
+                            onClick={() => handleBookNow(puja.id, puja.name)}
+                            className="w-full h-12 bg-white text-[#f97316] hover:bg-orange-50 font-bold rounded-xl shadow-lg transition-all active:scale-95 group/btn"
+                          >
+                            <span>{t('book_now')}</span>
+                            <FaArrowRight className="ml-2 w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                          </Button>
+                        </div>
+                      </CardContent>
+
+                      {/* Lighting Effects */}
+                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/20 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </section>
   );
