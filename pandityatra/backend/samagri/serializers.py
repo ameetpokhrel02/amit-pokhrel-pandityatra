@@ -1,10 +1,9 @@
 from rest_framework import serializers
-from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement
-from services.serializers import PujaSerializer # Assuming PujaSerializer is defined here
+from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem
+from services.serializers import PujaSerializer
 
 # --- 1. Category Serializer ---
 class SamagriCategorySerializer(serializers.ModelSerializer):
-    """Serializer for reading and writing Samagri categories."""
     class Meta:
         model = SamagriCategory
         fields = ['id', 'name', 'description']
@@ -12,7 +11,6 @@ class SamagriCategorySerializer(serializers.ModelSerializer):
 
 # --- 2. Item Serializer ---
 class SamagriItemSerializer(serializers.ModelSerializer):
-    """Serializer for reading and writing individual Samagri items."""
     category_name = serializers.CharField(source='category.name', read_only=True)
 
     class Meta:
@@ -20,26 +18,51 @@ class SamagriItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'category', 'category_name', 'price', 'unit', 'is_active', 'created_at']
         read_only_fields = ['id', 'category_name', 'created_at']
 
-# --- 3. Puja Requirement Serializer (Nested Read-Only) ---
+# --- 3. Shop Order Serializers ---
+
+class ShopOrderItemSerializer(serializers.ModelSerializer):
+    item_name = serializers.CharField(source='samagri_item.name', read_only=True)
+    
+    class Meta:
+        model = ShopOrderItem
+        fields = ['id', 'samagri_item', 'item_name', 'quantity', 'price_at_purchase']
+
+class ShopOrderSerializer(serializers.ModelSerializer):
+    items = ShopOrderItemSerializer(many=True, read_only=True)
+    user_email = serializers.EmailField(source='user.email', read_only=True)
+
+    class Meta:
+        model = ShopOrder
+        fields = [
+            'id', 'user_email', 'total_amount', 'status', 
+            'full_name', 'phone_number', 'shipping_address', 'city',
+            'payment_method', 'transaction_id', 'items', 'created_at'
+        ]
+        read_only_fields = ['id', 'user_email', 'status', 'total_amount', 'transaction_id', 'created_at']
+
+class ShopCheckoutSerializer(serializers.Serializer):
+    items = serializers.ListField(
+        child=serializers.DictField(),
+        required=True
+    )
+    full_name = serializers.CharField(max_length=100)
+    phone_number = serializers.CharField(max_length=20)
+    shipping_address = serializers.CharField()
+    city = serializers.CharField(max_length=100)
+    payment_method = serializers.ChoiceField(choices=['STRIPE', 'KHALTI'])
+
+# --- 4. Puja Requirement Serializer ---
 class PujaSamagriRequirementSerializer(serializers.ModelSerializer):
-    """
-    Serializer used to show what Samagri an item requires when viewing a Puja.
-    """
     samagri_name = serializers.CharField(source='samagri_item.name', read_only=True)
     samagri_unit = serializers.CharField(source='samagri_item.unit', read_only=True)
     samagri_price = serializers.DecimalField(source='samagri_item.price', max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = PujaSamagriRequirement
-        fields = ['samagri_name', 'samagri_unit', 'quantity_required', 'samagri_price']
+        fields = ['samagri_name', 'samagri_unit', 'quantity', 'samagri_price']
         read_only_fields = fields
 
-# --- 4. Writable Requirement Serializer (For creating/updating links) ---
 class WritablePujaSamagriRequirementSerializer(serializers.ModelSerializer):
-    """
-    Serializer for creating/updating the link between a Puja and a Samagri item.
-    Used in a dedicated Requirement ViewSet.
-    """
     class Meta:
         model = PujaSamagriRequirement
-        fields = ['puja', 'samagri_item', 'quantity_required']
+        fields = ['puja', 'samagri_item', 'quantity']

@@ -1,44 +1,112 @@
-from rest_framework import viewsets, mixins, status, permissions
-from rest_framework.permissions import IsAdminUser
-from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from django.db import transaction
+from django.conf import settings
+from .models import SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus
 from .serializers import (
     SamagriCategorySerializer, 
     SamagriItemSerializer, 
-    WritablePujaSamagriRequirementSerializer,
-    PujaSamagriRequirementSerializer
+    ShopOrderSerializer,
+    ShopCheckoutSerializer
 )
+from payments.utils import initiate_khalti_payment, convert_npr_to_usd
+import stripe
 
-# --- 1. Samagri Category Management (Admin Only) ---
-class SamagriCategoryViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for Samagri Categories. Restricted to Admin/Staff.
-    """
-    queryset = SamagriCategory.objects.all()
-    serializer_class = SamagriCategorySerializer
-    
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+class ShopCheckoutViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
 
-# --- 2. Samagri Item Management (Admin Only) ---
-class SamagriItemViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for individual Samagri Items. Restricted to Admin/Staff.
-    """
-    queryset = SamagriItem.objects.all().select_related('category')
-    serializer_class = SamagriItemSerializer
-    
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+    @action(detail=False, methods=['post'])
+    def initiate(self, request):
+        serializer = ShopCheckoutSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.status.HTTP_400_BAD_REQUEST)
 
-# --- 3. Puja Samagri Requirement Management (Admin Only) ---
-class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
-    """
-    CRUD for defining how much Samagri is required for a specific Puja.
-    """
-    queryset = PujaSamagriRequirement.objects.all().select_related('puja', 'samagri_item')
-    serializer_class = WritablePujaSamagriRequirementSerializer
-    permission_classes = [IsAdminUser]
+        data = serializer.validated_data
+        cart_items = data['items']
+        payment_method = data['payment_method']
+
+        try:
+            with transaction.atomic():
+                # 1. Create the Order
+                order = ShopOrder.objects.create(
+                    user=request.user,
+                    full_name=data['full_name'],
+                    phone_number=data['phone_number'],
+                    shipping_address=data['shipping_address'],
+                    city=data['city'],
+                    payment_method=payment_method
+                )
+
+                total_amount = 0
+                for item in cart_items:
+                    samagri_item = SamagriItem.objects.select_for_update().get(id=item['id'])
+                    
+                    # Stock Check
+                    if samagri_item.stock_quantity < item['quantity']:
+                        raise Exception(f"Insufficient stock for {samagri_item.name}")
+
+                    # Deduct Stock
+                    samagri_item.stock_quantity -= item['quantity']
+                    samagri_item.save()
+
+                    # Create Order Item
+                    ShopOrderItem.objects.create(
+                        order=order,
+                        samagri_item=samagri_item,
+                        quantity=item['quantity'],
+                        price_at_purchase=samagri_item.price
+                    )
+                    total_amount += samagri_item.price * item['quantity']
+
+                order.total_amount = total_amount
+                order.save()
+
+                # 2. Payment Gateway Integration
+                if payment_method == 'KHALTI':
+                    # Khalti (NPR)
+                    return_url = f"{settings.FRONTEND_URL}/shop/payment/verify"
+                    website_url = settings.FRONTEND_URL
+                    success, pidx, payment_url = initiate_khalti_payment(
+                        total_amount, 
+                        f"SHOP-{order.id}", 
+                        return_url, 
+                        website_url
+                    )
+                    if success:
+                        order.transaction_id = pidx
+                        order.save()
+                        return Response({"payment_url": payment_url, "order_id": order.id})
+                    else:
+                        raise Exception("Khalti initiation failed")
+
+                elif payment_method == 'STRIPE':
+                    # Stripe (USD)
+                    stripe.api_key = settings.STRIPE_SECRET_KEY
+                    amount_usd = convert_npr_to_usd(total_amount)
+                    
+                    checkout_session = stripe.checkout.Session.create(
+                        payment_method_types=['card'],
+                        line_items=[{
+                            'price_data': {
+                                'currency': 'usd',
+                                'product_data': {'name': f'PanditYatra Order #{order.id}'},
+                                'unit_amount': int(amount_usd * 100),
+                            },
+                            'quantity': 1,
+                        }],
+                        mode='payment',
+                        success_url=f"{settings.FRONTEND_URL}/shop/payment/success?session_id={{CHECKOUT_SESSION_ID}}&order_id={order.id}",
+                        cancel_url=f"{settings.FRONTEND_URL}/shop/payment/cancel?order_id={order.id}",
+                        metadata={'order_id': order.id, 'type': 'shop_order'}
+                    )
+                    order.transaction_id = checkout_session.id
+                    order.save()
+                    return Response({"payment_url": checkout_session.url, "order_id": order.id})
+
+        except SamagriItem.DoesNotExist:
+            return Response({"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_MESSAGE)

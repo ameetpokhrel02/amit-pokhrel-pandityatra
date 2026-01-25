@@ -1,195 +1,157 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
-import { X, Trash2, Plus, Minus } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const USD_RATE = 0.0075; // 1 NPR = 0.0075 USD (approx)
 
 const CartDrawer: React.FC = () => {
   const { items, updateQuantity, clear, total, drawerOpen, closeDrawer, removeItem } = useCart();
-  
+  const navigate = useNavigate();
+
   const totalUSD = total * USD_RATE;
 
   return (
-    <Dialog open={drawerOpen} onOpenChange={(open) => { if (!open) closeDrawer(); }}>
-      <DialogContent className="fixed inset-0 sm:inset-auto sm:right-0 sm:top-0 sm:h-full z-50 w-full sm:w-full sm:max-w-md bg-background p-0 shadow-lg border-0 sm:border-l rounded-none sm:rounded-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:slide-in-from-bottom sm:data-[state=open]:slide-in-from-right data-[state=closed]:slide-out-to-bottom sm:data-[state=closed]:slide-out-to-right">
-        <div className="flex flex-col h-full w-full">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b shrink-0">
-            <div className="flex-1">
-              <DialogTitle className="text-lg sm:text-xl font-bold">Your Cart</DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm mt-1">
-                {items.length} item{items.length !== 1 ? 's' : ''} in cart
-              </DialogDescription>
+    <Sheet open={drawerOpen} onOpenChange={(open) => { if (!open) closeDrawer(); }}>
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col h-full border-l shadow-2xl bg-white dark:bg-gray-900"
+      >
+        <SheetHeader className="px-6 py-6 border-b bg-orange-50/30 dark:bg-orange-950/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/50 rounded-xl flex items-center justify-center text-orange-600">
+              <ShoppingCart size={20} />
             </div>
-            <button
-              onClick={() => closeDrawer()}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors shrink-0 ml-2"
-              aria-label="Close cart"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div>
+              <SheetTitle className="text-xl font-bold text-gray-900 dark:text-white">Your Cart</SheetTitle>
+              <SheetDescription className="text-xs sm:text-sm font-medium text-orange-800 dark:text-orange-400">
+                {items.length} item{items.length !== 1 ? 's' : ''} in your cart
+              </SheetDescription>
+            </div>
           </div>
+        </SheetHeader>
 
-          {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto px-3 sm:px-4 py-4">
-            {items.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-center">
-                <div>
-                  <p className="text-base sm:text-lg font-medium mb-2">Your cart is empty</p>
-                  <p className="text-xs sm:text-sm">Add items to get started</p>
-                </div>
+        <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-thin">
+          {items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-60">
+              <div className="w-24 h-24 bg-orange-50 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <span className="text-4xl text-orange-300">🛒</span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {items.map((it) => {
-                  const itemTotal = Number(it.price || 0) * it.quantity;
-                  const itemTotalUSD = itemTotal * USD_RATE;
-                  
-                  return (
-                    <Card key={it.id} className="overflow-hidden bg-white dark:bg-gray-800">
-                      <CardContent className="p-3">
-                        <div className="flex gap-3">
-                          {/* Product Image */}
-                          <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden">
-                            {it.image ? (
-                              <img 
-                                src={it.image} 
-                                alt={it.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <span className="text-xs">No image</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Product Details */}
-                          <div className="flex-1 min-w-0 flex flex-col">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <CardTitle className="text-sm sm:text-base line-clamp-2 flex-1">
-                                {it.title}
-                              </CardTitle>
-                              <button
-                                onClick={() => removeItem(it.id)}
-                                className="p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors text-red-600 shrink-0"
-                                aria-label="Remove item"
-                                title="Remove from cart"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                            
-                            {/* Price */}
-                            <div className="mb-2">
-                              <p className="text-orange-600 font-semibold text-sm">
-                                NPR ₹{Number(it.price || 0).toLocaleString('en-IN')}
-                              </p>
-                              <p className="text-gray-500 dark:text-gray-400 text-xs">
-                                ${(Number(it.price || 0) * USD_RATE).toFixed(2)} USD
-                              </p>
-                            </div>
-                            
-                            {/* Quantity Controls */}
-                            <div className="flex items-center justify-between mt-auto">
-                              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 hover:bg-white dark:hover:bg-gray-600"
-                                  onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))}
-                                  title="Decrease quantity"
-                                >
-                                  <Minus className="h-3 w-3" />
-                                </Button>
-                                <span className="font-semibold w-8 text-center text-sm">
-                                  {it.quantity}
-                                </span>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost"
-                                  className="h-7 w-7 p-0 hover:bg-white dark:hover:bg-gray-600"
-                                  onClick={() => updateQuantity(it.id, it.quantity + 1)}
-                                  title="Increase quantity"
-                                >
-                                  <Plus className="h-3 w-3" />
-                                </Button>
-                              </div>
-                              
-                              {/* Item Total */}
-                              <div className="text-right">
-                                <p className="font-bold text-sm">
-                                  ₹{itemTotal.toLocaleString('en-IN')}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  ${itemTotalUSD.toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
+              <div>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">Your cart is empty</p>
+                <p className="text-sm text-gray-500">Pick some sacred items to get started!</p>
+              </div>
+              <Button
+                variant="outline"
+                className="border-orange-500 text-orange-600 hover:bg-orange-50 rounded-full"
+                onClick={() => closeDrawer()}
+              >
+                Browse Shop
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {items.map((it) => {
+                const itemTotal = Number(it.price || 0) * it.quantity;
+
+                return (
+                  <div key={it.id} className="group relative flex gap-4 p-3 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl hover:border-orange-200 transition-all">
+                    {/* Item Image */}
+                    <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden shrink-0 border border-gray-100/50">
+                      {it.image ? (
+                        <img src={it.image} alt={it.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-orange-200 bg-orange-50/30 font-bold text-lg uppercase">
+                          {it.title.charAt(0)}
                         </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                      )}
+                    </div>
 
-          {/* Footer - Total and Actions */}
-          {items.length > 0 && (
-            <div className="border-t border-gray-200 dark:border-gray-700 shrink-0 px-3 sm:px-4 py-3 sm:py-4 space-y-3 bg-white dark:bg-gray-900/50">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Subtotal (NPR):</span>
-                  <span>₹{Number(total || 0).toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Subtotal (USD):</span>
-                  <span>${totalUSD.toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Delivery:</span>
-                  <span className="text-green-600">FREE</span>
-                </div>
-                <div className="flex items-center justify-between font-bold text-base sm:text-lg pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <div>
-                    <p className="text-orange-600">Total:</p>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="text-sm font-bold text-gray-900 dark:text-white leading-tight truncate line-clamp-2">{it.title}</h4>
+                        <button
+                          onClick={() => removeItem(it.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-2">
+                        <div>
+                          <p className="text-sm font-bold text-orange-600">₹{Number(it.price || 0).toLocaleString()}</p>
+                          <p className="text-[10px] text-gray-400 italic">${(Number(it.price || 0) * USD_RATE).toFixed(2)} USD</p>
+                        </div>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border dark:border-gray-700 rounded-full p-1 h-8">
+                          <button
+                            onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))}
+                            className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 rounded-full"
+                          >
+                            <Minus size={12} />
+                          </button>
+                          <span className="text-xs font-bold w-4 text-center">{it.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(it.id, it.quantity + 1)}
+                            className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 rounded-full"
+                          >
+                            <Plus size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-orange-600">₹{Number(total || 0).toLocaleString('en-IN')}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">${totalUSD.toFixed(2)} USD</p>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 text-xs sm:text-sm h-10 border-orange-200 hover:bg-orange-50 dark:hover:bg-orange-950"
-                  onClick={() => {
-                    if (confirm('Are you sure you want to clear the cart?')) {
-                      clear();
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Clear Cart
-                </Button>
-                <Button 
-                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm h-10 font-semibold uppercase"
-                  onClick={() => alert('Checkout not implemented yet')}
-                >
-                  Checkout
-                </Button>
-              </div>
+                );
+              })}
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {items.length > 0 && (
+          <div className="p-6 bg-gradient-to-t from-gray-50 dark:from-gray-950 to-white dark:to-gray-900 border-t space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Subtotal</span>
+                <span className="font-medium">₹{total.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Delivery</span>
+                <span className="text-green-600 font-bold uppercase text-[10px]">Free</span>
+              </div>
+              <div className="flex justify-between items-center pt-3 border-t border-dashed">
+                <span className="font-bold text-lg">Total</span>
+                <div className="text-right">
+                  <p className="font-black text-2xl text-orange-600 leading-none">₹{total.toLocaleString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">${totalUSD.toFixed(2)} USD</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <Button
+                className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-black text-lg rounded-2xl shadow-lg ring-offset-background transition-all active:scale-[0.98]"
+                onClick={() => {
+                  closeDrawer();
+                  navigate('/shop/checkout');
+                }}
+              >
+                PROCEED TO CHECKOUT
+              </Button>
+              <button
+                onClick={() => { if (confirm('Clear all items?')) clear(); }}
+                className="text-xs text-gray-400 hover:text-red-500 font-medium transition-colors"
+              >
+                Clear Cart
+              </button>
+            </div>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 };
 

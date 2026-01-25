@@ -15,6 +15,7 @@ import PujaCategories from './pages/Shop/PujaCategories'
 import Samagri from './pages/Shop/Samagri'
 import Books from './pages/Shop/Books'
 import CartPage from './pages/Shop/Cart'
+import CheckoutPage from './pages/Shop/Checkout'
 
 // Auth
 import LoginPage from './pages/auth/Login'
@@ -70,6 +71,7 @@ import CartDrawer from './components/shop/CartDrawer'
 import FavoritesDrawer from './components/shop/FavoritesDrawer'
 import UnifiedChatWidget from './components/UnifiedChatWidget'
 import BackToTop from './components/common/BackToTop'
+import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 
 function App() {
   return (
@@ -87,6 +89,11 @@ function App() {
               <Route path="/shop/samagri" element={<Samagri />} />
               <Route path="/shop/books" element={<Books />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/shop/checkout" element={
+                <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              } />
               <Route path="/pandits" element={<PanditList />} />
               <Route path="/pandits/:id" element={<PanditProfile />} />
 
@@ -233,6 +240,7 @@ function App() {
             <FavoritesDrawer />
             <BackToTop />
             <UnifiedChatWidget />
+            <PWAInstallPrompt />
             <Toaster />
           </BrowserRouter>
         </AuthProvider>

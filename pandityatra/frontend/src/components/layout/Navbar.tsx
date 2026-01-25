@@ -33,8 +33,9 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import logo from '@/assets/images/PanditYatralogo.png';
-import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home } from 'lucide-react';
+import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown } from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
+import { usePWA } from '@/hooks/usePWA';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
@@ -45,6 +46,7 @@ const Navbar: React.FC = () => {
   const { items: cartItems, openDrawer: openCartDrawer } = useCart();
   const cartItemCount = cartItems.length;
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const { isInstallable, installPWA } = usePWA();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -167,6 +169,19 @@ const Navbar: React.FC = () => {
 
             <LanguageSelector />
 
+            {/* PWA Install Trigger (Desktop) */}
+            {isInstallable && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full hover:bg-orange-50 text-orange-600"
+                onClick={installPWA}
+                title="Install PanditYatra App"
+              >
+                <MonitorDown className="w-5 h-5" />
+              </Button>
+            )}
+
             {/* Cart */}
             <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openCartDrawer}>
               <ShoppingCart className="w-5 h-5" />
@@ -206,7 +221,7 @@ const Navbar: React.FC = () => {
 
                   <DropdownMenuSeparator className="bg-orange-100" />
 
-                   {user.role === 'pandit' && (
+                  {user.role === 'pandit' && (
                     <>
                       <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
                         <Link to="/pandit/dashboard" className="cursor-pointer gap-2">
