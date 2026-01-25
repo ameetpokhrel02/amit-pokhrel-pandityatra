@@ -16,6 +16,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, MapPin, Clock, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
+import { useLocation as useGeoLocation } from '@/hooks/useLocation';
+import { DateTime } from 'luxon';
+import { useCart } from '@/hooks/useCart';
+import { ShoppingCart } from 'lucide-react';
 
 interface Pandit {
   id: number;
@@ -44,6 +48,8 @@ interface BookingFormProps {
 const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookingSuccess }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { timezone, latitude, longitude, formatWithNepalTime } = useGeoLocation();
+  const { addItem, openDrawer } = useCart();
   const state = location.state as { panditId?: number; serviceId?: number; serviceName?: string; price?: string } | null;
 
   const [pandits, setPandits] = useState<Pandit[]>([]);
@@ -163,6 +169,21 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleAddAllToCart = () => {
+    if (samagriRequirements.length === 0) return;
+
+    samagriRequirements.forEach((req: any) => {
+      addItem({
+        id: `samagri-${req.samagri_item.id}`,
+        title: req.samagri_item.name,
+        price: parseFloat(req.samagri_item.price || '0'),
+        meta: { type: 'samagri', pujaId: formData.service }
+      }, req.quantity);
+    });
+
+    openDrawer();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -186,6 +207,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         booking_time: formData.booking_time,
         samagri_required: formData.samagri_required,
         notes: formData.notes,
+        customer_timezone: timezone,
+        customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
       };
 
       await apiClient.post('/bookings/', submitData);
@@ -339,6 +362,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
               </div>
             )}
 
+            {/* Timezone Info (Story Gap Fill) */}
+            {formData.booking_date && formData.booking_time && (
+              <div className="text-xs bg-blue-50 p-3 rounded-md text-blue-700 border border-blue-100 italic">
+                <Clock className="w-3 h-3 inline-block mr-1 mb-0.5" />
+                Selected: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
+              </div>
+            )}
+
             {/* Service Location */}
             <div className="space-y-2">
               <Label htmlFor="service_location">Service Location *</Label>
@@ -408,6 +439,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                       </li>
                     ))}
                   </ul>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddAllToCart}
+                    className="mt-3 w-full border-orange-200 text-orange-700 hover:bg-orange-100 h-8 text-xs"
+                  >
+                    <ShoppingCart className="w-3 h-3 mr-2" />
+                    Add All to Cart (Standalone Shop Flow)
+                  </Button>
                 </div>
               )}
             </div>

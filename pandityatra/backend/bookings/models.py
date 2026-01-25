@@ -68,6 +68,11 @@ class Booking(models.Model):
     samagri_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     total_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     total_fee_usd = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'), null=True, blank=True)
+    
+    # Location and Timezone Tracking
+    customer_timezone = models.CharField(max_length=50, default='UTC', help_text="Customer's local timezone")
+    customer_location = models.CharField(max_length=100, blank=True, null=True, help_text="Lat/Long of customer")
+    
     payment_status = models.BooleanField(default=False) # True if payment is confirmed
     payment_method = models.CharField(max_length=50, blank=True, null=True) # Khalti, Stripe, etc.
     transaction_id = models.CharField(max_length=100, blank=True, null=True, help_text="Payment Gateway Transaction ID")

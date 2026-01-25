@@ -13,7 +13,8 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         model = Booking
         fields = [
             'pandit', 'service', 'service_name', 'service_location', 
-            'booking_date', 'booking_time', 'notes', 'samagri_required'
+            'booking_date', 'booking_time', 'notes', 'samagri_required',
+            'customer_timezone', 'customer_location'
         ]
     
     def validate(self, data):
@@ -99,6 +100,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'service_location', 'booking_date', 'booking_time', 'status',
             'notes', 'samagri_required',
             'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'payment_method',
+            'customer_timezone', 'customer_location',
             'created_at', 'updated_at', 'accepted_at', 'completed_at'
         ]
         read_only_fields = fields

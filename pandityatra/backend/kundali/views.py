@@ -66,5 +66,20 @@ def generate_kundali(request):
         "kundali_id": kundali.id,
         "lagna": kundali.lagna,
         "midheaven": kundali.midheaven,
-        "ai_prediction": prediction
+        "ai_prediction": prediction,
+        "planets": [
+            {
+                "planet": p.planet,
+                "longitude": p.longitude,
+                "rashi": p.rashi,
+                "nakshatra": p.nakshatra,
+                "house": p.house
+            } for p in kundali.planets.all()
+        ],
+        "houses": [
+            {
+                "house_number": h.house_number,
+                "cusp_longitude": h.cusp_longitude
+            } for h in kundali.houses.all()
+        ]
     })

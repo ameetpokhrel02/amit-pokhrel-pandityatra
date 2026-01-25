@@ -14,12 +14,15 @@ import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaS
 import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
 import PWALogo from '@/assets/images/PWA.png';
 import { PDFDownloadLink } from '@react-pdf/renderer';
+import { useLocation as useGeoLocation } from '@/hooks/useLocation';
+import apiClient from '@/lib/api-client';
 //
 
 const OfflineKundali: React.FC = () => {
   const { token } = useAuth();
   const isAuthenticated = !!token;
   const navigate = useNavigate();
+  const { latitude, longitude, timezone } = useGeoLocation();
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -72,22 +75,33 @@ const OfflineKundali: React.FC = () => {
 
   //
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!formData.day || !formData.month || !formData.year) {
       alert("Please enter a valid date.");
       return;
     }
+
     setLoading(true);
-    setTimeout(() => {
-      const sunSign = getSunSign(parseInt(formData.day), parseInt(formData.month));
-      setResult({
-        sunSign,
-        moonSign: "Taurus", 
-        nakshatra: "Rohini", 
-        details: { ...formData }
-      });
+    try {
+      const dob = `${formData.year}-${formData.month.padStart(2, '0')}-${formData.day.padStart(2, '0')}`;
+      const time = `${formData.hour.padStart(2, '0')}:${formData.minute.padStart(2, '0')}`;
+
+      const payload = {
+        dob,
+        time,
+        latitude: latitude || 27.7172, // Default to KTM if geo fails
+        longitude: longitude || 85.3240,
+        timezone: timezone || 'Asia/Kathmandu'
+      };
+
+      const response = await apiClient.post('/kundali/generate/', payload);
+      setResult(response.data);
+    } catch (err: any) {
+      console.error("Kundali generation failed", err);
+      alert(err.response?.data?.detail || "Failed to generate Kundali. Ensure birth details and location are valid.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   if (!isAuthenticated) {
@@ -106,11 +120,11 @@ const OfflineKundali: React.FC = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="flex items-center space-x-2">
-                 <p className="text-sm text-[#3E2723]">Please login or register to continue.</p>
+                <p className="text-sm text-[#3E2723]">Please login or register to continue.</p>
               </div>
               <DialogFooter className="sm:justify-start">
-                <Button 
-                  type="button" 
+                <Button
+                  type="button"
                   className="bg-[#FF6F00] hover:bg-[#E65100] text-white"
                   onClick={() => navigate('/login')}
                 >
@@ -144,139 +158,196 @@ const OfflineKundali: React.FC = () => {
           </h1>
           <p className="text-gray-600">Generate detailed Vedic charts without internet connection.</p>
         </div>
-  
+
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-        {/* Left Column: Form */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="border-none shadow-lg">
-            <CardHeader className="bg-[#FFF3E0] rounded-t-lg">
-              <CardTitle className="text-[#E65100] flex items-center gap-2">
-                <FaUserAstronaut /> Birth Details
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6 space-y-4">
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <Input 
-                  placeholder="Enter Name" 
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="focus-visible:ring-[#FF6F00]"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
+          {/* Left Column: Form */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="border-none shadow-lg">
+              <CardHeader className="bg-[#FFF3E0] rounded-t-lg">
+                <CardTitle className="text-[#E65100] flex items-center gap-2">
+                  <FaUserAstronaut /> Birth Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <Label>Gender</Label>
-                  <Select 
-                    value={formData.gender} 
-                    onValueChange={(v) => setFormData({...formData, gender: v})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Place</Label>
-                  <Input 
-                    placeholder="City" 
-                    value={formData.place}
-                    onChange={(e) => setFormData({...formData, place: e.target.value})}
+                  <Label>Full Name</Label>
+                  <Input
+                    placeholder="Enter Name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="focus-visible:ring-[#FF6F00]"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <Input placeholder="DD" value={formData.day} onChange={e => setFormData({...formData, day: e.target.value})} />
-                <Input placeholder="MM" value={formData.month} onChange={e => setFormData({...formData, month: e.target.value})} />
-                <Input placeholder="YYYY" value={formData.year} onChange={e => setFormData({...formData, year: e.target.value})} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Input placeholder="HH" value={formData.hour} onChange={e => setFormData({...formData, hour: e.target.value})} />
-                <Input placeholder="MM" value={formData.minute} onChange={e => setFormData({...formData, minute: e.target.value})} />
-              </div>
-
-              <Button 
-                onClick={handleGenerate} 
-                className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white"
-                disabled={loading}
-              >
-                {loading ? <FaSpinner className="animate-spin mr-2" /> : <GiStarsStack className="mr-2" />}
-                Generate Kundali
-              </Button>
-            </CardContent>
-          </Card>
-          {/* PWA Install Card */}
-          <Card className="border-[#FF6F00] border-2 shadow-md bg-white">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <img src={PWALogo} alt="PWA" className="w-10 h-10 rounded-md" />
-                <div>
-                  <h3 className="font-bold text-[#3E2723]">Install App</h3>
-                  <p className="text-xs text-gray-500">For offline access</p>
-                </div>
-              </div>
-              <Button size="sm" variant="outline" onClick={handleInstallClick} className="border-[#FF6F00] text-[#FF6F00]">
-                <FaDownload />
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column: Visualization */}
-        <div className="lg:col-span-2">
-          <Card className="h-full border-none shadow-lg bg-white">
-            <CardHeader className="border-b">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-[#3E2723]">Chart Visualization</CardTitle>
-                <Tabs defaultValue="north" className="w-[200px]">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="north">North</TabsTrigger>
-                    <TabsTrigger value="south">South</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </CardHeader>
-            <CardContent className="p-8 flex flex-col items-center justify-center min-h-[400px] bg-[#FFF8E1]">
-              {!result ? (
-                <div className="text-center text-[#FF6F00] opacity-50">
-                  <GiSolarSystem size={120} className="mx-auto mb-4" />
-                  <p className="text-xl font-medium">Enter birth details to generate chart</p>
-                </div>
-              ) : (
-                <div className="w-full text-center space-y-6">
-                  <div className="border-4 border-[#3E2723] p-4 bg-white rounded-lg inline-block shadow-xl">
-                      {/* Simulated Chart */}
-                      <svg width="200" height="200" viewBox="0 0 100 100" className="mx-auto">
-                        <rect x="2" y="2" width="96" height="96" fill="none" stroke="#E65100" strokeWidth="2"/>
-                        <line x1="2" y1="2" x2="98" y2="98" stroke="#E65100" strokeWidth="1"/>
-                        <line x1="98" y1="2" x2="2" y2="98" stroke="#E65100" strokeWidth="1"/>
-                        <path d="M50 2 L98 50 L50 98 L2 50 Z" fill="none" stroke="#E65100" strokeWidth="1"/>
-                        <text x="50" y="45" fontSize="8" textAnchor="middle" fill="#3E2723">Sun: {result.sunSign}</text>
-                      </svg>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Gender</Label>
+                    <Select
+                      value={formData.gender}
+                      onValueChange={(v) => setFormData({ ...formData, gender: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  <div className="flex justify-around bg-white p-4 rounded-lg shadow-sm">
-                    <div><p className="text-xs text-gray-500">Sun Sign</p><p className="font-bold text-[#E65100]">{result.sunSign}</p></div>
-                    <div><p className="text-xs text-gray-500">Moon Sign</p><p className="font-bold text-[#3E2723]">{result.moonSign}</p></div>
+                  <div className="space-y-2">
+                    <Label>Place</Label>
+                    <Input
+                      placeholder="City"
+                      value={formData.place}
+                      onChange={(e) => setFormData({ ...formData, place: e.target.value })}
+                    />
                   </div>
-
-                  <Button onClick={() => window.print()} variant="outline" className="mt-4 border-[#3E2723] text-[#3E2723] w-full">
-                    <FaDownload className="mr-2" />
-                    Download Chart
-                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <Input placeholder="DD" value={formData.day} onChange={e => setFormData({ ...formData, day: e.target.value })} />
+                  <Input placeholder="MM" value={formData.month} onChange={e => setFormData({ ...formData, month: e.target.value })} />
+                  <Input placeholder="YYYY" value={formData.year} onChange={e => setFormData({ ...formData, year: e.target.value })} />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input placeholder="HH" value={formData.hour} onChange={e => setFormData({ ...formData, hour: e.target.value })} />
+                  <Input placeholder="MM" value={formData.minute} onChange={e => setFormData({ ...formData, minute: e.target.value })} />
+                </div>
+
+                <Button
+                  onClick={handleGenerate}
+                  className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white"
+                  disabled={loading}
+                >
+                  {loading ? <FaSpinner className="animate-spin mr-2" /> : <GiStarsStack className="mr-2" />}
+                  Generate Kundali
+                </Button>
+              </CardContent>
+            </Card>
+            {/* PWA Install Card */}
+            <Card className="border-[#FF6F00] border-2 shadow-md bg-white">
+              <CardContent className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={PWALogo} alt="PWA" className="w-10 h-10 rounded-md" />
+                  <div>
+                    <h3 className="font-bold text-[#3E2723]">Install App</h3>
+                    <p className="text-xs text-gray-500">For offline access</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={handleInstallClick} className="border-[#FF6F00] text-[#FF6F00]">
+                  <FaDownload />
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Visualization */}
+          <div className="lg:col-span-2">
+            <Card className="h-full border-none shadow-lg bg-white">
+              <CardHeader className="border-b">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-[#3E2723]">Chart Visualization</CardTitle>
+                  <Tabs defaultValue="north" className="w-[200px]">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="north">North</TabsTrigger>
+                      <TabsTrigger value="south">South</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </CardHeader>
+              <CardContent className="p-8 flex flex-col items-center justify-center min-h-[400px] bg-[#FFF8E1]">
+                {!result ? (
+                  <div className="text-center text-[#FF6F00] opacity-50">
+                    <GiSolarSystem size={120} className="mx-auto mb-4" />
+                    <p className="text-xl font-medium">Enter birth details to generate chart</p>
+                  </div>
+                ) : (
+                  <div className="w-full space-y-6">
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+                      <div className="border-4 border-[#3E2723] p-4 bg-white rounded-lg inline-block shadow-xl">
+                        {/* Dynamic Vedic Chart */}
+                        <svg width="300" height="300" viewBox="0 0 100 100" className="mx-auto">
+                          <rect x="2" y="2" width="96" height="96" fill="none" stroke="#E65100" strokeWidth="1.5" />
+                          <line x1="2" y1="2" x2="98" y2="98" stroke="#E65100" strokeWidth="0.8" />
+                          <line x1="98" y1="2" x2="2" y2="98" stroke="#E65100" strokeWidth="0.8" />
+                          <path d="M50 2 L98 50 L50 98 L2 50 Z" fill="none" stroke="#E65100" strokeWidth="0.8" />
+
+                          {/* Render Planets in Houses */}
+                          {result.planets?.map((p: any, idx: number) => {
+                            // Simple positioning logic for houses 1-12
+                            const houseCenters: any = {
+                              1: [50, 25], 2: [25, 12], 3: [12, 25], 4: [25, 50],
+                              5: [12, 75], 6: [25, 88], 7: [50, 75], 8: [75, 88],
+                              9: [88, 75], 10: [75, 50], 11: [88, 25], 12: [75, 12]
+                            };
+                            const [x, y] = houseCenters[p.house] || [50, 50];
+                            return (
+                              <text key={idx} x={x} y={y + (idx % 3) * 4} fontSize="3" textAnchor="middle" fill="#3E2723" fontWeight="bold">
+                                {p.planet.substring(0, 2)}
+                              </text>
+                            );
+                          })}
+                        </svg>
+                      </div>
+
+                      <div className="flex-1 space-y-4 text-left">
+                        <div className="bg-[#FFF3E0] p-4 rounded-lg border-l-4 border-orange-500">
+                          <h4 className="font-bold text-orange-800 mb-2 flex items-center gap-2">
+                            <GiStarsStack /> AI Prediction Preview
+                          </h4>
+                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-6">
+                            {result.ai_prediction}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-white border p-2 rounded shadow-sm text-center">
+                            <p className="text-[10px] text-gray-500 uppercase">Ascendant</p>
+                            <p className="font-bold text-sm">{Math.floor(result.lagna)}°</p>
+                          </div>
+                          <div className="bg-white border p-2 rounded shadow-sm text-center">
+                            <p className="text-[10px] text-gray-500 uppercase">Planets</p>
+                            <p className="font-bold text-sm">{result.planets?.length || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm text-left border-collapse">
+                        <thead>
+                          <tr className="bg-orange-100 text-orange-800">
+                            <th className="p-2 border">Planet</th>
+                            <th className="p-2 border">Rashi</th>
+                            <th className="p-2 border">Nakshatra</th>
+                            <th className="p-2 border">House</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {result.planets?.map((p: any, idx: number) => (
+                            <tr key={idx} className="hover:bg-orange-50 transition-colors">
+                              <td className="p-2 border font-medium">{p.planet}</td>
+                              <td className="p-2 border">{p.rashi}</td>
+                              <td className="p-2 border">{p.nakshatra}</td>
+                              <td className="p-2 border text-center">{p.house}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <Button onClick={() => window.print()} variant="outline" className="mt-4 border-[#3E2723] text-[#3E2723] w-full">
+                      <FaDownload className="mr-2" />
+                      Download Full PDF Chart
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
       </main>
       <Footer />
     </div>
