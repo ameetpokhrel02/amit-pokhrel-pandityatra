@@ -115,6 +115,12 @@ function App() {
                 </ProtectedRoute>
               } />
 
+              <Route path="/profile" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <EditProfile />
+                </ProtectedRoute>
+              } />
+
               <Route path="/my-bookings" element={
                 <ProtectedRoute allowedRoles={['user']}>
                   <MyBookingsPage />
