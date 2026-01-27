@@ -185,6 +185,7 @@ class BookingViewSet(viewsets.ModelViewSet):
     def available_slots(self, request):
         pandit_id = request.query_params.get("pandit_id")
         booking_date = request.query_params.get("date")
+        service_id = request.query_params.get("service_id")
 
         if not pandit_id or not booking_date:
             return Response({"detail": "pandit_id and date required"}, status=400)
@@ -192,21 +193,54 @@ class BookingViewSet(viewsets.ModelViewSet):
         pandit = Pandit.objects.filter(id=pandit_id, is_verified=True).first()
         if not pandit:
             return Response({"detail": "Pandit not found or not verified"}, status=404)
+        
+        # Get requested service duration
+        duration_minutes = 60 # Default
+        if service_id:
+            from services.models import Service
+            service = Service.objects.filter(id=service_id).first()
+            if service:
+                duration_minutes = service.duration_minutes
 
-        booked = Booking.objects.filter(
+        # Fetch existing bookings with their services
+        existing_bookings = Booking.objects.filter(
             pandit=pandit,
             booking_date=booking_date,
             status__in=[BookingStatus.PENDING, BookingStatus.ACCEPTED]
-        ).values_list("booking_time", flat=True)
+        ).select_related('service')
+
+        # Build list of busy intervals [(start, end)]
+        busy_intervals = []
+        for b in existing_bookings:
+            start_time = datetime.combine(datetime.today(), b.booking_time)
+            # Use booking's service duration or default
+            b_duration = b.service.duration_minutes if b.service else 60
+            end_time = start_time + timedelta(minutes=b_duration)
+            busy_intervals.append((start_time, end_time))
 
         from datetime import time
         slots = []
-        t = time(8, 0)
-        end = time(20, 0)
+        
+        # Helper to check overlap
+        def is_overlapping(candidate_start, candidate_end, intervals):
+            for start, end in intervals:
+                # Check if candidate overlaps with existing booking
+                # Overlap logic: A_start < B_end AND A_end > B_start
+                if candidate_start < end and candidate_end > start:
+                    return True
+            return False
 
-        while t < end:
-            if t not in booked:
-                slots.append(t.strftime("%H:%M"))
-            t = (datetime.combine(timezone.now().date(), t) + timedelta(hours=1)).time()
+        # Generate slots every 30 mins
+        current_time = datetime.combine(datetime.today(), time(8, 0)) # Start at 8 AM
+        end_of_day = datetime.combine(datetime.today(), time(20, 0)) # End at 8 PM
+
+        while current_time + timedelta(minutes=duration_minutes) <= end_of_day:
+            candidate_start = current_time
+            candidate_end = current_time + timedelta(minutes=duration_minutes)
+            
+            if not is_overlapping(candidate_start, candidate_end, busy_intervals):
+                slots.append(candidate_start.time().strftime("%H:%M"))
+            
+            current_time += timedelta(minutes=30) # 30 min increments
 
         return Response({"available_slots": slots})

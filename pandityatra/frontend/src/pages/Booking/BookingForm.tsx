@@ -154,6 +154,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
           params: {
             pandit_id: formData.pandit,
             date: formData.booking_date,
+            service_id: formData.service,
           },
         }
       );

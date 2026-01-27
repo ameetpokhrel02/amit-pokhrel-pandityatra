@@ -36,6 +36,13 @@ class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
     serializer_class = PujaSamagriRequirementSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_queryset(self):
+        queryset = PujaSamagriRequirement.objects.all()
+        puja_id = self.request.query_params.get('puja')
+        if puja_id:
+            queryset = queryset.filter(puja_id=puja_id)
+        return queryset
+
 class ShopCheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
