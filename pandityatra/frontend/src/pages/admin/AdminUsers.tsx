@@ -22,6 +22,9 @@ const AdminUsers = () => {
     const { toast } = useToast();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [search, setSearch] = useState("");
+    const [editId, setEditId] = useState<number | null>(null);
+    const [editForm, setEditForm] = useState<{ full_name: string; email: string; role: string }>({ full_name: "", email: "", role: "user" });
 
     useEffect(() => {
         fetchUsers();
@@ -43,10 +46,52 @@ const AdminUsers = () => {
         try {
             const res = await axiosInstance.post(`/users/admin/users/${userId}/toggle-status/`);
             toast({ title: "Success", description: res.data.message });
-            // Update local state
             setUsers(users.map(u => u.id === userId ? { ...u, is_active: !currentStatus } : u));
         } catch (error) {
             toast({ title: "Error", description: "Failed to update user status", variant: "destructive" });
+        }
+    };
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value);
+    };
+
+    const filteredUsers = users.filter(u =>
+        u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const handleEdit = (user: User) => {
+        setEditId(user.id);
+        setEditForm({ full_name: user.full_name, email: user.email, role: user.role });
+    };
+
+    const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setEditForm(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await axiosInstance.put(`/users/admin/users/${editId}/`, editForm);
+            toast({ title: "Success", description: "User updated" });
+            setEditId(null);
+            fetchUsers();
+        } catch {
+            toast({ title: "Error", description: "Failed to update user", variant: "destructive" });
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm("Delete this user?")) {
+            try {
+                await axiosInstance.delete(`/users/admin/users/${id}/`);
+                toast({ title: "Deleted", description: "User deleted" });
+                fetchUsers();
+            } catch {
+                toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+            }
         }
     };
 
@@ -55,59 +100,73 @@ const AdminUsers = () => {
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold">User Management</h1>
-                    <Badge variant="outline">Total: {users.length}</Badge>
+                    <span className="text-muted-foreground">Total: {users.length}</span>
                 </div>
-
-                <Card>
+                <Card className="mb-6">
                     <CardHeader>
-                        <CardTitle>Registered Users</CardTitle>
+                        <CardTitle>Search & Manage Users</CardTitle>
                     </CardHeader>
                     <CardContent>
+                        <input type="text" placeholder="Search users..." value={search} onChange={handleSearch} className="mb-4 p-2 border rounded w-full max-w-md" />
                         <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>ID</TableHead>
                                     <TableHead>Name</TableHead>
-                                    <TableHead>Phone / Email</TableHead>
-                                    <TableHead>Joined Date</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Action</TableHead>
+                                    <TableHead>Joined</TableHead>
+                                    <TableHead>Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">Loading...</TableCell>
+                                        <TableCell colSpan={7} className="text-center h-24">Loading...</TableCell>
                                     </TableRow>
-                                ) : users.length === 0 ? (
+                                ) : filteredUsers.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center h-24">No users found.</TableCell>
+                                        <TableCell colSpan={7} className="text-center h-24">No users found.</TableCell>
                                     </TableRow>
                                 ) : (
-                                    users.map((user) => (
+                                    filteredUsers.map((user) => (
                                         <TableRow key={user.id}>
                                             <TableCell>#{user.id}</TableCell>
-                                            <TableCell>{user.full_name || 'N/A'}</TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span>{user.phone_number || '-'}</span>
-                                                    <span className="text-xs text-muted-foreground">{user.email}</span>
-                                                </div>
+                                                {editId === user.id ? (
+                                                    <input name="full_name" value={editForm.full_name} onChange={handleEditChange} className="p-1 border rounded" />
+                                                ) : user.full_name || 'N/A'}
+                                            </TableCell>
+                                            <TableCell>
+                                                {editId === user.id ? (
+                                                    <input name="email" value={editForm.email} onChange={handleEditChange} className="p-1 border rounded" />
+                                                ) : user.email}
+                                            </TableCell>
+                                            <TableCell>
+                                                {editId === user.id ? (
+                                                    <input name="role" value={editForm.role} onChange={handleEditChange} className="p-1 border rounded" />
+                                                ) : user.role}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className={user.is_active ? "text-green-600" : "text-red-600"}>{user.is_active ? 'Active' : 'Blocked'}</span>
                                             </TableCell>
                                             <TableCell>{format(new Date(user.date_joined), 'MMM dd, yyyy')}</TableCell>
                                             <TableCell>
-                                                <Badge variant={user.is_active ? "default" : "destructive"}>
-                                                    {user.is_active ? 'Active' : 'Blocked'}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Button 
-                                                    variant={user.is_active ? "destructive" : "outline"}
-                                                    size="sm"
-                                                    onClick={() => toggleStatus(user.id, user.is_active)}
-                                                >
-                                                    {user.is_active ? 'Block' : 'Unblock'}
-                                                </Button>
+                                                {editId === user.id ? (
+                                                    <>
+                                                        <Button size="sm" onClick={handleEditSubmit}>Save</Button>
+                                                        <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>Edit</Button>
+                                                        <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Delete</Button>
+                                                        <Button size="sm" variant={user.is_active ? "destructive" : "outline"} onClick={() => toggleStatus(user.id, user.is_active)}>
+                                                            {user.is_active ? 'Block' : 'Unblock'}
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))

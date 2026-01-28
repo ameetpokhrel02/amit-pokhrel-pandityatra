@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
+import { useNavigate } from 'react-router-dom';
 import { fetchPujas } from '../../services/api';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -66,23 +67,14 @@ const PujaCategories = () => {
   const { toast } = useToast();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addItem, openDrawer } = useCart();
+  const navigate = useNavigate();
   const [selectedPuja, setSelectedPuja] = useState<Puja | null>(null);
 
   // ... (useEffect and loadData)
 
-  const handleAddToCart = (puja: Puja) => {
-    addItem({
-      id: puja.id,
-      title: puja.name || 'Puja Service',
-      price: Number(puja.price),
-      image: pujaData[puja.name || '']?.image || '/images/puja1.svg',
-    });
-    toast({
-      title: "Added to Cart",
-      description: `${puja.name} has been added.`,
-      className: "bg-green-600 text-white border-green-700 shadow-md"
-    });
-    openDrawer();
+  const handleBookNow = (puja: Puja) => {
+    // Navigate to booking form for this puja
+    navigate(`/booking?pujaId=${puja.id}`);
   };
 
   useEffect(() => {
@@ -271,7 +263,7 @@ const PujaCategories = () => {
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <Button
-                              onClick={() => handleAddToCart(puja)}
+                              onClick={() => handleBookNow(puja)}
                               className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium flex items-center justify-center gap-2 h-9 text-xs"
                             >
                               <ShoppingCart className="w-3 h-3" /> Book Now

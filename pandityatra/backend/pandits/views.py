@@ -435,34 +435,35 @@ def toggle_availability(request):
 # ---------------------------
 # PUBLIC: Search & Profile
 # ---------------------------
-class PanditViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [permissions.AllowAny]
-    
-    def get_queryset(self):
-        queryset = Pandit.objects.filter(
-            verification_status='APPROVED', 
-            is_verified=True,
-            is_available=True
-        ).select_related('user').prefetch_related(
-            'services', 'services__puja', 'reviews', 'reviews__customer'
-        ).order_by('-rating')
+class PanditViewSet(viewsets.ModelViewSet):
+    """
+    Admins can update/delete any pandit. Public can read/list.
+    """
+    queryset = Pandit.objects.select_related('user').prefetch_related(
+        'services', 'services__puja', 'reviews', 'reviews__customer'
+    ).order_by('-rating')
 
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAdminUser()]
+        if self.action in ['create']:
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
+
+    def get_queryset(self):
+        queryset = Pandit.objects.all()
         service_id = self.request.query_params.get('service_id')
         if service_id:
             queryset = queryset.filter(services__puja_id=service_id).distinct()
-            
         return queryset
 
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'profile']:
+            return PanditDetailSerializer
+        return PanditSerializer
 
     @action(detail=True, methods=['get'])
     def profile(self, request, pk=None):
         pandit = self.get_object()
         serializer = PanditDetailSerializer(pandit)
         return Response(serializer.data)
-
-    def get_serializer_class(self):
-        if self.action in ['retrieve', 'profile']:
-            return PanditDetailSerializer
-        return PanditSerializer
