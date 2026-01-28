@@ -266,8 +266,10 @@ const Samagri = () => {
                                                     onClick={() => handleAddToCart(item)}
                                                     variant="secondary"
                                                     className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm"
+                                                    disabled={item.stock_quantity === 0}
                                                 >
-                                                    <ShoppingCart className="w-4 h-4" /> Add
+                                                    <ShoppingCart className="w-4 h-4" />
+                                                    {item.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
                                                 </Button>
                                                 <Button
                                                     variant="secondary"

@@ -10,6 +10,7 @@ import { Star, Loader2, ArrowLeft } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { motion } from 'framer-motion';
 
+
 const ReviewForm = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -18,9 +19,26 @@ const ReviewForm = () => {
     const [comment, setComment] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+
+    React.useEffect(() => {
+        // Check if review already exists for this booking
+        if (!id) return;
+        apiClient.get(`/reviews/booking/${id}/`).then(res => {
+            if (res.data && res.data.id) {
+                setAlreadyReviewed(true);
+            }
+        }).catch(() => {
+            // If 404, no review exists; otherwise, ignore
+        });
+    }, [id]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (alreadyReviewed) {
+            setError("You have already submitted a review for this booking.");
+            return;
+        }
         if (rating === 0) {
             setError("Please select a star rating.");
             return;
@@ -41,6 +59,9 @@ const ReviewForm = () => {
             console.error(err);
             const msg = err.response?.data?.detail || "Failed to submit review.";
             setError(msg);
+            if (msg && msg.toLowerCase().includes('already reviewed')) {
+                setAlreadyReviewed(true);
+            }
         } finally {
             setLoading(false);
         }
@@ -68,12 +89,17 @@ const ReviewForm = () => {
                         <CardDescription>How was your puja service?</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {error && (
+                        {alreadyReviewed ? (
+                            <Alert variant="destructive" className="mb-6">
+                                <AlertDescription>You have already submitted a review for this booking.</AlertDescription>
+                            </Alert>
+                        ) : error && (
                             <Alert variant="destructive" className="mb-6">
                                 <AlertDescription>{error}</AlertDescription>
                             </Alert>
                         )}
 
+                        {!alreadyReviewed && (
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Star Rating */}
                             <div className="flex justify-center flex-col items-center gap-2">
@@ -123,6 +149,7 @@ const ReviewForm = () => {
                                 Submit Review
                             </Button>
                         </form>
+                        )}
                     </CardContent>
                 </Card>
             </motion.div>

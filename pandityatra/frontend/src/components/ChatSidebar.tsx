@@ -45,17 +45,44 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ bookingId, panditName }) => {
     return (
         <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b bg-orange-50/50 flex items-center justify-between">
+            <div className="p-4 border-b bg-orange-50/50 flex items-center justify-between gap-2">
                 <div>
                     <h3 className="text-sm font-bold text-orange-900">Pushpa Chat</h3>
                     <p className="text-[10px] text-gray-500">Real-time with {panditName || 'Pandit'}</p>
                 </div>
-                <Badge variant={isConnected ? "default" : "secondary"} className={cn(
-                    "text-[10px] px-2 py-0",
-                    isConnected ? "bg-green-500 hover:bg-green-500" : "bg-gray-400"
-                )}>
-                    {isConnected ? 'LIVE' : 'RECONNECTING'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <Badge variant={isConnected ? "default" : "secondary"} className={cn(
+                        "text-[10px] px-2 py-0",
+                        isConnected ? "bg-green-500 hover:bg-green-500" : "bg-gray-400"
+                    )}>
+                        {isConnected ? 'LIVE' : 'RECONNECTING'}
+                    </Badge>
+                    <button
+                        className="ml-2 text-xs text-orange-700 underline hover:text-orange-900 transition-colors"
+                        title="Export Chat Log"
+                        onClick={() => {
+                            if (!messages.length) return;
+                            const log = messages.map(m => {
+                                const who = m.sender === 'user' ? 'You' : (m.sender === 'pandit' ? (panditName || 'Pandit') : 'AI');
+                                return `[${new Date(m.timestamp).toLocaleString()}] ${who}: ${m.content}`;
+                            }).join('\n');
+                            const blob = new Blob([log], { type: 'text/plain' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `chatlog-booking-${bookingId}.txt`;
+                            document.body.appendChild(a);
+                            a.click();
+                            setTimeout(() => {
+                                document.body.removeChild(a);
+                                URL.revokeObjectURL(url);
+                            }, 100);
+                        }}
+                        disabled={!messages.length}
+                    >
+                        Export Chat
+                    </button>
+                </div>
             </div>
 
             {/* Messages */}

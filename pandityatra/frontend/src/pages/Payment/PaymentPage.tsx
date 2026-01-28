@@ -113,12 +113,19 @@ const PaymentPage: React.FC = () => {
         throw new Error('Payment initiation failed');
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Payment failed');
+      const backendError = err.response?.data?.error || err.message || 'Payment failed';
+      setError(backendError);
       toast({
         title: 'Payment Failed',
-        description: err.response?.data?.error || 'Could not initiate payment',
+        description: backendError,
         variant: 'destructive',
       });
+      // Store bookingId for retry
+      if (bookingId) {
+        sessionStorage.setItem('pending_booking_id', bookingId);
+      }
+      // Redirect to failure page with error message
+      navigate('/payment/failure', { state: { error: backendError } });
       setProcessing(false);
     }
   };

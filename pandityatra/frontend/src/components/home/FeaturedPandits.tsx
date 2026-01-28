@@ -274,7 +274,7 @@ const FeaturedPandits: React.FC = () => {
                       </div>
                     </div>
 
-                    <Link to={`/pandit/${pandit.id}`}>
+                    <Link to={`/pandits/${pandit.id}`}>
                       <Button
                         className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 transition-all duration-300 hover:scale-105"
                         disabled={!pandit.isAvailable}
@@ -308,7 +308,7 @@ const FeaturedPandits: React.FC = () => {
 
         {/* View All Button */}
         <div className="text-center mt-12">
-          <Link to="/booking">
+          <Link to="/pandits">
             <Button
               size="lg"
               variant="outline"

@@ -4,11 +4,13 @@ from .models import Payment, PaymentWebhook
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'transaction_id', 'user', 'amount', 'currency', 'payment_method', 'status', 'created_at']
+    list_display = [
+        'id', 'transaction_id', 'user', 'amount', 'currency', 'payment_method', 'status', 'created_at', 'error_summary'
+    ]
     list_filter = ['status', 'payment_method', 'created_at']
     search_fields = ['transaction_id', 'user__username']
     readonly_fields = ['created_at', 'updated_at', 'completed_at', 'refunded_at']
-    
+
     fieldsets = (
         ('User & Booking', {
             'fields': ('user', 'booking')
@@ -17,7 +19,7 @@ class PaymentAdmin(admin.ModelAdmin):
             'fields': ('payment_method', 'amount', 'currency', 'transaction_id')
         }),
         ('Status', {
-            'fields': ('status', 'gateway_response')
+            'fields': ('status', 'gateway_response', 'error_summary')
         }),
         ('Refund', {
             'fields': ('refund_amount', 'refund_reason', 'refunded_at')
@@ -27,12 +29,30 @@ class PaymentAdmin(admin.ModelAdmin):
         }),
     )
 
+    def error_summary(self, obj):
+        if obj.status in ('FAILED', 'REFUNDED') and obj.gateway_response:
+            # Show a short error message if present
+            err = obj.gateway_response.get('error')
+            if err:
+                return str(err)[:60]
+        return ''
+    error_summary.short_description = 'Error Details'
+
 
 @admin.register(PaymentWebhook)
 class PaymentWebhookAdmin(admin.ModelAdmin):
-    list_display = ['id', 'payment_method', 'processed', 'created_at']
+    list_display = ['id', 'payment_method', 'processed', 'created_at', 'error_excerpt']
     list_filter = ['payment_method', 'processed', 'created_at']
     readonly_fields = ['created_at']
+
+    def error_excerpt(self, obj):
+        if not obj.processed and obj.payload:
+            # Try to show error or failure reason from payload
+            err = obj.payload.get('error')
+            if err:
+                return str(err)[:60]
+        return ''
+    error_excerpt.short_description = 'Webhook Error'
 
 from .models import PanditWithdrawal
 

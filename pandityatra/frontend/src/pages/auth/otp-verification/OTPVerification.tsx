@@ -21,12 +21,14 @@ const itemVariants = {
 const OTPVerificationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { verifyResetOtp, loginWithOtp } = useAuth();
+  const { verifyResetOtp, loginWithOtp, requestOtp } = useAuth();
   const { toast } = useToast();
 
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState<string | null>(null);
 
   const { phone_number, email, flow } = location.state || {}; // flow: 'login' | 'reset_password'
   const identifier = phone_number || email;
@@ -58,7 +60,27 @@ const OTPVerificationPage: React.FC = () => {
       }
     } catch (err: any) {
       setError(err?.message || 'Verification failed');
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError(null);
+    setResendSuccess(null);
+    setResendLoading(true);
+    try {
+      await requestOtp(identifier);
+      setResendSuccess('A new verification code has been sent.');
+      toast({
+        title: 'OTP Resent!',
+        description: 'A new verification code has been sent.',
+        variant: 'default',
+      });
+    } catch (err: any) {
+      setError(err?.message || 'Failed to resend OTP');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -96,11 +118,20 @@ const OTPVerificationPage: React.FC = () => {
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+        {resendSuccess && (
+          <Alert variant="success" className="w-full">
+            <AlertDescription>{resendSuccess}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="text-center text-sm text-gray-500">
           Didn't receive code?{' '}
-          <button className="font-bold text-primary hover:underline">
-            Resend
+          <button
+            className="font-bold text-primary hover:underline disabled:opacity-60"
+            onClick={handleResendOTP}
+            disabled={resendLoading}
+          >
+            {resendLoading ? 'Resending...' : 'Resend'}
           </button>
         </div>
       </motion.div>

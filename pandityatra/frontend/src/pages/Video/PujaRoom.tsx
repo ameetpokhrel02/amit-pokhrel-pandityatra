@@ -11,16 +11,48 @@ export default function PujaRoom() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [roomUrl, setRoomUrl] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const fetchRoom = () => {
+    setLoading(true)
+    setError(null)
     if (id) {
       apiClient.get(`/video/room/${id}/`).then((response) => {
         setRoomUrl(response.data.room_url || response.data.room_name)
+        setLoading(false)
       }).catch(err => {
-        console.error("Failed to load room", err)
+        setError("Unable to connect to the video provider. Please check your connection or try again later.")
+        setLoading(false)
       })
     }
+  }
+
+  useEffect(() => {
+    fetchRoom()
+    // eslint-disable-next-line
   }, [id])
+
+  if (loading) {
+    return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold">Connecting to Sacred Space...</div>
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-orange-50">
+        <div className="bg-white p-8 rounded-xl shadow-lg flex flex-col items-center gap-4 border border-orange-200">
+          <span className="text-6xl">🙏</span>
+          <h2 className="text-2xl font-bold text-orange-700">Video Service Unavailable</h2>
+          <p className="text-gray-700 text-center max-w-md">{error}</p>
+          <div className="flex gap-3 mt-2">
+            <Button variant="outline" onClick={fetchRoom}>Retry</Button>
+            <Button variant="destructive" onClick={() => navigate('/my-bookings')}>Return to My Bookings</Button>
+            <a href="/contact" className="text-primary underline text-sm flex items-center">Contact Support</a>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!roomUrl) return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold">Connecting to Sacred Space...</div>
 

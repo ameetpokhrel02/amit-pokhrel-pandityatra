@@ -42,19 +42,56 @@ export const PanditList = () => {
     // Debounced query updater used by MotionSearch
     const handleQuery = (q: string) => {
         if (debounceRef.current) window.clearTimeout(debounceRef.current);
-        // small debounce so typing doesn't filter aggressively
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         debounceRef.current = window.setTimeout(() => setQuery(q), 180) as any;
     };
 
+    // --- Rule-based AI/NLP search ---
+    function parseQuery(q: string) {
+        // Simple rule-based extraction
+        const lower = q.toLowerCase();
+        // Language extraction
+        const langMatch = lower.match(/(english|nepali|hindi|sanskrit)/g);
+        const languages = langMatch ? Array.from(new Set(langMatch)) : [];
+        // Experience extraction
+        const expMatch = lower.match(/(\d+)\s*(years?|yrs?)/);
+        const experience = expMatch ? parseInt(expMatch[1]) : null;
+        // Expertise extraction
+        let expertise = '';
+        if (lower.includes('naming')) expertise = 'naming';
+        else if (lower.includes('marriage')) expertise = 'marriage';
+        else if (lower.includes('thread')) expertise = 'thread';
+        else if (lower.includes('puja')) expertise = 'puja';
+        else if (lower.includes('astrology')) expertise = 'astrology';
+        // Add more as needed
+        return { languages, experience, expertise };
+    }
+
     const filtered = useMemo(() => {
         if (!query) return pandits;
-        const q = query.toLowerCase();
-        return pandits.filter(p => (
-            (p.user_details.full_name || '').toLowerCase().includes(q) ||
-            (p.expertise || '').toLowerCase().includes(q) ||
-            (p.language || '').toLowerCase().includes(q)
-        ));
+        // If query is a simple word, fallback to default filter
+        if (query.length < 6) {
+            const q = query.toLowerCase();
+            return pandits.filter(p => (
+                (p.user_details.full_name || '').toLowerCase().includes(q) ||
+                (p.expertise || '').toLowerCase().includes(q) ||
+                (p.language || '').toLowerCase().includes(q)
+            ));
+        }
+        // Rule-based parsing
+        const { languages, experience, expertise } = parseQuery(query);
+        return pandits.filter(p => {
+            let match = true;
+            if (languages.length > 0) {
+                match = match && languages.some(lang => (p.language || '').toLowerCase().includes(lang));
+            }
+            if (experience !== null && typeof p.experience_years === 'number') {
+                match = match && p.experience_years >= experience;
+            }
+            if (expertise) {
+                match = match && (p.expertise || '').toLowerCase().includes(expertise);
+            }
+            return match;
+        });
     }, [pandits, query]);
 
     if (isLoading) {
@@ -73,62 +110,70 @@ export const PanditList = () => {
                     <MotionSearch onSearch={handleQuery} />
                 </div>
             </div>
-            <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                initial="hidden"
-                animate="visible"
-                variants={{
-                    hidden: {},
-                    visible: { transition: { staggerChildren: 0.06 } }
-                }}
-            >
-                {filtered.map((pandit) => (
-                    <motion.div key={pandit.id} variants={fadeInUp} whileHover={subtleHover}>
-                        <AnimatedCard className="border-t-4 border-t-primary">
-                            <CardHeader>
-                                <CardTitle className="text-xl">{pandit.user_details.full_name}</CardTitle>
-                                <CardDescription>
-                                    Expertise: {pandit.expertise} • Language: {pandit.language}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-2">
-                                    <p className="text-yellow-600 font-bold">Rating: {pandit.rating} / 5.0</p>
-                                    <p className="text-muted-foreground italic line-clamp-3">{pandit.bio}</p>
-                                    <div className="mt-4">
-                                        <div className="flex gap-2">
-                                            <Link to={`/pandits/${pandit.id}`} className="no-underline">
-                                                <Button variant="ghost">View Profile</Button>
-                                            </Link>
-                                            <PanditServicesModal
-                                                panditId={pandit.id}
-                                                panditName={pandit.user_details.full_name}
-                                            />
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className={`hover:bg-transparent ${isFavorite(pandit.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-                                                onClick={() => toggleFavorite({
-                                                    id: pandit.id,
-                                                    type: 'pandit',
-                                                    name: pandit.user_details.full_name,
-                                                    description: pandit.expertise,
-                                                    image: pandit.user_details.profile_pic_url
-                                                })}
-                                            >
-                                                {isFavorite(pandit.id) ? (
-                                                    <FaHeart className="h-5 w-5 text-red-500" />
-                                                ) : (
-                                                    <FaRegHeart className="h-5 w-5 text-gray-400 hover:text-red-500" />
-                                                )}
-                                            </Button>
+            {filtered.length === 0 ? (
+                <div className="text-center py-16">
+                    <div className="text-2xl font-semibold text-gray-700 mb-2">No pandits found</div>
+                    <div className="text-gray-500 mb-4">Try adjusting your search or filters.</div>
+                    <div className="text-gray-500 mb-4">Need help? <a href="/contact" className="text-primary underline">Contact support</a> or <a href="/booking" className="text-primary underline">browse all services</a>.</div>
+                </div>
+            ) : (
+                <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: {},
+                        visible: { transition: { staggerChildren: 0.06 } }
+                    }}
+                >
+                    {filtered.map((pandit) => (
+                        <motion.div key={pandit.id} variants={fadeInUp} whileHover={subtleHover}>
+                            <AnimatedCard className="border-t-4 border-t-primary">
+                                <CardHeader>
+                                    <CardTitle className="text-xl">{pandit.user_details.full_name}</CardTitle>
+                                    <CardDescription>
+                                        Expertise: {pandit.expertise} • Language: {pandit.language}
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-2">
+                                        <p className="text-yellow-600 font-bold">Rating: {pandit.rating} / 5.0</p>
+                                        <p className="text-muted-foreground italic line-clamp-3">{pandit.bio}</p>
+                                        <div className="mt-4">
+                                            <div className="flex gap-2">
+                                                <Link to={`/pandits/${pandit.id}`} className="no-underline">
+                                                    <Button variant="ghost">View Profile</Button>
+                                                </Link>
+                                                <PanditServicesModal
+                                                    panditId={pandit.id}
+                                                    panditName={pandit.user_details.full_name}
+                                                />
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className={`hover:bg-transparent ${isFavorite(pandit.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                                                    onClick={() => toggleFavorite({
+                                                        id: pandit.id,
+                                                        type: 'pandit',
+                                                        name: pandit.user_details.full_name,
+                                                        description: pandit.expertise,
+                                                        image: pandit.user_details.profile_pic_url
+                                                    })}
+                                                >
+                                                    {isFavorite(pandit.id) ? (
+                                                        <FaHeart className="h-5 w-5 text-red-500" />
+                                                    ) : (
+                                                        <FaRegHeart className="h-5 w-5 text-gray-400 hover:text-red-500" />
+                                                    )}
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </AnimatedCard>
-                    </motion.div>
-                ))}
-            </motion.div>
+                                </CardContent>
+                            </AnimatedCard>
+                        </motion.div>
+                    ))}
+                </motion.div>
+            )}
         </div>
     );
 };

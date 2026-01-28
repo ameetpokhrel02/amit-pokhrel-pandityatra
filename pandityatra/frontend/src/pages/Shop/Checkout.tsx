@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
+import { fetchSamagriItems } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,9 +13,44 @@ import Footer from '@/components/layout/Footer';
 import apiClient from '@/lib/api-client';
 
 const CheckoutPage: React.FC = () => {
-    const { items, total, clear } = useCart();
+    const { items, total, clear, updateQuantity, removeItem } = useCart();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [stockError, setStockError] = useState<string | null>(null);
+    const [cartValid, setCartValid] = useState(true);
+        // Sync cart with real-time stock on mount
+        useEffect(() => {
+            const checkStock = async () => {
+                try {
+                    setStockError(null);
+                    setCartValid(true);
+                    const latestItems = await fetchSamagriItems();
+                    let hasError = false;
+                    let errorMsg = '';
+                    for (const cartItem of items) {
+                        const latest = latestItems.find(i => i.id === Number(cartItem.id));
+                        if (!latest || latest.stock_quantity === 0) {
+                            removeItem(cartItem.id);
+                            hasError = true;
+                            errorMsg += `\n${cartItem.title} is out of stock and was removed from your cart.`;
+                        } else if (cartItem.quantity > latest.stock_quantity) {
+                            updateQuantity(cartItem.id, latest.stock_quantity);
+                            hasError = true;
+                            errorMsg += `\n${cartItem.title} quantity reduced to ${latest.stock_quantity} due to limited stock.`;
+                        }
+                    }
+                    if (hasError) {
+                        setStockError(errorMsg.trim());
+                        setCartValid(false);
+                    }
+                } catch (e) {
+                    setStockError('Could not verify stock. Please try again.');
+                    setCartValid(false);
+                }
+            };
+            checkStock();
+            // eslint-disable-next-line
+        }, []);
     const [formData, setFormData] = useState({
         full_name: '',
         phone_number: '',
@@ -31,22 +67,42 @@ const CheckoutPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-
+        setStockError(null);
+        setCartValid(true);
+        // Re-check stock before payment
         try {
+            const latestItems = await fetchSamagriItems();
+            let hasError = false;
+            let errorMsg = '';
+            for (const cartItem of items) {
+                const latest = latestItems.find(i => i.id === Number(cartItem.id));
+                if (!latest || latest.stock_quantity === 0) {
+                    removeItem(cartItem.id);
+                    hasError = true;
+                    errorMsg += `\n${cartItem.title} is out of stock and was removed from your cart.`;
+                } else if (cartItem.quantity > latest.stock_quantity) {
+                    updateQuantity(cartItem.id, latest.stock_quantity);
+                    hasError = true;
+                    errorMsg += `\n${cartItem.title} quantity reduced to ${latest.stock_quantity} due to limited stock.`;
+                }
+            }
+            if (hasError) {
+                setStockError(errorMsg.trim());
+                setCartValid(false);
+                setLoading(false);
+                return;
+            }
             const payload = {
                 ...formData,
                 items: items.map(it => ({ id: it.id, quantity: it.quantity }))
             };
-
             const response = await apiClient.post('/samagri/checkout/initiate/', payload);
-
-            // Redirect to payment gateway
             if (response.data.payment_url) {
                 window.location.href = response.data.payment_url;
             }
         } catch (err: any) {
-            console.error("Checkout failed:", err);
-            alert(err.response?.data?.error || "Checkout initiation failed. Please check stock and try again.");
+            setStockError(err.response?.data?.error || "Checkout initiation failed. Please check stock and try again.");
+            setCartValid(false);
         } finally {
             setLoading(false);
         }
@@ -204,9 +260,14 @@ const CheckoutPage: React.FC = () => {
                                         )}
                                     </div>
 
+                                    {stockError && (
+                                        <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm whitespace-pre-line">
+                                            {stockError}
+                                        </div>
+                                    )}
                                     <Button
                                         form="checkout-form"
-                                        disabled={loading}
+                                        disabled={loading || !cartValid}
                                         className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-xl shadow-lg ring-offset-2 focus:ring-2 focus:ring-orange-500 transition-all active:scale-[0.98]"
                                     >
                                         {loading ? (

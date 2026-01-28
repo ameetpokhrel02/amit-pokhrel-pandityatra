@@ -309,26 +309,33 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             {formData.pandit && (
               <div className="space-y-2">
                 <Label htmlFor="service">Select Service *</Label>
-                <Select
-                  value={String(formData.service)}
-                  onValueChange={(value) => handleInputChange('service', value)}
-                >
-                  <SelectTrigger className="h-10">
-                    <SelectValue placeholder="Choose a puja service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {services.filter(s => s.is_available).map((service) => (
-                      <SelectItem key={service.id} value={String(service.id)}>
-                        <div>
-                          <p className="font-semibold">{service.name}</p>
-                          <p className="text-xs text-gray-500">
-                            ₹{service.price} • {service.duration_minutes} mins
-                          </p>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {services.filter(s => s.is_available).length === 0 ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-yellow-800 text-sm">
+                    No services are currently available for this pandit.<br />
+                    <span className="text-gray-500">Try selecting another pandit or <a href="/contact" className="text-primary underline">contact support</a> for help.</span>
+                  </div>
+                ) : (
+                  <Select
+                    value={String(formData.service)}
+                    onValueChange={(value) => handleInputChange('service', value)}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Choose a puja service" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {services.filter(s => s.is_available).map((service) => (
+                        <SelectItem key={service.id} value={String(service.id)}>
+                          <div>
+                            <p className="font-semibold">{service.name}</p>
+                            <p className="text-xs text-gray-500">
+                              ₹{service.price} • {service.duration_minutes} mins
+                            </p>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 

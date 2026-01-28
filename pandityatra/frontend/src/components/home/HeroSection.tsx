@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,6 +43,7 @@ import heroPandit from '@/assets/images/hero 3-Photoroom.png';
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
   const { token } = useAuth();
+  const navigate = useNavigate();
   const [searchData, setSearchData] = useState({
     pujaType: '',
     date: '',
@@ -73,7 +74,11 @@ const HeroSection: React.FC = () => {
   ];
 
   const handleSearch = () => {
-    console.log('Search data:', searchData);
+    // Optionally pass searchData as query params
+    const params = new URLSearchParams();
+    if (searchData.pujaType) params.append('pujaType', searchData.pujaType);
+    if (searchData.date) params.append('date', searchData.date);
+    navigate(`/booking/pandits${params.toString() ? '?' + params.toString() : ''}`);
   };
 
   return (
@@ -179,11 +184,19 @@ const HeroSection: React.FC = () => {
           </Card>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-            <Link to="/register">
-              <Button size="lg" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-10 rounded-full font-bold">
-                {t('get_started')}
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-10 rounded-full font-bold"
+              onClick={() => {
+                if (token) {
+                  navigate('/booking');
+                } else {
+                  navigate('/register');
+                }
+              }}
+            >
+              {t('get_started')}
+            </Button>
             <Link to="/about">
               <Button variant="outline" size="lg" className="w-full sm:w-auto border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
                 <FaPlay className="mr-2 text-orange-500" /> {t('watch_demo')}

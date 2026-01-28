@@ -183,64 +183,72 @@ class BookingViewSet(viewsets.ModelViewSet):
     # ---------------------------
     @action(detail=False, methods=["get"])
     def available_slots(self, request):
+        from datetime import datetime, timedelta, time
         pandit_id = request.query_params.get("pandit_id")
         booking_date = request.query_params.get("date")
         service_id = request.query_params.get("service_id")
 
+        # Validate input
         if not pandit_id or not booking_date:
             return Response({"detail": "pandit_id and date required"}, status=400)
 
-        pandit = Pandit.objects.filter(id=pandit_id, is_verified=True).first()
-        if not pandit:
+        try:
+            pandit = Pandit.objects.get(id=pandit_id, is_verified=True)
+        except Pandit.DoesNotExist:
             return Response({"detail": "Pandit not found or not verified"}, status=404)
-        
-        # Get requested service duration
+
+        # Get requested service duration from Puja model
         duration_minutes = 60 # Default
         if service_id:
-            from services.models import Service
-            service = Service.objects.filter(id=service_id).first()
-            if service:
-                duration_minutes = service.duration_minutes
+            from services.models import Puja
+            try:
+                puja = Puja.objects.get(id=service_id)
+                duration_minutes = getattr(puja, 'base_duration_minutes', 60)
+            except Puja.DoesNotExist:
+                pass  # fallback to default
+
+        # Parse booking_date
+        try:
+            booking_date_obj = datetime.strptime(booking_date, "%Y-%m-%d").date()
+        except Exception:
+            return Response({"detail": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
         # Fetch existing bookings with their services
         existing_bookings = Booking.objects.filter(
             pandit=pandit,
-            booking_date=booking_date,
+            booking_date=booking_date_obj,
             status__in=[BookingStatus.PENDING, BookingStatus.ACCEPTED]
         ).select_related('service')
 
         # Build list of busy intervals [(start, end)]
         busy_intervals = []
         for b in existing_bookings:
-            start_time = datetime.combine(datetime.today(), b.booking_time)
+            start_time = datetime.combine(booking_date_obj, b.booking_time)
             # Use booking's service duration or default
-            b_duration = b.service.duration_minutes if b.service else 60
+            b_duration = getattr(b.service, 'base_duration_minutes', 60) if b.service else 60
             end_time = start_time + timedelta(minutes=b_duration)
             busy_intervals.append((start_time, end_time))
 
-        from datetime import time
         slots = []
-        
+
         # Helper to check overlap
         def is_overlapping(candidate_start, candidate_end, intervals):
             for start, end in intervals:
-                # Check if candidate overlaps with existing booking
-                # Overlap logic: A_start < B_end AND A_end > B_start
                 if candidate_start < end and candidate_end > start:
                     return True
             return False
 
         # Generate slots every 30 mins
-        current_time = datetime.combine(datetime.today(), time(8, 0)) # Start at 8 AM
-        end_of_day = datetime.combine(datetime.today(), time(20, 0)) # End at 8 PM
+        current_time = datetime.combine(booking_date_obj, time(8, 0)) # Start at 8 AM
+        end_of_day = datetime.combine(booking_date_obj, time(20, 0)) # End at 8 PM
 
         while current_time + timedelta(minutes=duration_minutes) <= end_of_day:
             candidate_start = current_time
             candidate_end = current_time + timedelta(minutes=duration_minutes)
-            
+
             if not is_overlapping(candidate_start, candidate_end, busy_intervals):
                 slots.append(candidate_start.time().strftime("%H:%M"))
-            
-            current_time += timedelta(minutes=30) # 30 min increments
+
+            current_time += timedelta(minutes=30)
 
         return Response({"available_slots": slots})

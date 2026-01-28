@@ -3,19 +3,36 @@
  */
 
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XCircle, ArrowLeft, HelpCircle } from 'lucide-react';
+import { XCircle, ArrowLeft, HelpCircle, RefreshCw } from 'lucide-react';
+
+interface LocationState {
+  error?: string;
+}
 
 const PaymentFailure: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState;
+  const backendError = state?.error;
 
   const handleRetry = () => {
     // Get booking ID from session storage
     const bookingId = sessionStorage.getItem('pending_booking_id');
     if (bookingId) {
       navigate(`/payment/${bookingId}`);
+    } else {
+      navigate('/my-bookings');
+    }
+  };
+
+  const handleChangeMethod = () => {
+    // Go back to payment page to select a different method
+    const bookingId = sessionStorage.getItem('pending_booking_id');
+    if (bookingId) {
+      navigate(`/payment/${bookingId}`, { state: { changeMethod: true } });
     } else {
       navigate('/my-bookings');
     }
@@ -38,6 +55,11 @@ const PaymentFailure: React.FC = () => {
             <p className="text-gray-600">
               Your payment was not completed. Don't worry, you can try again.
             </p>
+            {backendError && (
+              <div className="mt-2 text-xs text-red-500 bg-red-50 border border-red-200 rounded p-2">
+                <strong>Reason:</strong> {backendError}
+              </div>
+            )}
           </div>
 
           {/* Reasons */}
@@ -60,7 +82,16 @@ const PaymentFailure: React.FC = () => {
               onClick={handleRetry}
               className="w-full h-12 bg-primary hover:bg-primary/90"
             >
+              <RefreshCw className="w-4 h-4 mr-2" />
               Try Payment Again
+            </Button>
+
+            <Button
+              onClick={handleChangeMethod}
+              variant="secondary"
+              className="w-full h-12"
+            >
+              Change Payment Method
             </Button>
 
             <Button
