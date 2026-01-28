@@ -119,7 +119,16 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                 const Icon = item.icon;
                                 const isActive = location.pathname === item.path;
                                 return (
-                                    <Link to={item.path} key={item.path}>
+                                    <Link 
+                                        to={item.path} 
+                                        key={item.path}
+                                        onClick={() => {
+                                            // Close mobile sidebar after navigation
+                                            if (window.innerWidth < 768) {
+                                                setIsSidebarOpen(false);
+                                            }
+                                        }}
+                                    >
                                         <div className={`
                                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                                     ${isActive

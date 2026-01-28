@@ -1,18 +1,18 @@
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
-from .models import Pandit, PanditService
-from .serializers import PanditSerializer, PanditServiceSerializer, PanditDetailSerializer
+from .models import Pandit, PanditService, PanditAvailability
+from .serializers import PanditSerializer, PanditServiceSerializer, PanditDetailSerializer, PanditAvailabilitySerializer
 from .pandit_serializers import PanditRegistrationSerializer
 from payments.models import PanditWithdrawal
 from services.models import Puja
 from services.serializers import PujaSerializer
-
 
 # ---------------------------
 # Pandit Registration
@@ -137,8 +137,6 @@ def get_pandit_wallet(request):
 @permission_classes([permissions.IsAuthenticated])
 def get_pandit_withdrawals(request):
     try:
-        # pandit = request.user.pandit_profile
-        # Fix: ensure pandit profile exists
         if not hasattr(request.user, 'pandit_profile'):
              return Response({"error": "Pandit profile not found"}, status=404)
         
@@ -174,7 +172,6 @@ class PanditServiceViewSet(viewsets.ModelViewSet):
         if not hasattr(self.request.user, 'pandit_profile'):
             raise ValidationError("User is not a Pandit")
         
-        # Check if service already exists for this puja
         puja = serializer.validated_data.get('puja')
         if PanditService.objects.filter(pandit=self.request.user.pandit_profile, puja=puja).exists():
              raise ValidationError("You already offer this service")
@@ -182,12 +179,99 @@ class PanditServiceViewSet(viewsets.ModelViewSet):
         serializer.save(pandit=self.request.user.pandit_profile)
 
 class PujaCatalogView(generics.ListAPIView):
-    """
-    Publicly (or Authenticated) list of all possible Pujas.
-    """
     queryset = Puja.objects.filter(is_available=True)
     serializer_class = PujaSerializer
     permission_classes = [permissions.AllowAny]
+
+
+# ---------------------------
+# PANDIT: Calendar & Availability
+# ---------------------------
+class PanditCalendarView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """
+        Return all events: Bookings and Availability Blocks
+        """
+        try:
+            pandit = request.user.pandit_profile
+        except:
+             return Response({"error": "Not a pandit"}, status=403)
+
+        # 1. Get Bookings
+        bookings = Booking.objects.filter(
+            pandit=pandit,
+            status__in=[BookingStatus.ACCEPTED, BookingStatus.COMPLETED, BookingStatus.PENDING]
+        )
+        
+        events = []
+        for b in bookings:
+            start_dt = datetime.datetime.combine(b.booking_date, b.booking_time)
+            # Assume 1 hour default duration if service detail missing (MVP)
+            # In future, use b.service.duration_minutes
+            end_dt = start_dt + datetime.timedelta(hours=1) 
+            
+            color = "#3b82f6" # Blue for Accepted
+            if b.status == BookingStatus.PENDING: color = "#eab308" # Yellow
+            if b.status == BookingStatus.COMPLETED: color = "#22c55e" # Green
+            
+            events.append({
+                "id": f"booking-{b.id}",
+                "title": f"{b.service_name} ({b.user.full_name})",
+                "start": start_dt.isoformat(),
+                "end": end_dt.isoformat(),
+                "backgroundColor": color,
+                "extendedProps": {
+                    "type": "booking",
+                    "status": b.status,
+                    "location": b.service_location
+                }
+            })
+
+        # 2. Get Availability Blocks
+        blocks = PanditAvailability.objects.filter(pandit=pandit)
+        for block in blocks:
+             events.append({
+                "id": f"block-{block.id}",
+                "title": block.title or "Unavailable",
+                "start": block.start_time.isoformat(),
+                "end": block.end_time.isoformat(),
+                "backgroundColor": "#6b7280", # Gray
+                "extendedProps": {
+                    "type": "block"
+                }
+            })
+
+        return Response(events)
+
+    def post(self, request):
+        """
+        Create a new Availability Block (Mark as Unavailable)
+        """
+        try:
+            pandit = request.user.pandit_profile
+        except:
+             return Response({"error": "Not a pandit"}, status=403)
+             
+        data = request.data
+        serializer = PanditAvailabilitySerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(pandit=pandit)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_availability_block(request, block_id):
+    try:
+        pandit = request.user.pandit_profile
+        block = get_object_or_404(PanditAvailability, id=block_id, pandit=pandit)
+        block.delete()
+        return Response({"success": "Block removed"})
+    except:
+        return Response({"error": "Action failed"}, status=400)
+
 
 # ---------------------------
 # PANDIT: Dashboard Stats
@@ -203,14 +287,13 @@ def pandit_dashboard_stats(request):
     try:
         pandit = request.user.pandit_profile
     except:
-        # Auto-create profile if user has pandit role (Self-healing for Dev/Test)
         if getattr(request.user, 'role', '') == 'pandit':
              pandit = Pandit.objects.create(
                  user=request.user, 
                  expertise="General", 
                  language="Hindi",
                  experience_years=0,
-                 is_verified=True,  # Auto-verify in dev if needed, or keep False
+                 is_verified=True, 
                  verification_status="APPROVED" 
              )
              PanditWallet.objects.create(pandit=pandit)
@@ -232,9 +315,7 @@ def pandit_dashboard_stats(request):
     wallet, created = PanditWallet.objects.get_or_create(pandit=pandit)
     
     # 2. Next Puja
-    # Get the soonest ACCEPTED booking that is in the future (or today)
     now = timezone.localtime()
-    
     next_puja = Booking.objects.filter(
         pandit=pandit,
         status=BookingStatus.ACCEPTED,
@@ -254,11 +335,29 @@ def pandit_dashboard_stats(request):
             "videoLink": next_puja.video_room_url
         }
 
-    # 3. Booking Queue (Top 5 pending/upcoming)
+    # 3. Today's Schedule (NEW)
+    todays_schedule = Booking.objects.filter(
+        pandit=pandit,
+        booking_date=today
+    ).order_by('booking_time')
+
+    schedule_data = []
+    for b in todays_schedule:
+        schedule_data.append({
+            "id": b.id,
+            "title": b.service_name,
+            "time": b.booking_time,
+            "customer": b.user.full_name,
+            "status": b.status,
+             # Video link only if status is Accepted
+            "video_link": b.video_room_url if b.status == BookingStatus.ACCEPTED else None
+        })
+
+    # 4. Booking Queue (Top 5 pending/upcoming)
     queue = Booking.objects.filter(
         pandit=pandit,
         booking_date__gte=today
-    ).exclude(status=BookingStatus.COMPLETED).exclude(status=BookingStatus.CANCELLED).exclude(status=BookingStatus.FAILED).order_by('booking_date', 'booking_time')[:10]
+    ).exclude(status__in=[BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.FAILED]).order_by('booking_date', 'booking_time')[:10]
     
     queue_data = []
     for b in queue:
@@ -271,8 +370,7 @@ def pandit_dashboard_stats(request):
             "status": b.status
         })
         
-    # 4. Earnings Snapshot
-    # Week
+    # 5. Earnings Snapshot
     week_start = today - datetime.timedelta(days=today.weekday())
     week_earnings = Booking.objects.filter(
         pandit=pandit,
@@ -280,7 +378,6 @@ def pandit_dashboard_stats(request):
         status=BookingStatus.COMPLETED
     ).aggregate(total=Sum('total_fee'))['total'] or 0
     
-    # Month
     month_earnings = Booking.objects.filter(
         pandit=pandit,
         booking_date__month=today.month,
@@ -302,6 +399,7 @@ def pandit_dashboard_stats(request):
     return Response({
         "stats": stats_data,
         "next_puja": next_puja_data,
+        "schedule": schedule_data, # Return Today's Schedule
         "queue": queue_data
     })
 
@@ -338,14 +436,9 @@ def toggle_availability(request):
 # PUBLIC: Search & Profile
 # ---------------------------
 class PanditViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Public API to list and retrieve Pandits.
-    Optimized for the profile page.
-    """
     permission_classes = [permissions.AllowAny]
     
     def get_queryset(self):
-        # Base Queryset from class attribute
         queryset = Pandit.objects.filter(
             verification_status='APPROVED', 
             is_verified=True,
@@ -354,23 +447,17 @@ class PanditViewSet(viewsets.ReadOnlyModelViewSet):
             'services', 'services__puja', 'reviews', 'reviews__customer'
         ).order_by('-rating')
 
-        # Filter by service ID if provided
         service_id = self.request.query_params.get('service_id')
         if service_id:
             queryset = queryset.filter(services__puja_id=service_id).distinct()
             
         return queryset
 
-    @api_view(['GET'])
     def retrieve(self, request, *args, **kwargs):
         return super().retrieve(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])
     def profile(self, request, pk=None):
-        """
-        Custom endpoint: GET /api/pandits/:id/profile/
-        Returns the detailed profile structure.
-        """
         pandit = self.get_object()
         serializer = PanditDetailSerializer(pandit)
         return Response(serializer.data)

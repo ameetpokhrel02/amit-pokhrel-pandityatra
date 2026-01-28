@@ -5,7 +5,7 @@ from .views import (
     request_withdrawal, get_pandit_wallet, get_pandit_withdrawals,
     PanditServiceViewSet, PujaCatalogView,
     pandit_dashboard_stats, toggle_availability,
-    PanditViewSet
+    PanditViewSet, PanditCalendarView, delete_availability_block
 )
 from .admin_views import approve_withdrawal, list_withdrawals, admin_pandit_earnings
 
@@ -21,6 +21,10 @@ urlpatterns = [
     path('dashboard/stats/', pandit_dashboard_stats),
     path('dashboard/toggle-availability/', toggle_availability),
     
+    # Calendar & Availability
+    path('me/calendar/', PanditCalendarView.as_view(), name='pandit-calendar'),
+    path('me/calendar/blocks/<int:block_id>/', delete_availability_block, name='delete-block'),
+
     # Info / Catalog
     path('services/catalog/', PujaCatalogView.as_view(), name='puja-catalog'),
 

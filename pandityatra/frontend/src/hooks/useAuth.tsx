@@ -66,9 +66,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const requestOtp = async (identifier: string) => {
-    // Check if identifier looks like an email using simple regex or passed structure
-    // Ideally, Login.tsx should pass {email: ...} or {phone_number: ...}
-    // But maintaining signature for now, let's guess based on content.
     const isEmail = identifier.includes('@');
     return api.requestLoginOtp(
       isEmail ? { email: identifier } : { phone_number: identifier }

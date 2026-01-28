@@ -133,6 +133,12 @@ function App() {
                 </ProtectedRoute>
               } />
 
+              <Route path="/booking/:serviceId" element={
+                <ProtectedRoute allowedRoles={['user']}>
+                  <BookingForm />
+                </ProtectedRoute>
+              } />
+
               <Route path="/booking/:id/review" element={
                 <ProtectedRoute allowedRoles={['user']}>
                   <ReviewForm />

@@ -21,6 +21,9 @@ import { useLocation as useGeoLocation } from '@/hooks/useLocation';
 import { DateTime } from 'luxon';
 import { useCart } from '@/hooks/useCart';
 import { ShoppingCart } from 'lucide-react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
 interface Pandit {
   id: number;
@@ -44,9 +47,10 @@ interface BookingFormProps {
   panditId?: number;
   serviceId?: number;
   onBookingSuccess?: () => void;
+  embedded?: boolean;
 }
 
-const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookingSuccess }) => {
+const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookingSuccess, embedded = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { timezone, latitude, longitude, formatWithNepalTime } = useGeoLocation();
@@ -252,7 +256,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const fees = calculateFees();
   const minDate = new Date().toISOString().split('T')[0];
 
-  return (
+  const MainContent = (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -553,6 +557,16 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         </CardContent>
       </Card>
     </motion.div>
+  );
+
+  return embedded ? MainContent : (
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gray-50 py-8">
+        {MainContent}
+      </div>
+      <Footer />
+    </>
   );
 };
 

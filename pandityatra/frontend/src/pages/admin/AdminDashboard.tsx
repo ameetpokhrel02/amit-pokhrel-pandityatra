@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Users, AlertTriangle, CheckCircle, UserCheck } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 import { fetchAdminStats } from '@/lib/api';
@@ -38,25 +38,25 @@ const AdminDashboard: React.FC = () => {
 
                     <Card>
                         <CardHeader>
-                            <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
-                            <CardTitle>Pending Verifications</CardTitle>
-                            <CardDescription>Pandit profiles needing review</CardDescription>
+                            <UserCheck className="h-8 w-8 text-blue-500 mb-2" />
+                            <CardTitle>Total Pandits</CardTitle>
+                            <CardDescription>Verified & Pending</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats?.total_pandits || 0}</div>
-                            <p className="text-xs text-muted-foreground">Total Pandits</p>
+                            <p className="text-xs text-muted-foreground">Service Providers</p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
-                            <CardTitle>System Status</CardTitle>
-                            <CardDescription>Operational metrics</CardDescription>
+                            <AlertTriangle className="h-8 w-8 text-yellow-500 mb-2" />
+                            <CardTitle>Pending Verifications</CardTitle>
+                            <CardDescription>Action Required</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{stats?.pending_verifications || 0}</div>
-                            <p className="text-xs text-muted-foreground">Pending Verifications</p>
+                            <p className="text-xs text-muted-foreground">Profiles awaiting approval</p>
                         </CardContent>
                     </Card>
                 </div>

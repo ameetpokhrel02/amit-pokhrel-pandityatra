@@ -68,3 +68,18 @@ class PanditService(models.Model):
 
     def __str__(self):
         return f"{self.pandit.user.full_name} - {self.puja.name} (Rs. {self.custom_price})"
+
+class PanditAvailability(models.Model):
+    """
+    Blocks of time where the Pandit is explicitly unavailable or available.
+    For MVP, we assume primarily 'busy' blocks.
+    """
+    pandit = models.ForeignKey(Pandit, on_delete=models.CASCADE, related_name="availability_blocks")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    title = models.CharField(max_length=100, default="Unavailable", help_text="Reason for unavailability")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.pandit.user.full_name} : {self.start_time} - {self.end_time}"

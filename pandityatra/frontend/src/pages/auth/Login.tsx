@@ -73,18 +73,8 @@ const LoginPage: React.FC = () => {
     try {
       // Determine payload based on input type
       if (inputType === 'phone') {
-        await requestOtp(phone); // Original function (needs update in useAuth too ideally, but for now relies on phone)
+        await requestOtp(phone);
       } else {
-        // Since useAuth might not support email yet, we might need to bypass or update it.
-        // For this specific fix, let's assume useAuth.requestOtp handles it or we call api directly.
-        // Ideally, we should update useAuth.tsx, but let's see if we can just pass the right arg.
-        // Note: useAuth probably calls api.requestLoginOtp.
-
-        // TEMPORARY: If useAuth is strictly phone, we might fail here. 
-        // Let's rely on api call if useAuth isn't flexible enough, BUT better to assume we updated useAuth.
-        // For now, let's assume we send 'phone' as empty or handle in useAuth.
-        // Actually, let's look at useAuth.tsx next.
-        // For now, let's pass it.
         await requestOtp(inputType === 'email' ? email : phone);
       }
 

@@ -166,6 +166,7 @@ export interface Booking {
     total_fee?: number;
     payment_status?: boolean;
     payment_method?: string;
+    service_name?: string;
 }
 
 export async function fetchBookings(): Promise<Booking[]> {

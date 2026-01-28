@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Pandit, PanditService
+from .models import Pandit, PanditService, PanditAvailability
 from users.serializers import UserSerializer
 from services.serializers import PujaSerializer
 from services.models import Puja
@@ -49,6 +49,12 @@ class PanditServiceSerializer(serializers.ModelSerializer):
             'is_online', 'is_offline'
         ]
         read_only_fields = ['id', 'pandit']
+
+class PanditAvailabilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PanditAvailability
+        fields = ['id', 'start_time', 'end_time', 'title', 'created_at']
+        read_only_fields = ['id', 'created_at']
 
 class PanditDetailSerializer(PanditSerializer):
     # Alias fields to match requested JSON structure

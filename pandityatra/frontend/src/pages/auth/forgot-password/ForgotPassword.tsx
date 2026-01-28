@@ -31,13 +31,6 @@ const ForgotPasswordPage: React.FC = () => {
     setLoading(true);
     try {
 
-      // Call requestResetOtp with correct payload (it sends {phone_number: ...})
-      // But we need to support email too. useAuth calls helper.requestForgotPasswordOTP({phone_number: phone})
-      // We need to update useAuth logic OR call helper directly here.
-      // Easiest is to update useAuth to be flexible like requestOtp.
-      // But for now, let's call requestResetOtp signature (which accepts phone string currently).
-      // We updated useAuth to accept identifier (phone string), but the implementation calls {phone_number: ...}
-      // Let's rely on useAuth update (which we will do next step).
       await requestResetOtp(inputType === 'email' ? email : phone);
 
       toast({

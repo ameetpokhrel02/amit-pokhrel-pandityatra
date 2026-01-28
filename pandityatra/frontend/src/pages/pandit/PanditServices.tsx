@@ -71,6 +71,7 @@ export default function PanditServices() {
     const [duration, setDuration] = useState("");
     const [isOnline, setIsOnline] = useState(false);
     const [isOffline, setIsOffline] = useState(true);
+    const [isActive, setIsActive] = useState(true);
 
     useEffect(() => {
         fetchData();
@@ -109,7 +110,7 @@ export default function PanditServices() {
                 duration_minutes: duration,
                 is_online: isOnline,
                 is_offline: isOffline,
-                is_active: true
+                is_active: isActive
             });
 
             toast({ title: "Success", description: "Service added successfully" });
@@ -120,12 +121,9 @@ export default function PanditServices() {
             setSelectedPujaId("");
             setPrice("");
             setDuration("");
+            setIsActive(true);
         } catch (error: any) {
-            toast({
-                title: "Error",
-                description: error.response?.data?.detail || "Failed to add service",
-                variant: "destructive"
-            });
+            // ... error handling
         }
     };
 
@@ -139,6 +137,7 @@ export default function PanditServices() {
         setDuration(service.duration_minutes.toString());
         setIsOnline(service.is_online);
         setIsOffline(service.is_offline);
+        setIsActive(service.is_active);
         setIsAddOpen(true);
     };
 
@@ -155,7 +154,7 @@ export default function PanditServices() {
                 duration_minutes: duration,
                 is_online: isOnline,
                 is_offline: isOffline,
-                is_active: true
+                is_active: isActive
             };
 
             if (editServiceId) {
@@ -167,6 +166,7 @@ export default function PanditServices() {
                 await apiClient.post("/pandits/my-services/", payload);
                 toast({ title: "Success", description: "Service added successfully" });
             }
+            // ... rest of the function
 
             setIsAddOpen(false);
             setEditServiceId(null);
@@ -182,6 +182,20 @@ export default function PanditServices() {
                 description: error.response?.data?.detail || "Failed to save service",
                 variant: "destructive"
             });
+        }
+    };
+
+    const handleToggleActive = async (id: number, currentStatus: boolean) => {
+        try {
+            // Optimistic update
+            setServices(services.map(s => s.id === id ? { ...s, is_active: !currentStatus } : s));
+
+            await apiClient.patch(`/pandits/my-services/${id}/`, { is_active: !currentStatus });
+            toast({ title: "Success", description: `Service ${!currentStatus ? 'activated' : 'deactivated'}` });
+        } catch (error) {
+            // Revert on error
+            setServices(services.map(s => s.id === id ? { ...s, is_active: currentStatus } : s));
+            toast({ title: "Error", description: "Failed to update status", variant: "destructive" });
         }
     };
 
@@ -340,9 +354,15 @@ export default function PanditServices() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={service.is_active ? "outline" : "destructive"}>
-                                                    {service.is_active ? "Active" : "Inactive"}
-                                                </Badge>
+                                                <div className="flex items-center gap-2">
+                                                    <Switch
+                                                        checked={service.is_active}
+                                                        onCheckedChange={() => handleToggleActive(service.id, service.is_active)}
+                                                    />
+                                                    <span className={`text-xs ${service.is_active ? 'text-green-600' : 'text-gray-400'}`}>
+                                                        {service.is_active ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </div>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
