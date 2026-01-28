@@ -119,8 +119,8 @@ const OTPVerificationPage: React.FC = () => {
           </Alert>
         )}
         {resendSuccess && (
-          <Alert variant="success" className="w-full">
-            <AlertDescription>{resendSuccess}</AlertDescription>
+          <Alert variant="default" className="w-full bg-green-50 border-green-200">
+            <AlertDescription className="text-green-800">{resendSuccess}</AlertDescription>
           </Alert>
         )}
 

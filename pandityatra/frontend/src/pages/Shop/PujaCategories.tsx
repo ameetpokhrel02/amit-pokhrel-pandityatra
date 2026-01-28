@@ -77,6 +77,26 @@ const PujaCategories = () => {
     navigate(`/booking?pujaId=${puja.id}`);
   };
 
+  const handleAddToCart = (puja: Puja | null) => {
+    if (!puja) return;
+    
+    addItem({
+      id: `puja-${puja.id}`,
+      title: puja.name || 'Puja Service',
+      price: puja.price,
+      meta: { 
+        type: 'puja', 
+        panditId: puja.pandit,
+        duration: puja.duration_minutes
+      }
+    }, 1);
+    
+    toast({
+      title: "Added to Cart",
+      description: `${puja.name || 'Puja service'} has been added to your cart.`,
+    });
+  };
+
   useEffect(() => {
     loadData();
   }, []);

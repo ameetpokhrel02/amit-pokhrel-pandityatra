@@ -5,11 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { fetchAllPujas } from "@/lib/api";
+import { fetchAllPujas, type Puja } from "@/lib/api";
 import axios from "axios";
 
+interface AdminPuja extends Puja {
+  is_available: boolean;
+}
+
 export default function AdminServices() {
-  const [pujas, setPujas] = useState([]);
+  const [pujas, setPujas] = useState<AdminPuja[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     name: "",
@@ -25,7 +29,7 @@ export default function AdminServices() {
     setLoading(true);
     try {
       const data = await fetchAllPujas();
-      setPujas(data);
+      setPujas(data as AdminPuja[]);
     } catch (err) {
       toast({ title: "Error", description: "Failed to load pujas." });
     }
@@ -36,19 +40,19 @@ export default function AdminServices() {
     loadPujas();
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked, files } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : type === "file" ? files[0] : value,
+      [name]: type === "checkbox" ? checked : type === "file" ? (files ? files[0] : null) : value,
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      if (value !== null && value !== "") formData.append(key, value);
+      if (value !== null && value !== "") formData.append(key, String(value));
     });
     try {
       await axios.post("/api/services/", formData, {

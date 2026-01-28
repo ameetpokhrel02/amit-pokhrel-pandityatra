@@ -6,7 +6,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, Clock, MapPin, User, DollarSign, X, Video, PlayCircle } from 'lucide-react';
 import apiClient from '@/lib/api-client';
-import { fetchVideoRoom } from '@/lib/video-api';
+import { getVideoRoom } from '@/lib/video-api';
 import { fetchChatMessages } from '@/lib/chat-api';
   // Download chat log for a booking
   const handleDownloadChatLog = async (bookingId: number, serviceName: string) => {
@@ -75,7 +75,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
       const completed = bookings.filter(b => b.status === 'COMPLETED');
       const promises = completed.map(async (b) => {
         try {
-          const data = await fetchVideoRoom(b.id);
+          const data = await getVideoRoom(b.id);
           return { id: b.id, url: data.recording_url || null };
         } catch {
           return { id: b.id, url: null };

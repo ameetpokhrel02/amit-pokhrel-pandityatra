@@ -192,7 +192,6 @@ class ForgotPasswordRequestView(APIView):
         serializer = self.serializer_class(data=request.data)
         
         if not serializer.is_valid():
-            print(f"DEBUG: Validation Errors: {serializer.errors}")
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
         phone_number = serializer.validated_data.get('phone_number')

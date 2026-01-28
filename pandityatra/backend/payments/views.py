@@ -15,13 +15,13 @@ from adminpanel.models import PaymentErrorLog
 from django.utils import timezone
 from .models import Payment, PaymentWebhook
 from .serializers import PaymentSerializer # 🆕 Added Serializer
+from video.utils import create_video_room
 from .utils import (
     convert_npr_to_usd, 
     convert_usd_to_npr,
     get_exchange_rate,
     detect_currency_from_location,
     get_recommended_gateway,
-    create_video_room,
     initiate_khalti_payment,
     verify_khalti_payment,
     refund_stripe,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation as useRouterLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -17,7 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, MapPin, Clock, DollarSign, Sparkles, Bot, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
-import { useLocation as useGeoLocation } from '@/hooks/useLocation';
+import { useLocation } from '@/hooks/useLocation';
 import { DateTime } from 'luxon';
 import { useCart } from '@/hooks/useCart';
 import { ShoppingCart } from 'lucide-react';
@@ -52,8 +52,8 @@ interface BookingFormProps {
 
 const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookingSuccess, embedded = false }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { timezone, latitude, longitude, formatWithNepalTime } = useGeoLocation();
+  const location = useRouterLocation();
+  const { timezone, latitude, longitude, formatWithNepalTime, country, currency } = useLocation();
   const { addItem, openDrawer } = useCart();
   const state = location.state as { panditId?: number; serviceId?: number; serviceName?: string; price?: string } | null;
 
@@ -140,15 +140,48 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   };
 
 
-  // Fetch AI-based samagri recommendations
+  // Enhanced AI-based samagri recommendations with location context
   const fetchAIRecommendations = async (serviceId: number) => {
     setAiSamagriLoading(true);
     try {
       const response = await apiClient.post('/samagri/ai_recommend/', {
         puja_id: serviceId,
-        user_notes: formData.notes || ''
+        user_notes: formData.notes || '',
+        location: formData.service_location,
+        customer_timezone: timezone,
+        customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
+        budget_preference: 'standard' // Could be made dynamic
       });
-      setSamagriRequirements(response.data.recommendations || []);
+      
+      // Enhanced recommendations with auto-selection logic
+      const recommendations = response.data.recommendations || [];
+      const enhancedRecommendations = recommendations.map((item: any) => ({
+        ...item,
+        isAutoSelected: item.is_essential || item.confidence > 0.8,
+        reason: item.reason || `Recommended for ${formData.service_location} puja`,
+        confidence: item.confidence || 0.7
+      }));
+      
+      setSamagriRequirements(enhancedRecommendations);
+      
+      // Auto-add essential items to cart
+      const essentialItems = enhancedRecommendations.filter((item: any) => item.isAutoSelected);
+      if (essentialItems.length > 0) {
+        essentialItems.forEach((item: any) => {
+          addItem({
+            id: item.id ? `samagri-${item.id}` : `samagri-${item.name}`,
+            title: item.name,
+            price: item.price ? parseFloat(item.price) : 0,
+            meta: { 
+              type: 'samagri', 
+              pujaId: serviceId,
+              isEssential: true,
+              aiRecommended: true,
+              confidence: item.confidence
+            }
+          }, item.quantity);
+        });
+      }
     } catch (err) {
       console.error("Failed to load AI samagri recommendations", err);
       setSamagriRequirements([]);
@@ -390,11 +423,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
               </div>
             )}
 
-            {/* Timezone Info (Story Gap Fill) */}
+            {/* Timezone Info with Enhanced Location Context */}
             {formData.booking_date && formData.booking_time && (
               <div className="text-xs bg-blue-50 p-3 rounded-md text-blue-700 border border-blue-100 italic">
                 <Clock className="w-3 h-3 inline-block mr-1 mb-0.5" />
                 Selected: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
+                {country && (
+                  <div className="mt-1 flex items-center gap-2">
+                    <MapPin className="w-3 h-3" />
+                    <span>Detected location: {country}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {currency} recommended
+                    </Badge>
+                  </div>
+                )}
               </div>
             )}
 

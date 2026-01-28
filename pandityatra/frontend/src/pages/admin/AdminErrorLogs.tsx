@@ -62,7 +62,7 @@ const AdminErrorLogs: React.FC = () => {
               >
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Badge variant={log.resolved ? "success" : "destructive"}>
+                    <Badge variant={log.resolved ? "default" : "destructive"} className={log.resolved ? "bg-green-100 text-green-800" : ""}>
                       {log.resolved ? "Resolved" : "Unresolved"}
                     </Badge>
                     <span className="text-xs text-gray-400">{new Date(log.created_at).toLocaleString()}</span>
