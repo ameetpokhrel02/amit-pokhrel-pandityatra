@@ -1,6 +1,7 @@
 // In frontend/src/pages/Booking/PanditList.tsx
 
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { fetchPandits } from '../../lib/api';
 import type { Pandit } from '../../lib/api';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -22,6 +23,11 @@ export const PanditList = () => {
     const [error, setError] = useState<string | null>(null);
     const debounceRef = useRef<number | null>(null);
     const { isFavorite, toggleFavorite } = useFavorites();
+    const location = useLocation();
+    // Parse query params for pujaType and date
+    const params = new URLSearchParams(location.search);
+    const pujaTypeParam = params.get('pujaType')?.toLowerCase() || '';
+    const dateParam = params.get('date') || '';
 
     useEffect(() => {
         const loadPandits = async () => {
@@ -67,32 +73,42 @@ export const PanditList = () => {
     }
 
     const filtered = useMemo(() => {
-        if (!query) return pandits;
-        // If query is a simple word, fallback to default filter
-        if (query.length < 6) {
-            const q = query.toLowerCase();
-            return pandits.filter(p => (
-                (p.user_details.full_name || '').toLowerCase().includes(q) ||
-                (p.expertise || '').toLowerCase().includes(q) ||
-                (p.language || '').toLowerCase().includes(q)
-            ));
+        let result = pandits;
+        // Filter by pujaType from query param if present
+        if (pujaTypeParam) {
+            result = result.filter(p => (p.expertise || '').toLowerCase().includes(pujaTypeParam));
         }
-        // Rule-based parsing
-        const { languages, experience, expertise } = parseQuery(query);
-        return pandits.filter(p => {
-            let match = true;
-            if (languages.length > 0) {
-                match = match && languages.some(lang => (p.language || '').toLowerCase().includes(lang));
+        // (Optional) Filter by date if you want to restrict by availability, but backend is needed for real filtering
+        // For now, just pass through dateParam for future use
+        if (query) {
+            // If query is a simple word, fallback to default filter
+            if (query.length < 6) {
+                const q = query.toLowerCase();
+                result = result.filter(p => (
+                    (p.user_details.full_name || '').toLowerCase().includes(q) ||
+                    (p.expertise || '').toLowerCase().includes(q) ||
+                    (p.language || '').toLowerCase().includes(q)
+                ));
+            } else {
+                // Rule-based parsing
+                const { languages, experience, expertise } = parseQuery(query);
+                result = result.filter(p => {
+                    let match = true;
+                    if (languages.length > 0) {
+                        match = match && languages.some(lang => (p.language || '').toLowerCase().includes(lang));
+                    }
+                    if (experience !== null && typeof p.experience_years === 'number') {
+                        match = match && p.experience_years >= experience;
+                    }
+                    if (expertise) {
+                        match = match && (p.expertise || '').toLowerCase().includes(expertise);
+                    }
+                    return match;
+                });
             }
-            if (experience !== null && typeof p.experience_years === 'number') {
-                match = match && p.experience_years >= experience;
-            }
-            if (expertise) {
-                match = match && (p.expertise || '').toLowerCase().includes(expertise);
-            }
-            return match;
-        });
-    }, [pandits, query]);
+        }
+        return result;
+    }, [pandits, query, pujaTypeParam, dateParam]);
 
     if (isLoading) {
         return <div className="flex justify-center p-8"><LoadingSpinner /></div>;

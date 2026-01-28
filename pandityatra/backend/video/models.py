@@ -27,6 +27,7 @@ class VideoRoom(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
+    recording_url = models.URLField(null=True, blank=True)
 
 
 class VideoParticipant(models.Model):

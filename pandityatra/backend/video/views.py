@@ -21,6 +21,7 @@ def get_video_room(request, booking_id):
     return Response({
         "room_name": room.room_url,
         "status": room.status,
+        "recording_url": room.recording_url,
     })
 
 @api_view(['POST'])

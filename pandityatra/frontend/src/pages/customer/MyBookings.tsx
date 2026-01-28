@@ -4,8 +4,37 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Calendar, Clock, MapPin, User, DollarSign, X, Video } from 'lucide-react';
+import { Loader2, Calendar, Clock, MapPin, User, DollarSign, X, Video, PlayCircle } from 'lucide-react';
 import apiClient from '@/lib/api-client';
+import { fetchVideoRoom } from '@/lib/video-api';
+import { fetchChatMessages } from '@/lib/chat-api';
+  // Download chat log for a booking
+  const handleDownloadChatLog = async (bookingId: number, serviceName: string) => {
+    try {
+      const messages = await fetchChatMessages(bookingId);
+      if (!messages.length) {
+        alert('No chat messages found for this booking.');
+        return;
+      }
+      const log = messages.map((m: any) => {
+        const who = m.sender?.username || m.sender || 'User';
+        return `[${new Date(m.timestamp).toLocaleString()}] ${who}: ${m.content}`;
+      }).join('\n');
+      const blob = new Blob([log], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chatlog-${serviceName.replace(/\s+/g, '_')}-booking-${bookingId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err: any) {
+      alert('Failed to download chat log.');
+    }
+  };
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -39,6 +68,30 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled'>('all');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [recordingUrls, setRecordingUrls] = useState<Record<number, string | null>>({});
+  // Fetch recording URLs for completed bookings
+  useEffect(() => {
+    const fetchRecordings = async () => {
+      const completed = bookings.filter(b => b.status === 'COMPLETED');
+      const promises = completed.map(async (b) => {
+        try {
+          const data = await fetchVideoRoom(b.id);
+          return { id: b.id, url: data.recording_url || null };
+        } catch {
+          return { id: b.id, url: null };
+        }
+      });
+      const results = await Promise.all(promises);
+      setRecordingUrls(prev => {
+        const updated = { ...prev };
+        results.forEach(r => { updated[r.id] = r.url; });
+        return updated;
+      });
+    };
+    if (bookings.some(b => b.status === 'COMPLETED')) {
+      fetchRecordings();
+    }
+  }, [bookings]);
 
   useEffect(() => {
     fetchBookings();
@@ -230,7 +283,27 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t">
+                  <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
+                                        {/* VIDEO RECORDING LINK (COMPLETED) */}
+                                                            {/* CHAT LOG DOWNLOAD BUTTON (ALWAYS SHOWN) */}
+                                                            <Button
+                                                              variant="outline"
+                                                              className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                                                              onClick={() => handleDownloadChatLog(booking.id, booking.service_name)}
+                                                            >
+                                                              <User className="h-4 w-4 mr-2" />
+                                                              Download Chat Log
+                                                            </Button>
+                                        {booking.status === 'COMPLETED' && recordingUrls[booking.id] && (
+                                          <Button
+                                            variant="outline"
+                                            className="border-green-200 text-green-700 hover:bg-green-50"
+                                            onClick={() => window.open(recordingUrls[booking.id]!, '_blank')}
+                                          >
+                                            <PlayCircle className="h-4 w-4 mr-2" />
+                                            View Recording
+                                          </Button>
+                                        )}
                     {/* VIDEO CALL BUTTON */}
                     {booking.status === 'ACCEPTED' && booking.video_room_url && (
                       <Button

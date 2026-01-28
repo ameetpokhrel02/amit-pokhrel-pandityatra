@@ -61,6 +61,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [samagriRequirements, setSamagriRequirements] = useState<any[]>([]);
+  const [aiSamagriLoading, setAiSamagriLoading] = useState(false);
 
   // State for custom price if passed from service card
   const [customPrice, setCustomPrice] = useState<number | null>(state?.price ? parseFloat(state.price) : null);
@@ -101,7 +102,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   useEffect(() => {
     if (formData.service) {
-      fetchRequirements(Number(formData.service));
+      fetchAIRecommendations(Number(formData.service));
     }
   }, [formData.service]);
 
@@ -138,14 +139,21 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     }
   };
 
-  const fetchRequirements = async (serviceId: number) => {
+
+  // Fetch AI-based samagri recommendations
+  const fetchAIRecommendations = async (serviceId: number) => {
+    setAiSamagriLoading(true);
     try {
-      const response = await apiClient.get('/samagri/requirements/', {
-        params: { puja: serviceId }
+      const response = await apiClient.post('/samagri/ai_recommend/', {
+        puja_id: serviceId,
+        user_notes: formData.notes || ''
       });
-      setSamagriRequirements(response.data.results || response.data);
+      setSamagriRequirements(response.data.recommendations || []);
     } catch (err) {
-      console.error("Failed to load samagri requirements", err);
+      console.error("Failed to load AI samagri recommendations", err);
+      setSamagriRequirements([]);
+    } finally {
+      setAiSamagriLoading(false);
     }
   };
 
@@ -186,16 +194,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   const handleAddAllToCart = () => {
     if (samagriRequirements.length === 0) return;
-
     samagriRequirements.forEach((req: any) => {
       addItem({
-        id: `samagri-${req.samagri_item.id}`,
-        title: req.samagri_item.name,
-        price: parseFloat(req.samagri_item.price || '0'),
+        id: req.id ? `samagri-${req.id}` : `samagri-${req.name}`,
+        title: req.name,
+        price: req.price ? parseFloat(req.price) : 0,
         meta: { type: 'samagri', pujaId: formData.service }
       }, req.quantity);
     });
-
     openDrawer();
   };
 
@@ -450,7 +456,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
               </div>
 
               {/* AI Samagri Suggestions */}
-              {formData.samagri_required && samagriRequirements.length > 0 && (
+              {formData.samagri_required && (
                 <div className="mt-4 space-y-3 bg-white/50 p-4 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Sparkles className="w-12 h-12 text-orange-500" />
@@ -465,36 +471,42 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                       Smart Selection
                     </Badge>
                   </div>
-
-                  <div className="grid grid-cols-1 gap-2 relative z-10">
-                    {samagriRequirements.map((req: any) => (
-                      <div key={req.id} className="flex items-center justify-between bg-white p-2 rounded-lg border border-orange-50 hover:border-orange-200 transition-colors shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <span className="text-orange-600 font-bold text-xs">{req.samagri_item.name?.charAt(0)}</span>
+                  {aiSamagriLoading ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Loading AI recommendations...
+                    </div>
+                  ) : samagriRequirements.length > 0 ? (
+                    <div className="grid grid-cols-1 gap-2 relative z-10">
+                      {samagriRequirements.map((req: any, idx: number) => (
+                        <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-2 rounded-lg border border-orange-50 hover:border-orange-200 transition-colors shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                              <span className="text-orange-600 font-bold text-xs">{req.name?.charAt(0)}</span>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-gray-800">{req.name}</p>
+                              <p className="text-[10px] text-gray-500">{req.quantity} {req.unit} {req.price ? `• ₹${req.price}` : ''}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold text-gray-800">{req.samagri_item.name}</p>
-                            <p className="text-[10px] text-gray-500">{req.quantity} {req.unit} • ₹{req.samagri_item.price}</p>
-                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
+                            }}
+                            className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
+                            title="I have this item"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            // Logic to "Remove" from this specific list ( Anita's "I have it" logic)
-                            setSamagriRequirements(prev => prev.filter(r => r.id !== req.id));
-                          }}
-                          className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
-                          title="I have this item"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400 italic">No recommendations found.</div>
+                  )}
                   <Button
                     type="button"
                     variant="default"

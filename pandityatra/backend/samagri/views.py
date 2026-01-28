@@ -11,6 +11,59 @@ from .serializers import (
     ShopCheckoutSerializer,
     PujaSamagriRequirementSerializer
 )
+from services.models import Puja
+from services.ai_chat import ask_pandityatra_ai
+from rest_framework.views import APIView
+
+# --- AI-based Samagri Recommendation Endpoint ---
+class AISamagriRecommendationView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        """
+        Returns a recommended list of samagri items for a given puja/service using AI/rule-based logic.
+        Expects: { "puja_id": int, "user_notes": str (optional) }
+        """
+        puja_id = request.data.get("puja_id")
+        user_notes = request.data.get("user_notes", "")
+        if not puja_id:
+            return Response({"error": "puja_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            puja = Puja.objects.get(id=puja_id)
+        except Puja.DoesNotExist:
+            return Response({"error": "Puja not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Compose prompt for AI
+        prompt = f"""
+You are a Vedic ritual expert. Given the puja: '{puja.name}' and the following user notes: '{user_notes}', recommend a list of samagri items (with quantity and unit) needed for this puja. Respond as a JSON array of objects with fields: name, quantity, unit. Example: [{{"name": "Rice", "quantity": 1, "unit": "kg"}}, ...]
+"""
+        try:
+            ai_response = ask_pandityatra_ai(prompt)
+        except Exception as e:
+            return Response({"error": f"AI error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Try to parse AI response as JSON
+        import json
+        try:
+            items = json.loads(ai_response)
+        except Exception:
+            return Response({"error": "AI did not return valid JSON", "raw": ai_response}, status=status.HTTP_502_BAD_GATEWAY)
+
+        # Optionally, match names to SamagriItem DB for price/unit
+        results = []
+        for item in items:
+            name = item.get("name")
+            quantity = item.get("quantity", 1)
+            unit = item.get("unit", "pcs")
+            db_item = SamagriItem.objects.filter(name__iexact=name).first()
+            results.append({
+                "name": name,
+                "quantity": quantity,
+                "unit": unit,
+                "price": float(db_item.price) if db_item else None,
+                "id": db_item.id if db_item else None
+            })
+        return Response({"recommendations": results})
 from payments.utils import initiate_khalti_payment, convert_npr_to_usd
 import stripe
 

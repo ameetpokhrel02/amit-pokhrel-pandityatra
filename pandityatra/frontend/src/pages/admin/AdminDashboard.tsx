@@ -1,15 +1,18 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, AlertTriangle, CheckCircle, UserCheck } from 'lucide-react';
+import { Users, AlertTriangle, CheckCircle, UserCheck, Bug } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 import { fetchAdminStats } from '@/lib/api';
 import type { AdminStats } from '@/lib/api';
 
 const AdminDashboard: React.FC = () => {
+
     const { user } = useAuth();
     const [stats, setStats] = React.useState<AdminStats | null>(null);
+    const navigate = useNavigate();
 
     React.useEffect(() => {
         fetchAdminStats().then(setStats).catch(console.error);
@@ -57,6 +60,18 @@ const AdminDashboard: React.FC = () => {
                         <CardContent>
                             <div className="text-2xl font-bold">{stats?.pending_verifications || 0}</div>
                             <p className="text-xs text-muted-foreground">Profiles awaiting approval</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="cursor-pointer hover:shadow-lg transition" onClick={() => navigate('/admin/AdminErrorLogs')}>
+                        <CardHeader>
+                            <Bug className="h-8 w-8 text-red-500 mb-2" />
+                            <CardTitle>Error Logs</CardTitle>
+                            <CardDescription>Payment & Booking Issues</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold text-red-600">Review</div>
+                            <p className="text-xs text-muted-foreground">See all unresolved errors</p>
                         </CardContent>
                     </Card>
                 </div>

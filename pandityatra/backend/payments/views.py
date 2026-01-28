@@ -11,7 +11,8 @@ from django.utils import timezone
 from decimal import Decimal
 import stripe
 import logging
-
+from adminpanel.models import PaymentErrorLog
+from django.utils import timezone
 from .models import Payment, PaymentWebhook
 from .serializers import PaymentSerializer # 🆕 Added Serializer
 from .utils import (
@@ -97,6 +98,13 @@ class CreatePaymentIntentView(APIView):
                 
         except Exception as e:
             logger.error(f"Payment creation error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                user=request.user if request.user.is_authenticated else None,
+                booking_id=booking_id if 'booking_id' in locals() else None,
+                message=str(e),
+                context={"request_data": request.data}
+            )
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -161,6 +169,14 @@ class CreatePaymentIntentView(APIView):
             
         except Exception as e:
             logger.error(f"Stripe session creation error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                user=payment.user if payment and payment.user_id else None,
+                booking_id=booking.id if booking else None,
+                payment_id=payment.id if payment else None,
+                message=f"Stripe error: {str(e)}",
+                context={"request_data": request.data}
+            )
             return Response(
                 {"error": f"Stripe error: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -202,6 +218,14 @@ class CreatePaymentIntentView(APIView):
                 
         except Exception as e:
             logger.error(f"Khalti initiation error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                user=payment.user if payment and payment.user_id else None,
+                booking_id=booking.id if booking else None,
+                payment_id=payment.id if payment else None,
+                message=f"Khalti error: {str(e)}",
+                context={"request_data": request.data}
+            )
             return Response(
                 {"error": f"Khalti error: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -241,12 +265,27 @@ class StripeWebhookView(APIView):
             
         except ValueError as e:
             logger.error(f"Invalid payload: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="WEBHOOK",
+                message=f"Invalid Stripe payload: {str(e)}",
+                context={"request_data": str(request.body)}
+            )
             return Response({'error': 'Invalid payload'}, status=400)
         except stripe.error.SignatureVerificationError as e:
             logger.error(f"Invalid signature: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="WEBHOOK",
+                message=f"Invalid Stripe signature: {str(e)}",
+                context={"request_data": str(request.body)}
+            )
             return Response({'error': 'Invalid signature'}, status=400)
         except Exception as e:
             logger.error(f"Webhook error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="WEBHOOK",
+                message=f"Stripe webhook error: {str(e)}",
+                context={"request_data": str(request.body)}
+            )
             return Response({'error': str(e)}, status=500)
     
     def _handle_successful_payment(self, session):
@@ -362,6 +401,14 @@ class KhaltiVerifyView(APIView):
             )
         except Exception as e:
             logger.error(f"Khalti verification error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                user=request.user if request.user.is_authenticated else None,
+                booking_id=booking.id if 'booking' in locals() and booking else None,
+                payment_id=payment.id if 'payment' in locals() and payment else None,
+                message=f"Khalti verification error: {str(e)}",
+                context={"request_data": request.query_params}
+            )
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

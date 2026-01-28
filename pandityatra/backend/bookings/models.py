@@ -92,7 +92,7 @@ class Booking(models.Model):
         unique_together = ('pandit', 'booking_date', 'booking_time')
 
     def __str__(self):
-        return f"Booking {self.id} for {self.pandit.full_name} by {self.user.full_name}"
+        return f"Booking {self.id} for {self.pandit.user.full_name} by {self.user.full_name}"
     
     def calculate_total_fee(self):
         """Calculate total fee from service fee and samagri fee"""
