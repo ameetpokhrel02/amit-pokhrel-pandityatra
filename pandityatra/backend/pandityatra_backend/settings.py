@@ -221,4 +221,4 @@ DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 
 # AI Configuration
-OLLAMA_URL = 'http://ollama:11434'
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
