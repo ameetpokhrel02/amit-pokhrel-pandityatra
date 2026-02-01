@@ -110,7 +110,7 @@ def create_video_room(booking_id, booking_date, service_name):
 def verify_khalti_payment(pidx, amount):
     try:
         response = requests.post(
-            "https://khalti.com/api/v2/payment/verify/",
+            f"{settings.KHALTI_API_URL}/payment/verify/",
             headers={"Authorization": f"Key {settings.KHALTI_SECRET_KEY}"},
             data={"token": pidx, "amount": int(amount * 100)},
             timeout=10,
@@ -128,21 +128,43 @@ def verify_khalti_payment(pidx, amount):
         return False, None, {}
 
 
-def initiate_khalti_payment(amount_npr, order_id, return_url, website_url):
+def initiate_khalti_payment(amount_npr, order_id, return_url, website_url, user_info=None):
     try:
+        # Clean URL to avoid double slashes
+        base_url = settings.KHALTI_API_URL.rstrip('/')
+        secret_key = settings.KHALTI_SECRET_KEY
+
+        # Debugging: Check if key is loaded
+        if not secret_key:
+            logger.error("Khalti Secret Key is missing in settings!")
+            return False, "Khalti Configuration Error: Missing Secret Key", None
+
+        # Debug log for key (partial)
+        logger.info(f"Using Khalti Key: {secret_key[:5]}...{secret_key[-5:] if len(secret_key) > 10 else ''}")
+
+        payload = {
+            "return_url": return_url,
+            "website_url": website_url,
+            "amount": int(amount_npr * 100),
+            "purchase_order_id": order_id,
+            "purchase_order_name": f"Booking {order_id}",
+        }
+
+        if user_info:
+            payload["customer_info"] = user_info
+        
+        # Ensure header format is "Key <secret_key>"
+        # Note: Khalti Sandbox ("dev.khalti.com") might require strictly "Key" or sometimes "test_secret_key" depending on version.
+        # But per official docs for v2/epayment, it remains "Key <secret_key>".
+        headers = {
+            "Authorization": f"Key {secret_key.strip()}",
+            "Content-Type": "application/json",
+        }
+
         response = requests.post(
-            "https://khalti.com/api/v2/epayment/initiate/",
-            headers={
-                "Authorization": f"Key {settings.KHALTI_SECRET_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "return_url": return_url,
-                "website_url": website_url,
-                "amount": int(amount_npr * 100),
-                "purchase_order_id": order_id,
-                "purchase_order_name": f"Booking {order_id}",
-            },
+            f"{base_url}/epayment/initiate/",
+            headers=headers,
+            json=payload,
             timeout=10,
         )
 
@@ -150,12 +172,20 @@ def initiate_khalti_payment(amount_npr, order_id, return_url, website_url):
             data = response.json()
             return True, data["pidx"], data["payment_url"]
 
-        logger.error(response.text)
-        return False, None, None
+        logger.error(f"Khalti Error: {response.text}")
+        try:
+            error_data = response.json()
+            # return the first error found
+            if 'detail' in error_data:
+                return False, error_data['detail'], None
+            # or flatten validation errors
+            return False, str(error_data), None
+        except:
+            return False, f"Khalti Status {response.status_code}", None
 
     except Exception as e:
         logger.error(f"Khalti init error: {e}")
-        return False, None, None
+        return False, str(e), None
 
 
 # ===============================
@@ -168,7 +198,7 @@ def refund_stripe(payment_intent):
 
 def refund_khalti(pidx):
     requests.post(
-        "https://khalti.com/api/v2/payment/refund/",
+        f"{settings.KHALTI_API_URL}/payment/refund/",
         headers={"Authorization": f"Key {settings.KHALTI_SECRET_KEY}"},
         json={"pidx": pidx},
         timeout=10,

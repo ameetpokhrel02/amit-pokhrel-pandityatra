@@ -8,6 +8,11 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
+# Explicitly look for .env in the parent directory (project root)
+dotenv_path = os.path.join(Path(__file__).resolve().parent.parent.parent, '.env')
+load_dotenv(dotenv_path)
+
+# Backwards compatibility: try default load if specific path fails or not found
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -213,6 +218,7 @@ STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 # Khalti (for NPR payments)
 KHALTI_SECRET_KEY = os.environ.get('KHALTI_SECRET_KEY', '')
 KHALTI_PUBLIC_KEY = os.environ.get('KHALTI_PUBLIC_KEY', '')
+KHALTI_API_URL = os.environ.get('KHALTI_API_URL', 'https://khalti.com/api/v2')
 
 # Daily.co (for video calls)
 DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')

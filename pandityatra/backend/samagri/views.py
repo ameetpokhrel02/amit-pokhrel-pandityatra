@@ -293,18 +293,26 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                     # Khalti (NPR)
                     return_url = f"{settings.FRONTEND_URL}/shop/payment/verify"
                     website_url = settings.FRONTEND_URL
-                    success, pidx, payment_url = initiate_khalti_payment(
+                    
+                    user_info = {
+                        "name": data['full_name'],
+                        "email": request.user.email,
+                        "phone": data['phone_number']
+                    }
+
+                    success, pidx_or_error, payment_url = initiate_khalti_payment(
                         total_amount, 
                         f"SHOP-{order.id}", 
                         return_url, 
-                        website_url
+                        website_url,
+                        user_info
                     )
                     if success:
-                        order.transaction_id = pidx
+                        order.transaction_id = pidx_or_error
                         order.save()
                         return Response({"payment_url": payment_url, "order_id": order.id})
                     else:
-                        raise Exception("Khalti initiation failed")
+                        raise Exception(f"Khalti Error: {pidx_or_error}")
 
                 elif payment_method == 'STRIPE':
                     # Stripe (USD)

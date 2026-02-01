@@ -189,31 +189,40 @@ class CreatePaymentIntentView(APIView):
             website_url = settings.FRONTEND_URL
             purchase_order_id = f"BOOKING-{booking.id}"
             
-            success, pidx, payment_url = initiate_khalti_payment(
+            # Prepare customer info
+            user_info = {
+                "name": request.user.full_name if hasattr(request.user, 'full_name') else request.user.username,
+                "email": request.user.email,
+                "phone": request.user.phone_number if hasattr(request.user, 'phone_number') else "9800000000"
+            }
+            
+            success, pidx_or_error, payment_url = initiate_khalti_payment(
                 amount_npr=amount_npr,
                 purchase_order_id=purchase_order_id,
                 return_url=return_url,
-                website_url=website_url
+                website_url=website_url,
+                user_info=user_info
             )
             
             if success:
                 # Update payment
-                payment.transaction_id = pidx
-                payment.gateway_response = {'pidx': pidx, 'payment_url': payment_url}
+                payment.transaction_id = pidx_or_error
+                payment.gateway_response = {'pidx': pidx_or_error, 'payment_url': payment_url}
                 payment.status = 'PROCESSING'
                 payment.save()
                 
                 return Response({
                     'success': True,
                     'gateway': 'KHALTI',
-                    'pidx': pidx,
+                    'pidx': pidx_or_error,
                     'payment_url': payment_url,
                     'payment_id': payment.id
                 })
             else:
+                error_msg = pidx_or_error if pidx_or_error else "Failed to initiate Khalti payment"
                 return Response(
-                    {"error": "Failed to initiate Khalti payment"},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"error": error_msg},
+                    status=status.HTTP_400_BAD_REQUEST 
                 )
                 
         except Exception as e:
