@@ -165,7 +165,7 @@ def initiate_khalti_payment(amount_npr, order_id, return_url, website_url, user_
             f"{base_url}/epayment/initiate/",
             headers=headers,
             json=payload,
-            timeout=10,
+            timeout=60,
         )
 
         if response.status_code == 200:

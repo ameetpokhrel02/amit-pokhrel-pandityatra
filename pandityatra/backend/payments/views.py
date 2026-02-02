@@ -28,6 +28,7 @@ from .utils import (
     refund_khalti
 )
 from bookings.models import Booking
+from samagri.models import ShopOrder, ShopOrderStatus
 
 logger = logging.getLogger(__name__)
 
@@ -353,74 +354,90 @@ class KhaltiVerifyView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
+        # 1. Try finding Booking Payment
         try:
-            # Find payment by pidx
-            payment = Payment.objects.get(transaction_id=pidx, user=request.user)
-            booking = payment.booking
-            
-            # Verify with Khalti
-            success, transaction_id, details = verify_khalti_payment(pidx, payment.amount_npr)
-            
-            if success:
-                # Update payment
-                payment.status = 'COMPLETED'
-                payment.completed_at = timezone.now()
-                payment.gateway_response = details
-                payment.save()
+            payment = Payment.objects.filter(transaction_id=pidx, user=request.user).first()
+            if payment:
+                return self.handle_booking_verification(payment, pidx)
+
+            # 2. Try finding Shop Order
+            order = ShopOrder.objects.filter(transaction_id=pidx, user=request.user).first()
+            if order:
+                return self.handle_shop_verification(order, pidx)
                 
-                # Update booking
-                booking.payment_status = True
-                booking.payment_method = 'KHALTI'
-                booking.status = 'ACCEPTED'
-                
-                # 🚨 Save transaction ID for refunds
-                # pidx IS the transaction id for khalti refunds
-                booking.transaction_id = pidx
-                
-                # Create video room for online puja
-                if booking.service_location == 'ONLINE':
-                    room_url = create_video_room(
-                        booking.id,
-                        booking.booking_date,
-                        booking.service_name
-                    )
-                    if room_url:
-                        booking.video_room_url = room_url
-                
-                booking.save()
-                
-                return Response({
-                    'success': True,
-                    'booking_id': booking.id,
-                    'transaction_id': transaction_id
-                })
-            else:
-                payment.status = 'FAILED'
-                payment.save()
-                
-                return Response(
-                    {"error": "Payment verification failed"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-                
-        except Payment.DoesNotExist:
             return Response(
-                {"error": "Payment not found"},
+                {"error": "Payment record not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+            
         except Exception as e:
-            logger.error(f"Khalti verification error: {e}")
-            PaymentErrorLog.objects.create(
-                error_type="PAYMENT",
-                user=request.user if request.user.is_authenticated else None,
-                booking_id=booking.id if 'booking' in locals() and booking else None,
-                payment_id=payment.id if 'payment' in locals() and payment else None,
-                message=f"Khalti verification error: {str(e)}",
-                context={"request_data": request.query_params}
-            )
+            logging.getLogger(__name__).error(f"Error handling successful payment: {e}")
             return Response(
                 {"error": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def handle_booking_verification(self, payment, pidx):
+        booking = payment.booking
+        success, transaction_id, details = verify_khalti_payment(pidx, payment.amount_npr)
+        
+        if success:
+            # Update payment
+            payment.status = 'COMPLETED'
+            payment.completed_at = timezone.now()
+            payment.gateway_response = details
+            payment.save()
+            
+            # Update booking
+            booking.payment_status = True
+            booking.payment_method = 'KHALTI'
+            booking.status = 'ACCEPTED'
+            booking.transaction_id = pidx
+            
+            # Create video room for online puja
+            if booking.service_location == 'ONLINE':
+                room_url = create_video_room(
+                    booking.id,
+                    booking.booking_date,
+                    booking.service_name
+                )
+                if room_url:
+                    booking.video_room_url = room_url
+            
+            booking.save()
+            
+            return Response({
+                'success': True,
+                'booking_id': booking.id,
+                'transaction_id': transaction_id,
+                'type': 'BOOKING'
+            })
+        else:
+            payment.status = 'FAILED'
+            payment.save()
+            return Response(
+                {"error": "Payment verification failed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def handle_shop_verification(self, order, pidx):
+        success, transaction_id, details = verify_khalti_payment(pidx, order.total_amount)
+        
+        if success:
+            order.status = ShopOrderStatus.PAID
+            order.transaction_id = pidx # Confirm pidx
+            order.save()
+            
+            return Response({
+                'success': True,
+                'order_id': order.id,
+                'transaction_id': transaction_id,
+                'type': 'SHOP_ORDER'
+            })
+        else:
+            return Response(
+                {"error": "Payment verification failed"},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
 

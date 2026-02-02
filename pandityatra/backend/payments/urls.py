@@ -15,6 +15,7 @@ urlpatterns = [
     path("admin/withdrawals/", views.admin_withdrawal_requests), # 🆕 List Requests
     path("admin/withdrawals/<int:id>/approve/", views.approve_withdrawal), # 🆕 Action
     path("<int:payment_id>/refund/", views.refund_payment),
-
-
+    
+    # Verify
+    path("khalti/verify/", views.KhaltiVerifyView.as_view()),
 ]

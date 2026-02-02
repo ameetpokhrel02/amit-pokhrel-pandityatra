@@ -291,7 +291,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                 # 2. Payment Gateway Integration
                 if payment_method == 'KHALTI':
                     # Khalti (NPR)
-                    return_url = f"{settings.FRONTEND_URL}/shop/payment/verify"
+                    return_url = f"{settings.FRONTEND_URL}/payment/khalti/verify"
                     website_url = settings.FRONTEND_URL
                     
                     user_info = {

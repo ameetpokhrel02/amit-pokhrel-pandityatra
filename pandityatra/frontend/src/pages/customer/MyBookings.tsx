@@ -8,33 +8,6 @@ import { Loader2, Calendar, Clock, MapPin, User, DollarSign, X, Video, PlayCircl
 import apiClient from '@/lib/api-client';
 import { getVideoRoom } from '@/lib/video-api';
 import { fetchChatMessages } from '@/lib/chat-api';
-  // Download chat log for a booking
-  const handleDownloadChatLog = async (bookingId: number, serviceName: string) => {
-    try {
-      const messages = await fetchChatMessages(bookingId);
-      if (!messages.length) {
-        alert('No chat messages found for this booking.');
-        return;
-      }
-      const log = messages.map((m: any) => {
-        const who = m.sender?.username || m.sender || 'User';
-        return `[${new Date(m.timestamp).toLocaleString()}] ${who}: ${m.content}`;
-      }).join('\n');
-      const blob = new Blob([log], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `chatlog-${serviceName.replace(/\s+/g, '_')}-booking-${bookingId}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 100);
-    } catch (err: any) {
-      alert('Failed to download chat log.');
-    }
-  };
 import { motion } from 'framer-motion';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -69,6 +42,35 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
   const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled'>('all');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [recordingUrls, setRecordingUrls] = useState<Record<number, string | null>>({});
+
+  // Download chat log for a booking
+  const handleDownloadChatLog = async (bookingId: number, serviceName: string) => {
+    try {
+      const messages = await fetchChatMessages(bookingId);
+      if (!messages.length) {
+        alert('No chat messages found for this booking.');
+        return;
+      }
+      const log = messages.map((m: any) => {
+        const who = m.sender?.username || m.sender || 'User';
+        return `[${new Date(m.timestamp).toLocaleString()}] ${who}: ${m.content}`;
+      }).join('\n');
+      const blob = new Blob([log], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chatlog-${serviceName.replace(/\s+/g, '_')}-booking-${bookingId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    } catch (err: any) {
+      alert('Failed to download chat log.');
+    }
+  };
+
   // Fetch recording URLs for completed bookings
   useEffect(() => {
     const fetchRecordings = async () => {
@@ -100,7 +102,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         navigate('/login');
         return;
