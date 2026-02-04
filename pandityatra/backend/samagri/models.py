@@ -16,6 +16,8 @@ class SamagriItem(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     stock_quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=50, default="pcs")
+    # Image for the item
+    image = models.ImageField(upload_to='samagri_images/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

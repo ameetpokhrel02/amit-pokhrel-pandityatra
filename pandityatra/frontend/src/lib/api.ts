@@ -293,6 +293,7 @@ export interface SamagriItem {
     stock_quantity: number;
     image?: string;
     is_available: boolean;
+    unit?: string;
 }
 
 export interface SamagriCategory {
@@ -310,6 +311,31 @@ export async function fetchSamagriItems(params?: any): Promise<SamagriItem[]> {
 export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
     const response = await apiClient.get('/samagri/categories/');
     return response.data.results || response.data;
+}
+
+export async function createSamagriItem(data: FormData | any) {
+    const response = await apiClient.post('/samagri/items/', data);
+    return response.data;
+}
+
+export async function updateSamagriItem(id: number, data: FormData | any) {
+    const response = await apiClient.patch(`/samagri/items/${id}/`, data);
+    return response.data;
+}
+
+export async function deleteSamagriItem(id: number) {
+    const response = await apiClient.delete(`/samagri/items/${id}/`);
+    return response.data;
+}
+
+export async function createSamagriCategory(data: any) {
+    const response = await apiClient.post('/samagri/categories/', data);
+    return response.data;
+}
+
+export async function deleteSamagriCategory(id: number) {
+    const response = await apiClient.delete(`/samagri/categories/${id}/`);
+    return response.data;
 }
 
 // Helper to standardize error messages

@@ -87,4 +87,5 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom'],
   },
+  server: { proxy: { '/media': { target: 'http://localhost:8000', changeOrigin: true } } },
 })

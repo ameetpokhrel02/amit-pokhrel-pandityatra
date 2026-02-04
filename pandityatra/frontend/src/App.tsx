@@ -50,6 +50,8 @@ import AdminUsers from './pages/admin/AdminUsers'
 import AdminPayments from './pages/admin/AdminPayments'
 import AdminPayouts from './pages/admin/AdminPayouts'
 import AdminSettings from './pages/admin/AdminSettings'
+import AdminSamagri from './pages/admin/AdminSamagri'
+import AdminServices from './pages/admin/AdminServices'
 
 // Profile
 import EditProfile from './pages/customer/Profile'
@@ -217,6 +219,18 @@ function App() {
               <Route path="/admin/settings" element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminSettings />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/inventory" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminSamagri />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/admin/services" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminServices />
                 </ProtectedRoute>
               } />
 

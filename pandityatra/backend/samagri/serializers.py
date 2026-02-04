@@ -15,7 +15,7 @@ class SamagriItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SamagriItem
-        fields = ['id', 'name', 'category', 'category_name', 'price', 'unit', 'is_active', 'created_at']
+        fields = ['id', 'name', 'category', 'category_name', 'price', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'created_at']
         read_only_fields = ['id', 'category_name', 'created_at']
 
 # --- 3. Shop Order Serializers ---

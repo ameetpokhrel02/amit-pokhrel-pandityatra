@@ -8,6 +8,9 @@ from payments.webhooks.khalti import khalti_webhook
 
 urlpatterns = [
     # Payment initiation
+    path("initiate/", views.CreatePaymentIntentView.as_view(), name="payment-initiate"),
+    path("check-status/<int:booking_id>/", views.GetPaymentStatusView.as_view(), name="check-status"),
+    
     path("webhooks/stripe/", stripe_webhook),
     path("webhooks/khalti/", khalti_webhook),
     path("admin/", views.admin_payments),

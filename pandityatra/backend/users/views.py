@@ -431,6 +431,27 @@ def admin_toggle_user_status(request, user_id):
         return Response({"error": "User not found"}, status=404)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def admin_delete_user(request, user_id):
+    """
+    Delete a user permanently.
+    """
+    if request.user.role != 'admin':
+        return Response({"error": "Admin only"}, status=403)
+    
+    try:
+        user_obj = User.objects.get(id=user_id)
+        user_obj.delete()
+        return Response({"message": "User deleted successfully"}, status=204)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response({"error": str(e), "traceback": traceback.format_exc()}, status=500)
+
+
 # ----------------------------------------------------
 # 📌 ADMIN: PLATFORM SETTINGS
 # ----------------------------------------------------

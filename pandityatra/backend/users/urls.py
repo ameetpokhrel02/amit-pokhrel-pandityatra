@@ -4,7 +4,7 @@ from .views import (
     PasswordLoginView, ForgotPasswordRequestView, ForgotPasswordOTPVerifyView, 
     ResetPasswordView, ProfileView, AdminStatsView, ContactView,
     # 🚨 ADMIN VIEWS (Added)
-    admin_get_users, admin_toggle_user_status, admin_platform_settings
+    admin_get_users, admin_toggle_user_status, admin_delete_user, admin_platform_settings
 )
 
 urlpatterns = [
@@ -34,6 +34,7 @@ urlpatterns = [
 
     # 🚨 ADMIN: User Management
     path('admin/users/', admin_get_users, name='admin-users'),
+    path('admin/users/<int:user_id>/', admin_delete_user, name='admin-user-delete'),
     path('admin/users/<int:user_id>/toggle-status/', admin_toggle_user_status, name='admin-user-toggle'),
 
     # 🚨 ADMIN: Settings

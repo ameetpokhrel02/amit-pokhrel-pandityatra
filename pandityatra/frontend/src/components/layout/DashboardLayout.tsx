@@ -13,7 +13,8 @@ import {
     Calendar,
     Wallet,
     BookOpen,
-    DollarSign
+    DollarSign,
+    Package
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
@@ -50,6 +51,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: Users, label: 'Users', path: '/admin/users' },
             { icon: AlertTriangle, label: 'Pandit Verification', path: '/admin/pandits' },
             { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
+            { icon: BookOpen, label: 'Services', path: '/admin/services' },
+            { icon: Package, label: 'Inventory (Samagri)', path: '/admin/inventory' },
             { icon: Wallet, label: 'Payments', path: '/admin/payments' },
             { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' }, // Added Payouts
             { icon: Settings, label: 'Settings', path: '/admin/settings' },

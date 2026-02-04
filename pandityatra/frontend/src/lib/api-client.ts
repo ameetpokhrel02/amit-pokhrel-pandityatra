@@ -4,9 +4,9 @@ import { API_BASE_URL } from './helper';
 // Create Axios instance
 const apiClient = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    // headers: {
+    //     'Content-Type': 'application/json',
+    // },
 });
 
 // Request Interceptor: Attach Token
@@ -16,6 +16,12 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        
+        // If data is FormData, let browser set Content-Type
+        if (config.data instanceof FormData) {
+            delete config.headers['Content-Type'];
+        }
+        
         return config;
     },
     (error) => Promise.reject(error)
