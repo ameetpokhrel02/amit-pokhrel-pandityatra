@@ -17,6 +17,8 @@ import Samagri from './pages/Shop/Samagri'
 import Books from './pages/Shop/Books'
 import CartPage from './pages/Shop/Cart'
 import CheckoutPage from './pages/Shop/Checkout'
+import ShopPaymentSuccess from './pages/Shop/ShopPaymentSuccess'
+import ShopPaymentFailure from './pages/Shop/ShopPaymentFailure'
 
 // Auth
 import LoginPage from './pages/auth/Login'
@@ -98,6 +100,8 @@ function App() {
                   <CheckoutPage />
                 </ProtectedRoute>
               } />
+              <Route path="/shop/payment/success" element={<ShopPaymentSuccess />} />
+              <Route path="/shop/payment/cancel" element={<ShopPaymentFailure />} />
               <Route path="/pandits" element={<PanditList />} />
               <Route path="/pandits/:id" element={<PanditProfile />} />
 

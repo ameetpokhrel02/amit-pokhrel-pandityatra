@@ -62,6 +62,7 @@ export interface Pandit {
     services?: PanditService[];
     reviews?: PanditReview[];
     review_count?: number;
+    bookings_count?: number;
 }
 
 export interface PanditService {
