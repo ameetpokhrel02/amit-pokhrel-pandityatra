@@ -37,7 +37,7 @@ const AdminVerificationDashboard: React.FC = () => {
   const fetchPendingPandits = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       const response = await axios.get(
         'http://localhost:8000/api/pandits/pending/',
         {
@@ -59,7 +59,7 @@ const AdminVerificationDashboard: React.FC = () => {
   const handleApprovePandit = async (panditId: number) => {
     try {
       setActionLoading(panditId);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       await axios.post(
         `http://localhost:8000/api/pandits/${panditId}/verify/`,
         { notes: 'Approved by admin' },
@@ -87,7 +87,7 @@ const AdminVerificationDashboard: React.FC = () => {
 
     try {
       setActionLoading(panditId);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       await axios.post(
         `http://localhost:8000/api/pandits/${panditId}/reject/`,
         { reason: rejectReason },
@@ -231,7 +231,7 @@ const AdminVerificationDashboard: React.FC = () => {
                         </>
                       )}
                     </Button>
-                    
+
                     <Button
                       onClick={() => setSelectedPandit(pandit)}
                       variant="outline"
@@ -259,14 +259,14 @@ const AdminVerificationDashboard: React.FC = () => {
             <h3 className="text-lg font-semibold mb-4">
               Reject {selectedPandit.full_name}?
             </h3>
-            
+
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Provide reason for rejection..."
               className="w-full h-24 border border-gray-200 rounded-lg p-3 text-sm mb-4 focus:ring-2 focus:ring-orange-500"
             />
-            
+
             <div className="flex gap-3">
               <Button
                 onClick={() => setSelectedPandit(null)}

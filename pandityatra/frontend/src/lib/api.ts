@@ -240,6 +240,15 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
     }
 }
 
+export async function googleLogin(idToken: string) {
+    try {
+        const response = await apiClient.post('/users/google-login/', { id_token: idToken });
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
 export async function fetchProfile() {
     // Interceptor handles the token, argument removed as it was unused
     const response = await apiClient.get('/users/profile/');
@@ -279,6 +288,25 @@ export async function updatePanditProfile(id: number, data: any) {
 // ----------------------
 export async function submitContactForm(payload: { name: string; email: string; subject?: string; message: string }) {
     const response = await apiClient.post('/users/contact/', payload);
+    return response.data;
+}
+
+// ----------------------
+// Kundali APIs
+// ----------------------
+export async function generateKundali(payload: {
+    dob: string;
+    time: string;
+    latitude: number;
+    longitude: number;
+    timezone: string
+}) {
+    const response = await apiClient.post('/kundali/generate/', payload);
+    return response.data;
+}
+
+export async function getSavedKundalis() {
+    const response = await apiClient.get('/kundali/list/');
     return response.data;
 }
 

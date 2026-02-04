@@ -73,3 +73,22 @@ class PlatformSetting(models.Model):
 
     def __str__(self):
         return "Platform Settings"
+
+class ContactMessage(models.Model):
+    """
+    Stores contact form submissions from the frontend.
+    """
+    name = models.CharField(max_length=150)
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_resolved = models.BooleanField(default=False)
+    admin_note = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Message from {self.name} - {self.subject}"

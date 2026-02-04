@@ -31,7 +31,7 @@ export const EditProfile = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await apiClient.patch('/users/me/', formData);
+            await apiClient.patch('/users/profile/', formData);
             toast({ title: 'Success', description: 'Profile updated successfully' });
             refreshUser();
         } catch (error: any) {

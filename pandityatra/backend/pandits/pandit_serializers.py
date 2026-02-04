@@ -6,9 +6,9 @@ from users.models import User
 
 class PanditRegistrationSerializer(serializers.Serializer):
     """Separate serializer for Pandit registration with document upload"""
-    phone_number = serializers.CharField(max_length=15)
+    phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
     full_name = serializers.CharField(max_length=150)
-    password = serializers.CharField(write_only=True, min_length=6, required=True)
+    password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
     expertise = serializers.CharField(max_length=255)
     language = serializers.CharField(max_length=50)
     experience_years = serializers.IntegerField(min_value=0, max_value=100)

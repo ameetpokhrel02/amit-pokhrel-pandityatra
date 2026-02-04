@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import axiosInstance from '@/lib/api-client';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
+import { DataTablePagination } from "@/components/common/DataTablePagination";
 
 interface User {
     id: number;
@@ -23,6 +24,8 @@ const AdminUsers = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
     const [editId, setEditId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<{ full_name: string; email: string; role: string }>({ full_name: "", email: "", role: "user" });
 
@@ -54,12 +57,16 @@ const AdminUsers = () => {
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearch(e.target.value);
+        setCurrentPage(1);
     };
 
     const filteredUsers = users.filter(u =>
-        u.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase())
+        (u.full_name || "").toLowerCase().includes(search.toLowerCase()) ||
+        (u.email || "").toLowerCase().includes(search.toLowerCase())
     );
+
+    const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const currentUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
     const handleEdit = (user: User) => {
         setEditId(user.id);
@@ -130,7 +137,7 @@ const AdminUsers = () => {
                                         <TableCell colSpan={7} className="text-center h-24">No users found.</TableCell>
                                     </TableRow>
                                 ) : (
-                                    filteredUsers.map((user) => (
+                                    currentUsers.map((user) => (
                                         <TableRow key={user.id}>
                                             <TableCell>#{user.id}</TableCell>
                                             <TableCell>
@@ -173,6 +180,11 @@ const AdminUsers = () => {
                                 )}
                             </TableBody>
                         </Table>
+                        <DataTablePagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                        />
                     </CardContent>
                 </Card>
             </div>

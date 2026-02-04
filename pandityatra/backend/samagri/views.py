@@ -1,4 +1,5 @@
 from rest_framework import viewsets, status, permissions
+from users.permissions import IsAdminOrReadOnly
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
@@ -213,12 +214,12 @@ import stripe
 class SamagriCategoryViewSet(viewsets.ModelViewSet):
     queryset = SamagriCategory.objects.all()
     serializer_class = SamagriCategorySerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
 class SamagriItemViewSet(viewsets.ModelViewSet):
     queryset = SamagriItem.objects.all()
     serializer_class = SamagriItemSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = SamagriItem.objects.all()
@@ -230,7 +231,7 @@ class SamagriItemViewSet(viewsets.ModelViewSet):
 class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
     queryset = PujaSamagriRequirement.objects.all()
     serializer_class = PujaSamagriRequirementSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
         queryset = PujaSamagriRequirement.objects.all()

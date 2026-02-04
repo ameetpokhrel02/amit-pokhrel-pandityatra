@@ -10,7 +10,8 @@ class IsStaffOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        # Write permissions (POST, PUT, DELETE) are only allowed to staff/admin
+        # Write permissions (POST, PUT, DELETE) are only allowed to staff/admin/pandit
         return request.user and request.user.is_authenticated and (
-            request.user.is_staff or request.user.is_superuser
+            request.user.is_staff or request.user.is_superuser or 
+            getattr(request.user, 'role', '') in ['admin', 'pandit']
         )

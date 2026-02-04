@@ -1,7 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated  # 🚨 NEW: For security
+from rest_framework import permissions
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes # 🚨 Fix: Import decorators
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -13,6 +14,8 @@ from .serializers import (
     ForgotPasswordRequestSerializer, ForgotPasswordOTPVerifySerializer, ResetPasswordSerializer
 )
 from .otp_utils import send_local_otp, verify_local_otp 
+import requests
+from django.conf import settings
 from pandits.models import Pandit # 🚨 Import for Admin Stats 
 
 
@@ -24,10 +27,17 @@ class RegisterUserView(APIView):
             user = serializer.save()
             
             email = user.email
-            send_local_otp(email=email) 
+            password_provided = request.data.get('password')
+            
+            # 🚨 FIX: Only send OTP if NO password provided (Passwordless)
+            if not password_provided:
+                send_local_otp(email=email) 
+                message = "User registered. OTP sent to your email for verification."
+            else:
+                message = "User registered successfully. You can now login."
             
             return Response(
-                {"detail": "User registered. OTP sent to your email for verification."},
+                {"detail": message},
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -376,8 +386,8 @@ class AdminStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Check if user is admin
-        if not request.user.is_superuser and request.user.role != 'admin':
+        # Check if user is admin or superuser
+        if not (request.user.is_superuser or request.user.role == 'admin'):
             return Response(
                 {"detail": "You do not have permission to view admin stats."},
                 status=status.HTTP_403_FORBIDDEN
@@ -403,7 +413,7 @@ def admin_get_users(request):
     """
     Return list of all users (role='user' usually, or all non-admins).
     """
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
     
     # Filter only regular users
@@ -417,7 +427,7 @@ def admin_toggle_user_status(request, user_id):
     """
     Block/Unblock a user.
     """
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
     
     try:
@@ -437,7 +447,7 @@ def admin_delete_user(request, user_id):
     """
     Delete a user permanently.
     """
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
     
     try:
@@ -464,7 +474,7 @@ def admin_platform_settings(request):
     GET: Retrieve current platform settings (commission, etc.)
     POST: Update settings
     """
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
 
     # Use Singleton load() method
@@ -485,22 +495,81 @@ def admin_platform_settings(request):
 
 class ContactView(APIView):
     """
-    Handles Contact Form submissions.
+    Handles Contact Form submissions and saves them to the database.
     """
-    def post(self, request):
-        name = request.data.get('name')
-        email = request.data.get('email')
-        subject = request.data.get('subject', 'New Contact Form Submission')
-        message = request.data.get('message')
+    permission_classes = [permissions.AllowAny]
 
-        if not name or not email or not message:
+    def post(self, request):
+        from .serializers import ContactMessageSerializer
+        serializer = ContactMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
             return Response(
-                {"detail": "Name, Email, and Message are required."},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Thank you for reaching out! We will get back to you soon."},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GoogleLoginView(APIView):
+    """
+    Handles Google OAuth2 Login.
+    Verifies the id_token and returns JWT tokens.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        id_token = request.data.get('id_token')
+        if not id_token:
+            return Response({"detail": "id_token is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify token with Google
+        try:
+            # We call Google's tokeninfo endpoint to verify the integrity and ownership of the token
+            google_url = f"https://oauth2.googleapis.com/tokeninfo?id_token={id_token}"
+            google_response = requests.get(google_url)
+            data = google_response.json()
+
+            if google_response.status_code != 200:
+                return Response({"detail": "Invalid Google token"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Check if this token was actually meant for our client ID
+            # (In production, you'd compare data.get('aud') with settings.GOOGLE_CLIENT_ID)
+
+            email = data.get('email')
+            full_name = data.get('name', '')
+            google_id = data.get('sub') # The unique Google user ID
+
+            if not email:
+                return Response({"detail": "Email not provided by Google"}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get or create user
+            # We map Google emails to our local User model
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={
+                    'username': email.split('@')[0] + "_" + google_id[-4:],
+                    'full_name': full_name,
+                    'is_active': True,
+                    'role': 'user' # Default role for new signups via Google
+                }
             )
 
-        # Prepare for email sending (Logic can be added later in settings/SMTP)
-        return Response(
-            {"detail": "Thank you for reaching out! We will get back to you soon."},
-            status=status.HTTP_200_OK
-        )
+            # Generate JWT tokens (SimpleJWT integration)
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token), # frontend expects 'access' or 'token'?
+                'token': str(refresh.access_token),  # Providing both for safety
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'full_name': user.full_name,
+                    'role': user.role,
+                    'is_staff': user.is_staff,
+                    'is_superuser': user.is_superuser
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"detail": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

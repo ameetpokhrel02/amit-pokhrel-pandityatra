@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, X, Bot, User, Loader2, Sparkles, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,12 @@ interface Message {
 }
 
 const AIGuideBot: React.FC = () => {
+    const location = useLocation();
+    const isAdminRoute = location.pathname.startsWith('/admin');
+    const isPanditRoute = location.pathname.startsWith('/pandit');
+
+    if (isAdminRoute || isPanditRoute) return null;
+
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -109,8 +116,8 @@ const AIGuideBot: React.FC = () => {
                                                 {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                                             </div>
                                             <div className={`p-3 rounded-2xl text-sm ${msg.role === 'user'
-                                                    ? 'bg-orange-600 text-white rounded-tr-none shadow-lg shadow-orange-600/10'
-                                                    : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100'
+                                                ? 'bg-orange-600 text-white rounded-tr-none shadow-lg shadow-orange-600/10'
+                                                : 'bg-gray-50 text-gray-800 rounded-tl-none border border-gray-100'
                                                 }`}>
                                                 {msg.content}
                                             </div>

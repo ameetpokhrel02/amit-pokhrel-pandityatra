@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     RegisterUserView, RequestOTPView, OTPVerifyAndTokenView, 
     PasswordLoginView, ForgotPasswordRequestView, ForgotPasswordOTPVerifyView, 
-    ResetPasswordView, ProfileView, AdminStatsView, ContactView,
+    ResetPasswordView, ProfileView, AdminStatsView, ContactView, GoogleLoginView,
     # 🚨 ADMIN VIEWS (Added)
     admin_get_users, admin_toggle_user_status, admin_delete_user, admin_platform_settings
 )
@@ -17,6 +17,9 @@ urlpatterns = [
 
     # Password-Based Login
     path('login-password/', PasswordLoginView.as_view(), name='login-password'),  # Login with password
+    
+    # Google Login
+    path('google-login/', GoogleLoginView.as_view(), name='google-login'),
     
     # User Profile
     path('profile/', ProfileView.as_view(), name='profile'),

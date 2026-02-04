@@ -18,9 +18,10 @@ import { FaUser, FaUserTie, FaPhone, FaEnvelope, FaLock, FaArrowRight } from 're
 import { Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const RegisterPage: React.FC = () => {
-  const { register, token } = useAuth();
+  const { register, googleLogin, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -228,8 +229,41 @@ const RegisterPage: React.FC = () => {
           </p>
         )}
 
+        {/* Google Login Section */}
+        <div className="flex flex-col items-center gap-4 pt-2">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Or Continue With</p>
+          <div className="w-full flex justify-center">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  setLoading(true);
+                  try {
+                    await googleLogin(credentialResponse.credential);
+                    toast({
+                      title: "Success!",
+                      description: "Your account is ready. Redirecting...",
+                    });
+                  } catch (err: any) {
+                    setError(err.message || "Google registration failed");
+                  } finally {
+                    setLoading(false);
+                  }
+                }
+              }}
+              onError={() => {
+                setError("Google authentication failed. Please try again.");
+              }}
+              theme="outline"
+              shape="pill"
+              size="large"
+              width="100%"
+              text="signup_with"
+            />
+          </div>
+        </div>
+
         {/* Back to Login */}
-        <div className="pt-4 text-center border-t border-gray-100">
+        <div className="pt-8 text-center border-t border-gray-100 mt-4">
           <p className="text-sm text-gray-500">
             Already have an account?{' '}
             <Link to="/login" className="font-bold text-orange-600 hover:underline">

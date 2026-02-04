@@ -126,7 +126,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
 
     try {
       setCancellingId(bookingId);
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       await apiClient.patch(`/bookings/${bookingId}/cancel/`);
       fetchBookings();
     } catch (err: any) {
@@ -286,26 +286,26 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                   </div>
 
                   <div className="flex flex-wrap justify-end gap-3 pt-4 border-t">
-                                        {/* VIDEO RECORDING LINK (COMPLETED) */}
-                                                            {/* CHAT LOG DOWNLOAD BUTTON (ALWAYS SHOWN) */}
-                                                            <Button
-                                                              variant="outline"
-                                                              className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                                                              onClick={() => handleDownloadChatLog(booking.id, booking.service_name)}
-                                                            >
-                                                              <User className="h-4 w-4 mr-2" />
-                                                              Download Chat Log
-                                                            </Button>
-                                        {booking.status === 'COMPLETED' && recordingUrls[booking.id] && (
-                                          <Button
-                                            variant="outline"
-                                            className="border-green-200 text-green-700 hover:bg-green-50"
-                                            onClick={() => window.open(recordingUrls[booking.id]!, '_blank')}
-                                          >
-                                            <PlayCircle className="h-4 w-4 mr-2" />
-                                            View Recording
-                                          </Button>
-                                        )}
+                    {/* VIDEO RECORDING LINK (COMPLETED) */}
+                    {/* CHAT LOG DOWNLOAD BUTTON (ALWAYS SHOWN) */}
+                    <Button
+                      variant="outline"
+                      className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                      onClick={() => handleDownloadChatLog(booking.id, booking.service_name)}
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Download Chat Log
+                    </Button>
+                    {booking.status === 'COMPLETED' && recordingUrls[booking.id] && (
+                      <Button
+                        variant="outline"
+                        className="border-green-200 text-green-700 hover:bg-green-50"
+                        onClick={() => window.open(recordingUrls[booking.id]!, '_blank')}
+                      >
+                        <PlayCircle className="h-4 w-4 mr-2" />
+                        View Recording
+                      </Button>
+                    )}
                     {/* VIDEO CALL BUTTON */}
                     {booking.status === 'ACCEPTED' && booking.video_room_url && (
                       <Button

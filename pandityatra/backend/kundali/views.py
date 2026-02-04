@@ -108,3 +108,22 @@ def generate_kundali(request):
             } for h in kundali.houses.all()
         ]
     })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_kundalis(request):
+    user = request.user
+    kundalis = Kundali.objects.filter(user=user).order_by('-created_at')
+    
+    data = []
+    for k in kundalis:
+        data.append({
+            "id": k.id,
+            "dob": k.dob,
+            "time": k.time,
+            "place": f"{k.latitude}, {k.longitude}", # You might want to store place name in model later
+            "created_at": k.created_at
+        })
+    
+    return Response(data)

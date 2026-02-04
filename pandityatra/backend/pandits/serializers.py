@@ -65,9 +65,10 @@ class PanditDetailSerializer(PanditSerializer):
     # Aliases
     average_rating = serializers.DecimalField(source='rating', max_digits=3, decimal_places=2, read_only=True)
     total_reviews = serializers.IntegerField(source='reviews.count', read_only=True)
+    review_count = serializers.IntegerField(source='reviews.count', read_only=True)
 
     class Meta(PanditSerializer.Meta):
         fields = (
-            'id', 'user', 'bio', 'expertise', 'language', 'experience_years', 
-            'is_verified', 'services', 'average_rating', 'total_reviews', 'reviews'
+            'id', 'user', 'user_details', 'bio', 'expertise', 'language', 'experience_years', 
+            'is_verified', 'services', 'average_rating', 'rating', 'review_count', 'total_reviews', 'reviews'
         )

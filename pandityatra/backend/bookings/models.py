@@ -77,6 +77,7 @@ class Booking(models.Model):
     payment_method = models.CharField(max_length=50, blank=True, null=True) # Khalti, Stripe, etc.
     transaction_id = models.CharField(max_length=100, blank=True, null=True, help_text="Payment Gateway Transaction ID")
     video_room_url = models.URLField(max_length=500, blank=True, null=True, help_text="Video call link for online puja")
+    recording_url = models.URLField(max_length=500, blank=True, null=True, help_text="Recorded session URL (post-puja)")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

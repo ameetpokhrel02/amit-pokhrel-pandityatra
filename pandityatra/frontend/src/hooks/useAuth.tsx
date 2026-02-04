@@ -17,6 +17,7 @@ type AuthContextValue = {
   loginWithOtp: (phone: string, otp: string) => Promise<any>;
   verifyResetOtp: (phone: string, otp: string) => Promise<any>;
   passwordLogin: (phone: string, password: string) => Promise<any>;
+  googleLogin: (idToken: string) => Promise<any>;
   register: (payload: api.RegisterPayload) => Promise<any>;
   resetPassword: (phone: string, otp: string, newPw: string) => Promise<any>;
   logout: () => void;
@@ -124,6 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return resp;
   };
 
+  const googleLogin = async (idToken: string) => {
+    const resp = await api.googleLogin(idToken);
+    handleLoginSuccess(resp);
+    return resp;
+  };
+
   const handleLoginSuccess = (resp: any) => {
     const t = (resp && (resp.access || resp.token)) || resp;
     if (typeof t === 'string') {
@@ -176,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       loginWithOtp,
       verifyResetOtp,
       passwordLogin,
+      googleLogin,
       register,
       resetPassword,
       logout,

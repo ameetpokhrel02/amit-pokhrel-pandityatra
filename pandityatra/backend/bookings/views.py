@@ -229,6 +229,19 @@ class BookingViewSet(viewsets.ModelViewSet):
             end_time = start_time + timedelta(minutes=b_duration)
             busy_intervals.append((start_time, end_time))
 
+        # 🚨 ADDED: Fetch manual unavailability blocks
+        from pandits.models import PanditAvailability
+        manual_blocks = PanditAvailability.objects.filter(
+            pandit=pandit,
+            start_time__date=booking_date_obj
+        )
+        for block in manual_blocks:
+            # Convert to naive datetime if needed, or ensure tz awareness match
+            # For simplicity in this context, assuming localized or naive match
+            start = timezone.localtime(block.start_time).replace(tzinfo=None) # if using naive logic below
+            end = timezone.localtime(block.end_time).replace(tzinfo=None)
+            busy_intervals.append((start, end))
+
         slots = []
 
         # Helper to check overlap

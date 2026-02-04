@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { fetchAllPujas, type Puja } from "@/lib/api";
-import axios from "axios";
+import apiClient from "@/lib/api-client";
+import { DataTablePagination } from "@/components/common/DataTablePagination";
 
 interface AdminPuja extends Puja {
   is_available: boolean;
@@ -15,6 +16,9 @@ interface AdminPuja extends Puja {
 export default function AdminServices() {
   const [pujas, setPujas] = useState<AdminPuja[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -52,20 +56,29 @@ export default function AdminServices() {
     e.preventDefault();
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      if (value !== null && value !== "") formData.append(key, String(value));
+      if (value !== null && value !== "") {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, String(value));
+        }
+      }
     });
     try {
-      await axios.post("/api/services/", formData, {
+      await apiClient.post("/services/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        withCredentials: true,
       });
       toast({ title: "Success", description: "Puja added." });
       setForm({ name: "", description: "", base_duration_minutes: 60, base_price: "", is_available: true, image: null });
       loadPujas();
-    } catch (err) {
-      toast({ title: "Error", description: "Failed to add puja." });
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Error", description: err.response?.data?.detail || err.message || "Failed to add puja." });
     }
   };
+
+  const totalPages = Math.ceil(pujas.length / itemsPerPage);
+  const currentPujas = pujas.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <DashboardLayout userRole="admin">
@@ -95,6 +108,7 @@ export default function AdminServices() {
           {loading ? (
             <div>Loading...</div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -106,7 +120,7 @@ export default function AdminServices() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pujas.map((puja) => (
+                {currentPujas.map((puja) => (
                   <TableRow key={puja.id}>
                     <TableCell>{puja.name}</TableCell>
                     <TableCell>{puja.description}</TableCell>
@@ -117,6 +131,8 @@ export default function AdminServices() {
                 ))}
               </TableBody>
             </Table>
+            <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+          </>
           )}
         </CardContent>
       </Card>

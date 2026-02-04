@@ -16,7 +16,12 @@ def ensure_video_room_for_booking(booking):
         room_url=room_url,
         status="scheduled"
     )
-    return  video_room
+
+    # 🚨 CRITICAL FIX: Update Booking with the URL
+    booking.video_room_url = room_url
+    booking.save(update_fields=['video_room_url'])
+
+    return video_room
 
 # Closely link room to booking
 def close_video_room(booking):

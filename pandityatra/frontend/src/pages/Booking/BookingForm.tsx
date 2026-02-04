@@ -152,7 +152,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
         budget_preference: 'standard' // Could be made dynamic
       });
-      
+
       // Enhanced recommendations with auto-selection logic
       const recommendations = response.data.recommendations || [];
       const enhancedRecommendations = recommendations.map((item: any) => ({
@@ -161,9 +161,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         reason: item.reason || `Recommended for ${formData.service_location} puja`,
         confidence: item.confidence || 0.7
       }));
-      
+
       setSamagriRequirements(enhancedRecommendations);
-      
+
       // Auto-add essential items to cart
       const essentialItems = enhancedRecommendations.filter((item: any) => item.isAutoSelected);
       if (essentialItems.length > 0) {
@@ -172,8 +172,8 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             id: item.id ? `samagri-${item.id}` : `samagri-${item.name}`,
             title: item.name,
             price: item.price ? parseFloat(item.price) : 0,
-            meta: { 
-              type: 'samagri', 
+            meta: {
+              type: 'samagri',
               pujaId: serviceId,
               isEssential: true,
               aiRecommended: true,
@@ -245,7 +245,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('access_token');
+      const token = localStorage.getItem('token');
       if (!token) {
         navigate('/login');
         return;

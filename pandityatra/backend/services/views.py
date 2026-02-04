@@ -43,11 +43,11 @@ class PujaListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         user = self.request.user
         
-        # Admin must specify the 'pandit' ID.
-        if user.is_staff or user.is_superuser:
+        # Admin and Pandits can create services
+        if user.is_staff or user.is_superuser or getattr(user, 'role', '') in ['admin', 'pandit']:
             serializer.save()
         else:
-             raise PermissionDenied("Only staff and administrators can create general Puja listings.")
+             raise PermissionDenied("Only staff, administrators, and pandits can create general Puja listings.")
 
 
 class PujaDetailView(generics.RetrieveUpdateDestroyAPIView):

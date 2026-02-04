@@ -515,7 +515,7 @@ def admin_payments(request):
     List all payments for Admin Ledger
     """
     # Check permissions
-    if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+    if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
     
     payments = Payment.objects.all().select_related('booking', 'booking__pandit', 'booking__pandit__user', 'user').order_by('-created_at')
@@ -531,7 +531,7 @@ def refund_payment(request, payment_id):
     """
     Process refund for a specific payment
     """
-    if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+    if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
         
     try:
@@ -571,7 +571,7 @@ from rest_framework.permissions import IsAdminUser
 @api_view(["POST"])
 @permission_classes([IsAuthenticated]) # Should be IsAdminUser in prod, but using IsAuthenticated + check
 def approve_withdrawal(request, id):
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
         
     try:
@@ -601,7 +601,7 @@ def approve_withdrawal(request, id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_payouts(request):
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
 
     data = []
@@ -626,7 +626,7 @@ def admin_payouts(request):
 @permission_classes([IsAuthenticated])
 def admin_withdrawal_requests(request):
     """List of all withdrawal requests for Admin"""
-    if request.user.role != 'admin':
+    if not (request.user.is_superuser or request.user.role == 'admin'):
         return Response({"error": "Admin only"}, status=403)
         
     withdrawals = PanditWithdrawal.objects.select_related('pandit__user').order_by('-created_at')

@@ -10,12 +10,320 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner } from 'react-icons/fa';
+import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner, FaHistory } from 'react-icons/fa';
+import { ChevronRightIcon } from 'lucide-react';
 import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
-import PWALogo from '@/assets/images/PWA.png';
 import { useLocation as useGeoLocation } from '@/hooks/useLocation';
 import { useEffect as useNetworkEffect, useState as useNetworkState } from 'react';
 import * as Astronomy from 'astronomy-engine';
+import { DualDatePicker } from '@/components/ui/dual-date-picker';
+
+// Helpers
+const getZodiacSign = (longitude: number) => {
+  const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
+  let norm = longitude % 360;
+  if (norm < 0) norm += 360;
+  return signs[Math.floor(norm / 30)];
+};
+
+const getNakshatra = (longitude: number) => {
+  const nakshatras = ["Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha", "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"];
+  let norm = longitude % 360;
+  if (norm < 0) norm += 360;
+  return nakshatras[Math.floor(norm * 27 / 360)];
+};
+
+// Sub-component for the list
+const SavedChartsList = ({ onSelectChart }: { onSelectChart: (c: any) => void }) => {
+  const [charts, setCharts] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    import('@/lib/api').then(({ getSavedKundalis }) => {
+      getSavedKundalis()
+        .then(setCharts)
+        .catch(console.error)
+        .finally(() => setLoading(false));
+    });
+  }, []);
+
+  if (loading) return <div className="p-8 text-center"><FaSpinner className="animate-spin inline mr-2" /> Loading history...</div>;
+  if (charts.length === 0) return <div className="text-center p-8 text-gray-500 bg-white rounded-lg border border-dashed">No saved charts found. Generate one online to save it!</div>;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {charts.map((c, i) => (
+        <Card key={i} className="cursor-pointer hover:border-[#FF6F00] hover:shadow-md transition-all group" onClick={() => onSelectChart(c)}>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex justify-between">
+              <span>Chart #{c.id}</span>
+              <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">{new Date(c.created_at).toLocaleDateString()}</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1 text-sm text-gray-600">
+              <div className="flex items-center gap-2"><FaCalendarAlt className="text-[#FF6F00] w-3 h-3" /> {c.dob}</div>
+              <div className="flex items-center gap-2"><GiSolarSystem className="text-[#FF6F00] w-3 h-3" /> {c.time}</div>
+              <div className="flex items-center gap-2"><FaMapMarkerAlt className="text-[#FF6F00] w-3 h-3" /> {c.place}</div>
+            </div>
+            <Button variant="ghost" className="w-full mt-3 text-[#FF6F00] text-xs font-semibold group-hover:bg-orange-50 h-8">
+              Load Chart <ChevronRightIcon className="ml-1 w-3 h-3" />
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+};
+
+// Generator Form Component
+const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) => {
+  const { latitude, longitude } = geo;
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
+  const [pdfSyncStatus, setPdfSyncStatus] = useState<'idle' | 'queued' | 'synced'>('idle');
+  const [queuedPDF, setQueuedPDF] = useState<any>(null);
+
+  const formData = initialData;
+
+  useNetworkEffect(() => {
+    const handleOnline = () => {
+      if (queuedPDF) {
+        setPdfSyncStatus('synced');
+        setQueuedPDF(null);
+        setTimeout(() => setPdfSyncStatus('idle'), 2000);
+      }
+    };
+    window.addEventListener('online', handleOnline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [queuedPDF]);
+
+  const generateChart = async () => {
+    if (!formData.day || !formData.month || !formData.year || !formData.hour || !formData.minute) {
+      alert("Please enter valid birth details.");
+      return;
+    }
+    setLoading(true);
+
+    // 1. ONLINE MODE
+    if (isOnline) {
+      try {
+        const { generateKundali } = await import('@/lib/api');
+        const payload = {
+          dob: `${formData.year}-${formData.month}-${formData.day}`,
+          time: `${formData.hour}:${formData.minute}`,
+          latitude: latitude || 27.7172,
+          longitude: longitude || 85.3240,
+          timezone: 'Asia/Kathmandu'
+        };
+        const data = await generateKundali(payload);
+
+        const planetsWithHouses = data.planets.map((p: any) => ({
+          planet: p.planet,
+          longitude: p.longitude,
+          rashi: p.rashi,
+          nakshatra: p.nakshatra,
+          house: p.house
+        }));
+        setResult({
+          planets: planetsWithHouses,
+          lagna: data.lagna,
+          ai_prediction: data.ai_prediction,
+          source: 'online'
+        });
+        setLoading(false);
+        return;
+      } catch (e) {
+        console.error("Online generation failed, falling back to offline", e);
+      }
+    }
+
+    // 2. OFFLINE MODE (Fallback or Primary)
+    try {
+      const date = new Date(parseInt(formData.year), parseInt(formData.month) - 1, parseInt(formData.day), parseInt(formData.hour), parseInt(formData.minute));
+      const observer = new Astronomy.Observer(latitude || 27.7172, longitude || 85.3240, 1350);
+      const bodies = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
+
+      const planetsData = bodies.map(bodyName => {
+        const body = (Astronomy.Body as any)[bodyName];
+        const equator = Astronomy.Equator(body, date, observer, true, true);
+        const ecliptic = Astronomy.Ecliptic(equator.vec);
+
+        return {
+          planet: bodyName,
+          longitude: ecliptic.elon,
+          rashi: getZodiacSign(ecliptic.elon),
+          nakshatra: getNakshatra(ecliptic.elon)
+        };
+      });
+
+      const planetsWithHouses = planetsData.map(p => ({
+        ...p,
+        house: Math.floor(p.longitude / 30) + 1
+      }));
+
+      const sunSign = planetsData.find(p => p.planet === 'Sun')?.rashi;
+      const moonSign = planetsData.find(p => p.planet === 'Moon')?.rashi;
+
+      let prediction = `Based on your birth chart (Offline Mode):\n\n`;
+      prediction += `Your Sun Sign is **${sunSign}**. This represents your core essence and ego. `;
+      prediction += `\nYour Moon Sign is **${moonSign}**. This governs your emotions and inner self.`;
+
+      setResult({
+        planets: planetsWithHouses,
+        lagna: 0,
+        ai_prediction: prediction,
+        source: 'offline'
+      });
+
+    } catch (err) {
+      console.error("Calculation failed", err);
+      alert("Failed to generate chart. Please check your inputs.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Left Column: Form */}
+      <div className="lg:col-span-1 space-y-6">
+        {/* Inputs */}
+        <div className="space-y-2">
+          <Label htmlFor="name">Full Name</Label>
+          <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter name" />
+        </div>
+        <div className="space-y-2">
+          <Label>Gender</Label>
+          <Select value={formData.gender} onValueChange={(v) => setFormData({ ...formData, gender: v })}>
+            <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="male">Male</SelectItem>
+              <SelectItem value="female">Female</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Date of Birth</Label>
+          <DualDatePicker
+            date={{ day: formData.day, month: formData.month, year: formData.year, type: 'AD' }}
+            onDateChange={(d) => setFormData({ ...formData, day: d.day, month: d.month, year: d.year })}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2">
+            <Label>Hour</Label>
+            <Input type="number" min="0" max="23" value={formData.hour} onChange={(e) => setFormData({ ...formData, hour: e.target.value })} placeholder="HH" />
+          </div>
+          <div className="space-y-2">
+            <Label>Minute</Label>
+            <Input type="number" min="0" max="59" value={formData.minute} onChange={(e) => setFormData({ ...formData, minute: e.target.value })} placeholder="MM" />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label>Place</Label>
+          <Input value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} placeholder="City" />
+        </div>
+
+        <Button onClick={generateChart} disabled={loading} className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white">
+          {loading ? <FaSpinner className="animate-spin mr-2" /> : <GiStarsStack className="mr-2" />} Generate Kundali
+        </Button>
+      </div>
+
+      {/* Right Column: Results */}
+      <div className="lg:col-span-2">
+        {result ? (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <GiSolarSystem className="text-[#FF6F00]" /> Birth Chart Details
+                  {result.source === 'online' ?
+                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-auto">High Precision</span> :
+                    <span className="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full ml-auto">Approximate</span>
+                  }
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold text-[#3E2723] mb-2">Planetary Positions</h4>
+                    <div className="space-y-2 text-sm">
+                      {result.planets.map((p: any) => (
+                        <div key={p.planet} className="flex justify-between border-b pb-1">
+                          <span>{p.planet}</span>
+                          <span className="text-gray-600">{p.rashi} ({Number(p.longitude).toFixed(2)}°)</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-[#3E2723] mb-2">AI Prediction</h4>
+                    <div className="bg-orange-50 p-4 rounded-lg text-sm text-gray-700 whitespace-pre-line border border-orange-100">{result.ai_prediction}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Button
+              onClick={() => {
+                try {
+                  const content = `
+KUNDALI REPORT (${(result.source || 'OFFLINE').toUpperCase()} MODE)
+====================================================
+Name: ${formData.name || 'N/A'}
+Gender: ${formData.gender || 'N/A'}
+Date: ${formData.year}-${formData.month}-${formData.day}
+Time: ${formData.hour}:${formData.minute}
+Place: ${formData.place || 'Unknown'}
+
+PLANETARY POSITIONS:
+${result.planets ? result.planets.map((p: any) => `${p.planet}: ${p.rashi} (${Number(p.longitude).toFixed(2)})`).join('\n') : 'No planetary data available'}
+
+PREDICTION:
+${result.ai_prediction || 'No prediction available'}
+
+Generated by PanditYatra
+`.trim();
+                  const blob = new Blob([content], { type: 'text/plain' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${(formData.name || 'User').replace(/\s+/g, '_')}_Kundali.txt`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+
+                  if (!isOnline) {
+                    setPdfSyncStatus('queued');
+                    setQueuedPDF(result);
+                  }
+                } catch (error) {
+                  console.error("Download failed:", error);
+                  alert("Failed to download chart.");
+                }
+              }}
+              className="mt-4 w-full bg-[#FF6F00] hover:bg-[#E65100] text-white font-bold py-3"
+            >
+              <FaDownload className="mr-2" />
+              {isOnline ? 'Download Chart Summary' : 'Download Offline Summary'}
+            </Button>
+          </div>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-xl border-2 border-dashed border-gray-200 text-center">
+            <GiSolarSystem className="w-16 h-16 text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-500">No Chart Generated</h3>
+            <p className="text-gray-400 max-w-sm mt-2">Enter details to generate chart.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const OfflineKundali: React.FC = () => {
   const { token } = useAuth();
@@ -23,34 +331,11 @@ const OfflineKundali: React.FC = () => {
   const navigate = useNavigate();
   const geo = useGeoLocation();
   const { latitude, longitude, error: geoError, isNepalTime } = geo;
-  // Network status
+
   const [isOnline, setIsOnline] = useNetworkState(navigator.onLine);
-  const [pdfSyncStatus, setPdfSyncStatus] = useState<'idle' | 'queued' | 'synced'>('idle');
-  const [queuedPDF, setQueuedPDF] = useState<any>(null);
 
-  useNetworkEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      // If PDF was queued, simulate upload
-      if (queuedPDF) {
-        setPdfSyncStatus('synced');
-        setQueuedPDF(null);
-        setTimeout(() => setPdfSyncStatus('idle'), 2000);
-      }
-    };
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [queuedPDF]);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("generator");
 
-  // Form State
   const [formData, setFormData] = useState({
     name: '',
     gender: 'male',
@@ -62,154 +347,42 @@ const OfflineKundali: React.FC = () => {
     place: ''
   });
 
-  // Result State
-  const [result, setResult] = useState<any>(null);
+  const handleLoadChart = (chart: any) => {
+    const dobDate = new Date(chart.dob);
+    const timeParts = chart.time.split(':');
+
+    setFormData(prev => ({
+      ...prev,
+      name: `Chart #${chart.id}`,
+      day: dobDate.getDate().toString(),
+      month: (dobDate.getMonth() + 1).toString(),
+      year: dobDate.getFullYear().toString(),
+      hour: timeParts[0],
+      minute: timeParts[1],
+      place: chart.place
+    }));
+    setActiveTab("generator");
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useNetworkEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
       setShowAuthDialog(true);
     }
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    });
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-      }
-    }
-  };
-
-  const getZodiacSign = (longitude: number) => {
-    const signs = [
-      "Aries", "Taurus", "Gemini", "Cancer",
-      "Leo", "Virgo", "Libra", "Scorpio",
-      "Sagittarius", "Capricorn", "Aquarius", "Pisces"
-    ];
-    // Sidereal to Tropical adjustment (approximate ayanamsa for simplicity in offline mode)
-    // Or just use Tropical as returned by Astronomy engine for now
-    // Normalized to 0-360
-    let norm = longitude % 360;
-    if (norm < 0) norm += 360;
-    const index = Math.floor(norm / 30);
-    return signs[index];
-  };
-
-  const getNakshatra = (longitude: number) => {
-    const nakshatras = [
-      "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashira", "Ardra", "Punarvasu", "Pushya", "Ashlesha",
-      "Magha", "Purva Phalguni", "Uttara Phalguni", "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
-      "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha", "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
-    ];
-    // Simple mapping, assuming starting from 0 Aries
-    let norm = longitude % 360;
-    if (norm < 0) norm += 360;
-    const index = Math.floor(norm * 27 / 360);
-    return nakshatras[index];
-  };
-
-  const getHouseNumber = (planetLong: number, ascendantLong: number) => {
-    let diff = planetLong - ascendantLong;
-    if (diff < 0) diff += 360;
-    return Math.floor(diff / 30) + 1;
-  };
-
-  const generateOfflineChart = () => {
-    if (!formData.day || !formData.month || !formData.year || !formData.hour || !formData.minute) {
-      alert("Please enter valid birth details.");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // 1. Create Date Object
-      const date = new Date(
-        parseInt(formData.year),
-        parseInt(formData.month) - 1,
-        parseInt(formData.day),
-        parseInt(formData.hour),
-        parseInt(formData.minute)
-      );
-
-      // 2. Use Astronomy Engine
-      const observer = new Astronomy.Observer(latitude || 27.7172, longitude || 85.3240, 1350); // Default to Kathmandu
-
-      const bodies = [
-        "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"
-      ];
-
-      const planetsData = bodies.map(bodyName => {
-        const body = (Astronomy.Body as any)[bodyName];
-        // Get equatorial coordinates
-        const equator = Astronomy.Equator(body, date, observer, true, true);
-        // Convert to Vector for Ecliptic calculation if necessary, or use a method that accepts equatorial
-        // Astronomy.Ecliptic expects a Vector. Astronomy.Equator returns EquatorialCoordinates which has vec field (Vector)
-        const ecliptic = Astronomy.Ecliptic(equator.vec);
-        return {
-          planet: bodyName,
-          longitude: ecliptic.elon,
-          rashi: getZodiacSign(ecliptic.elon),
-          nakshatra: getNakshatra(ecliptic.elon)
-        };
-      });
-
-      // Calculate Ascendant (Lagna) - Approx
-      // A full sidereal ascendant calculation is complex. 
-      // Using Sun longitude + time offset as a very rough approximation for offline demo if library doesn't support it directly
-      // Better: Astronomy engine doesn't have direct 'Ascendant'. 
-      // We will use a mock Ascendant based on time of day for the visual or just place Sun in 1st house for now given library limitations for full Vedic calc
-      // Actually, let's just use the Sun's position as a reference for 'Lagna' in this lightweight version to avoid errors
-      const lagna = 0; // Placeholder
-
-      // Calculate Houses relative to a 0-degree start (Kalpurush) for simplicity
-      const planetsWithHouses = planetsData.map(p => ({
-        ...p,
-        house: Math.floor(p.longitude / 30) + 1 // Simple 1-12 based on Rashi
-      }));
-
-      // 3. Rule-Based Prediction (Offline AI)
-      const sunSign = planetsData.find(p => p.planet === 'Sun')?.rashi;
-      const moonSign = planetsData.find(p => p.planet === 'Moon')?.rashi;
-
-      let prediction = `Based on your birth chart (Offline Mode):\n\n`;
-      prediction += `Your Sun Sign is **${sunSign}**. This represents your core essence and ego. `;
-      if (sunSign === 'Aries') prediction += "You are energetic and a natural leader.\n";
-      if (sunSign === 'Taurus') prediction += "You are reliable and value stability.\n";
-      if (sunSign === 'Gemini') prediction += "You are curious and adaptable.\n";
-      if (sunSign === 'Cancer') prediction += "You are nurturing and emotional.\n";
-      if (sunSign === 'Leo') prediction += "You are charismatic and love the spotlight.\n";
-      if (sunSign === 'Virgo') prediction += "You are distinct and analytical.\n";
-      if (sunSign === 'Libra') prediction += "You are diplomatic and value harmony.\n";
-      if (sunSign === 'Scorpio') prediction += "You are intense and passionate.\n";
-      if (sunSign === 'Sagittarius') prediction += "You are adventurous and optimistic.\n";
-      if (sunSign === 'Capricorn') prediction += "You are disciplined and ambitious.\n";
-      if (sunSign === 'Aquarius') prediction += "You are innovative and humanitarian.\n";
-      if (sunSign === 'Pisces') prediction += "You are compassionate and artistic.\n";
-
-      prediction += `\nYour Moon Sign is **${moonSign}**. This governs your emotions and inner self.`;
-
-      setResult({
-        planets: planetsWithHouses,
-        lagna: 0,
-        ai_prediction: prediction
-      });
-
-    } catch (err) {
-      console.error("Calculation failed", err);
-      alert("Failed to generate chart. Please check your inputs.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!isAuthenticated) {
     return (
@@ -226,25 +399,9 @@ const OfflineKundali: React.FC = () => {
                   You need to be logged in to access the Offline Kundali Generator.
                 </DialogDescription>
               </DialogHeader>
-              <div className="flex items-center space-x-2">
-                <p className="text-sm text-[#3E2723]">Please login or register to continue.</p>
-              </div>
               <DialogFooter className="sm:justify-start">
-                <Button
-                  type="button"
-                  className="bg-[#FF6F00] hover:bg-[#E65100] text-white"
-                  onClick={() => navigate('/login')}
-                >
-                  Login Now
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-[#FF6F00] text-[#FF6F00]"
-                  onClick={() => navigate('/')}
-                >
-                  Go Home
-                </Button>
+                <Button type="button" className="bg-[#FF6F00] text-white" onClick={() => navigate('/login')}>Login Now</Button>
+                <Button type="button" variant="outline" className="border-[#FF6F00] text-[#FF6F00]" onClick={() => navigate('/')}>Go Home</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -257,71 +414,44 @@ const OfflineKundali: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-20 bg-[#F5F5F5] p-4 md:p-8">
-        {/* Header */}
+      <main className="flex-grow pt-32 bg-[#F5F5F5] p-4 md:p-8">
         <div className="max-w-4xl mx-auto mb-8 text-center pt-8">
           <h1 className="text-3xl md:text-4xl font-bold text-[#3E2723] mb-2 flex items-center justify-center gap-3">
             <GiSolarSystem className="text-[#FF6F00]" /> Offline Kundali Generator
           </h1>
-          <p className="text-gray-600">Generate detailed Vedic charts without internet connection.</p>
+          <p className="text-gray-600">Generate detailed Vedic charts {isOnline ? 'Online' : 'Offline'} mode.</p>
         </div>
 
-        {/* Location/Timezone/Sync Status */}
         <div className="max-w-4xl mx-auto mb-4">
-          {geoError && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-3 mb-2 rounded">
-              <FaMapMarkerAlt className="inline mr-2" />
-              Geolocation denied or unavailable. Defaulting to Nepal time (Asia/Kathmandu).
-            </div>
-          )}
-          {isNepalTime && !geoError && (
-            <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-2 mb-2 rounded">
-              <FaCalendarAlt className="inline mr-2" />
-              Using Nepal time zone for calculations.
-            </div>
-          )}
-          <div className="flex items-center gap-4">
-            <span className={isOnline ? 'text-green-700' : 'text-red-600'}>
-              <FaWifi className="inline mr-1" /> {isOnline ? 'Online' : 'Offline'}
+          <div className="flex items-center gap-4 justify-center md:justify-start">
+            <span className={isOnline ? 'text-green-700 font-medium px-3 py-1 bg-green-100 rounded-full text-sm' : 'text-red-600 font-medium px-3 py-1 bg-red-100 rounded-full text-sm'}>
+              <FaWifi className="inline mr-1" /> {isOnline ? 'Online Mode' : 'Offline Mode'}
             </span>
-            {pdfSyncStatus === 'queued' && (
-              <span className="text-yellow-700">PDF queued for upload</span>
-            )}
-            {pdfSyncStatus === 'synced' && (
-              <span className="text-green-700">PDF uploaded when back online</span>
-            )}
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
-          {/* Left Column: Form */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* ...existing code... */}
-          </div>
-
-          {/* Right Column: Visualization */}
-          <div className="lg:col-span-2">
-            {/* ...existing code... */}
-            {/* PDF Download/Sync Button */}
-            {result && (
-              <Button
-                onClick={() => {
-                  if (isOnline) {
-                    setPdfSyncStatus('synced');
-                    setTimeout(() => setPdfSyncStatus('idle'), 2000);
-                  } else {
-                    setPdfSyncStatus('queued');
-                    setQueuedPDF(result);
-                  }
-                }}
-                variant="outline"
-                className="mt-4 border-[#3E2723] text-[#3E2723] w-full"
-              >
-                <FaDownload className="mr-2" />
-                {isOnline ? 'Download Full PDF Chart' : 'Queue PDF for Upload'}
-              </Button>
+        <div className="max-w-6xl mx-auto pb-12">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {isOnline && (
+              <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">
+                <TabsTrigger value="generator">New Chart</TabsTrigger>
+                <TabsTrigger value="history">Saved Charts</TabsTrigger>
+              </TabsList>
             )}
-          </div>
+
+            <TabsContent value="generator" className="mt-0">
+              <KundaliGeneratorForm
+                initialData={formData}
+                setFormData={setFormData}
+                isOnline={isOnline}
+                geo={{ latitude, longitude, isNepalTime, error: geoError }}
+              />
+            </TabsContent>
+
+            <TabsContent value="history">
+              <SavedChartsList onSelectChart={handleLoadChart} />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       <Footer />

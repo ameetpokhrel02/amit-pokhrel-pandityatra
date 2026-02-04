@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { motion } from 'framer-motion';
 import { FaPhone, FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
+import { GoogleLogin } from '@react-oauth/google';
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -24,7 +25,7 @@ const itemVariants = {
 };
 
 const LoginPage: React.FC = () => {
-  const { requestOtp, passwordLogin, token, role } = useAuth();
+  const { requestOtp, passwordLogin, googleLogin, token, role } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
@@ -345,15 +346,52 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
+          {/* Google Login Section */}
+          <div className="flex flex-col items-center gap-4 pt-2">
+            <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Or Continue With</p>
+            <div className="w-full flex justify-center">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (credentialResponse.credential) {
+                    setLoading(true);
+                    try {
+                      await googleLogin(credentialResponse.credential);
+                      toast({
+                        title: "Google Login Successful!",
+                        description: "Welcome back! Redirecting...",
+                      });
+                      setHasJustLoggedIn(true);
+                    } catch (err: any) {
+                      setError(err.message || "Google login failed");
+                    } finally {
+                      setLoading(false);
+                    }
+                  }
+                }}
+                onError={() => {
+                  setError("Google Login failed. Please try again.");
+                }}
+                useOneTap
+                theme="outline"
+                shape="pill"
+                size="large"
+                width="100%"
+                text="continue_with"
+              />
+            </div>
+          </div>
+
           {/* Register as Pandit Button */}
-          <Link to="/pandit/register">
-            <Button
-              variant="outline"
-              className="w-full h-12 text-base rounded-xl border-orange-200 hover:bg-orange-50"
-            >
-              Register as Pandit
-            </Button>
-          </Link>
+          <div className="pt-4">
+            <Link to="/pandit/register">
+              <Button
+                variant="outline"
+                className="w-full h-12 text-base rounded-xl border-orange-200 hover:bg-orange-50"
+              >
+                Register as Pandit
+              </Button>
+            </Link>
+          </div>
         </motion.div>
       </motion.div>
     </AuthLayout>
