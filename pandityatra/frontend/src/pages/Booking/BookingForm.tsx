@@ -14,13 +14,27 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, MapPin, Clock, DollarSign, Sparkles, Bot, X } from 'lucide-react';
+import {
+  Loader2,
+  MapPin,
+  Clock,
+  Sparkles,
+  Bot,
+  X,
+  ShoppingCart,
+  ChevronRight,
+  AlertTriangle,
+  Calendar as CalendarIcon,
+  XCircle,
+  Video,
+  Home,
+  Building2
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
 import { useLocation } from '@/hooks/useLocation';
 import { DateTime } from 'luxon';
 import { useCart } from '@/hooks/useCart';
-import { ShoppingCart } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -38,8 +52,8 @@ interface Service {
   pandit: number;
   name: string;
   description: string;
-  duration_minutes: number;
-  price: number;
+  base_duration_minutes: number;
+  base_price: number;
   is_available: boolean;
 }
 
@@ -216,7 +230,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const calculateFees = () => {
     const selectedService = services.find(s => s.id === Number(formData.service));
     // Use customPrice if available (from PanditProfile), otherwise fallback to service base price
-    const serviceFee = customPrice !== null ? customPrice : (selectedService?.price || 0);
+    const serviceFee = customPrice !== null ? customPrice : (selectedService?.base_price || 0);
     const sammagriFee = formData.samagri_required ? 500 : 0;
     return { serviceFee, sammagriFee, total: serviceFee + sammagriFee };
   };
@@ -265,28 +279,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
       };
 
-      await apiClient.post('/bookings/', submitData);
-
-      setSuccess('Booking created successfully! Waiting for pandit confirmation.');
-      setTimeout(() => {
-        onBookingSuccess?.();
-        navigate('/my-bookings');
-      }, 2000);
+      navigate('/booking/confirmation', {
+        state: {
+          bookingData: submitData,
+          displayDetails: {
+            panitName: pandits.find(p => p.id === Number(formData.pandit))?.full_name || 'Selected Pandit',
+            serviceName: selectedService?.name || 'Selected Service',
+            servicePrice: selectedService?.base_price || 0,
+            samagriFee: fees.sammagriFee,
+            totalFee: fees.total,
+            samagriItems: samagriRequirements
+          }
+        }
+      });
     } catch (err: any) {
-      console.error('Booking failed:', err);
-      const errorMsg =
-        err.response?.data?.detail ||
-        err.response?.data?.non_field_errors?.[0] ||
-        (typeof err.response?.data === 'string' ? err.response?.data : null) ||
-        err.message ||
-        'Booking failed';
-
-      // Handle array of errors
-      if (typeof errorMsg === 'object') {
-        setError(Object.values(errorMsg).flat().join(', '));
-      } else {
-        setError(errorMsg);
-      }
+      console.error('Booking preview failed:', err);
+      setError('Failed to prepare booking preview');
     } finally {
       setLoading(false);
     }
@@ -301,15 +309,18 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
       animate={{ opacity: 1, y: 0 }}
       className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8"
     >
-      <Card>
-        <CardHeader className="bg-gradient-to-r from-orange-50 to-yellow-50">
-          <CardTitle className="text-2xl">Book a Pandit</CardTitle>
-          <p className="text-sm text-gray-600 mt-2">Schedule your sacred ceremony</p>
+      <Card className="border-orange-100 shadow-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-100">
+          <CardTitle className="text-2xl font-playfair text-orange-900 flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-orange-600" />
+            Book a Pandit
+          </CardTitle>
+          <p className="text-sm text-orange-700/70 mt-1">Schedule your sacred ceremony with Anita's guidance</p>
         </CardHeader>
 
-        <CardContent className="pt-6">
+        <CardContent className="pt-8 px-6 sm:px-10">
           {error && (
-            <Alert variant="destructive" className="mb-6">
+            <Alert variant="destructive" className="mb-6 bg-red-50 border-red-200 text-red-800">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -320,22 +331,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* Pandit Selection */}
             <div className="space-y-2">
-              <Label htmlFor="pandit">Select Pandit *</Label>
+              <Label htmlFor="pandit" className="text-orange-900 font-medium">Select Pandit *</Label>
               <Select
                 value={String(formData.pandit)}
                 onValueChange={(value) => handleInputChange('pandit', value)}
               >
-                <SelectTrigger className="h-10">
+                <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
                   <SelectValue placeholder="Choose a verified pandit" />
                 </SelectTrigger>
                 <SelectContent>
                   {pandits.map((pandit) => (
-                    <SelectItem key={pandit.id} value={String(pandit.id)}>
+                    <SelectItem key={pandit.id} value={String(pandit.id)} className="focus:bg-orange-50">
                       <div>
-                        <p className="font-semibold">{pandit.full_name}</p>
+                        <p className="font-semibold text-gray-900">{pandit.full_name}</p>
                         <p className="text-xs text-gray-500">{pandit.expertise}</p>
                       </div>
                     </SelectItem>
@@ -347,27 +358,30 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             {/* Service Selection */}
             {formData.pandit && (
               <div className="space-y-2">
-                <Label htmlFor="service">Select Service *</Label>
+                <Label htmlFor="service" className="text-orange-900 font-medium">Select Service *</Label>
                 {services.filter(s => s.is_available).length === 0 ? (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-yellow-800 text-sm">
-                    No services are currently available for this pandit.<br />
-                    <span className="text-gray-500">Try selecting another pandit or <a href="/contact" className="text-primary underline">contact support</a> for help.</span>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">No services available</p>
+                      <p className="text-amber-700/70 mt-0.5">Try selecting another pandit or contact support for help.</p>
+                    </div>
                   </div>
                 ) : (
                   <Select
                     value={String(formData.service)}
                     onValueChange={(value) => handleInputChange('service', value)}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
                       <SelectValue placeholder="Choose a puja service" />
                     </SelectTrigger>
                     <SelectContent>
                       {services.filter(s => s.is_available).map((service) => (
-                        <SelectItem key={service.id} value={String(service.id)}>
+                        <SelectItem key={service.id} value={String(service.id)} className="focus:bg-orange-50">
                           <div>
-                            <p className="font-semibold">{service.name}</p>
+                            <p className="font-semibold text-gray-900">{service.name}</p>
                             <p className="text-xs text-gray-500">
-                              ₹{service.price} • {service.duration_minutes} mins
+                              NPR {service.base_price} • {service.base_duration_minutes} mins
                             </p>
                           </div>
                         </SelectItem>
@@ -380,97 +394,110 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
             {/* Date Selection */}
             <div className="space-y-2">
-              <Label htmlFor="booking_date">Booking Date *</Label>
-              <Input
-                id="booking_date"
-                type="date"
-                value={formData.booking_date}
-                onChange={(e) => handleInputChange('booking_date', e.target.value)}
-                min={minDate}
-                className="h-10"
-                required
-              />
+              <Label htmlFor="booking_date" className="text-orange-900 font-medium">Booking Date *</Label>
+              <div className="relative">
+                <Input
+                  id="booking_date"
+                  type="date"
+                  value={formData.booking_date}
+                  onChange={(e) => handleInputChange('booking_date', e.target.value)}
+                  min={minDate}
+                  className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl pl-10"
+                  required
+                />
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400 pointer-events-none" />
+              </div>
             </div>
 
             {/* Time Selection */}
             {formData.booking_date && formData.pandit && (
               <div className="space-y-2">
-                <Label htmlFor="booking_time">Booking Time *</Label>
+                <Label htmlFor="booking_time" className="text-orange-900 font-medium">Booking Time *</Label>
                 {slotsLoading ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                    Loading available slots...
+                  <div className="flex items-center justify-center p-6 bg-orange-50/50 rounded-xl border border-dashed border-orange-200">
+                    <Loader2 className="h-5 w-5 animate-spin mr-3 text-orange-600" />
+                    <span className="text-sm text-orange-800">Finding best auspicious moments...</span>
                   </div>
                 ) : availableSlots.length > 0 ? (
                   <Select
                     value={formData.booking_time}
                     onValueChange={(value) => handleInputChange('booking_time', value)}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
                       <SelectValue placeholder="Select time" />
                     </SelectTrigger>
                     <SelectContent>
                       {availableSlots.map((slot) => (
-                        <SelectItem key={slot} value={slot}>
+                        <SelectItem key={slot} value={slot} className="focus:bg-orange-50">
                           {slot}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 ) : (
-                  <p className="text-sm text-red-500">No available slots for this date</p>
-                )}
-              </div>
-            )}
-
-            {/* Timezone Info with Enhanced Location Context */}
-            {formData.booking_date && formData.booking_time && (
-              <div className="text-xs bg-blue-50 p-3 rounded-md text-blue-700 border border-blue-100 italic">
-                <Clock className="w-3 h-3 inline-block mr-1 mb-0.5" />
-                Selected: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
-                {country && (
-                  <div className="mt-1 flex items-center gap-2">
-                    <MapPin className="w-3 h-3" />
-                    <span>Detected location: {country}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {currency} recommended
-                    </Badge>
+                  <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-700 text-sm">
+                    <XCircle className="w-5 h-5" />
+                    No available slots for this date
                   </div>
                 )}
               </div>
             )}
 
+            {/* Timezone Info */}
+            {formData.booking_date && formData.booking_time && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-xs bg-orange-50/50 p-4 rounded-xl text-orange-800 border border-orange-100 shadow-sm"
+              >
+                <div className="flex items-center gap-2 font-semibold mb-1">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  Nepal Mean Time (NMT)
+                </div>
+                <p className="pl-6 text-orange-900/70">
+                  Scheduled for: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
+                </p>
+                {country && (
+                  <div className="mt-2 pl-6 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                    Booking from {country} ({currency})
+                  </div>
+                )}
+              </motion.div>
+            )}
+
             {/* Service Location */}
             <div className="space-y-2">
-              <Label htmlFor="service_location">Service Location *</Label>
+              <Label htmlFor="service_location" className="text-orange-900 font-medium">Service Location *</Label>
               <Select
                 value={formData.service_location}
                 onValueChange={(value) => handleInputChange('service_location', value)}
               >
-                <SelectTrigger className="h-10">
+                <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ONLINE">
+                  <SelectItem value="ONLINE" className="focus:bg-orange-50">
                     <div className="flex items-center gap-2">
+                      <Video className="h-4 w-4 text-orange-600" />
                       <span>Online (Video Call)</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="HOME">
+                  <SelectItem value="HOME" className="focus:bg-orange-50">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                      <Home className="h-4 w-4 text-orange-600" />
                       <span>My Home</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="TEMPLE">
+                  <SelectItem value="TEMPLE" className="focus:bg-orange-50">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                      <Building2 className="h-4 w-4 text-orange-600" />
                       <span>Temple</span>
                     </div>
                   </SelectItem>
-                  <SelectItem value="PANDIT_LOCATION">
+                  <SelectItem value="PANDIT_LOCATION" className="focus:bg-orange-50">
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                      <MapPin className="h-4 w-4 text-orange-600" />
                       <span>Pandit's Location</span>
                     </div>
                   </SelectItem>
@@ -478,142 +505,158 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
               </Select>
             </div>
 
-            {/* Samagri Checkbox */}
-            {/* Samagri & Requirements */}
-            <div className="bg-orange-50 p-4 rounded-lg space-y-3">
-              <div className="flex items-center space-x-2">
+            {/* Samagri & AI Suggestions */}
+            <div className="bg-orange-50/30 p-6 rounded-2xl border border-orange-100 space-y-4">
+              <div className="flex items-center space-x-3">
                 <Checkbox
                   id="samagri"
                   checked={formData.samagri_required}
                   onCheckedChange={(checked) => handleInputChange('samagri_required', checked)}
+                  className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
                 />
                 <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="samagri" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    Include Samagri Kit (+₹500)
+                  <Label htmlFor="samagri" className="text-sm font-bold text-orange-900">
+                    Include Samagri Kit (+NPR 500)
                   </Label>
-                  <p className="text-xs text-muted-foreground">
-                    We will arrange all necessary items for the puja.
+                  <p className="text-xs text-orange-800/60 font-medium">
+                    Anita recommends including the ritual kit for a complete experience.
                   </p>
                 </div>
               </div>
 
-              {/* AI Samagri Suggestions */}
               {formData.samagri_required && (
-                <div className="mt-4 space-y-3 bg-white/50 p-4 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Sparkles className="w-12 h-12 text-orange-500" />
-                  </div>
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="space-y-4 pt-2"
+                >
+                  <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-bold text-orange-900 flex items-center gap-2">
+                        <Bot className="w-5 h-5 text-orange-600" />
+                        AI Recommended Samagri
+                      </p>
+                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-sans tracking-wide">
+                        SMART CHOICE
+                      </Badge>
+                    </div>
 
-                  <div className="flex items-center justify-between relative z-10">
-                    <p className="text-sm font-bold text-orange-900 flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-orange-600" />
-                      AI Recommended Samagri
-                    </p>
-                    <Badge variant="outline" className="bg-orange-100/50 text-orange-700 border-orange-200">
-                      Smart Selection
-                    </Badge>
-                  </div>
-                  {aiSamagriLoading ? (
-                    <div className="flex items-center justify-center p-4">
-                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                      Loading AI recommendations...
-                    </div>
-                  ) : samagriRequirements.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-2 relative z-10">
-                      {samagriRequirements.map((req: any, idx: number) => (
-                        <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-2 rounded-lg border border-orange-50 hover:border-orange-200 transition-colors shadow-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                              <span className="text-orange-600 font-bold text-xs">{req.name?.charAt(0)}</span>
+                    {aiSamagriLoading ? (
+                      <div className="flex flex-col items-center justify-center p-8 gap-3">
+                        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                        <span className="text-xs text-orange-800 font-medium animate-pulse">Consulting Vedic experts...</span>
+                      </div>
+                    ) : samagriRequirements.length > 0 ? (
+                      <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {samagriRequirements.map((req: any, idx: number) => (
+                          <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-50 hover:border-orange-200 transition-all shadow-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-inner">
+                                <span className="text-orange-600 font-bold text-sm tracking-tighter">{req.name?.slice(0, 2).toUpperCase()}</span>
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
+                                <p className="text-[11px] text-gray-500 font-medium">{req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-xs font-semibold text-gray-800">{req.name}</p>
-                              <p className="text-[10px] text-gray-500">{req.quantity} {req.unit} {req.price ? `• ₹${req.price}` : ''}</p>
-                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
+                              }}
+                              className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
                           </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
-                            }}
-                            className="h-8 w-8 p-0 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full"
-                            title="I have this item"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="py-8 text-center text-orange-800/40 italic text-sm">No items found in our sacred database.</div>
+                    )}
+
+                    <div className="pt-4 border-t border-orange-50 mt-4 flex flex-col gap-3">
+                      <Button
+                        type="button"
+                        onClick={handleAddAllToCart}
+                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        Add Missing to Cart
+                      </Button>
+                      <p className="text-[10px] text-center text-orange-900/40 italic font-medium">
+                        Anita's Journey: We'll add only the items you don't already have.
+                      </p>
                     </div>
-                  ) : (
-                    <div className="text-xs text-gray-400 italic">No recommendations found.</div>
-                  )}
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    onClick={handleAddAllToCart}
-                    className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold h-10 shadow-lg shadow-orange-200 mt-2 flex items-center justify-center gap-2 group"
-                  >
-                    <ShoppingCart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    Add All to Cart
-                  </Button>
-                  <p className="text-[10px] text-center text-gray-400 italic">Anita's Journey: Remove items you already have. Everything else goes to your cart.</p>
-                </div>
+                  </div>
+                </motion.div>
               )}
             </div>
 
             {/* Notes */}
             <div className="space-y-2">
-              <Label htmlFor="notes">Special Requests (Optional)</Label>
+              <Label htmlFor="notes" className="text-orange-900 font-medium">Special Requests & Notes (Optional)</Label>
               <textarea
                 id="notes"
                 value={formData.notes}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Any special requirements or preferences..."
-                className="w-full h-24 border border-gray-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-orange-500"
+                placeholder="Share any specific family traditions or ritual requirements..."
+                className="w-full h-32 border border-orange-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-gray-300 resize-none"
               />
             </div>
 
             {/* Fee Summary */}
             {formData.service && (
-              <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Service Fee:</span>
-                  <span className="font-semibold">₹{fees.serviceFee}</span>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-orange-50/50 p-6 rounded-2xl border-2 border-dashed border-orange-200 space-y-3"
+              >
+                <div className="flex justify-between text-sm font-medium text-orange-900/70">
+                  <span>Ritual Service:</span>
+                  <span>NPR {fees.serviceFee}</span>
                 </div>
                 {formData.samagri_required && (
-                  <div className="flex justify-between text-sm">
-                    <span>Samagri Fee:</span>
-                    <span className="font-semibold">₹{fees.sammagriFee}</span>
+                  <div className="flex justify-between text-sm font-medium text-orange-900/70">
+                    <span>Sacred Samagri Kit:</span>
+                    <span>NPR {fees.sammagriFee}</span>
                   </div>
                 )}
-                <div className="border-t pt-2 flex justify-between text-base font-bold">
-                  <span>Total Amount:</span>
-                  <span className="text-orange-600">₹{fees.total}</span>
+                <div className="border-t border-orange-200 pt-3 flex justify-between items-center">
+                  <span className="text-lg font-bold text-orange-950">Investment Total</span>
+                  <span className="text-2xl font-playfair font-bold text-orange-600">NPR {fees.total}</span>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              disabled={
-                loading ||
-                !formData.pandit ||
-                !formData.service ||
-                !formData.booking_date ||
-                !formData.booking_time
-              }
-              className="w-full h-12 text-base bg-orange-600 hover:bg-orange-700"
-            >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              ) : (
-                'Confirm Booking'
-              )}
-            </Button>
+            {/* Submit Button - Enhanced as per "Review & Confirm" CTA */}
+            <div className="pt-4">
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  !formData.pandit ||
+                  !formData.service ||
+                  !formData.booking_date ||
+                  !formData.booking_time
+                }
+                className="w-full h-14 text-lg font-bold bg-[#f97316] hover:bg-[#ea580c] text-white rounded-2xl shadow-lg shadow-orange-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {loading ? (
+                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                ) : (
+                  <>
+                    Review & Confirm
+                    <ChevronRight className="ml-2 w-5 h-5" />
+                  </>
+                )}
+              </Button>
+              <p className="text-center text-[10px] text-gray-400 mt-4 italic font-medium">
+                Verify choices in the next step before finalizing your sacred journey.
+              </p>
+            </div>
           </form>
         </CardContent>
       </Card>

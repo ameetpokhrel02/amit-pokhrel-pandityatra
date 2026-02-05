@@ -13,8 +13,10 @@ from .serializers import (
     PujaSamagriRequirementSerializer
 )
 from services.models import Puja
-from services.ai_chat import ask_pandityatra_ai
+from django.conf import settings
+from groq import Groq
 from rest_framework.views import APIView
+import json
 
 # --- AI-based Samagri Recommendation Endpoint ---
 class AISamagriRecommendationView(APIView):
@@ -82,7 +84,7 @@ Respond as a JSON array with objects containing:
 
 Example:
 [
-  {
+  {{
     "name": "Rice",
     "quantity": 1,
     "unit": "kg",
@@ -90,12 +92,21 @@ Example:
     "confidence": 0.95,
     "reason": "Essential offering for all Hindu pujas",
     "alternatives": ["Basmati rice", "Brown rice"]
-  }
+  }}
 ]
 """
 
         try:
-            ai_response = ask_pandityatra_ai(prompt)
+            client = Groq(api_key=settings.GROQ_API_KEY)
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a Vedic ritual expert."},
+                    {"role": "user", "content": prompt}
+                ],
+                model="llama-3.1-8b-instant",
+                temperature=0.7,
+            )
+            ai_response = chat_completion.choices[0].message.content
         except Exception as e:
             return Response({"error": f"AI error: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 

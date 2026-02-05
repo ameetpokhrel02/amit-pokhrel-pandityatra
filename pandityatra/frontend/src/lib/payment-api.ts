@@ -4,8 +4,10 @@
  */
 
 import axios from 'axios';
+import { API_BASE_URL } from './helper';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Since API_BASE_URL already contains '/api', we don't need to add it again
+const API_URL = API_BASE_URL;
 
 export interface PaymentIntent {
   success: boolean;
@@ -46,18 +48,15 @@ export const createPayment = async (
   currency: 'NPR' | 'USD',
   token: string
 ): Promise<PaymentIntent> => {
-  const response = await axios.post(
-    `${API_URL}/api/payments/create/`,
+  // Use authenticated axios instance from api-client
+  const { default: apiClient } = await import('./api-client');
+
+  const response = await apiClient.post(
+    '/payments/create/',
     {
       booking_id: bookingId,
       gateway,
       currency,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
     }
   );
   return response.data;
@@ -70,14 +69,8 @@ export const getPaymentStatus = async (
   bookingId: number,
   token: string
 ): Promise<PaymentStatus> => {
-  const response = await axios.get(
-    `${API_URL}/api/payments/status/${bookingId}/`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const { default: apiClient } = await import('./api-client');
+  const response = await apiClient.get(`/payments/status/${bookingId}/`);
   return response.data;
 };
 
@@ -86,9 +79,9 @@ export const getPaymentStatus = async (
  */
 export const getExchangeRate = async (nprAmount?: number): Promise<ExchangeRate> => {
   const url = nprAmount
-    ? `${API_URL}/api/payments/exchange-rate/?npr=${nprAmount}`
-    : `${API_URL}/api/payments/exchange-rate/`;
-  
+    ? `${API_URL}/payments/exchange-rate/?npr=${nprAmount}`
+    : `${API_URL}/payments/exchange-rate/`;
+
   const response = await axios.get(url);
   return response.data;
 };
@@ -100,14 +93,8 @@ export const verifyKhaltiPayment = async (
   pidx: string,
   token: string
 ): Promise<{ success: boolean; booking_id: number; transaction_id: string }> => {
-  const response = await axios.get(
-    `${API_URL}/api/payments/khalti/verify/?pidx=${pidx}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const { default: apiClient } = await import('./api-client');
+  const response = await apiClient.get(`/payments/khalti/verify/?pidx=${pidx}`);
   return response.data;
 };
 
@@ -139,11 +126,15 @@ export const openKhaltiPopup = (paymentUrl: string) => {
 /**
  * Format currency
  */
-export const formatCurrency = (amount: number, currency: 'NPR' | 'USD'): string => {
+export const formatCurrency = (amount: number | undefined | null, currency: 'NPR' | 'USD'): string => {
+  // Handle undefined/null amounts and convert strings to numbers
+  const numericAmount = Number(amount);
+  const safeAmount = isNaN(numericAmount) ? 0 : numericAmount;
+
   if (currency === 'NPR') {
-    return `NPR ${amount.toFixed(2)}`;
+    return `NPR ${safeAmount.toFixed(2)}`;
   }
-  return `$${amount.toFixed(2)}`;
+  return `$${safeAmount.toFixed(2)}`;
 };
 
 /**
@@ -154,7 +145,7 @@ export const detectPreferredCurrency = async (): Promise<'NPR' | 'USD'> => {
     // Try to get user's country from IP
     const response = await axios.get('https://ipapi.co/json/', { timeout: 3000 });
     const countryCode = response.data.country_code;
-    
+
     // Nepal uses NPR, everyone else USD
     return countryCode === 'NP' ? 'NPR' : 'USD';
   } catch (error) {

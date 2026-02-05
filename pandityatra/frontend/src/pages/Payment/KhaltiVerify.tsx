@@ -64,7 +64,7 @@ const KhaltiVerify: React.FC = () => {
 
         // Redirect to success page
         setTimeout(() => {
-          navigate('/payment/success');
+          navigate(`/payment/success/${result.booking_id}`);
         }, 1500);
       } else {
         throw new Error('Payment verification returned failure status.');

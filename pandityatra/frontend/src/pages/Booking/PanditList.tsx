@@ -41,8 +41,15 @@ export const PanditList = () => {
     const [languageFilter, setLanguageFilter] = useState<string>("all");
 
     // Parse query params for pujaType and date
-    const params = new URLSearchParams(location.search);
+    const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const pujaTypeParam = params.get('pujaType')?.toLowerCase() || '';
+    const queryParam = params.get('q') || '';
+
+    useEffect(() => {
+        if (queryParam) {
+            setQuery(queryParam);
+        }
+    }, [queryParam]);
 
     useEffect(() => {
         const loadPandits = async () => {
@@ -92,8 +99,8 @@ export const PanditList = () => {
 
         // 2. Dropdown Filters
         if (specializationFilter !== "all") {
-             // Simple approximate matching for demo; ideally backed by normalized tags
-             result = result.filter(p => (p.expertise || '').toLowerCase().includes(specializationFilter.toLowerCase()));
+            // Simple approximate matching for demo; ideally backed by normalized tags
+            result = result.filter(p => (p.expertise || '').toLowerCase().includes(specializationFilter.toLowerCase()));
         }
         if (languageFilter !== "all") {
             result = result.filter(p => (p.language || '').toLowerCase().includes(languageFilter.toLowerCase()));
@@ -128,7 +135,7 @@ export const PanditList = () => {
 
     // Extract Unique Options for Filters
     const specializations = useMemo(() => Array.from(new Set(pandits.map(p => p.expertise?.split(',')[0].trim()))).filter(Boolean), [pandits]);
-    const languagesList = useMemo(() => Array.from(new Set(pandits.flatMap(p => p.language?.split(',').map(l=>l.trim())))).filter(Boolean), [pandits]);
+    const languagesList = useMemo(() => Array.from(new Set(pandits.flatMap(p => p.language?.split(',').map(l => l.trim())))).filter(Boolean), [pandits]);
 
 
     if (isLoading) {
@@ -144,7 +151,7 @@ export const PanditList = () => {
     }
 
     if (error) {
-         return (
+        return (
             <div className="flex flex-col min-h-screen">
                 <Navbar />
                 <div className="flex-grow flex justify-center items-center text-red-500">
@@ -158,7 +165,7 @@ export const PanditList = () => {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50/50 pt-20">
             <Navbar />
-            
+
             <div className="container mx-auto p-4 md:p-8 flex-grow">
                 {/* Header Section */}
                 <div className="flex flex-col gap-6 mb-8">
@@ -169,11 +176,11 @@ export const PanditList = () => {
 
                     {/* Filters Bar */}
                     <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                         <div className="w-full md:w-1/3">
+                        <div className="w-full md:w-1/3">
                             <MotionSearch onSearch={handleQuery} placeholder="Search by name, puja, or expertise..." />
-                         </div>
-                         
-                         <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                        </div>
+
+                        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                             <Select value={specializationFilter} onValueChange={setSpecializationFilter}>
                                 <SelectTrigger className="w-[160px]">
                                     <SelectValue placeholder="Specialization" />
@@ -194,7 +201,7 @@ export const PanditList = () => {
                                 </SelectContent>
                             </Select>
 
-                             <Select value={experienceFilter} onValueChange={setExperienceFilter}>
+                            <Select value={experienceFilter} onValueChange={setExperienceFilter}>
                                 <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Experience" />
                                 </SelectTrigger>
@@ -205,7 +212,7 @@ export const PanditList = () => {
                                     <SelectItem value="<5">&lt; 5 Years</SelectItem>
                                 </SelectContent>
                             </Select>
-                         </div>
+                        </div>
                     </div>
                 </div>
 
@@ -214,8 +221,8 @@ export const PanditList = () => {
                     <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
                         <div className="text-lg font-medium text-gray-900 mb-1">No pandits match your criteria</div>
                         <p className="text-gray-500">Try removing some filters or searching for something else.</p>
-                        <Button 
-                            variant="link" 
+                        <Button
+                            variant="link"
                             className="mt-2 text-orange-600"
                             onClick={() => {
                                 setQuery('');
@@ -228,7 +235,7 @@ export const PanditList = () => {
                         </Button>
                     </div>
                 ) : (
-                    <motion.div 
+                    <motion.div
                         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                         initial="hidden"
                         animate="visible"
@@ -255,7 +262,7 @@ export const PanditList = () => {
                                             <Avatar className="h-24 w-24 border-[3px] border-orange-200 shadow-sm">
                                                 <AvatarImage src={pandit.user_details.profile_pic_url} className="object-cover" />
                                                 <AvatarFallback className="text-xl bg-orange-50 text-orange-600 font-bold">
-                                                    {(pandit.user_details?.full_name || "Pt").substring(0,2).toUpperCase()}
+                                                    {(pandit.user_details?.full_name || "Pt").substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>
                                             </Avatar>
                                             {pandit.is_verified && (
@@ -264,10 +271,10 @@ export const PanditList = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        
+
                                         {/* Name */}
                                         <h3 className="font-bold text-lg text-gray-900 mb-1">{pandit.user_details?.full_name || "Pandit"}</h3>
-                                        
+
                                         {/* Simple Rating (Grey/Star) per screenshot */}
                                         <div className="flex items-center justify-center gap-1 mb-4">
                                             <div className="flex text-gray-300">
@@ -296,7 +303,7 @@ export const PanditList = () => {
                                             <div>
                                                 <div className="flex items-center gap-2 mb-1">
                                                     <span className="text-xs font-semibold text-gray-700 flex items-center gap-1">
-                                                        <img src="/icons/gate.svg" className="w-3.5 h-3.5 opacity-60 hidden" alt="" /> 
+                                                        <img src="/icons/gate.svg" className="w-3.5 h-3.5 opacity-60 hidden" alt="" />
                                                         Specializations
                                                     </span>
                                                 </div>
@@ -327,7 +334,7 @@ export const PanditList = () => {
                                         </div>
 
                                     </CardContent>
-                                    
+
                                     <div className="border-t border-gray-100 border-dashed mx-4"></div>
 
                                     <CardFooter className="p-4 flex flex-col gap-3 bg-white">
@@ -345,7 +352,7 @@ export const PanditList = () => {
                                                 </Button>
                                             </div>
                                         </div>
-                                        
+
                                         <Link to={`/pandits/${pandit.id}`} className="w-full">
                                             <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold">
                                                 View Profile

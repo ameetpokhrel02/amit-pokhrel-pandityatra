@@ -16,12 +16,12 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
-        
+
         // If data is FormData, let browser set Content-Type
         if (config.data instanceof FormData) {
             delete config.headers['Content-Type'];
         }
-        
+
         return config;
     },
     (error) => Promise.reject(error)
@@ -105,4 +105,13 @@ function handleLogout() {
     window.location.href = '/login'; // Redirect to login
 }
 
+// Public API instance (no auth headers, no refresh logic)
+export const publicApi = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+export { apiClient as api };
 export default apiClient;

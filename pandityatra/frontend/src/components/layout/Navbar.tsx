@@ -49,6 +49,19 @@ const Navbar: React.FC = () => {
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { isInstallable, installPWA } = usePWA();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const performSearch = (query: string) => {
+    if (!query.trim()) return;
+    navigate(`/pandits?q=${encodeURIComponent(query.trim())}`);
+    setIsSearchExpanded(false);
+  };
+
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      performSearch(searchQuery);
+    }
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -159,9 +172,11 @@ const Navbar: React.FC = () => {
               />
               <Input
                 placeholder={isSearchExpanded ? t('search_placeholder') : ""}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleSearchKeyPress}
                 onFocus={() => setIsSearchExpanded(true)}
                 onBlur={(e) => {
-                  // If clicking the clear button, don't collapse immediately or let the click happen
                   if (!e.relatedTarget?.classList.contains('search-clear')) {
                     setIsSearchExpanded(false);
                   }
@@ -176,6 +191,7 @@ const Navbar: React.FC = () => {
                   className="search-clear absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors z-10"
                   onClick={(e) => {
                     e.stopPropagation();
+                    setSearchQuery('');
                     setIsSearchExpanded(false);
                   }}
                 >
@@ -361,6 +377,9 @@ const Navbar: React.FC = () => {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                       <Input
                         placeholder="Search for pujas..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyDown={handleSearchKeyPress}
                         className="pl-10 h-12 bg-gray-50 border-orange-100 rounded-xl focus-visible:ring-orange-500"
                       />
                     </div>

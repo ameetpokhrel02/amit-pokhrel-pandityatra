@@ -24,7 +24,6 @@ pyswisseph==2.10.3.2
 dj-rest-auth==2.2.8
 django-allauth==0.58.2
 
-
 # Groq AI
 groq
 

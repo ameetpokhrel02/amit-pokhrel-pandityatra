@@ -12,7 +12,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = [
-            'pandit', 'service', 'service_name', 'service_location', 
+            'id', 'pandit', 'service', 'service_name', 'service_location', 
             'booking_date', 'booking_time', 'notes', 'samagri_required',
             'customer_timezone', 'customer_location'
         ]
@@ -40,16 +40,19 @@ class BookingCreateSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """Create booking with automatic fee calculation"""
-        user = self.context['request'].user
+        # Get user and status passed from perform_create
+        user = validated_data.pop('user', self.context['request'].user)
+        status = validated_data.pop('status', BookingStatus.PENDING)
         service = validated_data.get('service')
         
         # Calculate fees
-        service_fee = service.price if service else 0
+        service_fee = service.base_price if service else 0
         samagri_fee = 500 if validated_data.get('samagri_required', True) else 0
         total_fee = service_fee + samagri_fee
         
         booking = Booking.objects.create(
             user=user,
+            status=status,
             service_fee=service_fee,
             samagri_fee=samagri_fee,
             total_fee=total_fee,
@@ -65,7 +68,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
     pandit_expertise = serializers.CharField(source='pandit.expertise', read_only=True)
-    service_duration = serializers.IntegerField(source='service.duration_minutes', read_only=True)
+    service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
 
     class Meta:
         model = Booking
@@ -88,7 +91,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
     pandit_expertise = serializers.CharField(source='pandit.expertise', read_only=True)
     pandit_language = serializers.CharField(source='pandit.language', read_only=True)
-    service_duration = serializers.IntegerField(source='service.duration_minutes', read_only=True)
+    service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
     service_description = serializers.CharField(source='service.description', read_only=True)
 
     class Meta:

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { api } from '@/services/api';
+import api, { publicApi } from '@/lib/api-client';
 
 export interface ChatMessageType {
   id?: string;
@@ -131,8 +131,8 @@ export function useChat(bookingId?: string): UseChat {
 
       try {
         if (mode === 'guide') {
-          // Quick Chat API call (Groq AI)
-          const response = await api.post('/chat/quick-chat/', {
+          // We use publicApi to ensure guest users or expired sessions don't get 401s
+          const response = await publicApi.post('/chat/quick-chat/', {
             message: content,
           });
 

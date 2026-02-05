@@ -136,7 +136,7 @@ class CreatePaymentIntentView(APIView):
             ]
             
             # Success and cancel URLs
-            success_url = f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+            success_url = f"{settings.FRONTEND_URL}/payment/success/{booking.id}?session_id={{CHECKOUT_SESSION_ID}}"
             cancel_url = f"{settings.FRONTEND_URL}/payment/cancel"
             
             # Create Checkout Session
@@ -199,7 +199,7 @@ class CreatePaymentIntentView(APIView):
             
             success, pidx_or_error, payment_url = initiate_khalti_payment(
                 amount_npr=amount_npr,
-                purchase_order_id=purchase_order_id,
+                order_id=purchase_order_id,
                 return_url=return_url,
                 website_url=website_url,
                 user_info=user_info

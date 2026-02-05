@@ -74,11 +74,11 @@ const HeroSection: React.FC = () => {
   ];
 
   const handleSearch = () => {
-    // Optionally pass searchData as query params
     const params = new URLSearchParams();
     if (searchData.pujaType) params.append('pujaType', searchData.pujaType);
     if (searchData.date) params.append('date', searchData.date);
-    navigate(`/booking/pandits${params.toString() ? '?' + params.toString() : ''}`);
+    if (searchData.time) params.append('time', searchData.time);
+    navigate(`/pandits${params.toString() ? '?' + params.toString() : ''}`);
   };
 
   return (

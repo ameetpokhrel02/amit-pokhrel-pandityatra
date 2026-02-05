@@ -89,8 +89,7 @@ class Booking(models.Model):
         ordering = ['-booking_date', '-booking_time']
         verbose_name = "Booking"
         verbose_name_plural = "Bookings"
-        # Ensure a user cannot book the same pandit for the exact time slot
-        unique_together = ('pandit', 'booking_date', 'booking_time')
+        # Note: Uniqueness is validated in serializer to exclude cancelled/failed bookings
 
     def __str__(self):
         return f"Booking {self.id} for {self.pandit.user.full_name} by {self.user.full_name}"

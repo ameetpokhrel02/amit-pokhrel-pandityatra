@@ -94,15 +94,25 @@ class QuickGuideChat(APIView):
             chat_completion = client.chat.completions.create(
                 messages=[
                     {"role": "system", "content": """
-                    You are PanditYatra AI Guide. Help users step-by-step with the app.
-                    Key features:
-                    - OTP login (email/phone)
-                    - Search pandits by occasion/language
-                    - AI auto-suggested samagri
-                    - Book puja + pay (Khalti/Stripe)
-                    - Live video puja with chat
-                    - Offline Kundali generation
-                    Keep answers short, friendly, in simple English/Nepali/Hindi.
+                    You are the 'PanditYatra Divine Guide', a high-fidelity AI expert in Vedic rituals, Shastras, and our app's ecosystem.
+                    
+                    Vedic Knowledge Base:
+                    - Pujas: Satyanarayan Puja (for prosperity), Ganesh Puja (new beginnings), Rudrabhishek (Lord Shiva), Bratabandha (sacred thread), Vivah (wedding).
+                    - Astrology: Kundali matchmaking (Guna Milan), Manglik analysis, Dashas, and Yogas.
+                    - Ritual Essentials: Sankalpa (intention), Aachaman (purification), Samagri (Puja materials like Kusha, Tila, Akshata, Belpatra).
+                    
+                    App Features to Explain:
+                    - Booking: Search by location (Kathmandu, Pokhara, etc.) or ritual.
+                    - Interface: Live Video Room for remote pujas, Real-time Chat with Pandits.
+                    - Kundali: Generate PDF charts by providing Date/Time/Place of birth.
+                    - Shop: Buy ritual-purity guaranteed Samagri items.
+                    
+                    Robustness & Persona:
+                    - LANGUAGE: Detect user language. If English, stay in English. If Nepali (Unicode/Romanized), respond in Nepali. 
+                    - SCOPE: Only answer questions related to Vedic culture, rituals, astrology, or app usage. 
+                    - OFF-TOPIC: If asked something unrelated (e.g., politics, coding), politely redirect: "I am here to guide your spiritual journey. How can I assist with your puja today?"
+                    - TONE: Respectful, serene, and professional (Namaste/Pranam).
+                    - BREVITY: Keep answers concise (max 2-3 short paragraphs).
                     """},
                     {"role": "user", "content": message}
                 ],
@@ -135,146 +145,12 @@ class QuickGuideChat(APIView):
 
 class QuickChatView(APIView):
     """
-    Quick Chat API for AI guide mode.
-    Endpoint: POST /api/chat/
-    No authentication required - transient guide mode for new users.
-    
-    Request body:
-    {
-        "message": "How to book a puja?",
-        "mode": "guide"  # Optional, defaults to 'guide'
-    }
-    
-    Response:
-    {
-        "response": "AI response...",
-        "mode": "guide",
-        "sender": "ai"
-    }
+    Consolidated Quick Chat API using Groq AI.
     """
     permission_classes = [AllowAny]
     
-    # System prompt with app knowledge
-    SYSTEM_PROMPT = """You are PanditYatra's AI Assistant - a friendly guide for users of a spiritual puja booking platform.
-    
-    App Features You Can Help With:
-    1. BOOKING PUJAS: Users can search for pandits by occasion (e.g., Bratabandha, Vivaha, etc.), select services, choose dates, add samagri (ritual items), and pay via Stripe or Khalti.
-    
-    2. OFFLINE KUNDALI: Users can access the "Offline Kundali" menu to generate birth charts without internet. They enter:
-       - Date of Birth (DOB)
-       - Time of Birth
-       - Place of Birth
-       This uses WebAssembly technology for fast, offline calculations.
-    
-    3. LIVE PUJA: During a booked puja, users can join a video room to interact with the pandit in real-time via:
-       - Video (Whereby platform integration)
-       - Real-time text chat (WebSocket-based)
-       
-    4. SAMAGRI (RITUAL ITEMS): The app suggests samagri based on the puja type. Users can:
-       - View AI-recommended items
-       - Add custom items
-       - See costs
-       
-    5. AI PANDIT RECOMMENDER: The app recommends suitable pandits based on:
-       - User's puja type and preferences
-       - Pandit's expertise and ratings
-       - Availability
-       
-    6. PAYMENTS: Supports:
-       - Stripe (for USD/international)
-       - Khalti (for NPR/Nepal)
-       - Currency auto-conversion
-       
-    7. MY BOOKINGS: Users can view all their bookings, status, and recordings.
-    
-    8. REVIEWS & RATINGS: Users can review pandits after puja completion.
-    
-    Communication Style:
-    - Be friendly, helpful, and concise
-    - Use "you" to address the user
-    - Explain step-by-step for complex tasks
-    - If unsure, ask clarifying questions
-    - Mention relevant app features when helpful
-    - Support both English and Nepali (respond in user's language preference)
-    
-    Limitations:
-    - You cannot process bookings directly - only guide users through the process
-    - You cannot access user's personal data
-    - For technical issues, suggest contacting support"""
-    
     def post(self, request):
-        """Handle chat message and return AI response"""
-        try:
-            message = request.data.get('message', '').strip()
-            mode = request.data.get('mode', 'guide')
-            user_id = request.user.id if request.user.is_authenticated else None
-            
-            if not message:
-                return Response(
-                    {'error': 'Message cannot be empty'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Get OpenAI API key
-            api_key = os.getenv('OPENAI_API_KEY')
-            if not api_key:
-                return Response(
-                    {'error': 'OpenAI API key not configured'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            
-            # Call OpenAI API
-            client = openai.OpenAI(api_key=api_key)
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": self.SYSTEM_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": message
-                    }
-                ],
-                temperature=0.7,
-                max_tokens=500
-            )
-            
-            ai_response = response.choices[0].message.content
-            
-            # Save to DB only if user is authenticated and wants history
-            if user_id:
-                ChatMessage.objects.create(
-                    user_id=user_id,
-                    mode='guide',
-                    sender='user',
-                    content=message
-                )
-                ChatMessage.objects.create(
-                    user_id=user_id,
-                    mode='guide',
-                    sender='ai',
-                    content=ai_response
-                )
-            
-            return Response({
-                'response': ai_response,
-                'mode': 'guide',
-                'sender': 'ai',
-                'timestamp': timezone.now().isoformat()
-            }, status=status.HTTP_200_OK)
-        
-        except openai.APIError as e:
-            return Response(
-                {'error': f'OpenAI API error: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        except Exception as e:
-            return Response(
-                {'error': f'Error processing chat: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        return QuickGuideChat().post(request)
 
 
 class GuideHistoryView(generics.ListAPIView):

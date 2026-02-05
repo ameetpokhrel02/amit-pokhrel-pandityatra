@@ -8,8 +8,10 @@ from payments.webhooks.khalti import khalti_webhook
 
 urlpatterns = [
     # Payment initiation
+    path("create/", views.CreatePaymentIntentView.as_view(), name="payment-create"),
     path("initiate/", views.CreatePaymentIntentView.as_view(), name="payment-initiate"),
     path("check-status/<int:booking_id>/", views.GetPaymentStatusView.as_view(), name="check-status"),
+    path("exchange-rate/", views.ExchangeRateView.as_view(), name="exchange-rate"),
     
     path("webhooks/stripe/", stripe_webhook),
     path("webhooks/khalti/", khalti_webhook),

@@ -11,9 +11,8 @@ import {
     ChevronRight,
     Eye,
     Star,
-    ArrowUp,
-    Heart,
-    X
+    X,
+    ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,107 +27,18 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
+import {
+    fetchSamagriItems,
+    fetchSamagriCategories,
+    type SamagriItem,
+    type SamagriCategory
+} from '@/lib/api';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
-// Mock Data for Books
-interface BookItem {
-    id: number;
-    title: string;
-    author: string;
-    price: number;
-    category: string;
-    description: string;
-    image?: string;
-    rating: number;
-    inStock: boolean;
-}
-
-const MOCK_BOOKS: BookItem[] = [
-    {
-        id: 1,
-        title: "The Bhagavad Gita",
-        author: "Vyasa",
-        price: 450,
-        category: "Scriptures",
-        description: "The timeless wisdom of Lord Krishna to Arjuna on the battlefield of Kurukshetra.",
-        rating: 5,
-        inStock: true
-    },
-    {
-        id: 2,
-        title: "Ramayana",
-        author: "Valmiki",
-        price: 1200,
-        category: "Epics",
-        description: "The epic journey of Lord Rama, Sita, and Hanuman. A tale of dharma and devotion.",
-        rating: 5,
-        inStock: true
-    },
-    {
-        id: 3,
-        title: "Mahabharata",
-        author: "Vyasa",
-        price: 1500,
-        category: "Epics",
-        description: "The longest epic poem known and has been described as 'the longest poem ever written'.",
-        rating: 4.8,
-        inStock: true
-    },
-    {
-        id: 4,
-        title: "Upanishads",
-        author: "Various Rishis",
-        price: 600,
-        category: "Philosophy",
-        description: "Ancient Sanskrit texts of spiritual teaching and ideas of Hinduism.",
-        rating: 4.7,
-        inStock: true
-    },
-    {
-        id: 5,
-        title: "Vedas (Set of 4)",
-        author: "Ancient Seers",
-        price: 5000,
-        category: "Scriptures",
-        description: "The Rigveda, the Yajurveda, the Samaveda and the Atharvaveda.",
-        rating: 5,
-        inStock: false
-    },
-    {
-        id: 6,
-        title: "Hanuman Chalisa",
-        author: "Tulsidas",
-        price: 50,
-        category: "Chants",
-        description: "A devotional hymn dedicated to Lord Hanuman.",
-        rating: 4.9,
-        inStock: true
-    },
-    {
-        id: 7,
-        title: "Srimad Bhagavatam",
-        author: "Vyasa",
-        price: 2500,
-        category: "Puranas",
-        description: "Focuses on bhakti yoga and the life of Krishna.",
-        rating: 4.9,
-        inStock: true
-    },
-    {
-        id: 8,
-        title: "Garuda Purana",
-        author: "Vyasa",
-        price: 350,
-        category: "Puranas",
-        description: "Dialogue between Lord Vishnu and Garuda regarding the afterlife.",
-        rating: 4.2,
-        inStock: true
-    }
-];
-
 const Books = () => {
-    const [books, setBooks] = useState<BookItem[]>([]);
+    const [books, setBooks] = useState<SamagriItem[]>([]);
+    const [categories, setCategories] = useState<SamagriCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<string>('featured');
@@ -136,27 +46,55 @@ const Books = () => {
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
-    const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
+    const [selectedBook, setSelectedBook] = useState<SamagriItem | null>(null);
 
     useEffect(() => {
-        // Simulate API Fetch
-        setTimeout(() => {
-            setBooks(MOCK_BOOKS);
-            setLoading(false);
-        }, 800);
+        loadData();
     }, []);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const [itemsData, categoriesData] = await Promise.all([
+                fetchSamagriItems(),
+                fetchSamagriCategories()
+            ]);
+
+            // Find the "Book" category
+            const bookCategory = categoriesData.find(c => c.name.toLowerCase() === 'book');
+
+            if (bookCategory) {
+                // Filter items that belong to the "Book" category
+                const bookItems = itemsData.filter(item => item.category === bookCategory.id);
+                setBooks(bookItems);
+            } else {
+                setBooks([]);
+            }
+
+            setCategories(categoriesData);
+        } catch (error) {
+            console.error('Failed to load books:', error);
+            toast({
+                title: "Error",
+                description: "Failed to load books. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Processing Data
     const filteredItems = books.filter(item => {
         const term = searchQuery.toLowerCase();
-        return item.title.toLowerCase().includes(term) || item.author.toLowerCase().includes(term);
+        return item.name.toLowerCase().includes(term) || (item.description && item.description.toLowerCase().includes(term));
     });
 
     const sortedItems = [...filteredItems].sort((a, b) => {
         switch (sortBy) {
             case 'price-asc': return a.price - b.price;
             case 'price-desc': return b.price - a.price;
-            case 'name-asc': return a.title.localeCompare(b.title);
+            case 'name-asc': return a.name.localeCompare(b.name);
             default: return 0;
         }
     });
@@ -169,16 +107,16 @@ const Books = () => {
 
     useEffect(() => { setCurrentPage(1); }, [searchQuery, sortBy]);
 
-    const handleAddToCart = (book: BookItem) => {
+    const handleAddToCart = (book: SamagriItem) => {
         addItem({
-            id: `book-${book.id}`, // Unique ID prefix
-            title: book.title,
-            price: book.price,
-            image: '/images/bhasma.png', // Fallback/Placeholder
+            id: book.id,
+            title: book.name,
+            price: Number(book.price),
+            image: book.image || '/images/bhasma.png',
         });
         toast({
             title: "Added to Cart",
-            description: `${book.title} has been added.`,
+            description: `${book.name} has been added to your cart.`,
             className: "bg-green-600 text-white border-green-700 shadow-lg"
         });
         openDrawer();
@@ -189,19 +127,19 @@ const Books = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="bg-gradient-to-r from-amber-700 to-orange-800 text-white py-20 px-4">
+            <section className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-20 px-4">
                 <div className="container mx-auto text-center max-w-3xl">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6 }}
                     >
-                        <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4">
+                        <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4 uppercase tracking-wider">
                             <Book className="w-4 h-4 mr-2" />
-                            Spiritual Wisdom
+                            Sacred Library
                         </Badge>
                         <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
-                            Sacred Library
+                            Spiritual Wisdom
                         </h1>
                         <p className="text-orange-100 text-lg mb-8 leading-relaxed">
                             Explore timeless scriptures, epics, and spiritual guides.
@@ -213,7 +151,7 @@ const Books = () => {
                             <Input
                                 type="text"
                                 placeholder="Search for Gita, Ramayana, etc..."
-                                className="pl-10 h-12 bg-white text-gray-900 border-none shadow-xl rounded-full"
+                                className="pl-10 h-12 bg-white text-gray-900 border-none shadow-xl rounded-full focus-visible:ring-2 focus-visible:ring-orange-300"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -245,7 +183,7 @@ const Books = () => {
 
                         <div className="flex items-center gap-2 text-sm text-gray-500 whitespace-nowrap">
                             <Filter className="w-4 h-4" />
-                            <span>{sortedItems.length} books</span>
+                            <span>{sortedItems.length} items</span>
                         </div>
                     </div>
                 </div>
@@ -273,15 +211,22 @@ const Books = () => {
                                 >
                                     <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col">
                                         <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden p-8 flex items-center justify-center">
-                                            {/* Placeholder Book Cover */}
-                                            <div className="w-3/4 h-full bg-orange-800 rounded-r-md shadow-lg border-l-4 border-orange-900 flex flex-col items-center justify-center p-2 text-center">
-                                                <div className="border border-orange-400/30 w-full h-full p-2 flex flex-col items-center justify-center">
-                                                    <Book className="text-orange-200 w-8 h-8 mb-2" />
-                                                    <span className="text-orange-50 font-serif text-sm line-clamp-2">{book.title}</span>
+                                            {book.image ? (
+                                                <img
+                                                    src={book.image}
+                                                    alt={book.name}
+                                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                            ) : (
+                                                <div className="w-3/4 h-full bg-orange-800 rounded-r-md shadow-lg border-l-4 border-orange-900 flex flex-col items-center justify-center p-2 text-center">
+                                                    <div className="border border-orange-400/30 w-full h-full p-2 flex flex-col items-center justify-center">
+                                                        <Book className="text-orange-200 w-8 h-8 mb-2" />
+                                                        <span className="text-orange-50 font-serif text-xs line-clamp-3">{book.name}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            )}
 
-                                            {!book.inStock && (
+                                            {book.stock_quantity === 0 && (
                                                 <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
                                                     <Badge variant="destructive">Out of Stock</Badge>
                                                 </div>
@@ -291,39 +236,42 @@ const Books = () => {
                                         <CardContent className="p-5 flex-1 flex flex-col">
                                             <div className="mb-2">
                                                 <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">
-                                                    {book.category}
+                                                    {categories.find(c => c.id === book.category)?.name || 'Book'}
                                                 </span>
                                             </div>
 
-                                            <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">
-                                                {book.title}
+                                            <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-2 group-hover:text-orange-600 transition-colors">
+                                                {book.name}
                                             </h3>
-                                            <p className="text-sm text-gray-500 mb-3">by {book.author}</p>
 
-                                            <div className="mt-auto pt-4 border-t border-gray-50 grid grid-cols-2 gap-3">
-                                                <div className="col-span-2 flex justify-between items-center mb-2">
-                                                    <span className="text-lg font-bold text-gray-900">
-                                                        ₹{book.price}
+                                            <div className="mt-auto pt-4 border-t border-gray-50 flex flex-col gap-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-lg font-bold text-orange-700">
+                                                        NPR {book.price}
                                                     </span>
-                                                    <div className="flex items-center text-yellow-500 text-xs">
-                                                        <Star className="w-3 h-3 fill-current mr-1" /> {book.rating}
-                                                    </div>
+                                                    {book.stock_quantity < 5 && book.stock_quantity > 0 && (
+                                                        <span className="text-[10px] text-red-500 font-bold animate-pulse uppercase">
+                                                            Only {book.stock_quantity} Left!
+                                                        </span>
+                                                    )}
                                                 </div>
 
-                                                <Button
-                                                    onClick={() => handleAddToCart(book)}
-                                                    disabled={!book.inStock}
-                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium h-9 text-xs"
-                                                >
-                                                    <ShoppingCart className="w-3 h-3 mr-2" /> Add
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    onClick={() => setSelectedBook(book)}
-                                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium h-9 text-xs"
-                                                >
-                                                    <Eye className="w-3 h-3 mr-2" /> View
-                                                </Button>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <Button
+                                                        onClick={() => handleAddToCart(book)}
+                                                        disabled={book.stock_quantity === 0}
+                                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium h-9 text-xs"
+                                                    >
+                                                        <ShoppingCart className="w-3 h-3 mr-2" /> Add
+                                                    </Button>
+                                                    <Button
+                                                        variant="secondary"
+                                                        onClick={() => setSelectedBook(book)}
+                                                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium h-9 text-xs"
+                                                    >
+                                                        <Eye className="w-3 h-3 mr-2" /> View
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -333,9 +281,16 @@ const Books = () => {
                     </motion.div>
                 ) : (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed">
-                        <Book className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                        <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No Books Found</h3>
-                        <p className="text-gray-500">Try searching for a different title.</p>
+                        <p className="text-gray-500">The sacred collection is currently being refreshed. Please check back soon.</p>
+                        <Button
+                            variant="link"
+                            className="mt-4 text-orange-600"
+                            onClick={loadData}
+                        >
+                            Refresh Collection
+                        </Button>
                     </div>
                 )}
 
@@ -366,27 +321,82 @@ const Books = () => {
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
                     >
                         <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.95, opacity: 0 }}
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
                             onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden"
+                            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row"
                         >
-                            <div className="p-6 border-b border-gray-100 flex justify-between">
-                                <h2 className="text-2xl font-bold">{selectedBook.title}</h2>
-                                <button onClick={() => setSelectedBook(null)}><X className="w-6 h-6 text-gray-400" /></button>
+                            {/* Product Image */}
+                            <div className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative">
+                                <button
+                                    onClick={() => setSelectedBook(null)}
+                                    className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors md:hidden"
+                                >
+                                    <X className="w-5 h-5 text-gray-500" />
+                                </button>
+
+                                {selectedBook.image ? (
+                                    <img
+                                        src={selectedBook.image}
+                                        alt={selectedBook.name}
+                                        className="w-full h-auto object-contain max-h-[300px] drop-shadow-2xl"
+                                    />
+                                ) : (
+                                    <div className="w-3/4 h-[300px] bg-orange-800 rounded-r-md shadow-lg border-l-4 border-orange-900 flex flex-col items-center justify-center p-6 text-center">
+                                        <Book className="text-orange-200 w-16 h-16 mb-4" />
+                                        <h3 className="text-orange-50 font-serif text-xl">{selectedBook.name}</h3>
+                                    </div>
+                                )}
                             </div>
-                            <div className="p-6">
-                                <p className="text-gray-600 mb-4">{selectedBook.description}</p>
-                                <div className="flex justify-between items-center font-bold text-lg">
-                                    <span>₹{selectedBook.price}</span>
-                                    <span className="text-sm font-normal text-gray-500">by {selectedBook.author}</span>
+
+                            {/* Product Details */}
+                            <div className="md:w-1/2 p-8 flex flex-col">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100 border-none mb-2">
+                                            {categories.find(c => c.id === selectedBook.category)?.name || 'Book'}
+                                        </Badge>
+                                        <h2 className="text-3xl font-bold text-gray-900 font-playfair">{selectedBook.name}</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedBook(null)}
+                                        className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                    >
+                                        <X className="w-6 h-6 text-gray-400" />
+                                    </button>
                                 </div>
-                            </div>
-                            <div className="p-6 bg-gray-50 flex gap-3">
-                                <Button onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }} className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-                                    Add to Cart
-                                </Button>
+
+                                <div className="flex items-center gap-3 mb-6">
+                                    <span className="text-3xl font-bold text-orange-600 font-sans">NPR {selectedBook.price}</span>
+                                    {selectedBook.stock_quantity > 0 ? (
+                                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+                                            In Stock ({selectedBook.stock_quantity})
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="destructive">Out of Stock</Badge>
+                                    )}
+                                </div>
+
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h4>
+                                    <p className="text-gray-600 leading-relaxed mb-6">
+                                        {selectedBook.description || "Divine spiritual wisdom for your sacred journey."}
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }}
+                                        disabled={selectedBook.stock_quantity === 0}
+                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-orange-600/20 gap-3"
+                                    >
+                                        <ShoppingCart className="w-6 h-6" /> Add to Cart
+                                    </Button>
+                                    <p className="text-center text-xs text-gray-400 italic">
+                                        Pure knowledge delivered to your doorstep.
+                                    </p>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>

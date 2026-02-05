@@ -35,6 +35,7 @@ import ChangePassword from './pages/auth/change-password/ChangePassword'
 import { PanditList } from './pages/Booking/PanditList'
 import PanditProfile from './pages/find-pandit/PanditProfile'
 import BookingForm from './pages/Booking/BookingForm'
+import Confirmation from './pages/Booking/Confirmation'
 import ReviewForm from './pages/Booking/ReviewForm'
 import MyBookingsPage from './pages/customer/MyBookings'
 
@@ -75,7 +76,7 @@ import PujaRoom from './pages/Video/PujaRoom'
 // Global UI
 import CartDrawer from './components/shop/CartDrawer'
 import FavoritesDrawer from './components/shop/FavoritesDrawer'
-import AIGuideBot from './components/AIGuideBot'
+import UnifiedChatWidget from './components/UnifiedChatWidget'
 import BackToTop from './components/common/BackToTop'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 
@@ -151,6 +152,12 @@ function App() {
                 <Route path="/booking/:id/review" element={
                   <ProtectedRoute allowedRoles={['user']}>
                     <ReviewForm />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="/booking/confirmation" element={
+                  <ProtectedRoute allowedRoles={['user']}>
+                    <Confirmation />
                   </ProtectedRoute>
                 } />
 
@@ -248,6 +255,7 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/payment/success" element={<PaymentSuccess />} />
+                <Route path="/payment/success/:bookingId" element={<PaymentSuccess />} />
                 <Route path="/payment/cancel" element={<PaymentFailure />} />
                 <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
 
@@ -272,7 +280,7 @@ function App() {
               <CartDrawer />
               <FavoritesDrawer />
               <BackToTop />
-              <AIGuideBot />
+              <UnifiedChatWidget />
               <PWAInstallPrompt />
               <Toaster />
             </BrowserRouter>

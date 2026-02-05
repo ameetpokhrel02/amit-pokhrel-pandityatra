@@ -17,8 +17,8 @@ import {
   formatCurrency,
   openKhaltiPopup,
 } from '@/lib/payment-api';
-import { CreditCard, Wallet } from 'lucide-react';
-import axios from 'axios';
+import { CreditCard, Wallet, CheckCircle2 } from 'lucide-react';
+import { api } from '@/lib/api-client';
 
 interface BookingDetails {
   id: number;
@@ -54,9 +54,16 @@ const PaymentPage: React.FC = () => {
   }, [bookingId]);
 
   const autoDetectCurrency = async () => {
-    const preferred = await detectPreferredCurrency();
-    setSelectedCurrency(preferred);
-    setSelectedGateway(preferred === 'NPR' ? 'KHALTI' : 'STRIPE');
+    try {
+      const preferred = await detectPreferredCurrency();
+      setSelectedCurrency(preferred);
+      setSelectedGateway(preferred === 'NPR' ? 'KHALTI' : 'STRIPE');
+    } catch (err) {
+      console.error('Failed to detect currency, defaulting to USD:', err);
+      // Default to USD if geolocation fails
+      setSelectedCurrency('USD');
+      setSelectedGateway('STRIPE');
+    }
   };
 
   const loadExchangeRate = async () => {
@@ -65,6 +72,8 @@ const PaymentPage: React.FC = () => {
       setExchangeRate(data.rate);
     } catch (err) {
       console.error('Failed to load exchange rate:', err);
+      // Use fallback rate (approximate NPR to USD conversion)
+      setExchangeRate(0.0075);
     }
   };
 
@@ -72,14 +81,11 @@ const PaymentPage: React.FC = () => {
     if (!bookingId || !token) return;
 
     try {
-      const response = await axios.get(
-        `http://localhost:8000/api/bookings/${bookingId}/`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      // Use 'api' client to handle baseURL and auth correctly
+      const response = await api.get(`/bookings/${bookingId}/`);
       setBooking(response.data);
     } catch (err: any) {
+      console.error('Failed to load booking details:', err);
       setError(err.response?.data?.detail || 'Failed to load booking details');
     } finally {
       setLoading(false);
@@ -120,12 +126,6 @@ const PaymentPage: React.FC = () => {
         description: backendError,
         variant: 'destructive',
       });
-      // Store bookingId for retry
-      if (bookingId) {
-        sessionStorage.setItem('pending_booking_id', bookingId);
-      }
-      // Redirect to failure page with error message
-      navigate('/payment/failure', { state: { error: backendError } });
       setProcessing(false);
     }
   };
@@ -139,6 +139,16 @@ const PaymentPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size={40} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       </div>
     );
   }
@@ -238,11 +248,10 @@ const PaymentPage: React.FC = () => {
                 {selectedCurrency === 'USD' && (
                   <button
                     onClick={() => setSelectedGateway('STRIPE')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all ${
-                      selectedGateway === 'STRIPE'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300'
-                    }`}
+                    className={`w-full p-4 border-2 rounded-lg transition-all ${selectedGateway === 'STRIPE'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <CreditCard className="w-6 h-6 text-blue-600" />
@@ -258,11 +267,10 @@ const PaymentPage: React.FC = () => {
                 {selectedCurrency === 'NPR' && (
                   <button
                     onClick={() => setSelectedGateway('KHALTI')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all ${
-                      selectedGateway === 'KHALTI'
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-300'
-                    }`}
+                    className={`w-full p-4 border-2 rounded-lg transition-all ${selectedGateway === 'KHALTI'
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-purple-300'
+                      }`}
                   >
                     <div className="flex items-center gap-3">
                       <Wallet className="w-6 h-6 text-purple-600" />
@@ -306,10 +314,11 @@ const PaymentPage: React.FC = () => {
             </Card>
 
             {/* Security Note */}
-            <Card>
+            <Card className="border-none bg-orange-50/50">
               <CardContent className="pt-6">
-                <p className="text-xs text-gray-600 text-center">
-                  🔒 Your payment is secured with industry-standard encryption
+                <p className="text-xs text-orange-700/70 text-center font-medium flex items-center justify-center gap-2">
+                  <CheckCircle2 className="w-3 h-3 text-orange-600" />
+                  Your payment is secured with industry-standard encryption
                 </p>
               </CardContent>
             </Card>
