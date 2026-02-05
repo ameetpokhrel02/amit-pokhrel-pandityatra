@@ -131,14 +131,14 @@ export function useChat(bookingId?: string): UseChat {
 
       try {
         if (mode === 'guide') {
-          // Quick Chat API call
-          const response = await api.post('/services/ai-guide/', {
-            prompt: content,
+          // Quick Chat API call (Groq AI)
+          const response = await api.post('/chat/quick-chat/', {
+            message: content,
           });
 
           const aiMessage: ChatMessageType = {
             id: Date.now().toString(),
-            content: response.data.response,
+            content: response.data.reply || response.data.response,
             sender: 'ai',
             timestamp: new Date().toISOString(),
             mode: 'guide',

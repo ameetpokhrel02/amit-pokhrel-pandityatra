@@ -8,6 +8,7 @@ from .models import ChatRoom, Message, ChatMessage
 from .serializers import ChatRoomSerializer, MessageSerializer
 import os
 from django.conf import settings
+from groq import Groq
 
 
 class ChatRoomListView(generics.ListAPIView):
@@ -74,6 +75,63 @@ class MarkMessageReadView(generics.UpdateAPIView):
         message.read_at = timezone.now()
         message.save()
         return Response(self.get_serializer(message).data)
+
+class QuickGuideChat(APIView):
+    """
+    Quick Guide Chatbot using Groq AI.
+    Goal: Floating AI helper that answers “How to use the app?”
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            message = request.data.get('message')
+            if not message:
+                return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+            client = Groq(api_key=settings.GROQ_API_KEY)
+
+            chat_completion = client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": """
+                    You are PanditYatra AI Guide. Help users step-by-step with the app.
+                    Key features:
+                    - OTP login (email/phone)
+                    - Search pandits by occasion/language
+                    - AI auto-suggested samagri
+                    - Book puja + pay (Khalti/Stripe)
+                    - Live video puja with chat
+                    - Offline Kundali generation
+                    Keep answers short, friendly, in simple English/Nepali/Hindi.
+                    """},
+                    {"role": "user", "content": message}
+                ],
+                model="llama-3.1-8b-instant",  # fast & cheap on Groq
+                temperature=0.7,
+                max_tokens=300
+            )
+
+            reply = chat_completion.choices[0].message.content
+
+            # Save to DB if user is authenticated
+            if request.user.is_authenticated:
+                ChatMessage.objects.create(
+                    user=request.user,
+                    mode='guide',
+                    sender='user',
+                    content=message
+                )
+                ChatMessage.objects.create(
+                    user=request.user,
+                    mode='guide',
+                    sender='ai',
+                    content=reply
+                )
+
+            return Response({"reply": reply, "response": reply}) # compatible with both old and new frontend names
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 class QuickChatView(APIView):
     """

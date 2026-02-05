@@ -13,5 +13,7 @@ urlpatterns = [
     path('messages/<int:pk>/mark-read/', views.MarkMessageReadView.as_view(), name='mark-message-read'),
     
     # Quick Chat (Guide Mode) - AI Help
+    path('quick-chat/', views.QuickGuideChat.as_view(), name='quick-guide-chat'),
     path('', views.QuickChatView.as_view(), name='quick-chat'),
-    path('history/', views.GuideHistoryView.as_view(), name='guide-history'),]
+    path('history/', views.GuideHistoryView.as_view(), name='guide-history'),
+]

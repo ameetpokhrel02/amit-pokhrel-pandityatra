@@ -91,17 +91,17 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   // }
 
   const getModeLabel = () => {
-    if (mode === 'guide') {
-      return 'PanditYatra AI Guide';
+    if (bookingId) {
+      return `Chat with ${panditName || 'Pandit'}`;
     }
-    return `Chat with ${panditName || 'Pandit'}`;
+    return 'PanditYatra AI Guide';
   };
 
   const getWelcomeMessage = () => {
-    if (mode === 'guide') {
-      return "Namaste! I'm PanditYatra's AI helper. Ask me how to use the app or get help with bookings.";
+    if (bookingId) {
+      return `You're now connected to ${panditName || 'the pandit'}. Feel free to ask any questions about your puja.`;
     }
-    return `You're now connected to ${panditName || 'the pandit'}. Feel free to ask any questions about your puja.`;
+    return "Namaste! I'm PanditYatra's AI helper. Ask me how to use the app or get help with bookings.";
   };
 
   return (
