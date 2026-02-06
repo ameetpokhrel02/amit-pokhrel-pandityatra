@@ -1,6 +1,6 @@
 import React from 'react';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
-import sideImage from '@/assets/images/pANDIT VIBING.png';
+import sideImage from '@/assets/images/pandit_loging.webp';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { X, Calendar, User, CheckCircle2 } from 'lucide-react';

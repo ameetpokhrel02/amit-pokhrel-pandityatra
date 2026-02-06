@@ -37,6 +37,7 @@ import {
 } from '@/lib/api';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import heroBg from '@/assets/images/agarbati_brands.webp';
 
 const Samagri = () => {
     const [items, setItems] = useState<SamagriItem[]>([]);
@@ -126,8 +127,18 @@ const Samagri = () => {
             <Navbar />
 
             {/* Hero Section */}
-            <section className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-20 px-4">
-                <div className="container mx-auto text-center max-w-3xl">
+            <section className="relative text-white py-24 px-4 overflow-hidden">
+                {/* Background Image */}
+                <div className="absolute inset-0 z-0">
+                    <img
+                        src={heroBg}
+                        alt="Sacred Samagri"
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-amber-900/70 backdrop-blur-[2px]" />
+                </div>
+
+                <div className="container mx-auto text-center max-w-3xl relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}

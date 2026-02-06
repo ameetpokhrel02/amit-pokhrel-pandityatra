@@ -19,7 +19,14 @@ export default function AdminServices() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    name: string;
+    description: string;
+    base_duration_minutes: number;
+    base_price: string;
+    is_available: boolean;
+    image: File | null;
+  }>({
     name: "",
     description: "",
     base_duration_minutes: 60,
@@ -57,8 +64,8 @@ export default function AdminServices() {
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
       if (value !== null && value !== "") {
-        if (value instanceof File) {
-          formData.append(key, value);
+        if ((value as any) instanceof File) {
+          formData.append(key, value as File);
         } else {
           formData.append(key, String(value));
         }
