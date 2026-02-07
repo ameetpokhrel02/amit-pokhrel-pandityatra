@@ -21,11 +21,17 @@ class SamagriItemSerializer(serializers.ModelSerializer):
 # --- 3. Shop Order Serializers ---
 
 class ShopOrderItemSerializer(serializers.ModelSerializer):
-    item_name = serializers.CharField(source='samagri_item.name', read_only=True)
+    item_name = serializers.SerializerMethodField()
     
     class Meta:
         model = ShopOrderItem
         fields = ['id', 'samagri_item', 'item_name', 'quantity', 'price_at_purchase']
+
+    def get_item_name(self, obj):
+        if obj.samagri_item:
+            return obj.samagri_item.name
+        # Fallback to the snapshot name if item is deleted
+        return obj.item_name or "Deleted Item"
 
 class ShopOrderSerializer(serializers.ModelSerializer):
     items = ShopOrderItemSerializer(many=True, read_only=True)

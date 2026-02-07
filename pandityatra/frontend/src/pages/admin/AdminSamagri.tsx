@@ -103,8 +103,10 @@ export default function AdminSamagri() {
           await deleteSamagriItem(id);
           toast({ title: "Success", description: "Item deleted." });
           loadData();
-      } catch (err) {
-          toast({ title: "Error", description: "Failed to delete item." });
+      } catch (err: any) {
+          console.error(err);
+          const errorMsg = err.response?.data?.detail || err.message || "Failed to delete item.";
+          toast({ title: "Error", description: errorMsg });
       }
   };
 

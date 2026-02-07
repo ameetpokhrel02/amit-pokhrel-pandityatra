@@ -276,7 +276,7 @@ const Samagri = () => {
                                                 <Button
                                                     onClick={() => handleAddToCart(item)}
                                                     variant="secondary"
-                                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm"
+                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm shadow-sm hover:shadow-md transition-all duration-300"
                                                     disabled={item.stock_quantity === 0}
                                                 >
                                                     <ShoppingCart className="w-4 h-4" />
@@ -284,7 +284,7 @@ const Samagri = () => {
                                                 </Button>
                                                 <Button
                                                     variant="secondary"
-                                                    className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm"
+                                                    className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
                                                     onClick={() => setSelectedItem(item)}
                                                 >
                                                     <Eye className="w-4 h-4" /> View

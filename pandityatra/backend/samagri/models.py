@@ -64,9 +64,11 @@ class ShopOrder(models.Model):
 
 class ShopOrderItem(models.Model):
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name='items')
-    samagri_item = models.ForeignKey(SamagriItem, on_delete=models.PROTECT)
+    samagri_item = models.ForeignKey(SamagriItem, on_delete=models.SET_NULL, null=True, blank=True)
+    item_name = models.CharField(max_length=150, blank=True, null=True) # Snapshot in case item is deleted
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.quantity} x {self.samagri_item.name} for Order #{self.order.id}"
+        item_name = self.samagri_item.name if self.samagri_item else self.item_name
+        return f"{self.quantity} x {item_name} for Order #{self.order.id}"

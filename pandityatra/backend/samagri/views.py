@@ -292,6 +292,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                     ShopOrderItem.objects.create(
                         order=order,
                         samagri_item=samagri_item,
+                        item_name=samagri_item.name,
                         quantity=item['quantity'],
                         price_at_purchase=samagri_item.price
                     )
