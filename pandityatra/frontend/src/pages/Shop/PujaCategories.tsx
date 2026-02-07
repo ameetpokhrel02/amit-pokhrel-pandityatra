@@ -105,7 +105,15 @@ const PujaCategories = () => {
     try {
       setLoading(true);
       const data = await fetchPujas();
-      setPujas(Array.isArray(data) ? data : []);
+      // Map API response (base_price/base_duration) to component structure (price/duration_minutes)
+      const mappedData = (Array.isArray(data) ? data : []).map((item: any) => ({
+        ...item,
+        price: item.base_price ? Number(item.base_price) : 0,
+        duration_minutes: item.base_duration_minutes || 60,
+        pandit_name: "PanditYatra Verified", // Default for catalog items
+        pandit: 0
+      }));
+      setPujas(mappedData);
     } catch (error) {
       console.error('Failed to load pujas:', error);
       toast({
@@ -227,8 +235,11 @@ const PujaCategories = () => {
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
             <AnimatePresence mode='popLayout'>
-              {paginatedItems.map((puja) => {
+              {paginatedItems.map((puja: any) => {
+                // Priority: API Image > Mapped Image > Default Image
                 const info = pujaData[puja.name || ''] || { image: '/images/puja1.svg' };
+                const imageSrc = puja.image || info.image;
+
                 return (
                   <motion.div
                     layout
@@ -250,7 +261,7 @@ const PujaCategories = () => {
                         </button>
 
                         <img
-                          src={info.image}
+                          src={imageSrc}
                           alt={puja.name}
                           className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110"
                         />

@@ -99,6 +99,7 @@ const PujaCategories: React.FC = () => {
               {pujas.map((puja, index) => {
                 const icon = iconsMap[puja.name] || <GiTempleDoor className="h-8 w-8" />;
                 const gradient = gradients[index % gradients.length];
+                const imageSrc = puja.image || null;
                 const isPopular = index < 3; // First 3 are "Popular"
 
                 return (

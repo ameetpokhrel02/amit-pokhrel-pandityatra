@@ -19,6 +19,8 @@ export default function AdminServices() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
+  const [editingId, setEditingId] = useState<number | null>(null);
+
   const [form, setForm] = useState<{
     name: string;
     description: string;
@@ -59,10 +61,52 @@ export default function AdminServices() {
     }));
   };
 
+  const handleEdit = (puja: AdminPuja) => {
+    setEditingId(puja.id);
+    setForm({
+      name: puja.name || "",
+      description: puja.description || "",
+      base_duration_minutes: puja.base_duration_minutes || 60,
+      base_price: puja.base_price ? String(puja.base_price) : "",
+      is_available: puja.is_available,
+      image: null, // Reset image input on edit as we can't set file input value
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancel = () => {
+    setEditingId(null);
+    setForm({
+      name: "",
+      description: "",
+      base_duration_minutes: 60,
+      base_price: "",
+      is_available: true,
+      image: null,
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this puja service?")) return;
+    try {
+      await apiClient.delete(`/services/${id}/`);
+      toast({ title: "Success", description: "Puja deleted successfully." });
+      loadPujas();
+    } catch (err: any) {
+      console.error(err);
+      toast({ title: "Error", description: "Failed to delete puja." });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
+      // Don't send null image on update unless you want to clear it (logic depends on backend)
+      // Usually backend ignores valid key if not present in request. 
+      // If image is null here, it means user didn't select a new file.
+      if (key === 'image' && value === null) return;
+
       if (value !== null && value !== "") {
         if ((value as any) instanceof File) {
           formData.append(key, value as File);
@@ -71,16 +115,24 @@ export default function AdminServices() {
         }
       }
     });
+
     try {
-      await apiClient.post("/services/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      toast({ title: "Success", description: "Puja added." });
-      setForm({ name: "", description: "", base_duration_minutes: 60, base_price: "", is_available: true, image: null });
+      if (editingId) {
+        await apiClient.patch(`/services/${editingId}/`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast({ title: "Success", description: "Puja updated successfully." });
+      } else {
+        await apiClient.post("/services/", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+        });
+        toast({ title: "Success", description: "Puja added successfully." });
+      }
+      handleCancel(); // Reset form
       loadPujas();
     } catch (err: any) {
       console.error(err);
-      toast({ title: "Error", description: err.response?.data?.detail || err.message || "Failed to add puja." });
+      toast({ title: "Error", description: err.response?.data?.detail || err.message || "Failed to save puja." });
     }
   };
 
@@ -91,19 +143,25 @@ export default function AdminServices() {
     <DashboardLayout userRole="admin">
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>Add New Puja/Service</CardTitle>
+          <CardTitle>{editingId ? "Edit Puja/Service" : "Add New Puja/Service"}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input name="name" value={form.name} onChange={handleChange} placeholder="Name" required />
             <Input name="base_price" value={form.base_price} onChange={handleChange} placeholder="Base Price (₹)" required type="number" min="0" />
             <Input name="base_duration_minutes" value={form.base_duration_minutes} onChange={handleChange} placeholder="Duration (min)" required type="number" min="1" />
-            <Input name="image" type="file" accept="image/*" onChange={handleChange} />
+            <div className="flex flex-col gap-2">
+                <Input name="image" type="file" accept="image/*" onChange={handleChange} />
+                {editingId && <span className="text-xs text-gray-500">Leave empty to keep existing image</span>}
+            </div>
             <Input name="description" value={form.description} onChange={handleChange} placeholder="Description" required />
             <label className="flex items-center gap-2">
               <input type="checkbox" name="is_available" checked={form.is_available} onChange={handleChange} /> Available
             </label>
-            <Button type="submit">Add Puja</Button>
+            <div className="md:col-span-2 flex gap-2">
+                <Button type="submit">{editingId ? "Update Puja" : "Add Puja"}</Button>
+                {editingId && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -124,16 +182,23 @@ export default function AdminServices() {
                   <TableHead>Price (₹)</TableHead>
                   <TableHead>Duration (min)</TableHead>
                   <TableHead>Available</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {currentPujas.map((puja) => (
                   <TableRow key={puja.id}>
                     <TableCell>{puja.name}</TableCell>
-                    <TableCell>{puja.description}</TableCell>
+                    <TableCell className="max-w-xs truncate">{puja.description}</TableCell>
                     <TableCell>{puja.base_price}</TableCell>
                     <TableCell>{puja.base_duration_minutes}</TableCell>
                     <TableCell>{puja.is_available ? "Yes" : "No"}</TableCell>
+                    <TableCell>
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handleEdit(puja)}>Edit</Button>
+                            <Button size="sm" variant="destructive" onClick={() => handleDelete(puja.id)}>Delete</Button>
+                        </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
