@@ -17,13 +17,27 @@ self.addEventListener('install', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests (like Google Auth, external APIs) and API calls
+  if (!event.request.url.startsWith(self.location.origin) || event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Network-first strategy for HTML navigation
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for other local assets
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Return cached version or fetch from network
         return response || fetch(event.request);
-      }
-    )
+      })
   );
 });
 

@@ -47,11 +47,44 @@ def send_local_otp(phone_number=None, email=None):
         # Send via Email
         try:
             subject = 'Your PanditYatra Verification Code'
-            message = f'Your verification code is: {otp_code}. It expires in {OTP_EXPIRATION_MINUTES} minutes.'
+            
+            # HTML Message with larger, bold OTP and no-reply warning
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h2 style="color: #ff9933; text-align: center;">PanditYatra Verification</h2>
+                <p style="font-size: 16px; color: #333;">Namaste,</p>
+                <p style="font-size: 16px; color: #333;">Your verification code is:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <span style="font-size: 32px; font-weight: bold; color: #333; letter-spacing: 5px; background-color: #f9f9f9; padding: 10px 20px; border-radius: 5px; border: 1px dashed #ccc;">{otp_code}</span>
+                </div>
+                <p style="font-size: 14px; color: #666;">This code expires in {OTP_EXPIRATION_MINUTES} minutes.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #999; text-align: center;">
+                    Please do not reply to this email. This mailbox is not monitored.<br>
+                    If you did not request this code, please ignore this email.
+                </p>
+            </div>
+            """
+            
+            # Plain text fallback
+            text_content = f'Your verification code is: {otp_code}. It expires in {OTP_EXPIRATION_MINUTES} minutes. Please do not reply to this email.'
+            
             from_email = settings.DEFAULT_FROM_EMAIL
             recipient_list = [email]
             
-            send_mail(subject, message, from_email, recipient_list)
+            # Create EmailMultiAlternatives object to support Reply-To
+            from django.core.mail import EmailMultiAlternatives
+            
+            msg = EmailMultiAlternatives(
+                subject, 
+                text_content, 
+                from_email, 
+                recipient_list,
+                reply_to=['no-reply@pandityatra.com'] # Redirect replies to a black hole
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+            
             print(f"--- [EMAIL SENT] To: {email} | Code: {otp_code} ---")
         except Exception as e:
             print(f"FAILED TO SEND EMAIL: {e}")

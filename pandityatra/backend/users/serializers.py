@@ -147,6 +147,7 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number', 
             'full_name', 
             'email', 
+            'profile_pic_url', # Added field
             'role',  # Include role in response
             'is_active', 
             'date_joined'

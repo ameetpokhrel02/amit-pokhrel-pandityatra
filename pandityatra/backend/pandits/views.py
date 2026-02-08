@@ -469,11 +469,58 @@ class PanditViewSet(viewsets.ModelViewSet):
     ).order_by('-rating')
 
     def get_permissions(self):
-        if self.action in ['update', 'partial_update', 'destroy']:
-            return [permissions.IsAdminUser()]
+        if self.action in ['update', 'partial_update']:
+            # Allow admins OR the pandit themselves to update their profile
+            return [permissions.IsAuthenticated()]
+        if self.action in ['destroy']:
+             return [permissions.IsAdminUser()]
         if self.action in ['create']:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+        
+    def update(self, request, *args, **kwargs):
+        # Additional check: only allow updating own profile unless admin
+        instance = self.get_object()
+        if not request.user.is_staff and instance.user != request.user:
+             return Response({"detail": "You do not have permission to edit this profile."}, status=403)
+             
+        # Extract user data
+        # Handle QueryDict (multipart) or JSON
+        data = request.data
+        user_data = {}
+        
+        # 1. Parse user_data prefixed fields
+        for key, value in data.items():
+            if key.startswith('user_data.'):
+                field_name = key.replace('user_data.', '')
+                user_data[field_name] = value
+
+        if user_data:
+             user = instance.user
+             
+             # 2. Special handling for profile_pic (File Upload)
+             if 'profile_pic' in user_data:
+                 profile_pic = user_data.pop('profile_pic')
+                 if profile_pic: 
+                     # Save file manually
+                     from django.core.files.storage import default_storage
+                     from django.core.files.base import ContentFile
+                     import os
+                     
+                     # Generate a unique filename
+                     file_ext = os.path.splitext(profile_pic.name)[1]
+                     file_path = f"profile_pics/user_{user.id}_{int(timezone.now().timestamp())}{file_ext}"
+                     
+                     saved_path = default_storage.save(file_path, profile_pic)
+                     user.profile_pic_url = f"/media/{saved_path}"
+
+             # 3. Update other user fields
+             for attr, value in user_data.items():
+                 if hasattr(user, attr):
+                     setattr(user, attr, value)
+             user.save()
+             
+        return super().update(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = Pandit.objects.all()

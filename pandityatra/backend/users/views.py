@@ -21,6 +21,7 @@ from pandits.models import Pandit # 🚨 Import for Admin Stats
 
 class RegisterUserView(APIView):
     """Handles User Registration (creates the user account) and sends OTP."""
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -45,6 +46,7 @@ class RegisterUserView(APIView):
 
 class RequestOTPView(APIView):
     """Handles OTP request for login (for existing users via Phone or Email)."""
+    permission_classes = [permissions.AllowAny]
     def post(self, request):
         phone_number = request.data.get('phone_number')
         email = request.data.get('email')
@@ -86,6 +88,7 @@ class RequestOTPView(APIView):
 
 class OTPVerifyAndTokenView(APIView):
     """Verifies the OTP (Phone or Email) and returns JWT Access and Refresh Tokens."""
+    permission_classes = [permissions.AllowAny]
     serializer_class = PhoneTokenSerializer
     
     def post(self, request):
@@ -100,6 +103,11 @@ class OTPVerifyAndTokenView(APIView):
         if not otp_code:
              return Response({"detail": "OTP code is required."}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Smart Fix: Check if phone_number is actually an email
+        if phone_number and '@' in phone_number:
+            email = phone_number
+            phone_number = None
+
         if not phone_number and not email:
              return Response({"detail": "Phone number or Email is required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -135,6 +143,7 @@ class OTPVerifyAndTokenView(APIView):
 
 class PasswordLoginView(APIView):
     """Handles password-based login and returns JWT tokens."""
+    permission_classes = [permissions.AllowAny]
     serializer_class = PasswordLoginSerializer
     
     def post(self, request):
@@ -196,6 +205,7 @@ class PasswordLoginView(APIView):
 
 class ForgotPasswordRequestView(APIView):
     """Handles forgot password request - sends OTP to phone or email."""
+    permission_classes = [permissions.AllowAny]
     serializer_class = ForgotPasswordRequestSerializer
     
     def post(self, request):
@@ -247,6 +257,7 @@ class ForgotPasswordRequestView(APIView):
 
 class ForgotPasswordOTPVerifyView(APIView):
     """Verifies OTP for forgot password flow."""
+    permission_classes = [permissions.AllowAny]
     serializer_class = ForgotPasswordOTPVerifySerializer
     
     def post(self, request):
@@ -298,6 +309,7 @@ class ForgotPasswordOTPVerifyView(APIView):
 
 class ResetPasswordView(APIView):
     """Resets password after OTP verification."""
+    permission_classes = [permissions.AllowAny]
     serializer_class = ResetPasswordSerializer
     
     def post(self, request):

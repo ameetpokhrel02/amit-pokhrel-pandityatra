@@ -197,10 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
-  return Object.assign(ctx, {
-    // Add any extra helpers if needed, or just exposure
-    requestResetOtp: async (phone: string) => requestForgotPasswordOTP({ phone_number: phone })
-  });
+  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
+  return ctx;
 };
 
 export default useAuth;
