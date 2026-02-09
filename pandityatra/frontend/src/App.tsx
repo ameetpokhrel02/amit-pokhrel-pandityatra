@@ -80,6 +80,13 @@ import UnifiedChatWidget from './components/UnifiedChatWidget'
 import BackToTop from './components/common/BackToTop'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
 
+// Error Handling
+import ErrorBoundary from './components/ErrorBoundary'
+import NotFound from './pages/Error/NotFound'
+import ServerError from './pages/Error/ServerError'
+import Unauthorized from './pages/Error/Unauthorized'
+import Offline from './pages/Error/Offline'
+
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
@@ -88,202 +95,209 @@ function App() {
       <CartProvider>
         <FavoritesProvider>
           <AuthProvider>
-            <BrowserRouter>
-              <Routes>
-                {/* 🌍 Public */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/about" element={<AboutUs />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/kundali" element={<OfflineKundali />} />
-                <Route path="/shop/pujas" element={<PujaCategories />} />
-                <Route path="/shop/samagri" element={<Samagri />} />
-                <Route path="/shop/books" element={<Books />} />
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/shop/checkout" element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
-                    <CheckoutPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/shop/payment/success" element={<ShopPaymentSuccess />} />
-                <Route path="/shop/payment/cancel" element={<ShopPaymentFailure />} />
-                <Route path="/pandits" element={<PanditList />} />
-                <Route path="/pandits/:id" element={<PanditProfile />} />
+            <ErrorBoundary>
+              <Offline />
+              <BrowserRouter>
+                <Routes>
+                  {/* 🌍 Public */}
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/about" element={<AboutUs />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/kundali" element={<OfflineKundali />} />
+                  <Route path="/shop/pujas" element={<PujaCategories />} />
+                  <Route path="/shop/samagri" element={<Samagri />} />
+                  <Route path="/shop/books" element={<Books />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/shop/checkout" element={
+                    <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
+                      <CheckoutPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/shop/payment/success" element={<ShopPaymentSuccess />} />
+                  <Route path="/shop/payment/cancel" element={<ShopPaymentFailure />} />
+                  <Route path="/pandits" element={<PanditList />} />
+                  <Route path="/pandits/:id" element={<PanditProfile />} />
 
-                {/* 🔐 Auth */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/pandit/register" element={<PanditRegister />} />
-                <Route path="/otp-verification" element={<LoginOTPVerification />} />
-                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                <Route path="/auth/otp-verification" element={<OTPVerification />} />
-                <Route path="/auth/change-password" element={<ChangePassword />} />
+                  {/* 🔐 Auth */}
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/pandit/register" element={<PanditRegister />} />
+                  <Route path="/otp-verification" element={<LoginOTPVerification />} />
+                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/auth/otp-verification" element={<OTPVerification />} />
+                  <Route path="/auth/change-password" element={<ChangePassword />} />
 
-                {/* 👤 Customer */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <CustomerDashboard />
-                  </ProtectedRoute>
-                } />
+                  {/* 👤 Customer */}
+                  <Route path="/dashboard" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <CustomerDashboard />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/profile" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <EditProfile />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <EditProfile />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/my-bookings" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <MyBookingsPage />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/my-bookings" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <MyBookingsPage />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/booking" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <BookingForm />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/booking" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <BookingForm />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/booking/:serviceId" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <BookingForm />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/booking/:serviceId" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <BookingForm />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/booking/:id/review" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <ReviewForm />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/booking/:id/review" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <ReviewForm />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/booking/confirmation" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <Confirmation />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/booking/confirmation" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <Confirmation />
+                    </ProtectedRoute>
+                  } />
 
-                {/* 🧑‍🕉️ Pandit */}
-                <Route path="/pandit/dashboard" element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditDashboard />
-                  </ProtectedRoute>
-                } />
+                  {/* 🧑‍🕉️ Pandit */}
+                  <Route path="/pandit/dashboard" element={
+                    <ProtectedRoute allowedRoles={['pandit']}>
+                      <PanditDashboard />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/pandit/earnings" element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditEarnings />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/pandit/earnings" element={
+                    <ProtectedRoute allowedRoles={['pandit']}>
+                      <PanditEarnings />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/pandit/services" element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditServices />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/pandit/services" element={
+                    <ProtectedRoute allowedRoles={['pandit']}>
+                      <PanditServices />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/pandit/bookings" element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditBookings />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/pandit/bookings" element={
+                    <ProtectedRoute allowedRoles={['pandit']}>
+                      <PanditBookings />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/pandit/profile" element={
-                  <ProtectedRoute allowedRoles={['pandit']}>
-                    <PanditPrivateProfile />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/pandit/profile" element={
+                    <ProtectedRoute allowedRoles={['pandit']}>
+                      <PanditPrivateProfile />
+                    </ProtectedRoute>
+                  } />
 
 
-                {/* 👑 Admin */}
-                <Route path="/admin/dashboard" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                } />
+                  {/* 👑 Admin */}
+                  <Route path="/admin/dashboard" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/pandits" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminPandits />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/pandits" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPandits />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/bookings" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminBookings />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/bookings" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminBookings />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/users" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminUsers />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/users" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminUsers />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/payments" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminPayments />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/payments" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPayments />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/payouts" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminPayouts />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/payouts" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminPayouts />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/settings" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminSettings />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/settings" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminSettings />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/inventory" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminSamagri />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/inventory" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminSamagri />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="/admin/services" element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <AdminServices />
-                  </ProtectedRoute>
-                } />
+                  <Route path="/admin/services" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <AdminServices />
+                    </ProtectedRoute>
+                  } />
 
-                {/* 💳 Payments */}
-                <Route path="/payment/:bookingId" element={
-                  <ProtectedRoute allowedRoles={['user']}>
-                    <PaymentPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/payment/success" element={<PaymentSuccess />} />
-                <Route path="/payment/success/:bookingId" element={<PaymentSuccess />} />
-                <Route path="/payment/cancel" element={<PaymentFailure />} />
-                <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
+                  {/* 💳 Payments */}
+                  <Route path="/payment/:bookingId" element={
+                    <ProtectedRoute allowedRoles={['user']}>
+                      <PaymentPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/payment/success" element={<PaymentSuccess />} />
+                  <Route path="/payment/success/:bookingId" element={<PaymentSuccess />} />
+                  <Route path="/payment/cancel" element={<PaymentFailure />} />
+                  <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
 
-                {/* 🎥 Video */}
-                <Route path="/puja-room/:id" element={<PujaRoom />} />
+                  {/* 🎥 Video */}
+                  <Route path="/puja-room/:id" element={<PujaRoom />} />
 
-                {/* 💬 Chat */}
-                <Route path="/chat" element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <ChatList />
-                  </ProtectedRoute>
-                } />
-                <Route path="/chat/:roomId" element={
-                  <ProtectedRoute allowedRoles={['user', 'pandit']}>
-                    <ChatRoom roomId={0} />
-                  </ProtectedRoute>
-                } />
+                  {/* 💬 Chat */}
+                  <Route path="/chat" element={
+                    <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                      <ChatList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/chat/:roomId" element={
+                    <ProtectedRoute allowedRoles={['user', 'pandit']}>
+                      <ChatRoom roomId={0} />
+                    </ProtectedRoute>
+                  } />
 
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+                  {/* 🚫 Error Pages */}
+                  <Route path="/404" element={<NotFound />} />
+                  <Route path="/500" element={<ServerError />} />
+                  <Route path="/403" element={<Unauthorized />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
 
-              <CartDrawer />
-              <FavoritesDrawer />
-              <BackToTop />
-              <UnifiedChatWidget />
-              <PWAInstallPrompt />
-              <Toaster />
-            </BrowserRouter>
+                <CartDrawer />
+                <FavoritesDrawer />
+                <BackToTop />
+                <UnifiedChatWidget />
+                <PWAInstallPrompt />
+                <Toaster />
+              </BrowserRouter>
+            </ErrorBoundary>
           </AuthProvider>
         </FavoritesProvider>
       </CartProvider>
