@@ -68,4 +68,5 @@ postgres_data/
 # ===============================
 .DS_Store
 Thumbs.db
-docs
+docs/
+
