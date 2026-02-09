@@ -5,18 +5,28 @@ import { fetchBookings, updateBookingStatus, type Booking } from '@/lib/api';
 import Navbar from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Video, PlayCircle } from 'lucide-react';
+import { format, isAfter, isBefore, subMinutes, addMinutes } from 'date-fns';
 
 const MyBookings: React.FC = () => {
+    const navigate = useNavigate();
     const { role } = useAuth();
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [now, setNow] = useState(new Date());
+
+    // Update current time every minute to refresh join buttons
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     // Fetch bookings on mount
     const loadBookings = async () => {
         try {
+            setLoading(true);
             const data = await fetchBookings();
             setBookings(data);
         } catch (err: any) {
@@ -56,6 +66,32 @@ const MyBookings: React.FC = () => {
             case 'CANCELLED': return <XCircle className="h-4 w-4 mr-1" />;
             default: return <Clock className="h-4 w-4 mr-1" />;
         }
+    };
+
+    const isJoinable = (booking: Booking) => {
+        if (!booking.booking_date || !booking.booking_time) return false;
+        if (booking.status !== 'ACCEPTED') return false;
+
+        try {
+            // Combine date and time strings
+            const pujaDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+
+            // Allow joining 10 minutes before and up to 2 hours after
+            const joinStart = subMinutes(pujaDateTime, 10);
+            const joinEnd = addMinutes(pujaDateTime, 120);
+
+            return isAfter(now, joinStart) && isBefore(now, joinEnd);
+        } catch (e) {
+            return false;
+        }
+    };
+
+    const handleJoinPuja = (bookingId: number) => {
+        navigate(`/puja-room/${bookingId}`);
+    };
+
+    const handleViewRecording = (bookingId: number) => {
+        navigate(`/recording/${bookingId}`);
     };
 
     if (loading) return (
@@ -166,13 +202,53 @@ const MyBookings: React.FC = () => {
                                     )}
 
                                     {role === 'pandit' && booking.status === 'ACCEPTED' && (
-                                        <CardFooter className="pt-2">
+                                        <CardFooter className="flex-col gap-2 pt-2">
                                             <Button
                                                 size="sm"
+                                                className={`w-full ${isJoinable(booking) ? 'bg-green-600 hover:bg-green-700' : 'opacity-50'}`}
+                                                disabled={!isJoinable(booking)}
+                                                onClick={() => handleJoinPuja(booking.id)}
+                                            >
+                                                <Video className="h-4 w-4 mr-2" />
+                                                Start Puja
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
                                                 className="w-full"
                                                 onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}
                                             >
                                                 Mark as Completed
+                                            </Button>
+                                        </CardFooter>
+                                    )}
+
+                                    {/* Customer Actions */}
+                                    {role === 'user' && booking.status === 'ACCEPTED' && (
+                                        <CardFooter className="pt-2">
+                                            <Button
+                                                size="sm"
+                                                className={`w-full ${isJoinable(booking) ? 'bg-[#f97316] hover:bg-[#ea580c]' : 'opacity-50'}`}
+                                                disabled={!isJoinable(booking)}
+                                                onClick={() => handleJoinPuja(booking.id)}
+                                            >
+                                                <Video className="h-4 w-4 mr-2" />
+                                                Join Puja
+                                            </Button>
+                                        </CardFooter>
+                                    )}
+
+                                    {/* Recording Action */}
+                                    {booking.recording_available && booking.recording_url && (
+                                        <CardFooter className="pt-2">
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                className="w-full bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                                                onClick={() => handleViewRecording(booking.id)}
+                                            >
+                                                <PlayCircle className="h-4 w-4 mr-2" />
+                                                View Recording
                                             </Button>
                                         </CardFooter>
                                     )}

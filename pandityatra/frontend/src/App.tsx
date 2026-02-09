@@ -72,6 +72,7 @@ import KhaltiVerify from './pages/Payment/KhaltiVerify'
 
 // Video
 import PujaRoom from './pages/Video/PujaRoom'
+import RecordingView from './pages/Video/RecordingView'
 
 // Global UI
 import CartDrawer from './components/shop/CartDrawer'
@@ -270,6 +271,7 @@ function App() {
 
                   {/* 🎥 Video */}
                   <Route path="/puja-room/:id" element={<PujaRoom />} />
+                  <Route path="/recording/:bookingId" element={<RecordingView />} />
 
                   {/* 💬 Chat */}
                   <Route path="/chat" element={

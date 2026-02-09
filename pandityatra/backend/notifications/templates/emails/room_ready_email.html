@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; }
+        .header { background-color: #f97316; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { padding: 30px; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #f97316; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        .footer { font-size: 12px; color: #777; text-align: center; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        .details { background-color: #fffaf0; padding: 15px; border-radius: 5px; margin: 20px 0; border: 1px solid #fbd38d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PanditYatra</h1>
+        </div>
+        <div class="content">
+            <h2>Namaste {{ user_name }},</h2>
+            <p>We are pleased to inform you that the video room for your upcoming puja is now ready.</p>
+            
+            <div class="details">
+                <strong>Puja:</strong> {{ puja_name }}<br>
+                <strong>Date:</strong> {{ booking_date }}<br>
+                <strong>Time:</strong> {{ booking_time }}
+            </div>
+
+            <p>You can join the sacred session by clicking the button below:</p>
+            
+            <a href="{{ room_url }}" class="button">{% if role == 'pandit' %}Start Puja{% else %}Join Puja{% endif %}</a>
+
+            <p>Please ensure you have a stable internet connection and your camera/microphone are working correctly.</p>
+        </div>
+        <div class="footer">
+            <p>May your puja be filled with peace and divine blessings.</p>
+            <p>&copy; 2026 PanditYatra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -160,7 +160,7 @@ export interface Booking {
     pandit: number; // or object
     pandit_name?: string; // helper for UI
     pandit_full_name?: string; // from serializer
-    status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED';
+    status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
     booking_date: string;
     booking_time?: string;
     notes?: string;
@@ -168,6 +168,14 @@ export interface Booking {
     payment_status?: boolean;
     payment_method?: string;
     service_name?: string;
+
+    // Daily.co Integration
+    daily_room_url?: string;
+    daily_room_name?: string;
+    recording_url?: string;
+    recording_available?: boolean;
+    puja_start_time?: string;
+    puja_end_time?: string;
 }
 
 export async function fetchBookings(): Promise<Booking[]> {

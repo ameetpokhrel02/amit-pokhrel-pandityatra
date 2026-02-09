@@ -238,6 +238,7 @@ KHALTI_API_URL = os.environ.get('KHALTI_API_URL', 'https://khalti.com/api/v2')
 
 # Daily.co (for video calls)
 DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')
+DAILY_ENABLE_RECORDING = os.environ.get('DAILY_ENABLE_RECORDING', 'False').lower() in ('true', '1', 'yes', 'on')
 
 # Frontend URL (for payment redirects)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')

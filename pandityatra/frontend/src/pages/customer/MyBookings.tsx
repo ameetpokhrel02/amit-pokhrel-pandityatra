@@ -337,16 +337,27 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                       <Button
                         variant="outline"
                         className="border-orange-200 text-orange-600 hover:bg-orange-50"
-                        onClick={() => navigate(`/write-review/${booking.id}`)}
+                        onClick={() => navigate(`/booking/${booking.id}/review`)}
                       >
                         Write Review
                       </Button>
                     )}
 
                     {booking.status === 'ACCEPTED' && !booking.video_room_url && (
-                      <Button disabled variant="secondary" className="cursor-not-allowed opacity-70">
+                       <Button 
+                         variant="secondary" 
+                         className="border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100"
+                         onClick={async () => {
+                           try {
+                             await apiClient.post(`/video/generate-link/${booking.id}/`);
+                             window.location.reload();
+                           } catch (error) {
+                             console.error("Failed to generate link");
+                           }
+                         }}
+                       >
                         <Video className="h-4 w-4 mr-2" />
-                        Wait for Link
+                        Generate Link
                       </Button>
                     )}
                   </div>

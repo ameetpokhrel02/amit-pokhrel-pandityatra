@@ -15,7 +15,7 @@ from adminpanel.models import PaymentErrorLog
 from django.utils import timezone
 from .models import Payment, PaymentWebhook
 from .serializers import PaymentSerializer # 🆕 Added Serializer
-from video.utils import create_video_room
+from video.services.room_creator import ensure_video_room_for_booking
 from .utils import (
     convert_npr_to_usd, 
     convert_usd_to_npr,
@@ -322,13 +322,10 @@ class StripeWebhookView(APIView):
             
             # Create video room for online puja
             if booking.service_location == 'ONLINE':
-                room_url = create_video_room(
-                    booking.id,
-                    booking.booking_date,
-                    booking.service_name
-                )
-                if room_url:
-                    booking.video_room_url = room_url
+                try:
+                    ensure_video_room_for_booking(booking)
+                except Exception as e:
+                    logger.error(f"Failed to create video room: {e}")
             
             booking.save()
             
@@ -396,13 +393,10 @@ class KhaltiVerifyView(APIView):
             
             # Create video room for online puja
             if booking.service_location == 'ONLINE':
-                room_url = create_video_room(
-                    booking.id,
-                    booking.booking_date,
-                    booking.service_name
-                )
-                if room_url:
-                    booking.video_room_url = room_url
+                try:
+                    ensure_video_room_for_booking(booking)
+                except Exception as e:
+                    logger.error(f"Failed to create video room: {e}")
             
             booking.save()
             

@@ -76,8 +76,18 @@ class Booking(models.Model):
     payment_status = models.BooleanField(default=False) # True if payment is confirmed
     payment_method = models.CharField(max_length=50, blank=True, null=True) # Khalti, Stripe, etc.
     transaction_id = models.CharField(max_length=100, blank=True, null=True, help_text="Payment Gateway Transaction ID")
-    video_room_url = models.URLField(max_length=500, blank=True, null=True, help_text="Video call link for online puja")
+    
+    # Daily.co Integration Fields
+    daily_room_url = models.URLField(max_length=500, blank=True, null=True, help_text="Official Daily.co join URL")
+    daily_room_name = models.CharField(max_length=100, blank=True, null=True, help_text="Daily.co room name for webhooks")
+    
+    video_room_url = models.URLField(max_length=500, blank=True, null=True, help_text="Video call link for online puja (Legacy)") # Keep for compatibility if needed
     recording_url = models.URLField(max_length=500, blank=True, null=True, help_text="Recorded session URL (post-puja)")
+    recording_available = models.BooleanField(default=False)
+    
+    # Timestamps for Puja Duration
+    puja_start_time = models.DateTimeField(null=True, blank=True)
+    puja_end_time = models.DateTimeField(null=True, blank=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+
+        .header {
+            background-color: #4b5563;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #f97316;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .footer {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .recording-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .recording-img {
+            background-color: #f3f4f6;
+            padding: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PanditYatra Recording</h1>
+        </div>
+        <div class="content">
+            <h2>Namaste {{ user_name }},</h2>
+            <p>The recording for your session <strong>{{ puja_name }}</strong> is now processed and available for
+                viewing.</p>
+
+            <div class="recording-card">
+                <div class="recording-img">
+                    <img src="https://img.icons8.com/ios-filled/100/f97316/play--v1.png" alt="Play" width="60">
+                </div>
+                <div style="padding: 15px; text-align: center;">
+                    <strong>{{ puja_name }}</strong>
+                </div>
+            </div>
+
+            <p>You can view and download your recording by clicking the button below:</p>
+
+            <a href="{{ recording_url }}" class="button">View Recording</a>
+
+            <p>The recording will be available in your dashboard for the next 30 days.</p>
+        </div>
+        <div class="footer">
+            <p>Thank you for choosing PanditYatra for your spiritual journey.</p>
+            <p>&copy; 2026 PanditYatra. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+
+</html>

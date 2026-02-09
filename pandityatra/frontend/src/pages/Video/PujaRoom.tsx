@@ -2,15 +2,94 @@ import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { motion } from "framer-motion"
 import apiClient from "@/lib/api-client"
-import { DailyProvider } from "@daily-co/daily-react"
+import { DailyProvider, useParticipantIds, useLocalParticipant, useDaily } from "@daily-co/daily-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import ChatSidebar from "@/components/ChatSidebar"
+import VideoTile from "./VideoTile"
+import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff } from "lucide-react"
+
+// Component to handle the grid of videos
+const VideoGrid = () => {
+    const daily = useDaily();
+    const localParticipantId = useLocalParticipant()?.session_id;
+    const remoteParticipantIds = useParticipantIds({ filter: 'remote' });
+    const [muted, setMuted] = useState(false);
+    const [videoOff, setVideoOff] = useState(false);
+
+    const toggleAudio = () => {
+        if(daily) {
+            daily.setLocalAudio(!muted);
+            setMuted(!muted);
+        }
+    };
+
+    const toggleVideo = () => {
+        if(daily) {
+            daily.setLocalVideo(!videoOff);
+            setVideoOff(!videoOff);
+        }
+    };
+
+    const leaveCall = () => {
+        if(daily) daily.leave();
+    };
+
+    return (
+        <div className="relative w-full h-full bg-slate-900 flex items-center justify-center">
+             {/* Remote Participants (Main View) */}
+             {remoteParticipantIds.length > 0 ? (
+                 remoteParticipantIds.map(id => (
+                     <VideoTile key={id} id={id} />
+                 ))
+             ) : (
+                <div className="text-center text-slate-400">
+                    <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-orange-500" />
+                    <p>Waiting for the Pandit to join...</p>
+                </div>
+             )}
+
+             {/* Local Participant (PIP) */}
+             {localParticipantId && (
+                 <VideoTile id={localParticipantId} isLocal />
+             )}
+
+             {/* Controls */}
+             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 bg-black/20 backdrop-blur-md p-2 rounded-full border border-white/10">
+                <Button 
+                    variant={muted ? "destructive" : "secondary"} 
+                    size="icon" 
+                    className="rounded-full"
+                    onClick={toggleAudio}
+                >
+                    {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+                <Button 
+                    variant={videoOff ? "destructive" : "secondary"} 
+                    size="icon" 
+                    className="rounded-full"
+                    onClick={toggleVideo}
+                >
+                    {videoOff ? <VideoOff className="h-4 w-4" /> : <Video className="h-4 w-4" />}
+                </Button>
+                <Button 
+                    variant="destructive" 
+                    size="icon" 
+                    className="rounded-full"
+                    onClick={leaveCall}
+                >
+                    <PhoneOff className="h-4 w-4" />
+                </Button>
+             </div>
+        </div>
+    );
+};
 
 export default function PujaRoom() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [roomUrl, setRoomUrl] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -18,10 +97,12 @@ export default function PujaRoom() {
     setLoading(true)
     setError(null)
     if (id) {
-      apiClient.get(`/video/room/${id}/`).then((response) => {
-        setRoomUrl(response.data.room_url || response.data.room_name)
+      apiClient.post(`/video/create-token/`, { booking_id: id }).then((response) => {
+        setRoomUrl(response.data.room_url)
+        setToken(response.data.token)
         setLoading(false)
       }).catch(err => {
+        console.error(err);
         setError("Unable to connect to the video provider. Please check your connection or try again later.")
         setLoading(false)
       })
@@ -34,7 +115,7 @@ export default function PujaRoom() {
   }, [id])
 
   if (loading) {
-    return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold">Connecting to Sacred Space...</div>
+    return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold gap-2"><Loader2 className="animate-spin" /> Connecting to Sacred Space...</div>
   }
 
   if (error) {
@@ -54,10 +135,10 @@ export default function PujaRoom() {
     )
   }
 
-  if (!roomUrl) return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold">Connecting to Sacred Space...</div>
+  if (!roomUrl || !token) return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold">Connecting to Sacred Space...</div>
 
   return (
-    <DailyProvider url={roomUrl}>
+    <DailyProvider url={roomUrl} token={token}>
       <motion.div
         className="min-h-screen flex flex-col lg:flex-row bg-background overflow-y-auto lg:overflow-hidden"
         initial={{ opacity: 0 }}
@@ -66,25 +147,7 @@ export default function PujaRoom() {
         {/* Video Area */}
         <div className="w-full lg:w-[70%] aspect-video lg:h-full p-4 bg-black">
           <Card className="h-full bg-slate-900 overflow-hidden relative border-none">
-            {/* The DailyProvider handles the underlying call. 
-                 In a full impl, we'd use useParticipant hooks to render specific streams.
-                 For this flow, we'll assume the frame is active. */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-orange-500 rounded-full animate-pulse mb-4 mx-auto flex items-center justify-center">
-                  <span className="text-white text-4xl">🕉️</span>
-                </div>
-                <p className="text-white text-lg font-medium">Sacred Video Feed Active</p>
-                <p className="text-gray-400 text-sm">Ramesh Shastri Ji (Pandit) Joined</p>
-              </div>
-            </div>
-
-            {/* Overlay Controls */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4">
-              <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-white text-sm">
-                Meeting ID: {id}
-              </div>
-            </div>
+             <VideoGrid />
           </Card>
         </div>
 
