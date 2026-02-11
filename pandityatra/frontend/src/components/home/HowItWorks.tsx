@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +38,7 @@ interface Step {
 }
 
 const HowItWorks: React.FC = () => {
+  const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(1);
   const { scrollYProgress } = useScroll();
   const y1 = useTransform(scrollYProgress, [0, 1], [0, 50]);
@@ -44,40 +46,40 @@ const HowItWorks: React.FC = () => {
   const steps: Step[] = [
     {
       id: 1,
-      title: "Choose Pandit & Puja",
-      description: "Select your preferred pandit and ceremony type from our verified experts",
+      title: t('how_it_works_steps.step1_title', 'Choose Pandit & Puja'),
+      description: t('how_it_works_steps.step1_desc', 'Select your preferred pandit and ceremony type from our verified experts'),
       icon: <FaUserCheck className="h-6 w-6" />,
-      details: ["Browse 500+ verified pandits", "Filter by location, language & expertise"],
+      details: [t('how_it_works_steps.step1_detail1', 'Browse 500+ verified pandits'), t('how_it_works_steps.step1_detail2', 'Filter by location, language & expertise')],
       color: "text-blue-600",
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200"
     },
     {
       id: 2,
-      title: "Select Date & Samagri",
-      description: "Pick your preferred date and samagri package",
+      title: t('how_it_works_steps.step2_title', 'Select Date & Samagri'),
+      description: t('how_it_works_steps.step2_desc', 'Pick your preferred date and samagri package'),
       icon: <FaCalendarAlt className="h-6 w-6" />,
-      details: ["Choose convenient date & time", "Select samagri package or customize"],
+      details: [t('how_it_works_steps.step2_detail1', 'Choose convenient date & time'), t('how_it_works_steps.step2_detail2', 'Select samagri package or customize')],
       color: "text-green-600",
       bgColor: "bg-green-50",
       borderColor: "border-green-200"
     },
     {
       id: 3,
-      title: "Join Live Video Puja",
-      description: "Participate in your ceremony via high-quality video call",
+      title: t('how_it_works_steps.step3_title', 'Join Live Video Puja'),
+      description: t('how_it_works_steps.step3_desc', 'Participate in your ceremony via high-quality video call'),
       icon: <FaVideo className="h-6 w-6" />,
-      details: ["HD video call with your pandit", "Real-time interaction and guidance"],
+      details: [t('how_it_works_steps.step3_detail1', 'HD video call with your pandit'), t('how_it_works_steps.step3_detail2', 'Real-time interaction and guidance')],
       color: "text-purple-600",
       bgColor: "bg-purple-50",
       borderColor: "border-purple-200"
     },
     {
       id: 4,
-      title: "Receive Recording",
-      description: "Get your puja recording and Kundali report",
+      title: t('how_it_works_steps.step4_title', 'Receive Recording'),
+      description: t('how_it_works_steps.step4_desc', 'Get your puja recording and Kundali report'),
       icon: <FaDownload className="h-6 w-6" />,
-      details: ["Download HD puja recording", "Receive detailed Kundali report"],
+      details: [t('how_it_works_steps.step4_detail1', 'Download HD puja recording'), t('how_it_works_steps.step4_detail2', 'Receive detailed Kundali report')],
       color: "text-orange-600",
       bgColor: "bg-orange-50",
       borderColor: "border-orange-200"
@@ -127,7 +129,7 @@ const HowItWorks: React.FC = () => {
             className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4"
           >
             <GiPrayerBeads className="h-4 w-4 text-orange-500 animate-spin-slow" />
-            <span className="text-orange-700 text-sm font-medium">Simple 4-Step Process</span>
+            <span className="text-orange-700 text-sm font-medium">{t('process_subtitle', 'Simple 4-Step Process')}</span>
           </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -136,10 +138,10 @@ const HowItWorks: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent"
           >
-            How It Works
+            {t('how_it_works', 'How It Works')}
           </motion.h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Experience authentic puja ceremonies from comfort of your home
+            {t('how_it_works_desc', 'Experience authentic puja ceremonies from comfort of your home')}
           </p>
         </div>
 
@@ -249,9 +251,9 @@ const HowItWorks: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-1">
                 <div className="bg-green-100 p-1.5 rounded-full"><FaVideo className="text-green-600 w-3 h-3" /></div>
-                <span className="font-bold text-xs">Live Interaction</span>
+                <span className="font-bold text-xs">{t('live_interaction', 'Live Interaction')}</span>
               </div>
-              <p className="text-[10px] text-gray-500">Connect face-to-face with Pandits</p>
+              <p className="text-[10px] text-gray-500">{t('live_interaction_desc', 'Connect face-to-face with Pandits')}</p>
             </motion.div>
 
             <motion.div
@@ -261,9 +263,9 @@ const HowItWorks: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-1">
                 <div className="bg-purple-100 p-1.5 rounded-full"><GiScrollUnfurled className="text-purple-600 w-3 h-3" /></div>
-                <span className="font-bold text-xs">Digital Kundali</span>
+                <span className="font-bold text-xs">{t('digital_kundali', 'Digital Kundali')}</span>
               </div>
-              <p className="text-[10px] text-gray-500">Get detailed reports instantly</p>
+              <p className="text-[10px] text-gray-500">{t('digital_kundali_desc', 'Get detailed reports instantly')}</p>
             </motion.div>
           </div>
 
@@ -272,7 +274,7 @@ const HowItWorks: React.FC = () => {
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
           <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-            Start Your Spiritual Journey
+            {t('start_journey', 'Start Your Spiritual Journey')}
           </Button>
         </div>
       </div>

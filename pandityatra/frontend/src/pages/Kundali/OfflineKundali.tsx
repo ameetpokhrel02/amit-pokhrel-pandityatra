@@ -8,15 +8,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner, FaHistory } from 'react-icons/fa';
-import { ChevronRightIcon } from 'lucide-react';
+import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner, FaHistory, FaMap } from 'react-icons/fa';
+import { ChevronRightIcon, MapPin } from 'lucide-react';
 import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
 import { useLocation as useGeoLocation } from '@/hooks/useLocation';
 import { useEffect as useNetworkEffect, useState as useNetworkState } from 'react';
 import * as Astronomy from 'astronomy-engine';
 import { DualDatePicker } from '@/components/ui/dual-date-picker';
+import MapPicker from '@/components/kundali/MapPicker';
 
 // Helpers
 const getZodiacSign = (longitude: number) => {
@@ -83,6 +84,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
   const [result, setResult] = useState<any>(null);
   const [pdfSyncStatus, setPdfSyncStatus] = useState<'idle' | 'queued' | 'synced'>('idle');
   const [queuedPDF, setQueuedPDF] = useState<any>(null);
+  const [isMapOpen, setIsMapOpen] = useState(false);
 
   const formData = initialData;
 
@@ -114,8 +116,8 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
         const payload = {
           dob: `${formData.year}-${formData.month}-${formData.day}`,
           time: `${formData.hour}:${formData.minute}`,
-          latitude: latitude || 27.7172,
-          longitude: longitude || 85.3240,
+          latitude: formData.latitude || latitude || 27.7172,
+          longitude: formData.longitude || longitude || 85.3240,
           timezone: 'Asia/Kathmandu'
         };
         const data = await generateKundali(payload);
@@ -143,7 +145,9 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
     // 2. OFFLINE MODE (Fallback or Primary)
     try {
       const date = new Date(parseInt(formData.year), parseInt(formData.month) - 1, parseInt(formData.day), parseInt(formData.hour), parseInt(formData.minute));
-      const observer = new Astronomy.Observer(latitude || 27.7172, longitude || 85.3240, 1350);
+      const finalLat = formData.latitude || latitude || 27.7172;
+      const finalLng = formData.longitude || longitude || 85.3240;
+      const observer = new Astronomy.Observer(finalLat, finalLng, 1350);
       const bodies = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune"];
 
       const planetsData = bodies.map(bodyName => {
@@ -225,7 +229,48 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
         </div>
         <div className="space-y-2">
           <Label>Place</Label>
-          <Input value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} placeholder="City" />
+          <div className="flex gap-2">
+            <Input value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} placeholder="City" className="flex-1" />
+            <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50">
+                  <MapPin className="w-4 h-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[600px] bg-white">
+                <DialogHeader>
+                  <DialogTitle>Select Birth Location</DialogTitle>
+                  <DialogDescription>
+                    Pinpoint your exact birth place for accurate astrological calculations.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <MapPicker
+                    initialLat={formData.latitude || latitude || 27.7172}
+                    initialLng={formData.longitude || longitude || 85.3240}
+                    initialAddress={formData.place}
+                    onLocationSelect={(loc) => {
+                      setFormData({
+                        ...formData,
+                        place: loc.address,
+                        latitude: loc.lat,
+                        longitude: loc.lng
+                      });
+                    }}
+                  />
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setIsMapOpen(false)} className="bg-[#FF6F00] text-white">Done</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+          {(formData.latitude || formData.longitude) && (
+            <div className="flex gap-4 text-[10px] text-gray-500 font-medium px-1">
+              <span>Lat: {Number(formData.latitude).toFixed(4)}</span>
+              <span>Lng: {Number(formData.longitude).toFixed(4)}</span>
+            </div>
+          )}
         </div>
 
         <Button onClick={generateChart} disabled={loading} className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white">
@@ -344,7 +389,9 @@ const OfflineKundali: React.FC = () => {
     year: '',
     hour: '',
     minute: '',
-    place: ''
+    place: '',
+    latitude: null as number | null,
+    longitude: null as number | null
   });
 
   const handleLoadChart = (chart: any) => {
@@ -359,7 +406,9 @@ const OfflineKundali: React.FC = () => {
       year: dobDate.getFullYear().toString(),
       hour: timeParts[0],
       minute: timeParts[1],
-      place: chart.place
+      place: chart.place,
+      latitude: chart.latitude,
+      longitude: chart.longitude
     }));
     setActiveTab("generator");
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -414,7 +463,8 @@ const OfflineKundali: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow pt-32 bg-[#F5F5F5] p-4 md:p-8">
+      <main className="flex-grow pt-40 bg-[#F5F5F5] p-4 md:p-8">
+        <div className="h-4 md:h-8" /> {/* Spacer for navbar clearance */}
         <div className="max-w-4xl mx-auto mb-8 text-center pt-8">
           <h1 className="text-3xl md:text-4xl font-bold text-[#3E2723] mb-2 flex items-center justify-center gap-3">
             <GiSolarSystem className="text-[#FF6F00]" /> Offline Kundali Generator

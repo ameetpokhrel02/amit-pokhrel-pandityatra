@@ -34,9 +34,12 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import logo from '@/assets/images/PanditYatralogo.png';
-import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown } from 'lucide-react';
+import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { usePWA } from '@/hooks/usePWA';
+import MegaMenu from './MegaMenu';
+import { fetchSamagriCategories, type SamagriCategory as CategoryType } from '@/lib/api';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
@@ -50,6 +53,20 @@ const Navbar: React.FC = () => {
   const { isInstallable, installPWA } = usePWA();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState<CategoryType[]>([]);
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchSamagriCategories();
+        setCategories(data);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+      }
+    };
+    loadCategories();
+  }, []);
 
   const performSearch = (query: string) => {
     if (!query.trim()) return;
@@ -87,7 +104,12 @@ const Navbar: React.FC = () => {
     { name: t('home'), path: '/', icon: <Home className="w-4 h-4" /> },
     { name: t('about'), path: '/about', icon: <User className="w-4 h-4" /> },
     { name: 'Offline Kundali', path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
-    { name: t('shop'), path: '/shop/samagri', icon: <ShoppingBagIcon /> },
+    {
+      name: t('shop'),
+      path: '/shop/samagri',
+      icon: <ShoppingBagIcon />,
+      hasMegaMenu: true
+    },
     { name: t('contact'), path: '/contact', icon: <User className="w-4 h-4" /> },
   ];
 
@@ -204,30 +226,53 @@ const Navbar: React.FC = () => {
           {/* Right: Actions */}
           <div className="hidden lg:flex items-center gap-3">
             {/* Common Text Links */}
-            <AnimatePresence>
-              {!isSearchExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  className="flex items-center gap-3"
-                >
-                  {navItems.map(item => (
+            {!isSearchExpanded && (
+              <div
+                className="relative flex items-center gap-1"
+                onMouseLeave={() => setIsMegaMenuOpen(false)}
+              >
+                {navItems.map(item => (
+                  <div
+                    key={item.path}
+                    className="relative py-2" // Added padding to increase hover area
+                    onMouseEnter={() => {
+                      if (item.hasMegaMenu) {
+                        setIsMegaMenuOpen(true);
+                      } else {
+                        setIsMegaMenuOpen(false);
+                      }
+                    }}
+                  >
                     <Link
-                      key={item.path}
                       to={item.path}
-                      className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-full transition-colors ${isActive(item.path)
+                      className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 ${isActive(item.path)
                         ? 'text-orange-600 bg-orange-50'
                         : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
                         }`}
                     >
                       {item.icon}
                       <span>{item.name}</span>
+                      {item.hasMegaMenu && <ChevronDown className={`w-3 h-3 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />}
                     </Link>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </div>
+                ))}
+
+                <AnimatePresence>
+                  {isMegaMenuOpen && (
+                    <div
+                      className="absolute top-full right-0 mt-0 pt-2 z-50"
+                      onMouseEnter={() => setIsMegaMenuOpen(true)}
+                    >
+                      <MegaMenu
+                        categories={categories.filter(c => c.is_active)}
+                        isOpen={isMegaMenuOpen}
+                        onClose={() => setIsMegaMenuOpen(false)}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
 
             <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
               <Link to="/booking">{t('find_pandit')}</Link>
@@ -386,30 +431,57 @@ const Navbar: React.FC = () => {
 
                     <nav className="flex flex-col gap-1">
                       {navItems.map(item => (
-                        <Link
-                          key={item.path}
-                          to={item.path}
-                          className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${isActive(item.path)
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'text-gray-600 hover:bg-orange-50'
-                            }`}
-                        >
-                          <span className="text-orange-500">{item.icon}</span>
-                          {item.name}
-                        </Link>
+                        <React.Fragment key={item.path}>
+                          <Link
+                            to={item.path}
+                            className={`flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-semibold transition-all ${isActive(item.path)
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'text-gray-600 hover:bg-orange-50'
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-orange-500">{item.icon}</span>
+                              {item.name}
+                            </div>
+                            {item.hasMegaMenu && <ChevronDown className="w-4 h-4 text-gray-400" />}
+                          </Link>
+
+                          {/* Mobile Submenu for Shop */}
+                          {item.hasMegaMenu && (
+                            <div className="grid grid-cols-2 gap-3 px-2 py-3 mt-1 mb-4 bg-orange-50/20 rounded-2xl border border-orange-100/30">
+                              {categories.filter(c => c.is_active).map(cat => {
+                                const IconComp = (LucideIcons as any)[cat.icon || 'Flower2'] || LucideIcons.Flower2;
+                                return (
+                                  <Link
+                                    key={cat.id}
+                                    to={`/shop/samagri?category=${cat.slug}`}
+                                    className="flex flex-col items-center justify-center p-4 rounded-xl bg-white dark:bg-gray-800 border border-orange-100 shadow-sm transition-all hover:bg-orange-50 active:scale-95 group"
+                                  >
+                                    <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                                      <IconComp className="w-6 h-6 text-orange-600" />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 text-center uppercase tracking-tight line-clamp-1">
+                                      {t(`categories.${cat.slug}.name`, cat.name)}
+                                    </span>
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </React.Fragment>
                       ))}
                     </nav>
 
                     <Button asChild className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg shadow-orange-200 font-bold">
                       <Link to="/booking" className="flex items-center justify-center gap-2">
                         <User className="w-4 h-4" />
-                        Find My Pandit
+                        {t('find_my_pandit', 'Find My Pandit')}
                       </Link>
                     </Button>
 
                     {token && user ? (
                       <div className="border-t border-orange-100 pt-6 mt-2 space-y-4">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">Account Portal</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">{t('account_portal', 'Account Portal')}</p>
                         <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                           <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
                             <AvatarImage src={user.profile_image} />

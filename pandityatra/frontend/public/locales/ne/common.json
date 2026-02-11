@@ -44,6 +44,39 @@
   "features": {
     "verified_pandits": "प्रमाणित पण्डितहरू",
     "secure_payments": "सुरक्षित भुक्तानी",
-    "live_streaming": "लाइभ स्ट्रिमिङ"
-  }
+    "live_streaming": "लाइव स्ट्रिमिङ"
+  },
+  "categories": {
+    "agarbatti": {
+      "name": "अगरबत्ती",
+      "desc": "पवित्र वातावरणका लागि प्रिमियम अगरबत्ती र धूप।"
+    },
+    "attar": {
+      "name": "अत्तर",
+      "desc": "धार्मिक अनुष्ठानका लागि उत्तम परम्परागत सुगन्धहरू।"
+    },
+    "books": {
+      "name": "पुस्तकहरू",
+      "desc": "वैदिक शास्त्र, पूजा विधि र आध्यात्मिक साहित्य।"
+    },
+    "brass-murti": {
+      "name": "पित्तलको मूर्ति",
+      "desc": "पित्तल र तामामा सुन्दर ढंगले कोरिएका देव मूर्तिहरू।"
+    }
+  },
+  "rituals": {
+    "Ganesh Puja": "गणेश पूजा",
+    "Lakshmi Puja": "लक्ष्मी पूजा",
+    "Saraswati Puja": "सरस्वती पूजा",
+    "Durga Puja": "दुर्गा पूजा",
+    "Griha Pravesh": "गृह प्रवेश",
+    "Marriage Ceremony": "विवाह समारोह",
+    "Naming Ceremony": "न्वारन",
+    "Thread Ceremony": "ब्रतबन्ध"
+  },
+  "shop_by_category": "श्रेणी अनुसार किनमेल गर्नुहोस्",
+  "explore_all": "सबै वस्तुहरू हेर्नुहोस्",
+  "featured": "विशेष",
+  "next_day_delivery": "अर्को दिन डेलिभरी",
+  "spiritual_purity": "१००% आध्यात्मिक शुद्धता"
 }

@@ -144,7 +144,7 @@ const PujaCategories: React.FC = () => {
 
                           <div className="text-left">
                             <h3 className="text-2xl font-bold font-playfair leading-tight group-hover:text-amber-200 transition-colors mb-2">
-                              {puja.name}
+                              {t(`rituals.${puja.name}`, puja.name)}
                             </h3>
                             <p className="text-white/80 text-sm line-clamp-3 leading-relaxed font-medium">
                               {puja.description}
@@ -156,7 +156,7 @@ const PujaCategories: React.FC = () => {
                           <div className="flex justify-between items-center border-t border-white/20 pt-6">
                             <div className="text-left">
                               <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-0.5">{t('starting_from')}</p>
-                              <p className="text-3xl font-black text-white">₹{Math.round(puja.base_price)}</p>
+                              <p className="text-3xl font-black text-white">₹{Math.round(parseFloat(puja.base_price))}</p>
                             </div>
                             <div className="text-right">
                               <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-0.5">{t('duration')}</p>

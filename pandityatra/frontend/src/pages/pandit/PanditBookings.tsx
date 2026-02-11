@@ -15,6 +15,7 @@ interface Booking {
   status: string;
   user_full_name: string;
   video_room_url?: string;
+  daily_room_url?: string;
 }
 
 const PanditBookings = () => {
@@ -81,15 +82,35 @@ const PanditBookings = () => {
                       </Button>
                     </>
                   )}
-                  {booking.status === 'ACCEPTED' && booking.video_room_url && (
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => window.open(booking.video_room_url, '_blank')}>
-                      <Video className="w-4 h-4 mr-1" /> Join Live Puja
+                  {booking.status === 'ACCEPTED' && (booking.daily_room_url || booking.video_room_url) && (
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}>
+                      <Video className="w-4 h-4 mr-1" /> Start Puja
                     </Button>
                   )}
                   {booking.status === 'ACCEPTED' && (
-                    <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}>
-                      Mark Completed
-                    </Button>
+                    <div className="flex gap-2">
+                      {!(booking.daily_room_url || booking.video_room_url) && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200"
+                          onClick={async () => {
+                            try {
+                              await apiClient.post(`/video/generate-link/${booking.id}/`);
+                              toast({ title: "Room generated successfully" });
+                              fetchBookings();
+                            } catch (error) {
+                              toast({ title: "Failed to generate link", variant: "destructive" });
+                            }
+                          }}
+                        >
+                          <Video className="w-4 h-4 mr-1" /> Generate Link
+                        </Button>
+                      )}
+                      <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}>
+                        Mark Completed
+                      </Button>
+                    </div>
                   )}
                 </div>
               </CardContent>

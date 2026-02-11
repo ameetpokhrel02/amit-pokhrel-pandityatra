@@ -271,7 +271,7 @@ const PanditDashboard = () => {
                                                 {t('mark_completed')}
                                             </Button>
                                             {nextPuja.videoLink && (
-                                                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => window.open(nextPuja.videoLink, '_blank')}>
+                                                <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => window.open(nextPuja.videoLink, '_blank')}>
                                                     <Video className="h-4 w-4" />
                                                     {t('join_video')}
                                                 </Button>

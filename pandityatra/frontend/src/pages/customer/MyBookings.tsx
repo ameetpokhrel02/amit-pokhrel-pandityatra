@@ -31,6 +31,10 @@ interface Booking {
   notes?: string;
   created_at: string;
   video_room_url?: string;
+  daily_room_url?: string;
+  daily_room_name?: string;
+  recording_available?: boolean;
+  recording_url?: string;
   pandit_id: number;
 }
 
@@ -307,10 +311,10 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                       </Button>
                     )}
                     {/* VIDEO CALL BUTTON */}
-                    {booking.status === 'ACCEPTED' && booking.video_room_url && (
+                    {booking.status === 'ACCEPTED' && (booking.daily_room_url || booking.video_room_url) && (
                       <Button
-                        onClick={() => window.open(booking.video_room_url, '_blank')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2"
+                        onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}
+                        className="bg-[#f97316] hover:bg-[#ea580c] text-white gap-2"
                       >
                         <Video className="h-4 w-4" />
                         Join Live Puja
@@ -343,19 +347,19 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                       </Button>
                     )}
 
-                    {booking.status === 'ACCEPTED' && !booking.video_room_url && (
-                       <Button 
-                         variant="secondary" 
-                         className="border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100"
-                         onClick={async () => {
-                           try {
-                             await apiClient.post(`/video/generate-link/${booking.id}/`);
-                             window.location.reload();
-                           } catch (error) {
-                             console.error("Failed to generate link");
-                           }
-                         }}
-                       >
+                    {booking.status === 'ACCEPTED' && !(booking.daily_room_url || booking.video_room_url) && (
+                      <Button
+                        variant="secondary"
+                        className="border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100"
+                        onClick={async () => {
+                          try {
+                            await apiClient.post(`/video/generate-link/${booking.id}/`);
+                            window.location.reload();
+                          } catch (error) {
+                            console.error("Failed to generate link");
+                          }
+                        }}
+                      >
                         <Video className="h-4 w-4 mr-2" />
                         Generate Link
                       </Button>

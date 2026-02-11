@@ -6,8 +6,8 @@ from services.serializers import PujaSerializer
 class SamagriCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = SamagriCategory
-        fields = ['id', 'name', 'description']
-        read_only_fields = ['id']
+        fields = ['id', 'name', 'slug', 'description', 'image', 'icon', 'order', 'is_active']
+        read_only_fields = ['id', 'slug']
 
 # --- 2. Item Serializer ---
 class SamagriItemSerializer(serializers.ModelSerializer):

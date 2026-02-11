@@ -29,7 +29,7 @@ def ensure_video_room_for_booking(booking):
     # Update Booking with the new fields
     booking.daily_room_url = room_url
     booking.daily_room_name = room_name
-    booking.video_room_url = room_url # Legacy field sync
+    booking.video_room_url = room_url # Legacy support
     booking.save(update_fields=['daily_room_url', 'daily_room_name', 'video_room_url'])
 
     # TODO: Trigger Notifications here

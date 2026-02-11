@@ -2,8 +2,8 @@ import os
 from rest_framework import generics, permissions, status
 from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework import serializers 
-from .models import Puja
-from .serializers import PujaSerializer
+from .models import Puja, PujaCategory
+from .serializers import PujaSerializer, PujaCategorySerializer
 from .permissions import IsStaffOrReadOnly
 from pandits.models import Pandit # Need Pandit model for the nested view logic
 from rest_framework.views import APIView
@@ -30,6 +30,12 @@ class PujaListCreateView(generics.ListCreateAPIView):
             serializer.save()
         else:
              raise PermissionDenied("Only staff, administrators, and pandits can create general Puja listings.")
+
+
+class PujaCategoryListView(generics.ListAPIView):
+    queryset = PujaCategory.objects.all()
+    serializer_class = PujaCategorySerializer
+    permission_classes = [AllowAny]
 
 
 class PujaDetailView(generics.RetrieveUpdateDestroyAPIView):

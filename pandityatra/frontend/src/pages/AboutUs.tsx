@@ -13,35 +13,69 @@ const AboutUs: React.FC = () => {
             <Navbar />
             <div className="flex-1">
                 {/* Hero Section */}
-                <section className="relative h-[60vh] flex items-center justify-center overflow-hidden bg-orange-50">
+                <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-orange-50/50">
                     <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
-                    <div className="container px-4 text-center">
-                        <motion.h1
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6"
-                        >
-                            Bridge to <span className="text-orange-600">Divine</span> Connection
-                        </motion.h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.1 }}
-                            className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto mb-8"
-                        >
-                            PanditYatra simplifies your spiritual journey by connecting you with experienced pandits, sacred rituals, and authentic puja samagri.
-                        </motion.p>
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                        >
-                            <Link to="/shop/pujas">
-                                <Button size="lg" className="bg-orange-600 hover:bg-orange-700">
-                                    Explore Services
-                                </Button>
-                            </Link>
-                        </motion.div>
+
+                    {/* Background Decorative Map */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 50, rotate: 5 }}
+                        animate={{ opacity: 0.4, x: 0, rotate: -2 }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className="absolute right-[5%] top-1/2 -translate-y-1/2 w-[45%] pointer-events-none hidden lg:block"
+                    >
+                        <img src="/images/map_of_nepal.png" alt="Map of Nepal" className="w-full h-auto opacity-60" />
+                    </motion.div>
+
+                    <div className="container px-4">
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <div className="text-center lg:text-left">
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 mb-6"
+                                >
+                                    Bridge to <span className="text-orange-600">Divine</span> Connection
+                                </motion.h1>
+                                <motion.p
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="text-lg md:text-xl text-slate-600 max-w-2xl lg:mx-0 mx-auto mb-8"
+                                >
+                                    PanditYatra simplifies your spiritual journey by connecting you with experienced pandits, sacred rituals, and authentic puja samagri across the holy land of Nepal.
+                                </motion.p>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+                                >
+                                    <Link to="/shop/pujas">
+                                        <Button size="lg" className="bg-orange-600 hover:bg-orange-700 w-full sm:w-auto">
+                                            Explore Services
+                                        </Button>
+                                    </Link>
+                                    <Button variant="outline" size="lg" className="border-orange-600 text-orange-600 hover:bg-orange-50 w-full sm:w-auto" asChild>
+                                        <a href="#mission">Our Story</a>
+                                    </Button>
+                                </motion.div>
+                            </div>
+
+                            {/* Mobile/Tablet Map Illustration */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className="relative lg:hidden block"
+                            >
+                                <img
+                                    src="/images/map_of_nepal.png"
+                                    alt="PanditYatra Network"
+                                    className="w-full max-w-md mx-auto h-auto mix-blend-multiply opacity-80"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-orange-50 to-transparent" />
+                            </motion.div>
+                        </div>
                     </div>
                 </section>
 
@@ -147,35 +181,35 @@ const AboutUs: React.FC = () => {
                                 {
                                     name: 'Pashupatinath',
                                     location: 'Kathmandu, Nepal',
-                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Pashupatinath_Temple-2020.jpg/1200px-Pashupatinath_Temple-2020.jpg',
+                                    image: '/images/pashupatinath.png',
                                     link: 'https://pashupatinathtemple.org/',
-                                    description: 'Sacred Hindu temple on the banks of Bagmati River'
+                                    description: 'Sacred Hindu temple on the banks of Bagmati River - A UNESCO World Heritage Site.'
                                 },
                                 {
                                     name: 'Muktinath',
                                     location: 'Mustang, Nepal',
-                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Muktinath_Temple.jpg/1200px-Muktinath_Temple.jpg',
+                                    image: '/images/muktinath.png',
                                     link: 'https://www.muktinath.org.np/',
-                                    description: 'Sacred pilgrimage site at 3,710 meters altitude'
+                                    description: 'Sacred pilgrimage site at 3,710 meters altitude, holy to both Hindus and Buddhists.'
                                 },
                                 {
                                     name: 'Manakamana',
                                     location: 'Gorkha, Nepal',
-                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Manakamana_Temple.JPG/1200px-Manakamana_Temple.JPG',
+                                    image: '/images/manakamana.png',
                                     link: 'https://en.wikipedia.org/wiki/Manakamana_Temple',
-                                    description: 'Temple of the wish-fulfilling goddess'
+                                    description: 'Temple of the wish-fulfilling goddess, accessible by a scenic cable car.'
                                 },
                                 {
                                     name: 'Janaki Mandir',
                                     location: 'Janakpur, Nepal',
-                                    image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Janaki_Mandir.jpg/1200px-Janaki_Mandir.jpg',
+                                    image: '/images/janakpur.png',
                                     link: 'https://janakpurmun.gov.np/en/node/60',
-                                    description: 'Birthplace of Goddess Sita'
+                                    description: 'A magnificent white marble temple dedicated to Goddess Sita.'
                                 }
                             ].map((temple, i) => (
                                 <div key={i} className="group relative overflow-hidden rounded-xl aspect-[4/3] bg-slate-200 shadow-lg hover:shadow-xl transition-all">
-                                    <img 
-                                        src={temple.image} 
+                                    <img
+                                        src={temple.image}
                                         alt={temple.name}
                                         className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                         onError={(e) => {

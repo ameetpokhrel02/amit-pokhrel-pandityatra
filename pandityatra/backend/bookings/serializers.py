@@ -77,7 +77,8 @@ class BookingListSerializer(serializers.ModelSerializer):
             'service_name', 'service_location', 'booking_date', 'booking_time', 
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status',
             'payment_method',
-            'service_duration', 'created_at'
+            'service_duration', 'created_at',
+            'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = fields
 
@@ -104,7 +105,8 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'notes', 'samagri_required',
             'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'payment_method',
             'customer_timezone', 'customer_location',
-            'created_at', 'updated_at', 'accepted_at', 'completed_at'
+            'created_at', 'updated_at', 'accepted_at', 'completed_at',
+            'daily_room_url', 'daily_room_name', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = fields
 
@@ -129,6 +131,7 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'user_full_name', 'pandit', 'pandit_full_name', 
             'service_name', 'service_location', 'booking_date', 'booking_time', 
-            'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at'
+            'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at',
+            'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = ['id', 'user', 'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at']

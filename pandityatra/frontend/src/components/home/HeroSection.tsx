@@ -155,7 +155,11 @@ const HeroSection: React.FC = () => {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  {pujaTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {pujaTypes.map(pt => (
+                    <SelectItem key={pt} value={pt}>
+                      {t(`rituals.${pt}`, pt)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
 

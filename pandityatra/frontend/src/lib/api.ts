@@ -97,11 +97,28 @@ export async function fetchPandit(id: number): Promise<Pandit> {
 
 export interface Puja {
     id: number;
-    name: string; // Changed from title to name to match common convention, or use title if backend sends title
+    name: string;
+    category?: number;
+    category_details?: PujaCategory;
     description?: string;
-    base_price: number;
+    base_price: string;
     base_duration_minutes?: number;
     image?: string;
+}
+
+export interface PujaCategory {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    image?: string;
+    icon?: string;
+    order: number;
+}
+
+export async function fetchPujaCategories(): Promise<PujaCategory[]> {
+    const response = await apiClient.get('/services/categories/');
+    return response.data;
 }
 
 export async function fetchPanditServices(panditId: number): Promise<Puja[]> {
@@ -172,6 +189,7 @@ export interface Booking {
     // Daily.co Integration
     daily_room_url?: string;
     daily_room_name?: string;
+    video_room_url?: string;
     recording_url?: string;
     recording_available?: boolean;
     puja_start_time?: string;
@@ -336,17 +354,22 @@ export interface SamagriItem {
 export interface SamagriCategory {
     id: number;
     name: string;
+    slug: string;
     description?: string;
+    image?: string;
+    icon?: string;
+    order: number;
+    is_active: boolean;
+}
+
+export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
+    const response = await apiClient.get('/samagri/categories/');
+    return response.data.results || response.data;
 }
 
 export async function fetchSamagriItems(params?: any): Promise<SamagriItem[]> {
     const response = await apiClient.get('/samagri/items/', { params });
     // Handle pagination result if it exists (Django Rest Framework default)
-    return response.data.results || response.data;
-}
-
-export async function fetchSamagriCategories(): Promise<SamagriCategory[]> {
-    const response = await apiClient.get('/samagri/categories/');
     return response.data.results || response.data;
 }
 

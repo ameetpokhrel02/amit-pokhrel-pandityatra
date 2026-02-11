@@ -128,7 +128,7 @@ const CustomerDashboard: React.FC = () => {
                         </div>
 
                         <div className="flex gap-2">
-                          {nextBooking.video_room_url && (
+                          {(nextBooking.daily_room_url || nextBooking.video_room_url) && (
                             <Button
                               onClick={() =>
                                 navigate(`/puja-room/${nextBooking.id}`)
