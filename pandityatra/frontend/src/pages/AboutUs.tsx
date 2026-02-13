@@ -13,17 +13,17 @@ const AboutUs: React.FC = () => {
             <Navbar />
             <div className="flex-1">
                 {/* Hero Section */}
-                <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-orange-50/50">
+                <section className="relative min-h-[60vh] lg:min-h-[80vh] flex items-center overflow-hidden bg-orange-50/50 py-12 lg:py-0">
                     <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
-                    {/* Background Decorative Map */}
+                    {/* Background Decorative Map (Desktop) */}
                     <motion.div
                         initial={{ opacity: 0, x: 50, rotate: 5 }}
-                        animate={{ opacity: 0.4, x: 0, rotate: -2 }}
+                        animate={{ opacity: 0.3, x: 0, rotate: -2 }}
                         transition={{ duration: 1.5, ease: "easeOut" }}
-                        className="absolute right-[5%] top-1/2 -translate-y-1/2 w-[45%] pointer-events-none hidden lg:block"
+                        className="absolute right-[-5%] top-1/2 -translate-y-1/2 w-[50%] pointer-events-none hidden lg:block overflow-hidden"
                     >
-                        <img src="/images/map_of_nepal.png" alt="Map of Nepal" className="w-full h-auto opacity-60" />
+                        <img src="/images/map_of_nepal.png" alt="Map of Nepal" className="w-full h-auto opacity-50 contrast-125" />
                     </motion.div>
 
                     <div className="container px-4">
@@ -40,7 +40,7 @@ const AboutUs: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: 0.1 }}
-                                    className="text-lg md:text-xl text-slate-600 max-w-2xl lg:mx-0 mx-auto mb-8"
+                                    className="text-lg md:text-xl text-slate-600 max-w-2xl lg:mx-0 mx-auto mb-10 px-4 lg:px-0"
                                 >
                                     PanditYatra simplifies your spiritual journey by connecting you with experienced pandits, sacred rituals, and authentic puja samagri across the holy land of Nepal.
                                 </motion.p>
@@ -66,14 +66,16 @@ const AboutUs: React.FC = () => {
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.3 }}
-                                className="relative lg:hidden block"
+                                className="relative lg:hidden block px-6"
                             >
-                                <img
-                                    src="/images/map_of_nepal.png"
-                                    alt="PanditYatra Network"
-                                    className="w-full max-w-md mx-auto h-auto mix-blend-multiply opacity-80"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-orange-50 to-transparent" />
+                                <div className="max-w-[280px] mx-auto relative">
+                                    <img
+                                        src="/images/map_of_nepal.png"
+                                        alt="PanditYatra Network"
+                                        className="w-full h-auto mix-blend-multiply opacity-60 drop-shadow-2xl"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-orange-50/80 to-transparent pointer-events-none" />
+                                </div>
                             </motion.div>
                         </div>
                     </div>

@@ -62,16 +62,16 @@ export default function AdminPandits() {
     };
 
     const filteredPandits = pandits.filter(p =>
-        p.user_details.full_name.toLowerCase().includes(search.toLowerCase()) ||
-        p.language.toLowerCase().includes(search.toLowerCase())
+        (p.user_details?.full_name?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (p.language?.toLowerCase() || "").includes(search.toLowerCase())
     );
 
     const handleEdit = (pandit: Pandit) => {
         setEditId(pandit.id);
         setEditForm({
-            full_name: pandit.user_details.full_name,
+            full_name: pandit.user_details?.full_name || "",
             experience_years: String(pandit.experience_years),
-            language: pandit.language
+            language: pandit.language || ""
         });
     };
 
@@ -105,7 +105,7 @@ export default function AdminPandits() {
     };
 
     const handleApprove = async (pandit: Pandit) => {
-        if (!confirm(`Are you sure you want to approve ${pandit.user_details.full_name}?`)) return;
+        if (!confirm(`Are you sure you want to approve ${pandit.user_details?.full_name || "this pandit"}?`)) return;
 
         try {
             await verifyPandit(pandit.id);
@@ -144,7 +144,7 @@ export default function AdminPandits() {
             await rejectPandit(selectedPandit.id, rejectReason);
             toast({
                 title: "Pandit Rejected",
-                description: `${selectedPandit.user_details.full_name} has been rejected.`,
+                description: `${selectedPandit.user_details?.full_name || "Pandit"} has been rejected.`,
             });
             setRejectDialogOpen(false);
             loadPandits();
@@ -203,14 +203,14 @@ export default function AdminPandits() {
                                             <TableRow key={pandit.id}>
                                                 <TableCell className="flex items-center gap-2">
                                                     <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={pandit.user_details.profile_pic_url || ""} />
-                                                        <AvatarFallback>{pandit.user_details.full_name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                                        <AvatarImage src={pandit.user_details?.profile_pic_url || ""} />
+                                                        <AvatarFallback>{(pandit.user_details?.full_name || "??").substring(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div>
                                                         {editId === pandit.id ? (
                                                             <input name="full_name" value={editForm.full_name} onChange={handleEditChange} className="p-1 border rounded" />
-                                                        ) : <div className="font-medium">{pandit.user_details.full_name}</div>}
-                                                        <div className="text-xs text-muted-foreground">{pandit.user_details.email}</div>
+                                                        ) : <div className="font-medium">{pandit.user_details?.full_name}</div>}
+                                                        <div className="text-xs text-muted-foreground">{pandit.user_details?.email}</div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
@@ -290,7 +290,7 @@ export default function AdminPandits() {
                             <DialogTitle>Reject Application</DialogTitle>
                             <DialogDescription>
                                 Please provide a reason for rejecting the verification request for{' '}
-                                <span className="font-semibold">{selectedPandit?.user_details.full_name}</span>.
+                                <span className="font-semibold">{selectedPandit?.user_details?.full_name || "this pandit"}</span>.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
