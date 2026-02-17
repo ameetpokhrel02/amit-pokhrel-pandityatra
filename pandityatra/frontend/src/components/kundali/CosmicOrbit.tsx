@@ -58,8 +58,6 @@ const CosmicOrbit: React.FC = () => {
     return (
         <div
             className="relative w-full min-h-[500px] md:min-h-[650px] overflow-hidden bg-[#F5F5F5] flex items-center justify-center cursor-default select-none border-b border-orange-100 py-8 lg:py-0"
-            onMouseEnter={() => setIsPaused(true)}
-            onMouseLeave={() => setIsPaused(false)}
         >
             {/* Soft Cosmic Gradients for Light Mode */}
             <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
@@ -102,9 +100,13 @@ const CosmicOrbit: React.FC = () => {
                 </div>
 
                 {/* RIGHT SIDE: ROTATING ORBIT */}
-                <div className="relative flex items-center justify-center order-1 lg:order-2 h-[350px] md:h-[550px] scale-[0.4] sm:scale-[0.55] md:scale-[0.75] lg:scale-[0.85] transition-transform origin-center lg:translate-x-12">
+                <div className="relative flex items-center justify-center order-1 lg:order-2 h-[350px] md:h-[550px] scale-[0.35] sm:scale-[0.5] md:scale-[0.65] lg:scale-[0.75] transition-transform origin-center lg:translate-x-0">
                     {/* Orbit Container */}
-                    <div className="relative w-full max-w-[850px] aspect-square flex items-center justify-center">
+                    <div
+                        className="relative w-full max-w-[850px] aspect-square flex items-center justify-center"
+                        onMouseEnter={() => setIsPaused(true)}
+                        onMouseLeave={() => setIsPaused(false)}
+                    >
                         {/* Sun Center */}
                         <div className="relative group z-30">
                             <div className="absolute inset-0 bg-orange-400 rounded-full blur-2xl opacity-40 animate-pulse scale-150" />
