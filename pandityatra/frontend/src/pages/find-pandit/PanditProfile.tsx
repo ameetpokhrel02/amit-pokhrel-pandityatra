@@ -49,7 +49,7 @@ const PanditProfile = () => {
         return (
             <div className="flex flex-col min-h-screen">
                 <Navbar />
-                <div className="flex-grow flex items-center justify-center bg-gray-50">
+                <div className="flex-grow flex items-center justify-center bg-background">
                     <Loader2 className="animate-spin text-orange-600 w-10 h-10" />
                 </div>
                 <Footer />
@@ -61,7 +61,7 @@ const PanditProfile = () => {
         return (
             <div className="flex flex-col min-h-screen">
                 <Navbar />
-                <div className="flex-grow flex flex-col items-center justify-center bg-gray-50 px-4">
+                <div className="flex-grow flex flex-col items-center justify-center bg-background px-4">
                     <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
                     <p className="text-gray-500 mb-6">The pandit profile you are looking for does not exist or is unavailable.</p>
                     <Button onClick={() => navigate(-1)} variant="outline">
@@ -78,7 +78,7 @@ const PanditProfile = () => {
     const userDetails = pandit.user_details || {};
     // Use type assertion or optional chaining to safely access potentially missing properties if the type definition is loose
     const fullName = userDetails.full_name || (pandit as any).full_name || "Pandit Ji";
-    const profilePic = userDetails.profile_pic_url || (pandit as any).profile_pic_url;
+    const profilePic = userDetails.profile_pic || (pandit as any).profile_pic;
     const email = userDetails.email || (pandit as any).email || "";
 
     const rating = pandit.rating || 0;
@@ -103,7 +103,7 @@ const PanditProfile = () => {
     };
 
     return (
-        <div className="flex flex-col min-h-screen bg-gray-50/50 pt-20">
+        <div className="flex flex-col min-h-screen bg-background pt-20">
             <Navbar />
 
             <div className="container mx-auto px-4 py-8 flex-grow">
@@ -115,7 +115,7 @@ const PanditProfile = () => {
                             <CardContent className="p-6 flex flex-col items-center text-center">
                                 {/* Details */}
                                 <div className="relative mb-4">
-                                    <Avatar className="w-32 h-32 border-4 border-white shadow-lg ring-1 ring-gray-100">
+                                    <Avatar className="w-32 h-32 border-4 border-white shadow-lg ring-1 ring-orange-100">
                                         <AvatarImage src={profilePic} className="object-cover" />
                                         <AvatarFallback className="text-2xl bg-orange-100 text-orange-700">
                                             {fullName.substring(0, 2).toUpperCase()}
@@ -196,7 +196,7 @@ const PanditProfile = () => {
                     <div className="lg:col-span-2 space-y-8">
 
                         {/* About */}
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-orange-100/50">
                             <h2 className="text-xl font-bold text-gray-900 mb-4">About {fullName}</h2>
                             <p className="text-gray-600 leading-relaxed">
                                 {bio}
@@ -204,11 +204,11 @@ const PanditProfile = () => {
                         </div>
 
                         {/* Specializations */}
-                        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-xl p-6 shadow-sm border border-orange-100/50">
                             <h2 className="text-xl font-bold text-gray-900 mb-4">Specializations</h2>
                             <div className="flex flex-wrap gap-2">
                                 {specializations.map((spec, index) => (
-                                    <Badge key={index} variant="secondary" className="px-3 py-1 font-normal bg-gray-100 text-gray-700 hover:bg-gray-200">
+                                    <Badge key={index} variant="secondary" className="px-3 py-1 font-normal bg-orange-100/50 text-gray-700 hover:bg-orange-100">
                                         {spec}
                                     </Badge>
                                 ))}
@@ -220,7 +220,7 @@ const PanditProfile = () => {
                             <h2 className="text-xl font-bold text-gray-900 mb-6">Services Offered</h2>
                             {
                                 (!pandit.services || pandit.services.length === 0) ? (
-                                    <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-lg">
+                                    <div className="text-center py-8 border-2 border-dashed border-orange-100/50 rounded-lg">
                                         <Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                                         <p className="text-gray-500 font-medium">No service provided</p>
                                     </div>
@@ -229,7 +229,7 @@ const PanditProfile = () => {
                                         {pandit.services.map((service) => (
                                             <Card key={service.id} className="border hover:border-orange-200 transition-colors cursor-pointer group overflow-hidden" onClick={() => setSelectedService(service)}>
                                                 {service.puja_details?.image && (
-                                                    <div className="w-full h-48 overflow-hidden bg-gray-100">
+                                                    <div className="w-full h-48 overflow-hidden bg-orange-50/50">
                                                         <img
                                                             src={service.puja_details.image}
                                                             alt={service.puja_details.name}
@@ -281,7 +281,7 @@ const PanditProfile = () => {
                                 {selectedService && (
                                     <>
                                         {selectedService.puja_details?.image && (
-                                            <div className="w-full h-56 bg-gray-100 relative">
+                                            <div className="w-full h-56 bg-orange-50/50 relative">
                                                 <img
                                                     src={selectedService.puja_details.image}
                                                     alt={selectedService.puja_details.name}
@@ -323,7 +323,7 @@ const PanditProfile = () => {
                                                 </p>
                                             </div>
 
-                                            <div className="flex items-center justify-between px-2 border-t pt-4 border-gray-100">
+                                            <div className="flex items-center justify-between px-2 border-t pt-4 border-orange-100/50">
                                                 <span className="text-gray-600 font-medium">Service Fee</span>
                                                 <span className="text-2xl font-bold text-orange-600">
                                                     NPR {parseFloat(selectedService.custom_price).toLocaleString()}

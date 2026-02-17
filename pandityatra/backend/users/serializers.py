@@ -137,9 +137,10 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Either phone_number or email is required.")
         return data
 
-# Corrected UserSerializer (moved to end for consistency)
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for outputting user profile data."""
+    pandit_profile = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -147,12 +148,29 @@ class UserSerializer(serializers.ModelSerializer):
             'phone_number', 
             'full_name', 
             'email', 
-            'profile_pic_url', # Added field
-            'role',  # Include role in response
+            'profile_pic',
+            'role',
             'is_active', 
-            'date_joined'
+            'date_joined',
+            'pandit_profile'
         )
-        read_only_fields = fields
+        read_only_fields = ('id', 'role', 'is_active', 'date_joined')
+
+    def get_pandit_profile(self, obj):
+        if obj.role == 'pandit' and hasattr(obj, 'pandit_profile'):
+            p = obj.pandit_profile
+            return {
+                'id': p.id,
+                'expertise': p.expertise,
+                'language': p.language,
+                'experience_years': p.experience_years,
+                'bio': p.bio,
+                'rating': float(p.rating) if p.rating is not None else 0.0,
+                'is_available': p.is_available,
+                'is_verified': p.is_verified,
+                'verification_status': p.verification_status
+            }
+        return None
 # 🚨 ADMIN: Platform Settings
 from .models import PlatformSetting
 

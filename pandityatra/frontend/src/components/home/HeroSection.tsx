@@ -38,6 +38,7 @@ import {
   TbZodiacPisces
 } from 'react-icons/tb';
 import MotionSearch from '@/components/ui/motion-search';
+import MiniOrbit from '@/components/kundali/MiniOrbit';
 import heroPandit from '@/assets/images/hero 3-Photoroom.png';
 
 const HeroSection: React.FC = () => {
@@ -118,6 +119,17 @@ const HeroSection: React.FC = () => {
           animate={{ rotate: -360 }}
           transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
         />
+
+        {/* Decorative Mini Orbits in Background */}
+        <div className="absolute top-[15%] left-[20%] opacity-40">
+          <MiniOrbit size={60} className="text-orange-400" />
+        </div>
+        <div className="absolute top-[60%] right-[15%] opacity-30">
+          <MiniOrbit size={80} className="text-orange-300" />
+        </div>
+        <div className="absolute bottom-[10%] left-[40%] opacity-25">
+          <MiniOrbit size={50} className="text-orange-500" />
+        </div>
       </div>
 
       <div className="container relative z-10 px-4 py-8 grid lg:grid-cols-2 gap-12 items-center">
@@ -190,7 +202,7 @@ const HeroSection: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
             <Button
               size="lg"
-              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-10 rounded-full font-bold"
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 flex items-center group overflow-hidden"
               onClick={() => {
                 if (token) {
                   navigate('/booking');
@@ -199,7 +211,8 @@ const HeroSection: React.FC = () => {
                 }
               }}
             >
-              {t('get_started')}
+              <MiniOrbit size={32} className="mr-2 group-hover:scale-110 transition-transform" />
+              <span className="text-lg">{t('get_started')}</span>
             </Button>
             <Link to="/about">
               <Button variant="outline" size="lg" className="w-full sm:w-auto border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
@@ -233,6 +246,11 @@ const HeroSection: React.FC = () => {
             </div>
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white dark:bg-slate-900 p-2 rounded-full shadow-lg">
               <GiChakram className="text-orange-500 h-6 w-6" />
+            </div>
+
+            {/* Mini Orbit on the ring */}
+            <div className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <MiniOrbit size={40} className="text-orange-500" />
             </div>
           </motion.div>
 

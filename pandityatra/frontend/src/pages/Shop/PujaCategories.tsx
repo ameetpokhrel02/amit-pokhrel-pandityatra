@@ -79,18 +79,18 @@ const PujaCategories = () => {
 
   const handleAddToCart = (puja: Puja | null) => {
     if (!puja) return;
-    
+
     addItem({
       id: `puja-${puja.id}`,
       title: puja.name || 'Puja Service',
       price: puja.price,
-      meta: { 
-        type: 'puja', 
+      meta: {
+        type: 'puja',
         panditId: puja.pandit,
         duration: puja.duration_minutes
       }
     }, 1);
-    
+
     toast({
       title: "Added to Cart",
       description: `${puja.name || 'Puja service'} has been added to your cart.`,
@@ -157,7 +157,7 @@ const PujaCategories = () => {
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
 
       {/* Hero Section */}

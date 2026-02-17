@@ -203,7 +203,7 @@ export default function AdminPandits() {
                                             <TableRow key={pandit.id}>
                                                 <TableCell className="flex items-center gap-2">
                                                     <Avatar className="h-8 w-8">
-                                                        <AvatarImage src={pandit.user_details?.profile_pic_url || ""} />
+                                                        <AvatarImage src={pandit.user_details?.profile_pic || ""} />
                                                         <AvatarFallback>{(pandit.user_details?.full_name || "??").substring(0, 2).toUpperCase()}</AvatarFallback>
                                                     </Avatar>
                                                     <div>

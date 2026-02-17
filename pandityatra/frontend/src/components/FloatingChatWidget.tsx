@@ -22,7 +22,7 @@ interface ChatRoom {
     id: number;
     user: {
       full_name: string;
-      profile_pic_url?: string;
+      profile_pic?: string;
     };
     expertise: string;
     rating: number;
@@ -153,9 +153,8 @@ const FloatingChatWidget: React.FC = () => {
         {/* Floating Bubble Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`relative group transition-all duration-300 ${
-            isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
-          }`}
+          className={`relative group transition-all duration-300 ${isOpen ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
+            }`}
         >
           <div className="relative">
             {/* Glow effect */}
@@ -239,9 +238,9 @@ const FloatingChatWidget: React.FC = () => {
                       >
                         <div className="flex items-center gap-3">
                           <div className="relative flex-shrink-0">
-                            {room.pandit.user.profile_pic_url ? (
+                            {room.pandit.user.profile_pic ? (
                               <img
-                                src={room.pandit.user.profile_pic_url}
+                                src={room.pandit.user.profile_pic}
                                 alt={room.pandit.user.full_name}
                                 className="h-12 w-12 rounded-full object-cover border-2 border-orange-200"
                               />
@@ -285,9 +284,9 @@ const FloatingChatWidget: React.FC = () => {
                 {/* Pandit Info Bar */}
                 <div className="border-b p-3 bg-gradient-to-r from-orange-50 to-orange-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    {selectedRoom.pandit.user.profile_pic_url ? (
+                    {selectedRoom.pandit.user.profile_pic ? (
                       <img
-                        src={selectedRoom.pandit.user.profile_pic_url}
+                        src={selectedRoom.pandit.user.profile_pic}
                         alt={selectedRoom.pandit.user.full_name}
                         className="h-10 w-10 rounded-full object-cover border-2 border-orange-300"
                       />
@@ -330,16 +329,14 @@ const FloatingChatWidget: React.FC = () => {
                         className={`flex ${msg.sender.id === user.id ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
-                          className={`max-w-xs px-4 py-2 rounded-2xl text-sm break-words ${
-                            msg.sender.id === user.id
-                              ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-br-none'
-                              : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
-                          }`}
+                          className={`max-w-xs px-4 py-2 rounded-2xl text-sm break-words ${msg.sender.id === user.id
+                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-br-none'
+                            : 'bg-white text-gray-900 border border-gray-200 rounded-bl-none shadow-sm'
+                            }`}
                         >
                           <p>{msg.content}</p>
-                          <span className={`text-xs opacity-70 mt-1 block ${
-                            msg.sender.id === user.id ? 'text-orange-100' : 'text-gray-500'
-                          }`}>
+                          <span className={`text-xs opacity-70 mt-1 block ${msg.sender.id === user.id ? 'text-orange-100' : 'text-gray-500'
+                            }`}>
                             {new Date(msg.timestamp).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit',

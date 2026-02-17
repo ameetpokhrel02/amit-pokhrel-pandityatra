@@ -12,7 +12,7 @@ interface ChatPreview {
     user: {
       username: string;
       full_name: string;
-      profile_pic_url: string;
+      profile_pic?: string;
     };
     rating: number;
   };
@@ -100,7 +100,7 @@ export const ChatList: React.FC = () => {
                 <div className="flex items-center gap-3">
                   {/* Pandit Avatar */}
                   <img
-                    src={chat.pandit.user.profile_pic_url || '/default-avatar.jpg'}
+                    src={chat.pandit.user.profile_pic || '/default-avatar.jpg'}
                     alt={chat.pandit.user.full_name}
                     className="w-12 h-12 rounded-full object-cover"
                   />

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
 
 interface DashboardLayoutProps {
@@ -38,6 +39,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
             { icon: Calendar, label: 'My Bookings', path: '/my-bookings' },
             { icon: User, label: 'Profile', path: '/profile' },
+            { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
         ],
         pandit: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/pandit/dashboard' },
@@ -71,11 +73,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="min-h-screen bg-background flex">
             {/* Mobile Sidebar Overlay */}
             <div className="md:hidden">
                 {/* Mobile Header */}
-                <div className="fixed top-0 left-0 right-0 h-16 bg-white border-b z-30 flex items-center justify-between px-4">
+                <div className="fixed top-0 left-0 right-0 h-16 bg-background border-b z-30 flex items-center justify-between px-4">
                     <div className="flex items-center gap-2">
                         <img
                             src={logo}
@@ -99,13 +101,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         exit={{ x: -250 }}
                         transition={{ duration: 0.2 }}
                         className={`
-                    fixed md:sticky top-0 left-0 h-screen w-64 bg-white border-r shadow-sm z-40
+                    fixed md:sticky top-0 left-0 h-screen w-64 bg-background border-r shadow-sm z-40
                     flex flex-col
                     ${isSidebarOpen ? 'block' : 'hidden md:block'}
                 `}
                     >
                         {/* Logo Area - Clickable to Home */}
-                        <Link to="/" className="h-16 flex items-center gap-3 px-6 border-b hover:bg-gray-50 transition-colors group">
+                        <Link to="/" className="h-16 flex items-center gap-3 px-6 border-b hover:bg-orange-50 transition-colors group">
                             <img
                                 src={logo}
                                 alt="PanditYatra"
@@ -122,8 +124,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                 const Icon = item.icon;
                                 const isActive = location.pathname === item.path;
                                 return (
-                                    <Link 
-                                        to={item.path} 
+                                    <Link
+                                        to={item.path}
                                         key={item.path}
                                         onClick={() => {
                                             // Close mobile sidebar after navigation
@@ -136,7 +138,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                                     ${isActive
                                                 ? 'bg-orange-50 text-primary font-medium'
-                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
+                                                : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
                                 `}>
                                             <Icon size={20} />
                                             <span>{item.label}</span>
@@ -147,11 +149,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         </nav>
 
                         {/* Footer Area */}
-                        <div className="p-4 border-t bg-gray-50">
+                        <div className="p-4 border-t bg-orange-50/50">
                             <div className="flex items-center gap-3 px-4 py-3 mb-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                    {user?.full_name?.[0] || 'U'}
-                                </div>
+                                <Avatar className="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-orange-100">
+                                    <AvatarImage src={user?.profile_pic} />
+                                    <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">
+                                        {user?.full_name?.[0] || 'U'}
+                                    </AvatarFallback>
+                                </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{user?.full_name}</p>
                                     <p className="text-xs text-gray-500 capitalize">{userRole}</p>
@@ -173,7 +178,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             {/* Main Content Area */}
             <main className="flex-1 min-w-0 overflow-auto pt-16 md:pt-0">
                 {/* Top Navigation Bar (visible on mobile, optional on desktop) */}
-                <div className="md:hidden sticky top-0 z-20 bg-white border-b px-4 py-3 flex items-center justify-between">
+                <div className="md:hidden sticky top-0 z-20 bg-background border-b px-4 py-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <img
                             src={logo}

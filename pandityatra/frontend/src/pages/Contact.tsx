@@ -47,7 +47,7 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#fff7ed] flex flex-col font-inter">
+        <div className="min-h-screen bg-background flex flex-col font-inter">
             <Navbar />
 
             <main className="flex-1 py-20 px-4">

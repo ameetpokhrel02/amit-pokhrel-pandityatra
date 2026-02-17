@@ -99,9 +99,8 @@ const Navbar: React.FC = () => {
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-bag"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
   );
 
-  // Common Navigation Items
   const navItems = [
-    { name: t('home'), path: '/', icon: <Home className="w-4 h-4" /> },
+    { name: t('home'), path: '/', icon: <Home className="w-4 h-4" />, hideOnDesktop: true },
     { name: t('about'), path: '/about', icon: <User className="w-4 h-4" /> },
     { name: 'Offline Kundali', path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
     {
@@ -110,7 +109,7 @@ const Navbar: React.FC = () => {
       icon: <ShoppingBagIcon />,
       hasMegaMenu: true
     },
-    { name: t('contact'), path: '/contact', icon: <User className="w-4 h-4" /> },
+    { name: t('contact'), path: '/contact', icon: <User className="w-4 h-4" />, hideOnSmallDesktop: true },
   ];
 
   // Logout Confirmation Dialog Component
@@ -164,7 +163,7 @@ const Navbar: React.FC = () => {
           : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
           }`}
       >
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between gap-4">
+        <div className="container mx-auto px-2 sm:px-4 h-20 flex items-center justify-between gap-2 lg:gap-4">
           {/* Left: Logo */}
           <Link to="/" className="flex items-center gap-2 shrink-0 group">
             <div className="relative w-10 h-10 lg:w-12 lg:h-12">
@@ -182,7 +181,7 @@ const Navbar: React.FC = () => {
               initial={false}
               animate={{
                 width: isSearchExpanded ? '100%' : '40px',
-                maxWidth: isSearchExpanded ? '600px' : '40px'
+                maxWidth: isSearchExpanded ? '450px' : '40px'
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="relative group"
@@ -224,17 +223,17 @@ const Navbar: React.FC = () => {
           </div>
 
           {/* Right: Actions */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-1.5 xl:gap-3 shrink-0">
             {/* Common Text Links */}
             {!isSearchExpanded && (
               <div
                 className="relative flex items-center gap-1"
                 onMouseLeave={() => setIsMegaMenuOpen(false)}
               >
-                {navItems.map(item => (
+                {navItems.filter(item => !item.hideOnDesktop).map(item => (
                   <div
                     key={item.path}
-                    className="relative py-2" // Added padding to increase hover area
+                    className={`relative py-2 ${item.hideOnSmallDesktop ? 'hidden xl:block' : ''}`}
                     onMouseEnter={() => {
                       if (item.hasMegaMenu) {
                         setIsMegaMenuOpen(true);
@@ -245,12 +244,12 @@ const Navbar: React.FC = () => {
                   >
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-full transition-all duration-200 ${isActive(item.path)
+                      className={`flex items-center gap-1 xl:gap-2 text-sm font-medium px-2 xl:px-4 py-2 rounded-full transition-all duration-200 ${isActive(item.path)
                         ? 'text-orange-600 bg-orange-50'
                         : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
                         }`}
                     >
-                      {item.icon}
+                      <span className="hidden xl:block">{item.icon}</span>
                       <span>{item.name}</span>
                       {item.hasMegaMenu && <ChevronDown className={`w-3 h-3 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />}
                     </Link>
@@ -274,7 +273,7 @@ const Navbar: React.FC = () => {
               </div>
             )}
 
-            <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-6 shadow-md hover:shadow-lg transition-all">
+            <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-4 xl:px-6 shadow-md hover:shadow-lg transition-all whitespace-nowrap">
               <Link to="/booking">{t('find_pandit')}</Link>
             </Button>
 
@@ -309,7 +308,7 @@ const Navbar: React.FC = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 overflow-hidden border border-orange-200 hover:border-orange-300 transition-all">
                     <Avatar className="h-full w-full">
-                      <AvatarImage src={user.profile_image} alt={user.full_name} />
+                      <AvatarImage src={user.profile_pic} />
                       <AvatarFallback className="bg-orange-100 text-orange-600 font-medium">
                         {user.full_name?.charAt(0) || 'U'}
                       </AvatarFallback>
@@ -319,7 +318,7 @@ const Navbar: React.FC = () => {
                 <DropdownMenuContent align="end" className="w-56 p-2 shadow-xl border-orange-100">
                   <div className="flex items-center gap-3 p-2 mb-2 bg-gradient-to-br from-orange-50 to-white rounded-lg border border-orange-100/50">
                     <Avatar className="h-10 w-10 border border-white shadow-sm">
-                      <AvatarImage src={user.profile_image} />
+                      <AvatarImage src={user.profile_pic} />
                       <AvatarFallback className="bg-orange-200 text-orange-700">
                         {user.full_name?.charAt(0)}
                       </AvatarFallback>
@@ -484,7 +483,7 @@ const Navbar: React.FC = () => {
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-2">{t('account_portal', 'Account Portal')}</p>
                         <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
                           <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                            <AvatarImage src={user.profile_image} />
+                            <AvatarImage src={user.profile_pic} />
                             <AvatarFallback className="bg-orange-200 text-orange-700 font-bold">{user.full_name?.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col overflow-hidden">

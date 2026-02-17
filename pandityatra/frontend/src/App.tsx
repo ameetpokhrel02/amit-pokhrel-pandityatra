@@ -11,6 +11,7 @@ import HomePage from './pages/Home'
 import AboutUs from './pages/AboutUs'
 import Contact from './pages/Contact'
 import OfflineKundali from './pages/Kundali/OfflineKundali'
+import PanchangCalendar from './pages/Calendar/PanchangCalendar'
 
 // Shop
 import PujaCategories from './pages/Shop/PujaCategories'
@@ -105,6 +106,7 @@ function App() {
                   <Route path="/about" element={<AboutUs />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/kundali" element={<OfflineKundali />} />
+                  <Route path="/calendar" element={<PanchangCalendar />} />
                   <Route path="/shop/pujas" element={<PujaCategories />} />
                   <Route path="/shop/samagri" element={<Samagri />} />
                   <Route path="/shop/books" element={<Books />} />

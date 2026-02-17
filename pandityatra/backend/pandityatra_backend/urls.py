@@ -52,8 +52,11 @@ urlpatterns = [
     # Puja endpoints
    #  # Include the new app's URLs
 
-   # Kundali endpoints
+    # Kundali endpoints
     path('api/kundali/', include('kundali.urls')),
+
+    # Panchang endpoints
+    path('api/panchang/', include('panchang.urls')),
 ]
 
 if settings.DEBUG:

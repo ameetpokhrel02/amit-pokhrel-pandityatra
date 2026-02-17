@@ -22,7 +22,7 @@ interface ChatRoomProps {
     user: {
       username: string;
       full_name: string;
-      profile_pic_url: string;
+      profile_pic?: string;
     };
     expertise: string[];
     rating: number;
@@ -112,7 +112,7 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
             {pandit && (
               <>
                 <img
-                  src={pandit.user.profile_pic_url || '/default-avatar.jpg'}
+                  src={pandit.user.profile_pic || '/default-avatar.jpg'}
                   alt={pandit.user.full_name}
                   className="w-12 h-12 rounded-full border-2 border-white object-cover"
                 />
@@ -165,11 +165,10 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
               className={`flex ${isCurrentUserMessage(msg.sender_id) ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  isCurrentUserMessage(msg.sender_id)
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${isCurrentUserMessage(msg.sender_id)
                     ? 'bg-orange-500 text-white rounded-br-none'
                     : 'bg-gray-300 text-gray-800 rounded-bl-none'
-                }`}
+                  }`}
               >
                 <p className="font-semibold text-sm mb-1">{msg.sender}</p>
                 <p className="text-sm">{msg.content}</p>
@@ -192,21 +191,19 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
         <div className="flex gap-2 justify-end">
           <button
             onClick={() => setLanguage('en')}
-            className={`px-3 py-1 text-sm rounded ${
-              language === 'en'
+            className={`px-3 py-1 text-sm rounded ${language === 'en'
                 ? 'bg-orange-500 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             English
           </button>
           <button
             onClick={() => setLanguage('ne')}
-            className={`px-3 py-1 text-sm rounded ${
-              language === 'ne'
+            className={`px-3 py-1 text-sm rounded ${language === 'ne'
                 ? 'bg-orange-500 text-white'
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+              }`}
           >
             नेपाली
           </button>

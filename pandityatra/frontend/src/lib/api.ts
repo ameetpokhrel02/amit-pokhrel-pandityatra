@@ -46,7 +46,7 @@ export interface Pandit {
         full_name: string;
         phone_number: string;
         email: string;
-        profile_pic_url?: string;
+        profile_pic?: string;
     };
     expertise: string;
     experience_years: number;

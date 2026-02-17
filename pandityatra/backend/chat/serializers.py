@@ -7,7 +7,7 @@ from pandits.models import Pandit
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'full_name', 'profile_pic_url']
+        fields = ['id', 'username', 'full_name', 'profile_pic']
 
 
 class PanditSimpleSerializer(serializers.ModelSerializer):

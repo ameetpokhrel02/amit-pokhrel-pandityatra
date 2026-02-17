@@ -6,13 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Video, Wallet, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchBookings, fetchPandits } from "@/lib/api";
 import type { Booking, Pandit } from "@/lib/api";
+import KundaliHistory from "@/components/dashboard/KundaliHistory";
+import { useSearchParams } from "react-router-dom";
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
 
   const [nextBooking, setNextBooking] = useState<any>(null);
   const [stats, setStats] = useState({
@@ -94,9 +99,14 @@ const CustomerDashboard: React.FC = () => {
         </div>
 
         {/* TABS */}
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full md:w-[200px] grid-cols-1">
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setSearchParams({ tab: val })}
+          className="w-full"
+        >
+          <TabsList className="grid w-full md:w-[400px] grid-cols-2">
             <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="kundali">Saved Kundalis</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6 mt-4">
@@ -164,13 +174,12 @@ const CustomerDashboard: React.FC = () => {
                     {recommendations.map(pandit => (
                       <Card key={pandit.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/pandits/${pandit.id}`)}>
                         <CardContent className="p-4 flex flex-col items-center text-center space-y-2">
-                          <div className="h-16 w-16 rounded-full bg-gray-200 overflow-hidden">
-                            {pandit.user_details.profile_pic_url ? (
-                              <img src={pandit.user_details.profile_pic_url} alt={pandit.user_details.full_name} className="h-full w-full object-cover" />
-                            ) : (
+                          <Avatar className="h-16 w-16 border-2 border-orange-200">
+                            <AvatarImage src={pandit.user_details.profile_pic} alt={pandit.user_details.full_name} />
+                            <AvatarFallback>
                               <span className="text-2xl pt-4 block text-gray-400">🕉</span>
-                            )}
-                          </div>
+                            </AvatarFallback>
+                          </Avatar>
                           <div>
                             <p className="font-semibold text-sm line-clamp-1">{pandit.user_details.full_name}</p>
                             <p className="text-xs text-muted-foreground">{pandit.expertise}</p>
@@ -256,6 +265,10 @@ const CustomerDashboard: React.FC = () => {
 
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="kundali" className="mt-4">
+            <KundaliHistory />
           </TabsContent>
         </Tabs>
 

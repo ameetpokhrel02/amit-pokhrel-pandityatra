@@ -68,7 +68,7 @@ const ReviewForm = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-background flex items-center justify-center p-4">
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -100,55 +100,55 @@ const ReviewForm = () => {
                         )}
 
                         {!alreadyReviewed && (
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Star Rating */}
-                            <div className="flex justify-center flex-col items-center gap-2">
-                                <div className="flex gap-1">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <button
-                                            key={star}
-                                            type="button"
-                                            className="transition-transform hover:scale-110 focus:outline-none"
-                                            onMouseEnter={() => setHoverRating(star)}
-                                            onMouseLeave={() => setHoverRating(0)}
-                                            onClick={() => setRating(star)}
-                                        >
-                                            <Star
-                                                size={32}
-                                                className={`${star <= (hoverRating || rating)
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {/* Star Rating */}
+                                <div className="flex justify-center flex-col items-center gap-2">
+                                    <div className="flex gap-1">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <button
+                                                key={star}
+                                                type="button"
+                                                className="transition-transform hover:scale-110 focus:outline-none"
+                                                onMouseEnter={() => setHoverRating(star)}
+                                                onMouseLeave={() => setHoverRating(0)}
+                                                onClick={() => setRating(star)}
+                                            >
+                                                <Star
+                                                    size={32}
+                                                    className={`${star <= (hoverRating || rating)
                                                         ? "fill-yellow-400 text-yellow-400"
                                                         : "text-gray-300"
-                                                    } transition-colors`}
-                                            />
-                                        </button>
-                                    ))}
+                                                        } transition-colors`}
+                                                />
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-500">
+                                        {rating > 0 ? `${rating} Stars` : "Select a rating"}
+                                    </p>
                                 </div>
-                                <p className="text-sm font-medium text-gray-500">
-                                    {rating > 0 ? `${rating} Stars` : "Select a rating"}
-                                </p>
-                            </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="comment">Your Review</Label>
-                                <Textarea
-                                    id="comment"
-                                    placeholder="Share your experience with the pandit..."
-                                    className="min-h-[120px]"
-                                    value={comment}
-                                    onChange={(e) => setComment(e.target.value)}
-                                    required
-                                />
-                            </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="comment">Your Review</Label>
+                                    <Textarea
+                                        id="comment"
+                                        placeholder="Share your experience with the pandit..."
+                                        className="min-h-[120px]"
+                                        value={comment}
+                                        onChange={(e) => setComment(e.target.value)}
+                                        required
+                                    />
+                                </div>
 
-                            <Button
-                                type="submit"
-                                className="w-full bg-orange-600 hover:bg-orange-700"
-                                disabled={loading}
-                            >
-                                {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
-                                Submit Review
-                            </Button>
-                        </form>
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-orange-600 hover:bg-orange-700"
+                                    disabled={loading}
+                                >
+                                    {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : null}
+                                    Submit Review
+                                </Button>
+                            </form>
                         )}
                     </CardContent>
                 </Card>

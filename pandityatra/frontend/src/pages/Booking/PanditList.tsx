@@ -260,7 +260,7 @@ export const PanditList = () => {
                                         {/* Avatar */}
                                         <div className="relative mb-3">
                                             <Avatar className="h-24 w-24 border-[3px] border-orange-200 shadow-sm">
-                                                <AvatarImage src={pandit.user_details.profile_pic_url} className="object-cover" />
+                                                <AvatarImage src={pandit.user_details.profile_pic} className="object-cover" />
                                                 <AvatarFallback className="text-xl bg-orange-50 text-orange-600 font-bold">
                                                     {(pandit.user_details?.full_name || "Pt").substring(0, 2).toUpperCase()}
                                                 </AvatarFallback>

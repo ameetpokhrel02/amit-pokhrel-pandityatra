@@ -56,4 +56,16 @@ export const fetchPanditServices = async (panditId: number) => {
   }
 };
 
+export const fetchPanchang = async (date?: string, days: number = 1) => {
+  try {
+    const params: any = { days };
+    if (date) params.date = date;
+    const response = await apiClient.get('/panchang/data/', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching panchang:', error);
+    throw error;
+  }
+};
+
 export default apiClient;

@@ -92,7 +92,7 @@ const Confirmation = () => {
     return (
         <>
             <Navbar />
-            <div className="min-h-screen bg-gray-50/50 py-12 px-4">
+            <div className="min-h-screen bg-background py-12 px-4">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -192,7 +192,7 @@ const Confirmation = () => {
 
                             {/* Notes */}
                             {bookingData.notes && (
-                                <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                                <div className="bg-orange-50/50 rounded-2xl p-6 border border-orange-100/50">
                                     <div className="flex items-center gap-2 mb-2 italic">
                                         <FileText className="w-4 h-4 text-gray-400" />
                                         <h3 className="text-sm font-bold text-gray-500 uppercase">Special Instructions</h3>
@@ -223,7 +223,7 @@ const Confirmation = () => {
                             </div>
                         </CardContent>
 
-                        <CardFooter className="bg-gray-50/80 p-8 gap-4">
+                        <CardFooter className="bg-orange-50/50 p-8 gap-4">
                             <Button
                                 variant="outline"
                                 size="lg"

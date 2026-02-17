@@ -51,7 +51,7 @@ const FeaturedPandits: React.FC = () => {
         const mapped: DisplayPandit[] = data.map(p => ({
           id: p.id,
           name: p.user_details.full_name || 'Pandit',
-          image: p.user_details.profile_pic_url || '/src/assets/images/placeholder_pandit.png', // Fallback
+          image: p.user_details.profile_pic || '/src/assets/images/placeholder_pandit.png', // Fallback
           rating: p.rating || 0,
           reviewCount: 0, // Placeholder
           experience: p.experience_years,
@@ -156,8 +156,8 @@ const FeaturedPandits: React.FC = () => {
                     <Badge
                       variant={pandit.isAvailable ? "default" : "secondary"}
                       className={`${pandit.isAvailable
-                          ? "bg-green-500 hover:bg-green-600"
-                          : "bg-gray-400"
+                        ? "bg-green-500 hover:bg-green-600"
+                        : "bg-gray-400"
                         } transition-all duration-300`}
                     >
                       {pandit.isAvailable ? "Available" : "Busy"}
@@ -192,8 +192,8 @@ const FeaturedPandits: React.FC = () => {
                           <FaStar
                             key={i}
                             className={`h-4 w-4 ${i < Math.floor(pandit.rating)
-                                ? "text-yellow-400"
-                                : "text-gray-300"
+                              ? "text-yellow-400"
+                              : "text-gray-300"
                               }`}
                           />
                         ))}
@@ -294,8 +294,8 @@ const FeaturedPandits: React.FC = () => {
               <button
                 key={index}
                 className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
-                    ? "bg-orange-500 scale-125"
-                    : "bg-orange-200 hover:bg-orange-300"
+                  ? "bg-orange-500 scale-125"
+                  : "bg-orange-200 hover:bg-orange-300"
                   }`}
                 onClick={() => {
                   setCurrentSlide(index);

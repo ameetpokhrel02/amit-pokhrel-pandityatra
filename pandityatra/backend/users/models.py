@@ -24,7 +24,7 @@ class User(AbstractUser):
     # 3. Email field (Mandatory for Login/OTP)
     email = models.EmailField(unique=True, blank=False, null=False)
     
-    profile_pic_url = models.URLField(blank=True, null=True)
+    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     
     # 3. Roles
     ROLE_CHOICES = (

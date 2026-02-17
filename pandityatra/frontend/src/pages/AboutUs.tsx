@@ -1,11 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Award, BookOpen, MapPin, Users, ArrowRight } from 'lucide-react';
+import { FaOm, FaWifi } from 'react-icons/fa';
+import { GiChakram } from 'react-icons/gi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import panditsGrp from '@/assets/images/pandits  grp.png';
 
 const AboutUs: React.FC = () => {
     return (
@@ -13,18 +16,48 @@ const AboutUs: React.FC = () => {
             <Navbar />
             <div className="flex-1">
                 {/* Hero Section */}
-                <section className="relative min-h-[60vh] lg:min-h-[80vh] flex items-center overflow-hidden bg-orange-50/50 py-12 lg:py-0">
+                <section className="relative min-h-[60vh] lg:min-h-[80vh] flex items-center overflow-hidden bg-background py-12 lg:py-0">
                     <div className="absolute inset-0 bg-grid-slate-200 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
-                    {/* Background Decorative Map (Desktop) */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 50, rotate: 5 }}
-                        animate={{ opacity: 0.3, x: 0, rotate: -2 }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        className="absolute right-[-5%] top-1/2 -translate-y-1/2 w-[50%] pointer-events-none hidden lg:block overflow-hidden"
-                    >
-                        <img src="/images/map_of_nepal.png" alt="Map of Nepal" className="w-full h-auto opacity-50 contrast-125" />
-                    </motion.div>
+                    {/* Rotating Rings Background Effect */}
+                    <div className="absolute right-[-5%] top-1/2 -translate-y-1/2 w-[55%] h-full pointer-events-none hidden lg:flex items-center justify-center overflow-hidden">
+                        {/* Outer Ring */}
+                        <motion.div
+                            className="absolute w-[800px] h-[800px] border border-orange-200/20 rounded-full"
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                        />
+
+                        {/* Middle Ring with Icons */}
+                        <motion.div
+                            className="absolute w-[600px] h-[600px] border-2 border-dashed border-orange-200/40 rounded-full"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+                        >
+                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-lg">
+                                <FaOm className="text-orange-500 h-6 w-6" />
+                            </div>
+                            <div className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 bg-white p-2 rounded-full shadow-lg">
+                                <FaWifi className="text-orange-400 h-5 w-5" />
+                            </div>
+                        </motion.div>
+
+                        {/* Inner Ring with Icons */}
+                        <motion.div
+                            className="absolute w-[450px] h-[450px] border border-orange-100/30 rounded-full"
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                        >
+                            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white p-2 rounded-full shadow-lg">
+                                <GiChakram className="text-orange-500 h-6 w-6" />
+                            </div>
+                        </motion.div>
+
+                        {/* Static Content Image (No motion as requested) */}
+                        <div className="relative z-10 w-full h-auto flex justify-center">
+                            <img src={panditsGrp} alt="PanditYatra Group" className="w-[115%] h-auto drop-shadow-2xl" />
+                        </div>
+                    </div>
 
                     <div className="container px-4">
                         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -61,22 +94,16 @@ const AboutUs: React.FC = () => {
                                 </motion.div>
                             </div>
 
-                            {/* Mobile/Tablet Map Illustration */}
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.3 }}
-                                className="relative lg:hidden block px-6"
-                            >
-                                <div className="max-w-[280px] mx-auto relative">
+                            <div className="relative lg:hidden block px-6">
+                                <div className="max-w-[360px] mx-auto relative rounded-2xl overflow-hidden shadow-2xl">
                                     <img
-                                        src="/images/map_of_nepal.png"
-                                        alt="PanditYatra Network"
-                                        className="w-full h-auto mix-blend-multiply opacity-60 drop-shadow-2xl"
+                                        src={panditsGrp}
+                                        alt="PanditYatra Team"
+                                        className="w-full h-auto"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-orange-50/80 to-transparent pointer-events-none" />
                                 </div>
-                            </motion.div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -95,7 +122,7 @@ const AboutUs: React.FC = () => {
                                 </p>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <Card className="bg-orange-50 border-none">
+                                <Card className="bg-orange-100/50 border-none">
                                     <CardContent className="p-6 flex flex-col items-center text-center">
                                         <Users className="w-10 h-10 text-orange-600 mb-4" />
                                         <h3 className="font-semibold mb-2">Verified Pandits</h3>
@@ -109,7 +136,7 @@ const AboutUs: React.FC = () => {
                                         <p className="text-sm text-slate-600">Strict Adherence to Vidhi</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-green-50 border-none">
+                                <Card className="bg-green-100/50 border-none">
                                     <CardContent className="p-6 flex flex-col items-center text-center">
                                         <Award className="w-10 h-10 text-green-600 mb-4" />
                                         <h3 className="font-semibold mb-2">Quality Samagri</h3>
@@ -129,7 +156,7 @@ const AboutUs: React.FC = () => {
                 </section>
 
                 {/* Importance of Rituals */}
-                <section className="py-20 bg-slate-50 px-4">
+                <section className="py-20 bg-orange-50/30 px-4">
                     <div className="container">
                         <h2 className="text-3xl font-bold text-center mb-12">The Essence of Rituals</h2>
                         <div className="grid md:grid-cols-3 gap-8">
@@ -166,7 +193,7 @@ const AboutUs: React.FC = () => {
                 </section>
 
                 {/* Featured Temples (Placeholder for 'some temples') */}
-                <section className="py-20 px-4 bg-white">
+                <section className="py-20 px-4 bg-background">
                     <div className="container">
                         <div className="flex justify-between items-end mb-12">
                             <div>
@@ -241,12 +268,14 @@ const AboutUs: React.FC = () => {
                     </div>
                 </section>
 
-                {/* CTA */}
-                <section className="py-24 bg-orange-600 text-white px-4 text-center">
-                    <div className="container">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to star your spiritual journey?</h2>
-                        <p className="text-orange-100 max-w-2xl mx-auto mb-8 text-lg">
-                            Book a pandit or order puja samagri today and experience the divine connection.
+                <section className="py-24 bg-orange-600 text-white px-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 pointer-events-none opacity-20">
+                        <img src={panditsGrp} alt="" className="w-full h-full object-cover mix-blend-overlay" />
+                    </div>
+                    <div className="container relative z-10">
+                        <h2 className="text-4xl md:text-5xl font-black mb-6 uppercase tracking-tight">Digital <span className="text-orange-200">Devotion</span></h2>
+                        <p className="text-orange-50 max-w-2xl mx-auto mb-8 text-xl font-medium">
+                            Connecting Rituals Online - Experience the divine connection from anywhere in the world.
                         </p>
                         <div className="flex gap-4 justify-center">
                             <Link to="/booking">

@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'kundali',
     'video',  # Video call integration
     'ai',  # AI Pandit module
+    'panchang', # Nepali Panchang & Calendar
 ]
 
 # Django Channels Configuration

@@ -17,7 +17,7 @@ export const ProfileHeader = ({ pandit }: ProfileHeaderProps) => {
                 {/* Photo */}
                 <div className="w-full md:w-auto flex justify-center">
                     <Avatar className="w-32 h-32 border-4 border-orange-50 shadow-md">
-                        <AvatarImage src={pandit.user_details.profile_pic_url || ""} />
+                        <AvatarImage src={pandit.user_details.profile_pic || ""} />
                         <AvatarFallback className="text-4xl bg-orange-100 text-orange-600">
                             {pandit.user_details.full_name?.charAt(0) || "P"}
                         </AvatarFallback>

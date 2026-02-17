@@ -10,6 +10,7 @@ from decimal import Decimal
 from .models import Pandit, PanditService, PanditAvailability
 from .serializers import PanditSerializer, PanditServiceSerializer, PanditDetailSerializer, PanditAvailabilitySerializer
 from .pandit_serializers import PanditRegistrationSerializer
+from users.serializers import UserSerializer
 from payments.models import PanditWithdrawal
 from services.models import Puja
 from services.serializers import PujaSerializer
@@ -496,29 +497,13 @@ class PanditViewSet(viewsets.ModelViewSet):
                 user_data[field_name] = value
 
         if user_data:
-             user = instance.user
-             
-             # 2. Special handling for profile_pic (File Upload)
-             if 'profile_pic' in user_data:
-                 profile_pic = user_data.pop('profile_pic')
-                 if profile_pic: 
-                     # Save file manually
-                     from django.core.files.storage import default_storage
-                     from django.core.files.base import ContentFile
-                     import os
-                     
-                     # Generate a unique filename
-                     file_ext = os.path.splitext(profile_pic.name)[1]
-                     file_path = f"profile_pics/user_{user.id}_{int(timezone.now().timestamp())}{file_ext}"
-                     
-                     saved_path = default_storage.save(file_path, profile_pic)
-                     user.profile_pic_url = f"/media/{saved_path}"
-
-             # 3. Update other user fields
-             for attr, value in user_data.items():
-                 if hasattr(user, attr):
-                     setattr(user, attr, value)
-             user.save()
+            user = instance.user
+            # Use UserSerializer for validation and saving (supports ImageField)
+            user_serializer = UserSerializer(user, data=user_data, partial=True)
+            if user_serializer.is_valid():
+                user_serializer.save()
+            else:
+                return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
              
         return super().update(request, *args, **kwargs)
 
