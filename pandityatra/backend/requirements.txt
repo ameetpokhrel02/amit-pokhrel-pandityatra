@@ -27,3 +27,4 @@ django-allauth==0.58.2
 # Groq AI
 groq
 
+nepali-datetime

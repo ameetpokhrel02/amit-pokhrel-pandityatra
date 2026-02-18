@@ -32,7 +32,6 @@ import {
     isSameDay,
     isToday
 } from 'date-fns';
-import NepaliDate from 'bikram-sambat';
 
 const NepaliMonthNames = ["Baishakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin", "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"];
 
@@ -82,7 +81,8 @@ const PanchangCalendar: React.FC = () => {
         return panchangData.find(d => isSameDay(new Date(d.date), date));
     };
 
-    const toNepaliNumeral = (num: number | string) => {
+    const toNepaliNumeral = (num: number | string | undefined | null) => {
+        if (!num) return '';
         const numerals: any = {
             '0': '०', '1': '१', '2': '२', '3': '३', '4': '४', '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'
         };

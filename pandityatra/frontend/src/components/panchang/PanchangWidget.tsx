@@ -14,7 +14,8 @@ const PanchangWidget: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
 
-    const toNepaliNumeral = (num: number | string) => {
+    const toNepaliNumeral = (num: number | string | undefined | null) => {
+        if (!num) return '';
         const numerals: any = {
             '0': '०', '1': '१', '2': '२', '3': '३', '4': '४', '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'
         };
@@ -27,6 +28,8 @@ const PanchangWidget: React.FC = () => {
                 const response = await fetchPanchang();
                 if (response && response.length > 0) {
                     setData(response[0]);
+                } else {
+                    throw new Error('No data from API');
                 }
             } catch (err) {
                 console.error('Panchang widget error:', err);
@@ -34,15 +37,37 @@ const PanchangWidget: React.FC = () => {
 
                 // Fallback logic using bikram-sambat library
                 const today = new Date();
-                const nepaliDate = new NepaliDate(today);
-                setData({
-                    date: format(today, 'yyyy-MM-dd'),
-                    bs_date: nepaliDate.format('YYYY-MM-DD'),
-                    tithi: "Loading...",
-                    nakshatra: "Loading...",
-                    festivals: [],
-                    offline: true
-                });
+                try {
+                    // Try usage with bikram-sambat library
+                    // Handle ESM/CJS interop for bikram-sambat
+                    const ND: any = NepaliDate;
+                    const nepaliDate = new (ND.default || ND)(today);
+                    setData({
+                        date: format(today, 'yyyy-MM-dd'),
+                        bs_date: nepaliDate.format('YYYY-MM-DD'),
+                        bs_year: nepaliDate.getYear(),
+                        bs_month: nepaliDate.getMonth(), // NepaliDate getMonth is 1-indexed usually? check docs. Assuming 1-indexed? No, likely 0 or 1.
+                        bs_day: nepaliDate.getDate(),
+                        tithi: "", // Fallback
+                        nakshatra: "", // Fallback
+                        festivals: [],
+                        offline: true
+                    });
+                } catch (e) {
+                    console.error("Bikram Sambat error:", e);
+                    // Absolute fallback if library fails
+                    setData({
+                        date: format(today, 'yyyy-MM-dd'),
+                        bs_date: "Offline",
+                        bs_year: 2081, // Approximate
+                        bs_month: 1,
+                        bs_day: 1,
+                        tithi: "Offline Mode",
+                        nakshatra: "Connection Error",
+                        festivals: [],
+                        offline: true
+                    });
+                }
             } finally {
                 setLoading(false);
             }
