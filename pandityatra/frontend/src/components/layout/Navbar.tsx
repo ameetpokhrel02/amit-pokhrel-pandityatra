@@ -40,6 +40,7 @@ import LanguageSelector from './LanguageSelector';
 import { usePWA } from '@/hooks/usePWA';
 import MegaMenu from './MegaMenu';
 import { fetchSamagriCategories, type SamagriCategory as CategoryType } from '@/lib/api';
+import { ThemeToggle } from './ThemeToggle';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
@@ -292,6 +293,8 @@ const Navbar: React.FC = () => {
               </Button>
             )}
 
+            <ThemeToggle />
+
             {/* Cart */}
             <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openCartDrawer}>
               <ShoppingCart className="w-5 h-5" />
@@ -399,6 +402,8 @@ const Navbar: React.FC = () => {
                 </Badge>
               )}
             </Button>
+
+            <ThemeToggle />
 
             <Sheet>
               <SheetTrigger asChild>
