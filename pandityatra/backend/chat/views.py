@@ -12,6 +12,7 @@ from groq import Groq
 import json
 from django.db.models import Q
 from samagri.models import SamagriItem
+from bookings.models import Booking, BookingStatus
 
 class ChatRoomListView(generics.ListAPIView):
     """List all chat rooms for the current user"""
@@ -93,12 +94,26 @@ class QuickGuideChat(APIView):
 
             client = Groq(api_key=settings.GROQ_API_KEY)
 
+            # Booking Context Injection
+            booking_context = ""
+            if request.user.is_authenticated:
+                active_bookings = Booking.objects.filter(
+                    user=request.user, 
+                    status__in=[BookingStatus.ACCEPTED, BookingStatus.PENDING]
+                ).select_related('pandit__user')
+                
+                if active_bookings.exists():
+                    booking_info = []
+                    for b in active_bookings:
+                        booking_info.append(f"Booking ID {b.id}: {b.service_name} with Pandit {b.pandit.user.full_name} on {b.booking_date}")
+                    booking_context = "\nACTIVE USER BOOKINGS:\n" + "\n".join(booking_info) + "\nNote: If a user asks about their puja, suggest switching to the real-time chat mode using their Booking ID."
+
             tools = [
                 {
                     "type": "function",
                     "function": {
                         "name": "search_samagri",
-                        "description": "Search for physical puja items/products (like books, agarbatti, diya) when a user wants to BUY something.",
+                        "description": "Search for physical puja items/products (like books, agarbatti, diya) when a user wants to BUY or FIND something.",
                         "parameters": {
                             "type": "object",
                             "properties": {
@@ -108,6 +123,27 @@ class QuickGuideChat(APIView):
                                 }
                             },
                             "required": ["query"]
+                        }
+                    }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "add_to_cart",
+                        "description": "Used when a user explicitly asks to BUY or ADD an item to their cart.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "item_name": {
+                                    "type": "string",
+                                    "description": "The name of the item to add to cart."
+                                },
+                                "quantity": {
+                                    "type": "integer",
+                                    "default": 1
+                                }
+                            },
+                            "required": ["item_name"]
                         }
                     }
                 },
@@ -124,20 +160,64 @@ class QuickGuideChat(APIView):
                             }
                         }
                     }
+                },
+                {
+                    "type": "function",
+                    "function": {
+                        "name": "suggest_real_time_chat",
+                        "description": "Used when the user asks about their booking or needs to speak to their Pandit. Provides a switch to the real-time chat window.",
+                        "parameters": {
+                            "type": "object",
+                            "properties": {
+                                "booking_id": {"type": "string"},
+                                "pandit_name": {"type": "string"}
+                            },
+                            "required": ["booking_id"]
+                        }
+                    }
                 }
             ]
+            
+            # Get active booking context if user is authenticated
+            booking_context = ""
+            if request.user.is_authenticated:
+                active_booking = Booking.objects.filter(
+                    user=request.user, 
+                    status__in=[BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+                ).first()
+                if active_booking:
+                    booking_context = f"The user has an ACTIVE BOOKING (ID: {active_booking.id}) for {active_booking.puja.name} with Pandit {active_booking.pandit.user.get_full_name()}. Mention this if relevant."
+
+            PANDITYATRA_KNOWLEDGE = """
+            SITE NAVIGATION & FEATURES (How to use PanditYatra):
+            1. Find Pandits: Click 'Find Pandits' in the menu to search and book professional Pandits for any ritual.
+            2. Puja Categories: Browse 'Puja Categories' to see different types of ceremonies (e.g., Wedding, Satyanarayan, Graha Pravesh).
+            3. Kundali: Use our 'Kundali' feature for life-long horoscope generation (100% offline, privacy-first).
+            4. Shop: Visit the 'Shop' to buy Samagri (ritual items) and Books.
+            5. Appointments: Management of bookings is done via the User Dashboard.
+            6. Cart: Users can add items to their cart and checkout using Khalti or Stripe.
+            7. Live Video Puja: We support live video rituals for global connectivity.
+            """
 
             messages = [
-                {"role": "system", "content": """
-                You are the 'PanditYatra Divine Guide'. 
+                {"role": "system", "content": f"""
+                You are the 'PanditYatra Divine Guide' - a knowledgeable spiritual assistant.
                 
-                CRITICAL INSTRUCTION:
-                Distinguish between 'booking' a service (Puja ceremony) and 'buying' a physical item (e.g., a Book, Agarbatti, Diya). 
-                - If the user needs a PHYSICAL ITEM (like a book or incense), use 'search_samagri'.
-                - If the user wants to HIRE A PANDIT for a ceremony, use 'book_pandit'.
+                SITE KNOWLEDGE:
+                {PANDITYATRA_KNOWLEDGE}
                 
-                Tone: Peaceful, spiritual, and professional (Namaste/🙏). 
-                Encourage users to add products directly to their cart when search results are found.
+                STRICT RULES:
+                1. PRODUCT SEARCH: For ANY request about a product, item, book, or samagri (e.g., 'laddu', 'agarbatti', 'bhagavad gita'), you MUST call 'search_samagri'.
+                2. NO HALLUCINATIONS: NEVER suggest or describe a product unless it appears in the 'search_samagri' tool output. If the tool returns nothing, say: "I couldn't find [item] in our shop. Would you like me to find an alternative?"
+                3. SERVICE VS PRODUCT: 
+                   - 'HIRE/RESERVE PANDIT' -> use 'book_pandit'.
+                   - 'BUY/NEED ITEM' -> use 'search_samagri'.
+                4. ADD TO CART: When you find an item the user wants, use 'add_to_cart' to simplify their journey.
+                
+                {booking_context}
+                
+                Tone: Peaceful, spiritual, and welcoming (Namaste/🙏). 
+                If asked "How to use this site", explain the features listed in SITE KNOWLEDGE.
                 """},
                 {"role": "user", "content": message}
             ]
@@ -154,6 +234,7 @@ class QuickGuideChat(APIView):
             response_message = response.choices[0].message
             tool_calls = response_message.tool_calls
             products_data = []
+            actions_data = []
 
             if tool_calls:
                 messages.append(response_message)
@@ -164,24 +245,31 @@ class QuickGuideChat(APIView):
                     
                     if function_name == "search_samagri":
                         query = function_args.get("query", "")
-                        # Robust Search: Try exact, then word split
+                        # Enhanced search with better fallback
                         items = SamagriItem.objects.filter(
                             Q(name__icontains=query) | 
                             Q(category__name__icontains=query) |
                             Q(description__icontains=query),
                             is_active=True
-                        )[:3]
+                        ).distinct()[:3]
                         
-                        if not items.exists() and len(query) > 3:
-                            # Fallback: split words if query is long
+                        # Fallback: if no results, try splitting into words or searching by first 3 chars
+                        if not items.exists() and len(query) >= 3:
                             words = query.split()
                             q_objects = Q()
                             for word in words:
-                                if len(word) > 2:
+                                if len(word) >= 3:
+                                    # Try name, category, and description with each word
                                     q_objects |= Q(name__icontains=word)
-                            items = SamagriItem.objects.filter(q_objects, is_active=True)[:3]
+                                    q_objects |= Q(category__name__icontains=word)
+                            
+                            # Also try a very fuzzy check for the first few letters
+                            if not q_objects:
+                                q_objects = Q(name__icontains=query[:3])
+                                
+                            items = SamagriItem.objects.filter(q_objects, is_active=True).distinct()[:3]
 
-                        results_summary = "No items found."
+                        results_summary = "No items found in the current inventory."
                         if items.exists():
                             results_summary = f"Found {items.count()} matching items: " + ", ".join([i.name for i in items])
                             for item in items:
@@ -199,6 +287,33 @@ class QuickGuideChat(APIView):
                             "content": results_summary,
                         })
 
+                    elif function_name == "add_to_cart":
+                        item_name = function_args.get("item_name", "")
+                        qty = function_args.get("quantity", 1)
+                        # Find the best match to add
+                        item = SamagriItem.objects.filter(Q(name__icontains=item_name), is_active=True).first()
+                        if item:
+                            actions_data.append({
+                                "type": "ADD_TO_CART",
+                                "product": {
+                                    "id": item.id,
+                                    "title": item.name,
+                                    "price": float(item.price),
+                                    "image": request.build_absolute_uri(item.image.url) if item.image else None
+                                },
+                                "quantity": qty
+                            })
+                            content = f"Added {qty} of {item.name} to the user's reactive cart."
+                        else:
+                            content = "Item not found to add to cart."
+                        
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": content,
+                        })
+
                     elif function_name == "book_pandit":
                         loc = function_args.get("location", "anywhere")
                         rit = function_args.get("ritual", "a puja")
@@ -207,6 +322,21 @@ class QuickGuideChat(APIView):
                             "role": "tool",
                             "name": function_name,
                             "content": f"The user must go to 'Find Pandit' to book for {rit} in {loc} manually.",
+                        })
+
+                    elif function_name == "suggest_real_time_chat":
+                        bid = function_args.get("booking_id")
+                        pname = function_args.get("pandit_name", "your Pandit")
+                        actions_data.append({
+                            "type": "SWITCH_MODE",
+                            "bookingId": bid,
+                            "panditName": pname
+                        })
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": f"Offered the user to switch to real-time chat for booking {bid}.",
                         })
 
                 # Second Pass: Natural Response
@@ -218,11 +348,10 @@ class QuickGuideChat(APIView):
             else:
                 reply = response_message.content
 
-            # Final Cleanup: Remove any raw tool call tags leaked into the text (leaks sometimes occur in Llama 3)
+            # Final Cleanup
             if reply:
                 import re
                 reply = re.sub(r'<function.*?>.*?</function>', '', reply, flags=re.DOTALL).strip()
-                # Also remove lingering thought-style tags if any
                 reply = re.sub(r'<thought.*?>.*?</thought>', '', reply, flags=re.DOTALL).strip()
 
             # Save History
@@ -230,7 +359,12 @@ class QuickGuideChat(APIView):
                 ChatMessage.objects.create(user=request.user, mode='guide', sender='user', content=message)
                 ChatMessage.objects.create(user=request.user, mode='guide', sender='ai', content=reply)
 
-            return Response({"reply": reply, "response": reply, "products": products_data}) 
+            return Response({
+                "reply": reply, 
+                "response": reply, 
+                "products": products_data,
+                "actions": actions_data
+            })
 
         except Exception as e:
             import traceback

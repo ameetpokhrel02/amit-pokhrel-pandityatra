@@ -89,24 +89,23 @@ const PanditBookings = () => {
                   )}
                   {booking.status === 'ACCEPTED' && (
                     <div className="flex gap-2">
-                      {!(booking.daily_room_url || booking.video_room_url) && (
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200"
-                          onClick={async () => {
-                            try {
-                              await apiClient.post(`/video/generate-link/${booking.id}/`);
-                              toast({ title: "Room generated successfully" });
-                              fetchBookings();
-                            } catch (error) {
-                              toast({ title: "Failed to generate link", variant: "destructive" });
-                            }
-                          }}
-                        >
-                          <Video className="w-4 h-4 mr-1" /> Generate Link
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="bg-orange-50 text-orange-700 hover:bg-orange-100 border-orange-200"
+                        onClick={async () => {
+                          try {
+                            await apiClient.post(`/video/generate-link/${booking.id}/`);
+                            toast({ title: (booking.daily_room_url || booking.video_room_url) ? "Room regenerated successfully" : "Room generated successfully" });
+                            fetchBookings();
+                          } catch (error) {
+                            toast({ title: "Failed to generate link", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <Video className="w-4 h-4 mr-1" /> 
+                        { (booking.daily_room_url || booking.video_room_url) ? 'Regenerate Link' : 'Generate Link' }
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}>
                         Mark Completed
                       </Button>

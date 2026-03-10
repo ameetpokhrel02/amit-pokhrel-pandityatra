@@ -48,17 +48,13 @@ class DailyVideoService:
             room_data = {
                 'name': f'puja-{booking_id}-{datetime.now().strftime("%Y%m%d")}',
                 'properties': {
-                    'max_participants': 10,  # Pandit + customer + family members
                     'enable_chat': True,
                     'enable_screenshare': True,
-                    'enable_recording': 'cloud',  # Enable cloud recording
-                    'start_cloud_recording': False,  # Manual start
                     'exp': int(expiry_time.timestamp()),
                     'eject_at_room_exp': True,
                     'lang': 'en',
-                    'geo': 'in-mumbai',  # Closest to Nepal
-                    'privacy': 'private',
-                    'enable_knocking': True,
+                    'privacy': 'public',
+                    'enable_knocking': False,
                     'enable_prejoin_ui': True,
                     'enable_network_ui': True,
                     'enable_people_ui': True,
@@ -76,6 +72,10 @@ class DailyVideoService:
                     }
                 }
             }
+
+            if getattr(settings, 'DAILY_ENABLE_RECORDING', False):
+                room_data['properties']['enable_recording'] = 'cloud'
+                room_data['properties']['start_cloud_recording'] = False
             
             response = requests.post(
                 f'{self.base_url}/rooms',
@@ -158,7 +158,7 @@ class DailyVideoService:
                     'user_name': user_name,
                     'is_owner': is_owner,
                     'enable_screenshare': is_owner,  # Only pandit can screenshare
-                    'enable_recording': is_owner,    # Only pandit can record
+                    'enable_recording': is_owner if getattr(settings, 'DAILY_ENABLE_RECORDING', False) else False,
                     'enable_chat': True,
                     'exp': int((datetime.now() + timedelta(hours=4)).timestamp())
                 }

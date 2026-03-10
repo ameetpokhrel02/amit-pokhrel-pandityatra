@@ -1,11 +1,26 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import api, { publicApi } from '@/lib/api-client';
 
+import { useCart } from './useCart';
+
 export interface ChatProductType {
   id: number;
   name: string;
   price: number;
   image: string | null;
+}
+
+export interface ChatActionType {
+  type: 'ADD_TO_CART' | 'SWITCH_MODE';
+  product?: {
+    id: number | string;
+    title: string;
+    price: number;
+    image?: string;
+  };
+  quantity?: number;
+  bookingId?: string;
+  panditName?: string;
 }
 
 export interface ChatMessageType {
@@ -15,6 +30,7 @@ export interface ChatMessageType {
   timestamp: string;
   mode?: 'guide' | 'interaction';
   products?: ChatProductType[];
+  actions?: ChatActionType[];
 }
 
 export interface UseChat {
@@ -28,34 +44,48 @@ export interface UseChat {
   connectWebSocket: (bookingId: string, token: string) => void;
   disconnectWebSocket: () => void;
   isConnected: boolean;
+  bookingId?: string;
+  panditName?: string;
+  switchMode: (id: string, name?: string) => void;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
 
-export function useChat(bookingId?: string): UseChat {
+export function useChat(initialBookingId?: string): UseChat {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<'guide' | 'interaction'>('guide');
   const [isConnected, setIsConnected] = useState(false);
+  const [currentBookingId, setCurrentBookingId] = useState<string | undefined>(initialBookingId);
+  const [currentPanditName, setCurrentPanditName] = useState<string | undefined>(undefined);
+  
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { addItem } = useCart();
 
   // Auto-detect mode based on bookingId
   useEffect(() => {
-    if (bookingId) {
+    if (initialBookingId) {
+      setCurrentBookingId(initialBookingId);
       setMode('interaction');
-    } else {
-      setMode('guide');
     }
-  }, [bookingId]);
+  }, [initialBookingId]);
+
+  const switchMode = useCallback((id: string, name?: string) => {
+    setCurrentBookingId(id);
+    setCurrentPanditName(name);
+    setMode('interaction');
+    setMessages([]); // Clear AI chat when switching to real-time? Or keep it? User might want context.
+  }, []);
 
   // Connect WebSocket for interaction mode
   const connectWebSocket = useCallback((bkId: string, token: string) => {
     if (!bkId || !token) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Use the dynamic bkId if available, fallback to initial
     const wsUrl = `${protocol}//${window.location.host}/ws/puja/${bkId}/`;
 
     try {
@@ -139,9 +169,18 @@ export function useChat(bookingId?: string): UseChat {
 
       try {
         if (mode === 'guide') {
-          // We use publicApi to ensure guest users or expired sessions don't get 401s
           const response = await publicApi.post('/chat/quick-chat/', {
             message: content,
+          });
+
+          const actions = response.data.actions || [];
+          
+          // Agentic execution of actions (e.g., auto-add to cart)
+          actions.forEach((action: ChatActionType) => {
+            if (action.type === 'ADD_TO_CART' && action.product) {
+              addItem(action.product, action.quantity || 1);
+            }
+            // We don't auto-switch mode without user click, but we'll show a button
           });
 
           const aiMessage: ChatMessageType = {
@@ -151,6 +190,7 @@ export function useChat(bookingId?: string): UseChat {
             timestamp: new Date().toISOString(),
             mode: 'guide',
             products: response.data.products || [],
+            actions: actions,
           };
 
           setMessages((prev) => [
@@ -195,7 +235,7 @@ export function useChat(bookingId?: string): UseChat {
         setIsLoading(false);
       }
     },
-    [mode]
+    [mode, addItem]
   );
 
   const clearMessages = useCallback(() => {
@@ -213,5 +253,8 @@ export function useChat(bookingId?: string): UseChat {
     connectWebSocket,
     disconnectWebSocket,
     isConnected,
-  };
+    bookingId: currentBookingId,
+    panditName: currentPanditName,
+    switchMode
+  } as any;
 }

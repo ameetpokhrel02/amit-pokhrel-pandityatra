@@ -20,7 +20,7 @@ interface UnifiedChatWidgetProps {
 }
 
 const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, panditName }) => {
-  const { token } = useAuth();
+  const { token, role } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -34,18 +34,20 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     connectWebSocket,
     disconnectWebSocket,
     isConnected,
+    bookingId: activeBookingId,
+    switchMode,
   } = useChat(bookingId);
 
   useEffect(() => {
-    if (isOpen && bookingId && token && mode === 'interaction') {
-      connectWebSocket(bookingId, token);
+    if (isOpen && activeBookingId && token && mode === 'interaction') {
+      connectWebSocket(activeBookingId, token);
     }
     return () => {
       if (mode === 'interaction') {
         disconnectWebSocket();
       }
     };
-  }, [isOpen, bookingId, token, mode, connectWebSocket, disconnectWebSocket]);
+  }, [isOpen, activeBookingId, token, mode, connectWebSocket, disconnectWebSocket]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,7 +90,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   };
 
   const getModeLabel = () => {
-    if (bookingId) return `Chat with ${panditName || 'Pandit'}`;
+    if (mode === 'interaction') return `Chat with ${panditName || 'Pandit'}`;
     return 'PanditYatra AI Guide';
   };
 
@@ -98,6 +100,11 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     }
     return "Namaste! I'm PanditYatra's AI helper. I can help you book pujas, find pandits, or explain app features.";
   };
+
+  // 🛡️ Guard: Only show for customers (users) or guests. Hide for Pandits and Admins.
+  if (role === 'pandit' || role === 'admin') {
+    return null;
+  }
 
   return (
     <>
@@ -222,7 +229,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                   </div>
                 )}
 
-                {messages.map((msg, idx) => (
+                {messages.map((msg: any, idx: number) => (
                   <div key={msg.id || idx} className={cn("flex flex-col gap-1 w-full", msg.sender === 'user' ? "items-end text-right" : "items-start text-left")}>
                     <div className={cn("flex gap-2.5", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
                       <div className={cn(
@@ -248,11 +255,26 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
 
                     {msg.products && msg.products.length > 0 && (
                       <div className={cn("flex flex-col gap-2 w-full", msg.sender === 'user' ? "items-end pr-10" : "items-start pl-10")}>
-                        {msg.products.map((product) => (
+                        {msg.products.map((product: any) => (
                           <ChatProductCard key={product.id} product={product} />
                         ))}
                       </div>
                     )}
+                    
+                    {msg.actions && msg.actions.map((action: any, aIdx: number) => (
+                      action.type === 'SWITCH_MODE' && (
+                        <div key={aIdx} className="ml-10 mt-2">
+                          <Button 
+                            onClick={() => switchMode(action.bookingId!, action.panditName)}
+                            variant="outline"
+                            className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100 rounded-xl text-xs flex gap-2 items-center py-1 h-auto"
+                          >
+                            <MessageSquare size={14} />
+                            Switch to Chat with {action.panditName || 'Pandit'}
+                          </Button>
+                        </div>
+                      )
+                    ))}
                     
                     <span className={cn("text-[10px] text-gray-400 font-medium px-1 mt-0.5", msg.sender === 'user' ? "mr-10" : "ml-10")}>
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

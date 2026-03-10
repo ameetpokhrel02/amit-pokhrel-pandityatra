@@ -9,7 +9,7 @@ def ensure_video_room_for_booking(booking):
         return booking.video_room
     
     # Get service info for metadata
-    puja_title = booking.service.title if booking.service else booking.service_name
+    puja_title = booking.service.name if booking.service else booking.service_name
     pandit_id = booking.pandit_id
 
     room_name, room_url = create_daily_room_for_booking(

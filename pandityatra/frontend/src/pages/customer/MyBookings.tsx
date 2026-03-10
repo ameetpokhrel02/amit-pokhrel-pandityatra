@@ -347,7 +347,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                       </Button>
                     )}
 
-                    {booking.status === 'ACCEPTED' && !(booking.daily_room_url || booking.video_room_url) && (
+                    {booking.status === 'ACCEPTED' && (
                       <Button
                         variant="secondary"
                         className="border-orange-200 text-orange-700 bg-orange-50 hover:bg-orange-100"
@@ -361,7 +361,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                         }}
                       >
                         <Video className="h-4 w-4 mr-2" />
-                        Generate Link
+                        { (booking.daily_room_url || booking.video_room_url) ? 'Regenerate Link' : 'Generate Link' }
                       </Button>
                     )}
                   </div>
