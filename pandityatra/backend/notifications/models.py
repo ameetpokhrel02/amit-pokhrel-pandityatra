@@ -19,6 +19,7 @@ class Notification(models.Model):
         ('REVIEW_RECEIVED', 'Review Received'),
         ('PANDIT_VERIFIED', 'Pandit Verified'),
         ('PANDIT_REJECTED', 'Pandit Rejected'),
+        ('REMINDER', 'Reminder'),
     ]
     
     user = models.ForeignKey(

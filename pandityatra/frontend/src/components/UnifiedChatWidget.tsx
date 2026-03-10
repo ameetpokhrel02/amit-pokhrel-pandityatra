@@ -1,19 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, Loader, Sparkles, User, Bot } from 'lucide-react';
+import { MessageSquare, Shield, X, Send, Loader, Sparkles, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription
-} from '@/components/ui/sheet';
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
 import { cn } from '@/lib/utils';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
-
+import { ChatProductCard } from './ChatProductCard';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UnifiedChatWidgetProps {
@@ -127,149 +125,192 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
           )}
         </AnimatePresence>
 
-        <Button
-          onClick={handleOpen}
-          className={cn(
-            "w-14 h-14 sm:w-16 sm:h-16 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95 p-0 overflow-hidden border-4 border-white",
-            isOpen ? "bg-red-500" : "bg-gradient-to-br from-orange-500 to-amber-600"
-          )}
-        >
-          {isOpen ? <X size={28} /> : <MessageCircle size={32} />}
-          {!isOpen && (
-            <span className="absolute top-0 right-0 flex h-4 w-4">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-4 w-4 bg-green-500 border-2 border-white"></span>
-            </span>
-          )}
-        </Button>
-      </div>
-
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-[400px] p-0 flex flex-col border-l-2 border-orange-100 overflow-hidden bg-white"
-        >
-          {/* Custom Header */}
-          <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 text-white shrink-0 shadow-md">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
-                <img src={panditLogo} alt="Logo" className="w-8 h-8 object-contain brightness-0 invert" />
-              </div>
-              <div className="flex-1">
-                <SheetTitle className="text-white text-xl font-bold tracking-tight">
-                  {getModeLabel()}
-                </SheetTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-400" : "bg-orange-200")} />
-                  <span className="text-[10px] text-orange-50 font-medium uppercase tracking-widest">
-                    {isConnected ? 'Live & Connected' : 'Spiritual System Ready'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 bg-orange-50/10">
-            {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-6 animate-in fade-in zoom-in duration-500">
-                <div className="w-24 h-24 rounded-full bg-orange-100 flex items-center justify-center">
-                  <Bot size={48} className="text-orange-600" />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-orange-900 font-bold text-lg">Vedic AI Assistant</h4>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    {getWelcomeMessage()}
-                  </p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2 pt-2">
-                  {['Book a Puja', 'Find Pandit', 'Pooja Items'].map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => setInputValue(tag)}
-                      className="px-3 py-1.5 rounded-full bg-white border border-orange-200 text-xs text-orange-700 hover:bg-orange-50 transition-colors shadow-sm"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {messages.map((msg, idx) => (
-              <div key={msg.id || idx} className={cn("flex gap-3", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
-                <div className={cn(
-                  "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
-                  msg.sender === 'user' ? "bg-orange-500 text-white" : "bg-white border-2 border-orange-200 text-orange-600"
-                )}>
-                  {msg.sender === 'user' ? <User size={16} /> : <Bot size={16} />}
-                </div>
-                <div className={cn(
-                  "max-w-[75%] space-y-1",
-                  msg.sender === 'user' ? "items-end text-right" : "items-start text-left"
-                )}>
-                  <div className={cn(
-                    "px-4 py-3 rounded-2xl text-sm shadow-md transition-all",
-                    msg.sender === 'user'
-                      ? "bg-orange-500 text-white rounded-tr-none"
-                      : "bg-white text-gray-800 rounded-tl-none border-l-4 border-orange-500"
-                  )}>
-                    {msg.content}
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              onClick={handleOpen}
+              className={cn(
+                "w-14 h-14 sm:w-[60px] sm:h-[60px] rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:scale-105 active:scale-95 p-0 overflow-visible relative text-white border-none shrink-0",
+                isOpen ? "bg-orange-600" : "bg-orange-600 hover:bg-orange-700"
+              )}
+            >
+              <AnimatePresence mode='wait'>
+                {isOpen ? (
+                  <motion.div
+                    key="close"
+                    initial={{ opacity: 0, rotate: -90 }}
+                    animate={{ opacity: 1, rotate: 0 }}
+                    exit={{ opacity: 0, rotate: 90 }}
+                  >
+                    <X size={26} strokeWidth={2.5} />
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="msg"
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                  >
+                    <MessageSquare size={26} strokeWidth={2.5} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+              {!isOpen && (
+                <span className="absolute -top-1 -right-1 flex h-[22px] w-[22px] items-center justify-center rounded-full bg-teal-600 text-[11px] font-bold text-white border-2 border-white shadow-sm z-10">
+                  1
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent 
+            className="w-[92vw] sm:w-[380px] p-0 mb-4 mr-0 sm:mr-6 rounded-3xl overflow-hidden border-none shadow-[0_20px_50px_rgba(0,0,0,0.2)] bg-white animate-in zoom-in-95 duration-200"
+            side="top"
+            align="end"
+            sideOffset={16}
+          >
+            <div className="flex flex-col h-[550px] max-h-[80vh]">
+              {/* Custom Header */}
+              <div className="bg-orange-600 p-5 text-white shrink-0 shadow-md relative">
+                <button 
+                  onClick={() => setIsOpen(false)} 
+                  className="absolute top-5 right-4 text-white/80 hover:text-white transition-colors p-1"
+                >
+                  <X size={20} />
+                </button>
+                <div className="flex items-center gap-3.5 pr-8">
+                  <div className="w-[45px] h-[45px] rounded-full bg-white flex items-center justify-center border border-white/20 shrink-0 overflow-hidden shadow-inner p-1">
+                    <img src={panditLogo} alt="Logo" className="w-full h-full object-contain" />
                   </div>
-                  <span className="text-[10px] text-gray-400 font-medium px-1">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white text-[17px] font-bold tracking-tight leading-snug truncate m-0 p-0">
+                      {getModeLabel()}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-400" : "bg-[#a3e635]")} />
+                      <span className="text-[13px] text-white/90 font-medium">
+                        Online — {isConnected ? 'Live Chat' : 'PanditYatra AI Support'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            ))}
 
-            {isLoading && (
-              <div className="flex gap-3 justify-start items-center">
-                <div className="w-8 h-8 rounded-full bg-white border-2 border-orange-100 flex items-center justify-center animate-pulse">
-                  <Bot size={16} className="text-orange-300" />
-                </div>
-                <div className="bg-white px-4 py-2 rounded-2xl rounded-tl-none border border-orange-100 flex gap-1">
-                  <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" />
-                </div>
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 bg-orange-50/10 custom-scrollbar">
+                {messages.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-6 animate-in fade-in zoom-in duration-500">
+                    <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center shadow-inner">
+                      <Bot size={40} className="text-orange-600" />
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="text-orange-900 font-bold text-lg leading-tight">Namaste! How can I help?</h4>
+                      <p className="text-gray-600 text-[13px] leading-relaxed">
+                        {getWelcomeMessage()}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2 pt-2">
+                      {['Book a Puja', 'Order Agarbatti', 'Panchang Today'].map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => setInputValue(tag)}
+                          className="px-3.5 py-2 rounded-full bg-white border border-orange-100 text-[12px] font-medium text-orange-700 hover:bg-orange-50 transition-all shadow-sm hover:shadow active:scale-95"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {messages.map((msg, idx) => (
+                  <div key={msg.id || idx} className={cn("flex flex-col gap-1 w-full", msg.sender === 'user' ? "items-end text-right" : "items-start text-left")}>
+                    <div className={cn("flex gap-2.5", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
+                      <div className={cn(
+                        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+                        msg.sender === 'user' ? "bg-orange-500 text-white" : "bg-white border border-orange-100 text-orange-600"
+                      )}>
+                        {msg.sender === 'user' ? <User size={15} /> : <Bot size={15} />}
+                      </div>
+                      <div className={cn(
+                        "max-w-[82%] space-y-1",
+                        msg.sender === 'user' ? "items-end text-right" : "items-start text-left"
+                      )}>
+                        <div className={cn(
+                          "px-4 py-3 rounded-2xl text-[13.5px] shadow-sm transition-all whitespace-pre-wrap leading-relaxed",
+                          msg.sender === 'user'
+                            ? "bg-orange-500 text-white rounded-tr-none"
+                            : "bg-white text-gray-800 rounded-tl-none border-l-4 border-orange-500"
+                        )}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    </div>
+
+                    {msg.products && msg.products.length > 0 && (
+                      <div className={cn("flex flex-col gap-2 w-full", msg.sender === 'user' ? "items-end pr-10" : "items-start pl-10")}>
+                        {msg.products.map((product) => (
+                          <ChatProductCard key={product.id} product={product} />
+                        ))}
+                      </div>
+                    )}
+                    
+                    <span className={cn("text-[10px] text-gray-400 font-medium px-1 mt-0.5", msg.sender === 'user' ? "mr-10" : "ml-10")}>
+                      {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex gap-2.5 justify-start items-center">
+                    <div className="w-8 h-8 rounded-full bg-white border border-orange-50 flex items-center justify-center animate-pulse">
+                      <Bot size={15} className="text-orange-300" />
+                    </div>
+                    <div className="bg-white px-4 py-2.5 rounded-2xl rounded-tl-none border border-orange-50 flex gap-1 shadow-sm">
+                      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" />
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-100 text-red-700 px-4 py-2.5 rounded-2xl text-[12px] font-medium text-center shadow-sm mx-4">
+                    <Sparkles className="inline-block mr-2 text-red-300" size={14} />
+                    {error}
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            )}
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-xl text-xs font-medium text-center shadow-sm mx-4">
-                <Sparkles className="inline-block mr-2 text-red-400" size={14} />
-                {error}
+              {/* Input Area */}
+              <div className="p-4 border-t border-orange-50 bg-white shrink-0 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
+                <div className="relative group flex items-center gap-2">
+                  <div className="flex-1 relative">
+                    <Input
+                      value={inputValue}
+                      onChange={(e) => setInputValue(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask about rituals or products..."
+                      className="pr-10 py-5 rounded-2xl border-orange-100 focus:border-orange-500 focus:ring-0 bg-orange-50/30 text-[13px] transition-all placeholder:text-gray-400"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={isLoading || !inputValue.trim()}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-600/10 transition-all p-0"
+                    >
+                      <Send size={16} />
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-center text-[9px] text-gray-400 mt-2.5 font-bold uppercase tracking-widest opacity-60">
+                  Powered by PanditYatra Divine AI
+                </p>
               </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 border-t-2 border-orange-50 bg-white shrink-0">
-            <div className="relative group">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message here..."
-                className="pr-12 py-6 rounded-2xl border-orange-100 focus:border-orange-500 focus:ring-orange-200 bg-orange-50/30 text-sm transition-all"
-                disabled={isLoading}
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={isLoading || !inputValue.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 transition-all p-0"
-              >
-                <Send size={18} />
-              </Button>
             </div>
-            <p className="text-center text-[10px] text-gray-400 mt-2 font-medium uppercase tracking-tighter">
-              Powered by PanditYatra Divine AI
-            </p>
-          </div>
-        </SheetContent>
-      </Sheet>
+          </PopoverContent>
+        </Popover>
+      </div>
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

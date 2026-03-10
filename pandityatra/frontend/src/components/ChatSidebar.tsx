@@ -4,6 +4,7 @@ import { useChat } from '@/hooks/useChat';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { ChatProductCard } from './ChatProductCard';
 
 interface ChatSidebarProps {
     bookingId: string;
@@ -100,13 +101,20 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ bookingId, panditName }) => {
                                 msg.sender === 'user' ? "items-end" : "items-start"
                             )}>
                                 <div className={cn(
-                                    "max-w-[85%] p-3 rounded-2xl text-xs shadow-sm",
+                                    "max-w-[85%] p-3 rounded-2xl text-xs shadow-sm whitespace-pre-wrap",
                                     msg.sender === 'user'
                                         ? "bg-orange-600 text-white rounded-tr-none"
                                         : "bg-gray-100 text-gray-800 rounded-tl-none border border-gray-200"
                                 )}>
                                     {msg.content}
                                 </div>
+                                {msg.products && msg.products.length > 0 && (
+                                    <div className="flex flex-col gap-2 mt-2 w-full max-w-[85%]">
+                                        {msg.products.map(product => (
+                                            <ChatProductCard key={product.id} product={product} />
+                                        ))}
+                                    </div>
+                                )}
                                 <span className="text-[9px] text-gray-400 mt-1">
                                     {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>

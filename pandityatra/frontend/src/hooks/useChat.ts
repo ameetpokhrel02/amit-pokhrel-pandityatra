@@ -1,12 +1,20 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import api, { publicApi } from '@/lib/api-client';
 
+export interface ChatProductType {
+  id: number;
+  name: string;
+  price: number;
+  image: string | null;
+}
+
 export interface ChatMessageType {
   id?: string;
   content: string;
   sender: 'user' | 'ai' | 'pandit';
   timestamp: string;
   mode?: 'guide' | 'interaction';
+  products?: ChatProductType[];
 }
 
 export interface UseChat {
@@ -142,6 +150,7 @@ export function useChat(bookingId?: string): UseChat {
             sender: 'ai',
             timestamp: new Date().toISOString(),
             mode: 'guide',
+            products: response.data.products || [],
           };
 
           setMessages((prev) => [

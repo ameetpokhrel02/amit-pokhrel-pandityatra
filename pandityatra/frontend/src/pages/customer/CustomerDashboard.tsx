@@ -12,12 +12,16 @@ import { fetchBookings, fetchPandits } from "@/lib/api";
 import type { Booking, Pandit } from "@/lib/api";
 import KundaliHistory from "@/components/dashboard/KundaliHistory";
 import { useSearchParams } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 const CustomerDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'overview';
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { unreadCount } = useNotifications();
 
   const [nextBooking, setNextBooking] = useState<any>(null);
   const [stats, setStats] = useState({
@@ -92,9 +96,18 @@ const CustomerDashboard: React.FC = () => {
               Your spiritual journey continues here
             </p>
           </div>
-          <Button variant="outline" size="icon" className="relative">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="relative"
+            onClick={() => setIsNotificationOpen(true)}
+          >
             <Bell className="h-5 w-5" />
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                {unreadCount}
+              </span>
+            )}
           </Button>
         </div>
 
@@ -273,6 +286,10 @@ const CustomerDashboard: React.FC = () => {
         </Tabs>
 
       </div>
+      <NotificationCenter 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+      />
     </DashboardLayout>
   );
 };

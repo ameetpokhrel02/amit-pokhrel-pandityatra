@@ -57,6 +57,9 @@ urlpatterns = [
 
     # Panchang endpoints
     path('api/panchang/', include('panchang.urls')),
+
+    # Notifications endpoints
+    path('api/notifications/', include('notifications.urls')),
 ]
 
 if settings.DEBUG:

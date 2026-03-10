@@ -44,7 +44,7 @@ import MyBookingsPage from './pages/customer/MyBookings'
 import CustomerDashboard from './pages/customer/CustomerDashboard'
 import PanditDashboard from './pages/pandit/PanditDashboard'
 import PanditEarnings from './pages/pandit/PanditEarnings'
-import PanditServices from './pages/pandit/PanditServices' // 🆕
+import PanditServices from './pages/pandit/PanditServices' // 
 import PanditBookings from './pages/pandit/PanditBookings'
 import PanditPrivateProfile from './pages/pandit/PanditProfile'
 

@@ -60,8 +60,10 @@ const Books = () => {
                 fetchSamagriCategories()
             ]);
 
-            // Find the "Book" category
-            const bookCategory = categoriesData.find(c => c.name.toLowerCase() === 'book');
+            // Find the "Book" or "Books" category
+            const bookCategory = categoriesData.find(c => 
+                c.name.toLowerCase() === 'book' || c.name.toLowerCase() === 'books'
+            );
 
             if (bookCategory) {
                 // Filter items that belong to the "Book" category
