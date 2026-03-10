@@ -98,13 +98,13 @@ class QuickGuideChat(APIView):
                     "type": "function",
                     "function": {
                         "name": "search_samagri",
-                        "description": "Search the database for Samagri (puja items/products) when a user asks to buy or needs an item.",
+                        "description": "Search for physical puja items/products (like books, agarbatti, diya) when a user wants to BUY something.",
                         "parameters": {
                             "type": "object",
                             "properties": {
                                 "query": {
                                     "type": "string",
-                                    "description": "The name of the item to search for (e.g., 'agarbatti', 'diya', 'kapur')."
+                                    "description": "The item name or category (e.g., 'book', 'agarbatti')."
                                 }
                             },
                             "required": ["query"]
@@ -115,71 +115,56 @@ class QuickGuideChat(APIView):
                     "type": "function",
                     "function": {
                         "name": "book_pandit",
-                        "description": "Handle requests to book a pandit for a location and ritual.",
+                        "description": "Used ONLY when a user wants to RESERVE/HIRE a pandit for a ritual (e.g., 'book a pandit for wedding'). DO NOT use this for physical books.",
                         "parameters": {
                             "type": "object",
                             "properties": {
-                                "location": {
-                                    "type": "string",
-                                    "description": "The location for the puja (e.g., 'Kathmandu')."
-                                },
-                                "ritual": {
-                                    "type": "string",
-                                    "description": "The type of ritual (e.g., 'Rudrabhishek')."
-                                }
+                                "location": {"type": "string"},
+                                "ritual": {"type": "string"}
                             }
                         }
                     }
                 }
             ]
 
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": """
-                    You are the 'PanditYatra Divine Guide', a high-fidelity AI expert in Vedic rituals, Shastras, and our app's ecosystem.
-                    
-                    MISSION:
-                    Your goal is to be a spiritual companion and a platform tutor. If a user asks a spiritual question, answer it, then pivot to how PanditYatra can help (e.g., 'To perform this ritual, you can book a verified Pandit here...').
-                    
-                    Vedic Knowledge Base:
-                    - Pujas: Satyanarayan Puja (for prosperity), Ganesh Puja (new beginnings), Rudrabhishek (Lord Shiva), Bratabandha (sacred thread), Vivah (wedding).
-                    - Astrology: Kundali matchmaking (Guna Milan), Manglik analysis, Dashas, and Yogas.
-                    - Ritual Essentials: Sankalpa (intention), Aachaman (purification), Samagri (Puja materials like Kusha, Tila, Akshata, Belpatra).
-                    
-                    App Features (Teach these step-by-step):
-                    - Booking a Pandit: Go to 'Find Pandit', select a ritual or location, and choose a verified professional.
-                    - Remote Puja: Mention our 'Live Video Room' for users abroad.
-                    - Kundali Service: Users can generate a detailed PDF by providing their birth details (Date, Time, Place).
-                    - Samagri Shopping: Use the 'search_samagri' tool whenever they need physical items. Tell them they can add items directly to their cart from this chat!
-                    
-                    Robustness & Persona:
-                    - PROACTIVE: Always end with a helpful 'did you know?' about an app feature if relevant.
-                    - LANGUAGE: Respond in the user's language (Nepali, Romanized Nepali, or English).
-                    - SCOPE: Vedic culture, rituals, astrology, and PanditYatra app help.
-                    - TONE: Peaceful, professional, and spiritual (Namaste/🙏).
-                    - BREVITY: Concise, bulleted steps are preferred.
-                    """},
-                    {"role": "user", "content": message}
-                ],
-                model="llama-3.1-8b-instant",  # fast & cheap on Groq
-                temperature=0.7,
-                max_tokens=300,
+            messages = [
+                {"role": "system", "content": """
+                You are the 'PanditYatra Divine Guide'. 
+                
+                CRITICAL INSTRUCTION:
+                Distinguish between 'booking' a service (Puja ceremony) and 'buying' a physical item (e.g., a Book, Agarbatti, Diya). 
+                - If the user needs a PHYSICAL ITEM (like a book or incense), use 'search_samagri'.
+                - If the user wants to HIRE A PANDIT for a ceremony, use 'book_pandit'.
+                
+                Tone: Peaceful, spiritual, and professional (Namaste/🙏). 
+                Encourage users to add products directly to their cart when search results are found.
+                """},
+                {"role": "user", "content": message}
+            ]
+
+            # First Pass: Check for tools
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=messages,
                 tools=tools,
-                tool_choice="auto"
+                tool_choice="auto",
+                max_tokens=300
             )
 
-            ai_message = chat_completion.choices[0].message
-            reply = ai_message.content or ""
+            response_message = response.choices[0].message
+            tool_calls = response_message.tool_calls
             products_data = []
 
-            # Process tool calls if AI decided to call tools
-            if ai_message.tool_calls:
-                for tool_call in ai_message.tool_calls:
-                    if tool_call.function.name == "search_samagri":
-                        args = json.loads(tool_call.function.arguments)
-                        query = args.get("query", "")
-                        
-                        # Better search: check name OR category name OR description
+            if tool_calls:
+                messages.append(response_message)
+                
+                for tool_call in tool_calls:
+                    function_name = tool_call.function.name
+                    function_args = json.loads(tool_call.function.arguments)
+                    
+                    if function_name == "search_samagri":
+                        query = function_args.get("query", "")
+                        # Robust Search: Try exact, then word split
                         items = SamagriItem.objects.filter(
                             Q(name__icontains=query) | 
                             Q(category__name__icontains=query) |
@@ -187,9 +172,18 @@ class QuickGuideChat(APIView):
                             is_active=True
                         )[:3]
                         
+                        if not items.exists() and len(query) > 3:
+                            # Fallback: split words if query is long
+                            words = query.split()
+                            q_objects = Q()
+                            for word in words:
+                                if len(word) > 2:
+                                    q_objects |= Q(name__icontains=word)
+                            items = SamagriItem.objects.filter(q_objects, is_active=True)[:3]
+
+                        results_summary = "No items found."
                         if items.exists():
-                            if not reply:
-                                reply = f"Namaste! I found these {query} items that might be perfect for your puja:"
+                            results_summary = f"Found {items.count()} matching items: " + ", ".join([i.name for i in items])
                             for item in items:
                                 products_data.append({
                                     "id": item.id,
@@ -197,33 +191,47 @@ class QuickGuideChat(APIView):
                                     "price": float(item.price),
                                     "image": request.build_absolute_uri(item.image.url) if item.image else None
                                 })
-                        else:
-                            # If no specific item found, maybe suggest the category or a general message
-                            if not reply:
-                                reply = f"I'm sorry, I couldn't find any items matching '{query}' in our store right now. 🙏 Please browse our 'Shop' section for our full collection of ritual essentials."
-                    
-                    elif tool_call.function.name == "book_pandit":
-                        args = json.loads(tool_call.function.arguments)
-                        location = args.get("location", "your location")
-                        ritual = args.get("ritual", "your puja")
-                        reply = f"To book a pandit for {ritual} in {location}, please navigate to the 'Find Pandit' section in our app to see available verified Pandits! 🙏"
+                        
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": results_summary,
+                        })
 
-            # Save to DB if user is authenticated (saves only text)
+                    elif function_name == "book_pandit":
+                        loc = function_args.get("location", "anywhere")
+                        rit = function_args.get("ritual", "a puja")
+                        messages.append({
+                            "tool_call_id": tool_call.id,
+                            "role": "tool",
+                            "name": function_name,
+                            "content": f"The user must go to 'Find Pandit' to book for {rit} in {loc} manually.",
+                        })
+
+                # Second Pass: Natural Response
+                final_response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=messages,
+                )
+                reply = final_response.choices[0].message.content
+            else:
+                reply = response_message.content
+
+            # Final Cleanup: Remove any raw tool call tags leaked into the text (leaks sometimes occur in Llama 3)
+            if reply:
+                import re
+                reply = re.sub(r'<function.*?>.*?</function>', '', reply, flags=re.DOTALL).strip()
+                # Also remove lingering thought-style tags if any
+                reply = re.sub(r'<thought.*?>.*?</thought>', '', reply, flags=re.DOTALL).strip()
+
+            # Save History
             if request.user.is_authenticated:
-                ChatMessage.objects.create(
-                    user=request.user,
-                    mode='guide',
-                    sender='user',
-                    content=message
-                )
-                ChatMessage.objects.create(
-                    user=request.user,
-                    mode='guide',
-                    sender='ai',
-                    content=reply
-                )
+                ChatMessage.objects.create(user=request.user, mode='guide', sender='user', content=message)
+                ChatMessage.objects.create(user=request.user, mode='guide', sender='ai', content=reply)
 
             return Response({"reply": reply, "response": reply, "products": products_data}) 
+
         except Exception as e:
             import traceback
             traceback.print_exc()
