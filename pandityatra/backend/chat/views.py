@@ -183,10 +183,12 @@ class QuickGuideChat(APIView):
             if request.user.is_authenticated:
                 active_booking = Booking.objects.filter(
                     user=request.user, 
-                    status__in=[BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]
+                    status__in=[BookingStatus.ACCEPTED, BookingStatus.PENDING]
                 ).first()
                 if active_booking:
-                    booking_context = f"The user has an ACTIVE BOOKING (ID: {active_booking.id}) for {active_booking.puja.name} with Pandit {active_booking.pandit.user.get_full_name()}. Mention this if relevant."
+                    service_name = active_booking.service.name if active_booking.service else active_booking.service_name
+                    pandit_name = active_booking.pandit.user.full_name if active_booking.pandit.user.full_name else active_booking.pandit.user.username
+                    booking_context = f"The user has an ACTIVE BOOKING (ID: {active_booking.id}) for {service_name} with Pandit {pandit_name}. Mention this if relevant."
 
             PANDITYATRA_KNOWLEDGE = """
             SITE NAVIGATION & FEATURES (How to use PanditYatra):
