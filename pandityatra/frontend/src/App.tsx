@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { CartProvider } from './hooks/useCart'
 import { FavoritesProvider } from './hooks/useFavorites'
+import { ChatProvider } from './contexts/ChatContext'
 import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { Toaster } from '@/components/ui/toaster'
 import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -42,10 +43,12 @@ import MyBookingsPage from './pages/customer/MyBookings'
 
 // Dashboards (NEW STRUCTURE)
 import CustomerDashboard from './pages/customer/CustomerDashboard'
+import CustomerMessages from './pages/customer/CustomerMessages'
 import PanditDashboard from './pages/pandit/PanditDashboard'
 import PanditEarnings from './pages/pandit/PanditEarnings'
 import PanditServices from './pages/pandit/PanditServices' // 
 import PanditBookings from './pages/pandit/PanditBookings'
+import PanditMessages from './pages/pandit/PanditMessages'
 import PanditPrivateProfile from './pages/pandit/PanditProfile'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -57,6 +60,7 @@ import AdminPayouts from './pages/admin/AdminPayouts'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminSamagri from './pages/admin/AdminSamagri'
 import AdminServices from './pages/admin/AdminServices'
+import AdminActivityLogs from './pages/admin/AdminActivityLogs'
 
 // Profile
 import EditProfile from './pages/customer/Profile'
@@ -70,6 +74,7 @@ import PaymentPage from './pages/Payment/PaymentPage'
 import PaymentSuccess from './pages/Payment/PaymentSuccess'
 import PaymentFailure from './pages/Payment/PaymentFailure'
 import KhaltiVerify from './pages/Payment/KhaltiVerify'
+import EsewaVerify from './pages/Payment/EsewaVerify'
 
 // Video
 import PujaRoom from './pages/Video/PujaRoom'
@@ -97,6 +102,7 @@ function App() {
     <GoogleOAuthProvider clientId={googleClientId}>
       <CartProvider>
         <FavoritesProvider>
+          <ChatProvider>
           <AuthProvider>
             <ThemeProvider defaultTheme="system" storageKey="pandityatra-theme">
               <ErrorBoundary>
@@ -151,6 +157,12 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    <Route path="/messages" element={
+                      <ProtectedRoute allowedRoles={['user']}>
+                        <CustomerMessages />
+                      </ProtectedRoute>
+                    } />
+
                     <Route path="/booking" element={
                       <ProtectedRoute allowedRoles={['user']}>
                         <BookingForm />
@@ -197,6 +209,12 @@ function App() {
                     <Route path="/pandit/bookings" element={
                       <ProtectedRoute allowedRoles={['pandit']}>
                         <PanditBookings />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/pandit/messages" element={
+                      <ProtectedRoute allowedRoles={['pandit']}>
+                        <PanditMessages />
                       </ProtectedRoute>
                     } />
 
@@ -262,6 +280,12 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    <Route path="/admin/activity-logs" element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminActivityLogs />
+                      </ProtectedRoute>
+                    } />
+
                     {/* 💳 Payments */}
                     <Route path="/payment/:bookingId" element={
                       <ProtectedRoute allowedRoles={['user']}>
@@ -272,6 +296,7 @@ function App() {
                     <Route path="/payment/success/:bookingId" element={<PaymentSuccess />} />
                     <Route path="/payment/cancel" element={<PaymentFailure />} />
                     <Route path="/payment/khalti/verify" element={<KhaltiVerify />} />
+                    <Route path="/payment/esewa/verify" element={<EsewaVerify />} />
 
                     {/* 🎥 Video */}
                     <Route path="/puja-room/:id" element={<PujaRoom />} />
@@ -306,6 +331,7 @@ function App() {
               </ErrorBoundary>
             </ThemeProvider>
           </AuthProvider>
+          </ChatProvider>
         </FavoritesProvider>
       </CartProvider>
     </GoogleOAuthProvider>

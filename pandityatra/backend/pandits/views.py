@@ -305,6 +305,7 @@ def delete_availability_block(request, block_id):
 from bookings.models import Booking, BookingStatus
 from django.db.models import Sum
 from .models import PanditWallet
+from chat.models import Message, ChatRoom
 import datetime
 
 @api_view(['GET'])
@@ -410,6 +411,12 @@ def pandit_dashboard_stats(request):
         booking_date__year=today.year,
         status=BookingStatus.COMPLETED
     ).aggregate(total=Sum('total_fee'))['total'] or 0
+
+    # 6. Unread Messages Count
+    unread_messages_count = Message.objects.filter(
+        chat_room__pandit=pandit,
+        is_read=False
+    ).exclude(sender=request.user).count()
     
     stats_data = {
         "todays_bookings": todays_bookings_count,
@@ -419,7 +426,8 @@ def pandit_dashboard_stats(request):
         "total_earned": wallet.total_earned,
         "week_earnings": week_earnings,
         "month_earnings": month_earnings,
-        "is_online": pandit.is_available
+        "unread_messages": unread_messages_count,
+        "is_online": getattr(pandit, 'is_available', False)
     }
 
     return Response({
@@ -522,5 +530,16 @@ class PanditViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def profile(self, request, pk=None):
         pandit = self.get_object()
+        
+        # Log Activity
+        from adminpanel.utils import log_activity
+        log_activity(
+            user=request.user if request.user.is_authenticated else None, 
+            action_type="VIEW_PROFILE", 
+            details=f"Viewed profile of {pandit.user.full_name}", 
+            request=request,
+            pandit=pandit
+        )
+
         serializer = PanditDetailSerializer(pandit)
         return Response(serializer.data)

@@ -3,6 +3,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import ChatRoom, Message, ChatMessage
 from django.utils import timezone
+from django.db.models import Q
+from notifications.services import notify_new_message
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -14,6 +16,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.room_id = self.scope['url_route']['kwargs']['room_id']
         self.room_group_name = f'chat_{self.room_id}'
         self.user = self.scope['user']
+        
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+
+        # Verify access
+        access_granted = await self.verify_room_access()
+        if not access_granted:
+            await self.close()
+            return
         
         # Join room group
         await self.channel_layer.group_add(
@@ -38,11 +50,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
     
     async def receive(self, text_data):
-        data = json.dumps(text_data)
+        try:
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            return
+
         message_type = data.get('type', 'TEXT')
         content = data.get('content', '')
-        content_ne = data.get('content_ne', None)  # Nepali translation
+        content_ne = data.get('content_ne', None)
         
+        # Check pre-booking limits
+        is_allowed, reason = await self.check_pre_booking_limit()
+        if not is_allowed:
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': reason
+            }))
+            return
+
         # Save message to database
         message = await self.save_message(content, content_ne, message_type)
         
@@ -79,6 +104,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             content_ne=content_ne,
             message_type=message_type
         )
+        # 🔔 Send notification to recipient
+        notify_new_message(message)
         return message
     
     @database_sync_to_async
@@ -98,6 +125,45 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'timestamp': msg.timestamp.isoformat(),
             'is_read': msg.is_read
         } for msg in reversed(messages)]
+
+    @database_sync_to_async
+    def verify_room_access(self):
+        """Verify user has access to this chat room"""
+        try:
+            room = ChatRoom.objects.get(id=self.room_id)
+            is_customer = room.customer_id == self.user.id
+            is_pandit = room.pandit.user_id == self.user.id
+            return is_customer or is_pandit
+        except ChatRoom.DoesNotExist:
+            return False
+
+    @database_sync_to_async
+    def check_pre_booking_limit(self):
+        """Check if user has exceeded pre-booking message limit (10 msgs per 24h)"""
+        try:
+            chat_room = ChatRoom.objects.get(id=self.room_id)
+            if not chat_room.is_pre_booking:
+                return True, None
+                
+            # Only customers are limited, pandits can reply
+            from users.models import User
+            if self.user.role != 'customer':
+                return True, None
+
+            # Limit to 10 messages per 24 hours
+            time_limit = timezone.now() - timezone.timedelta(hours=24)
+            msg_count = Message.objects.filter(
+                chat_room=chat_room,
+                sender=self.user,
+                timestamp__gte=time_limit
+            ).count()
+            
+            if msg_count >= 10:
+                return False, "Pre-booking message limit reached (10 msgs/day). Book a puja for unlimited chat!"
+            
+            return True, None
+        except ChatRoom.DoesNotExist:
+            return False, "Room not found"
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):

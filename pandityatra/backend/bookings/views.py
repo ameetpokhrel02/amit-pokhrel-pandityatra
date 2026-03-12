@@ -14,6 +14,12 @@ from .serializers import (
     BookingSerializer
 )
 from pandits.models import Pandit
+from notifications.services import (
+    notify_booking_created,
+    notify_booking_accepted,
+    notify_booking_completed,
+    notify_booking_cancelled
+)
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -69,6 +75,20 @@ class BookingViewSet(viewsets.ModelViewSet):
             raise permissions.PermissionDenied("This Pandit is not verified by admin.")
 
         serializer.save(user=user, status=BookingStatus.PENDING)
+        
+        # 🔔 Send notification to pandit about new booking
+        booking = serializer.instance
+        notify_booking_created(booking)
+        
+        # Log Activity
+        from adminpanel.utils import log_activity
+        log_activity(
+            user=user, 
+            action_type="BOOKING", 
+            details=f"Booked {serializer.validated_data.get('service').name} with {pandit.user.full_name}", 
+            request=self.request,
+            pandit=pandit
+        )
 
     # ---------------------------
     # PANDIT UPDATE STATUS
@@ -98,8 +118,13 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         if new_status == BookingStatus.ACCEPTED:
             booking.accepted_at = timezone.now()
+            # 🔔 Notify customer that booking is accepted
+            notify_booking_accepted(booking)
+            
         if new_status == BookingStatus.COMPLETED:
             booking.completed_at = timezone.now()
+            # 🔔 Notify both parties that booking is completed
+            notify_booking_completed(booking)
             
             # Credit Pandit earnings (Wallet System)
             pandit_wallet = booking.pandit.wallet
@@ -108,6 +133,10 @@ class BookingViewSet(viewsets.ModelViewSet):
             pandit_wallet.total_earned += pandit_share
             pandit_wallet.available_balance += pandit_share
             pandit_wallet.save()
+            
+        if new_status == BookingStatus.CANCELLED:
+            # 🔔 Notify customer that pandit cancelled
+            notify_booking_cancelled(booking, cancelled_by='pandit')
 
         booking.save()
         return Response(BookingDetailSerializer(booking).data)
@@ -130,6 +159,9 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking.status = BookingStatus.CANCELLED
         booking.cancelled_by = "user"
         booking.save()
+        
+        # 🔔 Notify pandit that customer cancelled
+        notify_booking_cancelled(booking, cancelled_by='user')
 
         return Response(BookingDetailSerializer(booking).data)
 

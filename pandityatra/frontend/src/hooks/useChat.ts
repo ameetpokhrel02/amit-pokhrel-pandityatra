@@ -45,8 +45,11 @@ export interface UseChat {
   disconnectWebSocket: () => void;
   isConnected: boolean;
   bookingId?: string;
+  panditId?: string;
   panditName?: string;
+  panditProfilePic?: string;
   switchMode: (id: string, name?: string) => void;
+  initiateChat: (pId: string, pName?: string, pProfilePic?: string) => Promise<void>;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -59,7 +62,9 @@ export function useChat(initialBookingId?: string): UseChat {
   const [mode, setMode] = useState<'guide' | 'interaction'>('guide');
   const [isConnected, setIsConnected] = useState(false);
   const [currentBookingId, setCurrentBookingId] = useState<string | undefined>(initialBookingId);
+  const [currentPanditId, setCurrentPanditId] = useState<string | undefined>(undefined);
   const [currentPanditName, setCurrentPanditName] = useState<string | undefined>(undefined);
+  const [currentPanditProfilePic, setCurrentPanditProfilePic] = useState<string | undefined>(undefined);
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,13 +85,35 @@ export function useChat(initialBookingId?: string): UseChat {
     setMessages([]); // Clear AI chat when switching to real-time? Or keep it? User might want context.
   }, []);
 
+  const initiateChat = useCallback(async (pId: string, pName?: string, pProfilePic?: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/chat/rooms/initiate/', { pandit_id: pId });
+      const room = response.data;
+      setCurrentBookingId(room.id.toString());
+      setCurrentPanditId(pId);
+      setCurrentPanditName(pName || room.pandit?.user?.full_name);
+      setCurrentPanditProfilePic(pProfilePic || room.pandit?.user?.profile_pic);
+      setMode('interaction');
+      setMessages([]);
+    } catch (err: any) {
+      setError(err?.response?.data?.error || 'Failed to initiate chat');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Connect WebSocket for interaction mode
   const connectWebSocket = useCallback((bkId: string, token: string) => {
     if (!bkId || !token) return;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Use the dynamic bkId if available, fallback to initial
-    const wsUrl = `${protocol}//${window.location.host}/ws/puja/${bkId}/`;
+    // Use backend WebSocket URL - not frontend's host
+    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    // Pass JWT token as query parameter for authentication
+    const wsUrl = `${wsBaseUrl}/ws/chat/${bkId}/?token=${encodeURIComponent(token)}`;
+
+    console.log('Connecting to WebSocket:', wsUrl.replace(/token=.*/, 'token=***'));
 
     try {
       wsRef.current = new WebSocket(wsUrl);
@@ -204,28 +231,54 @@ export function useChat(initialBookingId?: string): UseChat {
             },
             aiMessage,
           ]);
-        } else if (mode === 'interaction' && wsRef.current?.readyState === WebSocket.OPEN) {
-          // WebSocket message
-          wsRef.current.send(
-            JSON.stringify({
-              content,
-              message_type: 'TEXT',
-            })
-          );
+        } else if (mode === 'interaction') {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            // WebSocket message
+            wsRef.current.send(
+              JSON.stringify({
+                content,
+                message_type: 'TEXT',
+              })
+            );
 
-          // Add user message optimistically
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              content,
-              sender: 'user',
-              timestamp: new Date().toISOString(),
-              mode: 'interaction',
-            },
-          ]);
+            // Add user message optimistically
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: Date.now().toString(),
+                content,
+                sender: 'user',
+                timestamp: new Date().toISOString(),
+                mode: 'interaction',
+              },
+            ]);
+          } else if (currentBookingId) {
+            // Fallback: Send via HTTP API if WebSocket not connected
+            try {
+              await api.post(`/chat/rooms/${currentBookingId}/messages/`, {
+                content,
+                message_type: 'TEXT',
+              });
+              
+              // Add user message
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: Date.now().toString(),
+                  content,
+                  sender: 'user',
+                  timestamp: new Date().toISOString(),
+                  mode: 'interaction',
+                },
+              ]);
+            } catch (httpErr: any) {
+              setError('Failed to send message. Please try again.');
+            }
+          } else {
+            setError('Chat connection not established');
+          }
         } else {
-          setError('Not connected to puja');
+          setError('Chat not ready');
         }
       } catch (err: any) {
         const errorMsg = err?.response?.data?.error || err?.message || 'Failed to send message';
@@ -254,7 +307,10 @@ export function useChat(initialBookingId?: string): UseChat {
     disconnectWebSocket,
     isConnected,
     bookingId: currentBookingId,
+    panditId: currentPanditId,
     panditName: currentPanditName,
-    switchMode
+    panditProfilePic: currentPanditProfilePic,
+    switchMode,
+    initiateChat
   } as any;
 }

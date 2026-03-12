@@ -204,6 +204,113 @@ def refund_khalti(pidx):
         timeout=10,
     )
 
+
+# ===============================
+# eSewa Integration
+# ===============================
+import hmac
+import hashlib
+import base64
+import uuid
+
+def generate_esewa_signature(message, secret_key):
+    """Generate HMAC SHA256 signature for eSewa"""
+    key = secret_key.encode('utf-8')
+    msg = message.encode('utf-8')
+    signature = hmac.new(key, msg, hashlib.sha256).digest()
+    return base64.b64encode(signature).decode('utf-8')
+
+
+def initiate_esewa_payment(amount_npr, order_id, return_url, failure_url):
+    """
+    Initiate eSewa payment
+    Returns form data to be submitted to eSewa
+    """
+    try:
+        esewa_url = getattr(settings, 'ESEWA_API_URL', 'https://rc-epay.esewa.com.np')
+        secret_key = getattr(settings, 'ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
+        product_code = getattr(settings, 'ESEWA_PRODUCT_CODE', 'EPAYTEST')
+        
+        # Generate unique transaction UUID
+        transaction_uuid = str(uuid.uuid4())
+        
+        # eSewa uses paisa (1 NPR = 100 paisa)
+        total_amount = int(amount_npr)
+        
+        # Create signature message: total_amount,transaction_uuid,product_code
+        signature_message = f"total_amount={total_amount},transaction_uuid={transaction_uuid},product_code={product_code}"
+        signature = generate_esewa_signature(signature_message, secret_key)
+        
+        # Form data for eSewa
+        form_data = {
+            'amount': str(total_amount),
+            'tax_amount': '0',
+            'total_amount': str(total_amount),
+            'transaction_uuid': transaction_uuid,
+            'product_code': product_code,
+            'product_service_charge': '0',
+            'product_delivery_charge': '0',
+            'success_url': return_url,
+            'failure_url': failure_url,
+            'signed_field_names': 'total_amount,transaction_uuid,product_code',
+            'signature': signature,
+        }
+        
+        payment_url = f"{esewa_url}/api/epay/main/v2/form"
+        
+        return True, payment_url, form_data, transaction_uuid
+        
+    except Exception as e:
+        logger.error(f"eSewa init error: {e}")
+        return False, str(e), None, None
+
+
+def verify_esewa_payment(encoded_data):
+    """
+    Verify eSewa payment from the callback
+    The callback contains base64 encoded JSON data
+    """
+    try:
+        import json
+        
+        # Decode base64 data
+        decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+        payment_data = json.loads(decoded_data)
+        
+        transaction_code = payment_data.get('transaction_code')
+        status = payment_data.get('status')
+        total_amount = payment_data.get('total_amount')
+        transaction_uuid = payment_data.get('transaction_uuid')
+        product_code = payment_data.get('product_code')
+        signed_field_names = payment_data.get('signed_field_names')
+        signature = payment_data.get('signature')
+        
+        # Verify signature
+        secret_key = getattr(settings, 'ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
+        expected_message = f"transaction_code={transaction_code},status={status},total_amount={total_amount},transaction_uuid={transaction_uuid},product_code={product_code},signed_field_names={signed_field_names}"
+        expected_signature = generate_esewa_signature(expected_message, secret_key)
+        
+        if signature != expected_signature:
+            logger.error("eSewa signature mismatch")
+            return False, None, "Invalid signature"
+        
+        if status == 'COMPLETE':
+            return True, transaction_code, payment_data
+        else:
+            return False, None, f"Payment status: {status}"
+            
+    except Exception as e:
+        logger.error(f"eSewa verify error: {e}")
+        return False, None, str(e)
+
+
+def refund_esewa(transaction_code, amount):
+    """Initiate eSewa refund (placeholder - requires merchant access)"""
+    logger.info(f"eSewa refund requested for {transaction_code}, amount: {amount}")
+    # eSewa refunds typically require contacting their support
+    return True
+
+
 # ===============================
 # PANDIT REFUND & EARNING REVERSAL
 # ===============================

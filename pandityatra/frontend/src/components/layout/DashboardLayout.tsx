@@ -14,15 +14,15 @@ import {
     Wallet,
     BookOpen,
     DollarSign,
-    Package
+    Package,
+    MessageCircle,
+    Bell
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
-import { useNotifications } from '@/hooks/useNotifications';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { Bell } from 'lucide-react';
+import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -35,14 +35,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-    const { unreadCount } = useNotifications();
 
     // Define navigation items based on role
     const navItems = {
         user: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
             { icon: Calendar, label: 'My Bookings', path: '/my-bookings' },
+            { icon: MessageCircle, label: 'Messages', path: '/messages' },
             { icon: User, label: 'Profile', path: '/profile' },
             { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
         ],
@@ -51,6 +50,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: User, label: 'My Profile', path: '/pandit/profile' },
             { icon: BookOpen, label: 'Services', path: '/pandit/services' },
             { icon: Calendar, label: 'Bookings', path: '/pandit/bookings' },
+            { icon: MessageCircle, label: 'Messages', path: '/pandit/messages' },
             { icon: Wallet, label: 'Earnings', path: '/pandit/earnings' },
         ],
         admin: [
@@ -62,6 +62,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: Package, label: 'Inventory (Samagri)', path: '/admin/inventory' },
             { icon: Wallet, label: 'Payments', path: '/admin/payments' },
             { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' }, // Added Payouts
+            { icon: Menu, label: 'Activity Logs', path: '/admin/activity-logs' }, // I used Menu icon because Activity requires import, and Menu is already imported. I will just use CheckCircle for now, wait, I can add Activity
             { icon: Settings, label: 'Settings', path: '/admin/settings' },
         ]
     };
@@ -92,19 +93,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         <span className="font-bold text-lg text-primary">PanditYatra</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="relative mr-1"
-                            onClick={() => setIsNotificationOpen(true)}
-                        >
-                            <Bell className="h-5 w-5" />
-                            {unreadCount > 0 && (
-                                <span className="absolute top-1 right-1 h-4 w-4 bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                                    {unreadCount}
-                                </span>
-                            )}
-                        </Button>
+                        <NotificationDropdown />
                         <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                             {isSidebarOpen ? <X /> : <Menu />}
                         </Button>
@@ -199,19 +188,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             <main className="flex-1 min-w-0 overflow-auto pt-16 md:pt-0 bg-[#FDFCFB]">
                 {/* Desktop Top Header (Hidden on sidebars/mobile) */}
                 <div className="hidden md:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b px-8 py-3 items-center justify-end gap-4 h-16">
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="relative text-gray-500 hover:text-primary transition-colors"
-                        onClick={() => setIsNotificationOpen(true)}
-                    >
-                        <Bell className="h-5 w-5" />
-                        {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 h-4 w-4 bg-orange-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                                {unreadCount}
-                            </span>
-                        )}
-                    </Button>
+                    <NotificationDropdown />
                     <div className="h-6 w-px bg-gray-200 mx-2" />
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700 capitalize px-2 py-1 bg-gray-100 rounded-md">
@@ -245,11 +222,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 open={showLogoutDialog}
                 onOpenChange={setShowLogoutDialog}
                 onConfirm={handleLogoutConfirm}
-            />
-            {/* Notification Center Sidebar */}
-            <NotificationCenter 
-                isOpen={isNotificationOpen} 
-                onClose={() => setIsNotificationOpen(false)} 
             />
         </div>
     );

@@ -13,6 +13,7 @@ import json
 from django.db.models import Q
 from samagri.models import SamagriItem
 from bookings.models import Booking, BookingStatus
+from notifications.services import notify_new_message
 
 class ChatRoomListView(generics.ListAPIView):
     """List all chat rooms for the current user"""
@@ -21,11 +22,11 @@ class ChatRoomListView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
+        # For customers, show rooms they are part of
+        # For pandits (via user link), show rooms they are part of
         return ChatRoom.objects.filter(
-            customer=user
-        ).order_by('-created_at') | ChatRoom.objects.filter(
-            pandit__user=user
-        ).order_by('-created_at')
+            Q(customer=user) | Q(pandit__user=user)
+        ).distinct().order_by('-created_at')
 
 
 class ChatRoomDetailView(generics.RetrieveUpdateAPIView):
@@ -41,8 +42,8 @@ class ChatRoomDetailView(generics.RetrieveUpdateAPIView):
         ) | ChatRoom.objects.filter(pandit__user=user)
 
 
-class MessageListView(generics.ListAPIView):
-    """List all messages in a chat room"""
+class MessageListView(generics.ListCreateAPIView):
+    """List all messages in a chat room or send a new message"""
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
     
@@ -64,6 +65,38 @@ class MessageListView(generics.ListAPIView):
         )
         
         return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        """Send a new message to the chat room"""
+        room_id = self.kwargs['room_id']
+        user = request.user
+        
+        try:
+            chat_room = ChatRoom.objects.get(id=room_id)
+            
+            # Verify user has access to this room
+            is_customer = chat_room.customer_id == user.id
+            is_pandit = chat_room.pandit.user_id == user.id
+            
+            if not (is_customer or is_pandit):
+                return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+            
+            # Create the message
+            message = Message.objects.create(
+                chat_room=chat_room,
+                sender=user,
+                content=request.data.get('content', ''),
+                message_type=request.data.get('message_type', 'TEXT')
+            )
+            
+            # 🔔 Send notification to the recipient
+            notify_new_message(message)
+            
+            serializer = self.get_serializer(message)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+        except ChatRoom.DoesNotExist:
+            return Response({'error': 'Chat room not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 class MarkMessageReadView(generics.UpdateAPIView):
@@ -350,11 +383,23 @@ class QuickGuideChat(APIView):
             else:
                 reply = response_message.content
 
-            # Final Cleanup
+            # Final Cleanup - Remove ALL function-like tags
             if reply:
                 import re
-                reply = re.sub(r'<function.*?>.*?</function>', '', reply, flags=re.DOTALL).strip()
-                reply = re.sub(r'<thought.*?>.*?</thought>', '', reply, flags=re.DOTALL).strip()
+                # Remove <function=xyz>{...}</function> patterns (various formats)
+                reply = re.sub(r'<function[^>]*>.*?</function>', '', reply, flags=re.DOTALL).strip()
+                reply = re.sub(r',?function[=:][a-z_]+[>}]\s*\{[^}]*\}\s*<?\/function>?', '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+                # Remove <thought>...</thought> patterns
+                reply = re.sub(r'<thought[^>]*>.*?</thought>', '', reply, flags=re.DOTALL).strip()
+                # Remove <suggest_real_time_chat>...</suggest_real_time_chat> and similar
+                reply = re.sub(r'<[a-z_]+>\s*\{.*?\}\s*</[a-z_]+>', '', reply, flags=re.DOTALL).strip()
+                # Remove any remaining function call syntax like <function=add_to_cart>...
+                reply = re.sub(r'<function=[a-z_]+>.*', '', reply, flags=re.DOTALL | re.IGNORECASE).strip()
+                # Clean up any orphaned JSON-like content at start/end
+                reply = re.sub(r'^[\s,]*\{["\']?[a-z_]+["\']?:.*?\}[\s,]*', '', reply, flags=re.IGNORECASE).strip()
+                # If reply became empty after cleanup, provide a fallback
+                if not reply:
+                    reply = "I've processed your request. Is there anything else I can help you with? 🙏"
 
             # Save History
             if request.user.is_authenticated:
@@ -397,3 +442,33 @@ class GuideHistoryView(generics.ListAPIView):
             user=self.request.user,
             mode='guide'
         ).order_by('timestamp')
+
+class ChatRoomInitiateView(APIView):
+    """
+    Initiate or get a pre-booking chat room with a pandit.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        pandit_id = request.data.get('pandit_id')
+        if not pandit_id:
+            return Response({'error': 'pandit_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from pandits.models import Pandit
+            pandit = Pandit.objects.get(id=pandit_id)
+            
+            # Check for existing pre-booking room
+            room, created = ChatRoom.objects.get_or_create(
+                customer=request.user,
+                pandit=pandit,
+                is_pre_booking=True,
+                defaults={'is_active': True}
+            )
+            
+            serializer = ChatRoomSerializer(room, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+        except Pandit.DoesNotExist:
+            return Response({'error': 'Pandit not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -85,6 +85,16 @@ def create_video_token(request):
             room.status = 'live'
             room.save()
             
+        # Log Activity
+        from adminpanel.utils import log_activity
+        log_activity(
+            user=request.user,
+            action_type="VIDEO_CALL",
+            details=f"Joined video call for booking #{booking.id}",
+            request=request,
+            pandit=booking.pandit if hasattr(booking, 'pandit') else None
+        )
+            
         return Response({
             "token": token,
             "room_url": room.room_url,

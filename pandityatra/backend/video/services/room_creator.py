@@ -1,6 +1,7 @@
 from video.models import VideoRoom
 from video.services.daily import create_daily_room_for_booking
 from notifications.email_utils import send_room_ready_email
+from notifications.services import notify_puja_room_ready
 
 def ensure_video_room_for_booking(booking):
     
@@ -32,23 +33,9 @@ def ensure_video_room_for_booking(booking):
     booking.video_room_url = room_url # Legacy support
     booking.save(update_fields=['daily_room_url', 'daily_room_name', 'video_room_url'])
 
-    # TODO: Trigger Notifications here
+    # 🔔 Trigger Notifications for puja room ready
     try:
-        from notifications.models import Notification
-        Notification.objects.create(
-            user=booking.user,
-            notification_type='PAYMENT_SUCCESS',
-            title="Puja Room Ready",
-            message=f"Your {puja_title} room is ready. Join from 'My Bookings' on {booking.booking_date} at {booking.booking_time}.",
-            booking=booking
-        )
-        Notification.objects.create(
-            user=booking.pandit.user,
-            notification_type='BOOKING_ACCEPTED',
-            title="Puja Room Ready (Pandit)",
-            message=f"The room for {puja_title} is ready. Start when scheduled.",
-            booking=booking
-        )
+        notify_puja_room_ready(booking)
         
         # Send Emails
         send_room_ready_email(booking)

@@ -1,6 +1,6 @@
-
 from django.db import models
 from django.conf import settings
+from pandits.models import Pandit
 
 class PaymentErrorLog(models.Model):
 	"""
@@ -29,3 +29,22 @@ class PaymentErrorLog(models.Model):
 
 	def __str__(self):
 		return f"{self.error_type} - {self.message[:60]}"
+
+class ActivityLog(models.Model):
+    """
+    Log of system activities, mainly for Admin review.
+    Tracks actions by Users and Pandits like Login, Profile View, Booking, etc.
+    """
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    pandit = models.ForeignKey(Pandit, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    action_type = models.CharField(max_length=50) # LOGIN, VIEW_PROFILE, ADD_TO_CART, BOOKING, PAYMENT, VIDEO_CALL, REVIEW
+    details = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        actor = self.user.full_name if self.user else "System"
+        return f"{actor} - {self.action_type} at {self.created_at.strftime('%Y-%m-%d %H:%M:%S')}"

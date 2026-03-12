@@ -1,6 +1,6 @@
 /**
  * Payment API Service
- * Handles payment gateway integrations (Stripe + Khalti)
+ * Handles payment gateway integrations (Stripe + Khalti + eSewa)
  */
 
 import axios from 'axios';
@@ -11,12 +11,14 @@ const API_URL = API_BASE_URL;
 
 export interface PaymentIntent {
   success: boolean;
-  gateway: 'STRIPE' | 'KHALTI';
+  gateway: 'STRIPE' | 'KHALTI' | 'ESEWA';
   session_id?: string;
   checkout_url?: string;
   pidx?: string;
   payment_url?: string;
   payment_id: number;
+  form_data?: Record<string, string>;  // For eSewa form submission
+  transaction_uuid?: string;  // For eSewa
 }
 
 export interface PaymentStatus {
@@ -40,11 +42,11 @@ export interface ExchangeRate {
 }
 
 /**
- * Create payment intent (Stripe or Khalti)
+ * Create payment intent (Stripe, Khalti, or eSewa)
  */
 export const createPayment = async (
   bookingId: number,
-  gateway: 'STRIPE' | 'KHALTI',
+  gateway: 'STRIPE' | 'KHALTI' | 'ESEWA',
   currency: 'NPR' | 'USD',
   token: string
 ): Promise<PaymentIntent> => {
@@ -95,6 +97,18 @@ export const verifyKhaltiPayment = async (
 ): Promise<{ success: boolean; booking_id: number; transaction_id: string }> => {
   const { default: apiClient } = await import('./api-client');
   const response = await apiClient.get(`/payments/khalti/verify/?pidx=${pidx}`);
+  return response.data;
+};
+
+/**
+ * Verify eSewa payment
+ */
+export const verifyEsewaPayment = async (
+  data: string,
+  token: string
+): Promise<{ success: boolean; booking_id: number; transaction_id: string }> => {
+  const { default: apiClient } = await import('./api-client');
+  const response = await apiClient.get(`/payments/esewa/verify/?data=${encodeURIComponent(data)}`);
   return response.data;
 };
 

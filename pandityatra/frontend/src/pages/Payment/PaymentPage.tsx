@@ -43,7 +43,7 @@ const PaymentPage: React.FC = () => {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedGateway, setSelectedGateway] = useState<'STRIPE' | 'KHALTI'>('STRIPE');
+  const [selectedGateway, setSelectedGateway] = useState<'STRIPE' | 'KHALTI' | 'ESEWA'>('STRIPE');
   const [selectedCurrency, setSelectedCurrency] = useState<'NPR' | 'USD'>('USD');
   const [exchangeRate, setExchangeRate] = useState<number>(0.0075);
 
@@ -57,7 +57,7 @@ const PaymentPage: React.FC = () => {
     try {
       const preferred = await detectPreferredCurrency();
       setSelectedCurrency(preferred);
-      setSelectedGateway(preferred === 'NPR' ? 'KHALTI' : 'STRIPE');
+      setSelectedGateway(preferred === 'NPR' ? 'ESEWA' : 'STRIPE');
     } catch (err) {
       console.error('Failed to detect currency, defaulting to USD:', err);
       // Default to USD if geolocation fails
@@ -113,7 +113,9 @@ const PaymentPage: React.FC = () => {
         } else if (selectedGateway === 'KHALTI' && paymentIntent.payment_url) {
           // Open Khalti popup or redirect
           window.location.href = paymentIntent.payment_url;
-          // Alternative: openKhaltiPopup(paymentIntent.payment_url);
+        } else if (selectedGateway === 'ESEWA' && paymentIntent.payment_url && paymentIntent.form_data) {
+          // eSewa requires form POST submission
+          submitEsewaForm(paymentIntent.payment_url, paymentIntent.form_data);
         }
       } else {
         throw new Error('Payment initiation failed');
@@ -128,6 +130,24 @@ const PaymentPage: React.FC = () => {
       });
       setProcessing(false);
     }
+  };
+
+  // eSewa requires form submission instead of redirect
+  const submitEsewaForm = (url: string, formData: Record<string, string>) => {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    
+    Object.entries(formData).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
   };
 
   const getAmount = () => {
@@ -215,7 +235,7 @@ const PaymentPage: React.FC = () => {
                     variant={selectedCurrency === 'NPR' ? 'default' : 'outline'}
                     onClick={() => {
                       setSelectedCurrency('NPR');
-                      setSelectedGateway('KHALTI');
+                      setSelectedGateway('ESEWA');
                     }}
                     className="flex-1"
                   >
@@ -263,21 +283,54 @@ const PaymentPage: React.FC = () => {
                   </button>
                 )}
 
+                {/* eSewa Option - Nepal's Leading Digital Wallet */}
+                {selectedCurrency === 'NPR' && (
+                  <button
+                    onClick={() => setSelectedGateway('ESEWA')}
+                    className={`w-full p-4 border-2 rounded-xl transition-all ${selectedGateway === 'ESEWA'
+                      ? 'border-[#60BB46] bg-gradient-to-r from-[#60BB46]/10 to-[#60BB46]/5 shadow-lg shadow-[#60BB46]/20'
+                      : 'border-gray-200 hover:border-[#60BB46]/60 hover:bg-[#60BB46]/5'
+                      }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
+                        <img 
+                          src="/images/esewa.jpg" 
+                          alt="eSewa" 
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="font-bold text-[#60BB46] text-lg">eSewa</p>
+                        <p className="text-xs text-gray-600">Nepal's Leading Digital Wallet</p>
+                      </div>
+                      {selectedGateway === 'ESEWA' && (
+                        <CheckCircle2 className="w-6 h-6 text-[#60BB46]" />
+                      )}
+                    </div>
+                  </button>
+                )}
+
                 {/* Khalti Option */}
                 {selectedCurrency === 'NPR' && (
                   <button
                     onClick={() => setSelectedGateway('KHALTI')}
-                    className={`w-full p-4 border-2 rounded-lg transition-all ${selectedGateway === 'KHALTI'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-gray-200 hover:border-purple-300'
+                    className={`w-full p-4 border-2 rounded-xl transition-all ${selectedGateway === 'KHALTI'
+                      ? 'border-[#5C2D91] bg-gradient-to-r from-[#5C2D91]/10 to-[#5C2D91]/5 shadow-lg shadow-[#5C2D91]/20'
+                      : 'border-gray-200 hover:border-[#5C2D91]/60 hover:bg-[#5C2D91]/5'
                       }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Wallet className="w-6 h-6 text-purple-600" />
-                      <div className="text-left">
-                        <p className="font-semibold">Khalti</p>
-                        <p className="text-xs text-gray-600">Nepal's Digital Wallet</p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-[#5C2D91] flex items-center justify-center shadow-sm">
+                        <Wallet className="w-7 h-7 text-white" />
                       </div>
+                      <div className="text-left flex-1">
+                        <p className="font-bold text-[#5C2D91] text-lg">Khalti</p>
+                        <p className="text-xs text-gray-600">Digital Wallet & Mobile Banking</p>
+                      </div>
+                      {selectedGateway === 'KHALTI' && (
+                        <CheckCircle2 className="w-6 h-6 text-[#5C2D91]" />
+                      )}
                     </div>
                   </button>
                 )}
@@ -295,12 +348,23 @@ const PaymentPage: React.FC = () => {
                   <Button
                     onClick={handlePayment}
                     disabled={processing}
-                    className="w-full h-12 text-base bg-primary hover:bg-primary/90"
+                    className={`w-full h-12 text-base font-semibold transition-all ${
+                      selectedGateway === 'ESEWA' 
+                        ? 'bg-[#60BB46] hover:bg-[#4fa339] text-white' 
+                        : selectedGateway === 'KHALTI'
+                        ? 'bg-[#5C2D91] hover:bg-[#4a2475] text-white'
+                        : 'bg-primary hover:bg-primary/90'
+                    }`}
                   >
                     {processing ? (
                       <LoadingSpinner size={20} className="text-white" />
                     ) : (
-                      `Pay with ${selectedGateway === 'STRIPE' ? 'Stripe' : 'Khalti'}`
+                      <>
+                        {selectedGateway === 'ESEWA' && (
+                          <img src="/images/esewa.jpg" alt="" className="w-5 h-5 rounded mr-2" />
+                        )}
+                        Pay with {selectedGateway === 'STRIPE' ? 'Stripe' : selectedGateway === 'KHALTI' ? 'Khalti' : 'eSewa'}
+                      </>
                     )}
                   </Button>
                 </div>

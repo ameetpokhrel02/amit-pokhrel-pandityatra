@@ -9,7 +9,9 @@ class ChatRoom(models.Model):
     booking = models.OneToOneField(
         'bookings.Booking',
         on_delete=models.CASCADE,
-        related_name='chat_room'
+        related_name='chat_room',
+        null=True,
+        blank=True
     )
     customer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -23,6 +25,7 @@ class ChatRoom(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_pre_booking = models.BooleanField(default=False)
     
     class Meta:
         ordering = ['-created_at']
@@ -30,6 +33,8 @@ class ChatRoom(models.Model):
             models.Index(fields=['customer', 'pandit']),
             models.Index(fields=['booking']),
         ]
+        # Only one pre-booking room per customer-pandit pair
+        unique_together = ['customer', 'pandit', 'is_pre_booking']
     
     def __str__(self):
         return f"Chat: {self.customer.username} <-> {self.pandit.user.username}"

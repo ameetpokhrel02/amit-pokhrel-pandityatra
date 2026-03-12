@@ -23,4 +23,5 @@ urlpatterns = [
     
     # Verify
     path("khalti/verify/", views.KhaltiVerifyView.as_view()),
+    path("esewa/verify/", views.EsewaVerifyView.as_view()),
 ]

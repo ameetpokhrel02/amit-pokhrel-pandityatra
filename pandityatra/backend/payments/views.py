@@ -1,5 +1,5 @@
 """
-Payment Views - Stripe and Khalti Integration
+Payment Views - Stripe, Khalti, and eSewa Integration
 """
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes # 🆕 Added decorators
@@ -24,11 +24,15 @@ from .utils import (
     get_recommended_gateway,
     initiate_khalti_payment,
     verify_khalti_payment,
+    initiate_esewa_payment,
+    verify_esewa_payment,
     refund_stripe,
-    refund_khalti
+    refund_khalti,
+    refund_esewa
 )
 from bookings.models import Booking
 from samagri.models import ShopOrder, ShopOrderStatus
+from notifications.services import notify_payment_success, notify_payment_failed
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +95,8 @@ class CreatePaymentIntentView(APIView):
                 return self._create_stripe_session(payment, booking, amount_usd, request)
             elif gateway == 'KHALTI':
                 return self._initiate_khalti_payment(payment, booking, amount_npr, request)
+            elif gateway == 'ESEWA':
+                return self._initiate_esewa_payment(payment, booking, amount_npr, request)
             else:
                 return Response(
                     {"error": "Invalid gateway"},
@@ -241,6 +247,57 @@ class CreatePaymentIntentView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    def _initiate_esewa_payment(self, payment, booking, amount_npr, request):
+        """Initiate eSewa Payment"""
+        try:
+            success_url = f"{settings.FRONTEND_URL}/payment/esewa/verify"
+            failure_url = f"{settings.FRONTEND_URL}/payment/failure"
+            purchase_order_id = f"BOOKING-{booking.id}"
+            
+            success, payment_url, form_data, transaction_uuid = initiate_esewa_payment(
+                amount_npr=amount_npr,
+                order_id=purchase_order_id,
+                return_url=success_url,
+                failure_url=failure_url
+            )
+            
+            if success:
+                # Update payment
+                payment.transaction_id = transaction_uuid
+                payment.gateway_response = {'transaction_uuid': transaction_uuid, 'form_data': form_data}
+                payment.status = 'PROCESSING'
+                payment.save()
+                
+                return Response({
+                    'success': True,
+                    'gateway': 'ESEWA',
+                    'payment_url': payment_url,
+                    'form_data': form_data,
+                    'transaction_uuid': transaction_uuid,
+                    'payment_id': payment.id
+                })
+            else:
+                error_msg = payment_url if payment_url else "Failed to initiate eSewa payment"
+                return Response(
+                    {"error": error_msg},
+                    status=status.HTTP_400_BAD_REQUEST 
+                )
+                
+        except Exception as e:
+            logger.error(f"eSewa initiation error: {e}")
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                user=payment.user if payment and payment.user_id else None,
+                booking_id=booking.id if booking else None,
+                payment_id=payment.id if payment else None,
+                message=f"eSewa error: {str(e)}",
+                context={"request_data": request.data}
+            )
+            return Response(
+                {"error": f"eSewa error: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class StripeWebhookView(APIView):
     """
@@ -329,6 +386,9 @@ class StripeWebhookView(APIView):
             
             booking.save()
             
+            # 🔔 Send payment success notification
+            notify_payment_success(booking, payment.amount)
+            
             logger.info(f"Payment completed for booking {booking_id}")
             
         except Exception as e:
@@ -400,6 +460,9 @@ class KhaltiVerifyView(APIView):
             
             booking.save()
             
+            # 🔔 Send payment success notification
+            notify_payment_success(booking, payment.amount)
+            
             return Response({
                 'success': True,
                 'booking_id': booking.id,
@@ -409,6 +472,10 @@ class KhaltiVerifyView(APIView):
         else:
             payment.status = 'FAILED'
             payment.save()
+            
+            # 🔔 Send payment failed notification
+            notify_payment_failed(booking, "Khalti payment verification failed")
+            
             return Response(
                 {"error": "Payment verification failed"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -426,6 +493,131 @@ class KhaltiVerifyView(APIView):
                 'success': True,
                 'order_id': order.id,
                 'transaction_id': transaction_id,
+                'type': 'SHOP_ORDER'
+            })
+        else:
+            return Response(
+                {"error": "Payment verification failed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class EsewaVerifyView(APIView):
+    """
+    Verify eSewa payment
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Handle redirect from eSewa"""
+        # eSewa sends data as base64 encoded JSON in 'data' parameter
+        encoded_data = request.query_params.get('data')
+        
+        if not encoded_data:
+            return Response(
+                {"error": "Missing payment data"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            import json
+            import base64
+            
+            # Decode the data
+            decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+            payment_data = json.loads(decoded_data)
+            
+            transaction_uuid = payment_data.get('transaction_uuid')
+            
+            # Find payment by transaction_uuid
+            payment = Payment.objects.filter(
+                transaction_id=transaction_uuid, 
+                user=request.user
+            ).first()
+            
+            if payment:
+                return self.handle_booking_verification(payment, encoded_data)
+            
+            # Try finding Shop Order
+            order = ShopOrder.objects.filter(
+                transaction_id=transaction_uuid, 
+                user=request.user
+            ).first()
+            
+            if order:
+                return self.handle_shop_verification(order, encoded_data)
+                
+            return Response(
+                {"error": "Payment record not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+            
+        except Exception as e:
+            logger.error(f"Error handling eSewa payment: {e}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def handle_booking_verification(self, payment, encoded_data):
+        booking = payment.booking
+        success, transaction_code, details = verify_esewa_payment(encoded_data)
+        
+        if success:
+            # Update payment
+            payment.status = 'COMPLETED'
+            payment.completed_at = timezone.now()
+            payment.gateway_response = details
+            payment.save()
+            
+            # Update booking
+            booking.payment_status = True
+            booking.payment_method = 'ESEWA'
+            booking.status = 'ACCEPTED'
+            booking.transaction_id = transaction_code
+            
+            # Create video room for online puja
+            if booking.service_location == 'ONLINE':
+                try:
+                    ensure_video_room_for_booking(booking)
+                except Exception as e:
+                    logger.error(f"Failed to create video room: {e}")
+            
+            booking.save()
+            
+            # 🔔 Send payment success notification
+            notify_payment_success(booking, payment.amount)
+            
+            return Response({
+                'success': True,
+                'booking_id': booking.id,
+                'transaction_id': transaction_code,
+                'type': 'BOOKING'
+            })
+        else:
+            payment.status = 'FAILED'
+            payment.save()
+            
+            # 🔔 Send payment failed notification
+            notify_payment_failed(booking, "eSewa payment verification failed")
+            
+            return Response(
+                {"error": "Payment verification failed"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def handle_shop_verification(self, order, encoded_data):
+        success, transaction_code, details = verify_esewa_payment(encoded_data)
+        
+        if success:
+            order.status = ShopOrderStatus.PAID
+            order.transaction_id = transaction_code
+            order.save()
+            
+            return Response({
+                'success': True,
+                'order_id': order.id,
+                'transaction_id': transaction_code,
                 'type': 'SHOP_ORDER'
             })
         else:

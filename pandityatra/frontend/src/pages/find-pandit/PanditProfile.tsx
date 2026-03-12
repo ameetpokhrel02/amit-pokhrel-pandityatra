@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchPandit } from "@/lib/api";
 import type { Pandit } from "@/lib/api";
-import { Loader2, MapPin, Briefcase, Star, Phone, Mail, Facebook, Instagram, ShieldCheck } from "lucide-react";
+import { Loader2, MapPin, Briefcase, Star, Phone, Mail, Facebook, Instagram, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import {
 import { Check, Clock } from "lucide-react";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { useChatTrigger } from '@/contexts/ChatContext';
 
 const PanditProfile = () => {
     const { id } = useParams<{ id: string }>();
@@ -29,6 +30,7 @@ const PanditProfile = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<any>(null);
+    const { openChatWithPandit } = useChatTrigger();
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -155,18 +157,35 @@ const PanditProfile = () => {
                                     "{bio.substring(0, 120)}{bio.length > 120 ? '...' : ''}"
                                 </p>
 
-                                <Button
-                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white mb-6"
-                                    size="lg"
-                                    onClick={() => {
-                                        document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
-                                        if (pandit.services && pandit.services.length > 0) {
-                                            setSelectedService(pandit.services[0]);
-                                        }
-                                    }}
-                                >
-                                    View Services
-                                </Button>
+                                <div className="flex flex-col gap-3 w-full mb-6">
+                                    <Button
+                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                                        size="lg"
+                                        onClick={() => {
+                                            document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+                                            if (pandit.services && pandit.services.length > 0) {
+                                                setSelectedService(pandit.services[0]);
+                                            }
+                                        }}
+                                    >
+                                        View Services
+                                    </Button>
+                                    
+                                    {/* Message Pandit Button - Pre-booking Chat */}
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
+                                        size="lg"
+                                        onClick={() => {
+                                            if (pandit && id) {
+                                                openChatWithPandit(id, fullName, profilePic);
+                                            }
+                                        }}
+                                    >
+                                        <MessageCircle className="w-4 h-4 mr-2" />
+                                        Message Pandit
+                                    </Button>
+                                </div>
 
                                 <Separator className="mb-6" />
 

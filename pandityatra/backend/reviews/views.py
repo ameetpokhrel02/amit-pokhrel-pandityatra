@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from .models import Review
 from .serializers import ReviewSerializer
 from bookings.models import Booking, BookingStatus
+from notifications.services import notify_review_received
 
 # ---------------------------
 # Create Review
@@ -34,8 +35,21 @@ class CreateReviewView(generics.CreateAPIView):
         if Review.objects.filter(booking=booking).exists():
              raise permissions.PermissionDenied("You have already reviewed this booking.")
 
-        serializer.save(
+        review = serializer.save(
             customer=user, 
             pandit=booking.pandit,
             booking=booking
+        )
+        
+        # 🔔 Notify pandit about the review
+        notify_review_received(review)
+        
+        # Log Activity
+        from adminpanel.utils import log_activity
+        log_activity(
+            user=user,
+            action_type="REVIEW",
+            details=f"Left a {serializer.validated_data.get('rating', '')} star review for {booking.pandit.user.full_name}",
+            request=self.request,
+            pandit=booking.pandit
         )

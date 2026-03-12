@@ -1,10 +1,23 @@
-from rest_framework import viewsets, status, permissions
-from users.permissions import IsAdminOrReadOnly
-from rest_framework.decorators import action
-from rest_framework.response import Response
+import json
+import stripe
+from groq import Groq
+
 from django.db import transaction
 from django.conf import settings
-from .models import SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus, SamagriCategory, PujaSamagriRequirement
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from users.permissions import IsAdminOrReadOnly
+from services.models import Puja
+from payments.utils import initiate_khalti_payment, convert_npr_to_usd
+from adminpanel.utils import log_activity
+
+from .models import (
+    SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus, 
+    SamagriCategory, PujaSamagriRequirement
+)
 from .serializers import (
     SamagriCategorySerializer, 
     SamagriItemSerializer, 
@@ -12,11 +25,6 @@ from .serializers import (
     ShopCheckoutSerializer,
     PujaSamagriRequirementSerializer
 )
-from services.models import Puja
-from django.conf import settings
-from groq import Groq
-from rest_framework.views import APIView
-import json
 
 # --- AI-based Samagri Recommendation Endpoint ---
 class AISamagriRecommendationView(APIView):
@@ -120,27 +128,41 @@ Example:
         # Match with database items and add pricing
         results = []
         for item in items:
-            name = item.get("name", "")
+            name = str(item.get("name", ""))
             quantity = item.get("quantity", 1)
-            unit = item.get("unit", "pcs")
-            is_essential = item.get("is_essential", False)
-            confidence = item.get("confidence", 0.7)
-            reason = item.get("reason", f"Recommended for {puja.name}")
+            unit = str(item.get("unit", "pcs"))
+            is_essential = bool(item.get("is_essential", False))
+            
+            try:
+                confidence = float(item.get("confidence", 0.7))
+            except (ValueError, TypeError):
+                confidence = 0.7
+                
+            reason = str(item.get("reason", f"Recommended for {puja.name}"))
             alternatives = item.get("alternatives", [])
+            if not isinstance(alternatives, list):
+                if isinstance(alternatives, str):
+                    alternatives = [alternatives]
+                else:
+                    alternatives = []
             
             # Try to find matching database item
-            db_item = SamagriItem.objects.filter(
-                name__icontains=name.split()[0]  # Match first word
-            ).first()
+            db_item = None
+            if name and len(name.split()) > 0:
+                db_item = SamagriItem.objects.filter(
+                    name__icontains=name.split()[0]  # Match first word
+                ).first()
             
             # If not found, try alternatives
             if not db_item and alternatives:
                 for alt in alternatives:
-                    db_item = SamagriItem.objects.filter(
-                        name__icontains=alt.split()[0]
-                    ).first()
-                    if db_item:
-                        break
+                    alt_str = str(alt)
+                    if alt_str and len(alt_str.split()) > 0:
+                        db_item = SamagriItem.objects.filter(
+                            name__icontains=alt_str.split()[0]
+                        ).first()
+                        if db_item:
+                            break
             
             results.append({
                 "name": name,
@@ -219,8 +241,7 @@ Example:
                 return price * quantity
                 
         return 50 * quantity  # Default estimate
-from payments.utils import initiate_khalti_payment, convert_npr_to_usd
-import stripe
+
 
 class SamagriCategoryViewSet(viewsets.ModelViewSet):
     queryset = SamagriCategory.objects.all()
@@ -300,6 +321,14 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
 
                 order.total_amount = total_amount
                 order.save()
+                
+                # Log Activity
+                log_activity(
+                    user=request.user, 
+                    action_type="SHOP_ORDER", 
+                    details=f"Placed order #{order.id} for {len(cart_items)} items total NPR {total_amount}", 
+                    request=request
+                )
 
                 # 2. Payment Gateway Integration
                 if payment_method == 'KHALTI':

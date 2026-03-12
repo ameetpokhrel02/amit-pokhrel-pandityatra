@@ -20,6 +20,7 @@ class Notification(models.Model):
         ('PANDIT_VERIFIED', 'Pandit Verified'),
         ('PANDIT_REJECTED', 'Pandit Rejected'),
         ('REMINDER', 'Reminder'),
+        ('PUJA_ROOM_READY', 'Puja Room Ready'),
     ]
     
     user = models.ForeignKey(

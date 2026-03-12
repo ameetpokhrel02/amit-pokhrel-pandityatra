@@ -237,6 +237,11 @@ KHALTI_SECRET_KEY = os.environ.get('KHALTI_SECRET_KEY', '')
 KHALTI_PUBLIC_KEY = os.environ.get('KHALTI_PUBLIC_KEY', '')
 KHALTI_API_URL = os.environ.get('KHALTI_API_URL', 'https://khalti.com/api/v2')
 
+# eSewa (for NPR payments - Nepal's Leading Digital Wallet)
+ESEWA_SECRET_KEY = os.environ.get('ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')  # Test secret key
+ESEWA_PRODUCT_CODE = os.environ.get('ESEWA_PRODUCT_CODE', 'EPAYTEST')  # Test product code
+ESEWA_API_URL = os.environ.get('ESEWA_API_URL', 'https://rc-epay.esewa.com.np')  # Test URL (rc = release candidate)
+
 # Daily.co (for video calls)
 DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')
 DAILY_ENABLE_RECORDING = os.environ.get('DAILY_ENABLE_RECORDING', 'False').lower() in ('true', '1', 'yes', 'on')

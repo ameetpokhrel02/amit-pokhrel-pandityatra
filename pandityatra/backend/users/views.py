@@ -131,6 +131,11 @@ class OTPVerifyAndTokenView(APIView):
         
         if is_valid: 
             refresh = RefreshToken.for_user(user)
+            
+            # Log Activity
+            from adminpanel.utils import log_activity
+            log_activity(user=user, action_type="LOGIN", details=f"Logged in via OTP.", request=request)
+            
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -193,6 +198,11 @@ class PasswordLoginView(APIView):
         
         if authenticated_user:
             refresh = RefreshToken.for_user(authenticated_user)
+            
+            # Log Activity
+            from adminpanel.utils import log_activity
+            log_activity(user=authenticated_user, action_type="LOGIN", details=f"Logged in via password.", request=request)
+            
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
@@ -568,6 +578,10 @@ class GoogleLoginView(APIView):
 
             # Generate JWT tokens (SimpleJWT integration)
             refresh = RefreshToken.for_user(user)
+            
+            action_type = "LOGIN" if not created else "SIGNUP"
+            from adminpanel.utils import log_activity
+            log_activity(user=user, action_type=action_type, details=f"Authenticated via Google.", request=request)
             
             return Response({
                 'refresh': str(refresh),

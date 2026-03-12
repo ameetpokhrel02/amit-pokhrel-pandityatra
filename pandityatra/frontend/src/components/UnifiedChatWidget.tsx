@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MessageSquare, Shield, X, Send, Loader, Sparkles, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { useAuth } from '@/hooks/useAuth';
 import { useChat } from '@/hooks/useChat';
+import { useChatTrigger } from '@/contexts/ChatContext';
 import { cn } from '@/lib/utils';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
 import { ChatProductCard } from './ChatProductCard';
@@ -17,13 +18,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface UnifiedChatWidgetProps {
   bookingId?: string;
   panditName?: string;
+  panditId?: string;
 }
 
-const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, panditName }) => {
-  const { token, role } = useAuth();
+const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, panditName: initialPanditName, panditId: initialPanditId }) => {
+  const { token, role, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Global chat trigger context
+  const { pendingPanditChat, clearPendingChat, shouldOpenAIGuide, clearAIGuide } = useChatTrigger();
 
   const {
     messages,
@@ -36,7 +41,47 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     isConnected,
     bookingId: activeBookingId,
     switchMode,
+    initiateChat,
+    panditName: chatPanditName,
+    panditProfilePic: chatPanditProfilePic,
+    setMode,
+    clearMessages,
   } = useChat(bookingId);
+
+  // Display name and pic from chat hook or prop
+  const displayPanditName = chatPanditName || initialPanditName;
+  const displayPanditProfilePic = chatPanditProfilePic;
+
+  // State for popup visibility
+  const [showPopup, setShowPopup] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Listen for global pandit chat trigger
+  useEffect(() => {
+    if (pendingPanditChat && token) {
+      setIsOpen(true);
+      setHasInteracted(true);
+      setShowPopup(false);
+      // Initiate chat room with pandit
+      initiateChat(pendingPanditChat.panditId, pendingPanditChat.panditName, pendingPanditChat.panditProfilePic);
+      clearPendingChat();
+    } else if (pendingPanditChat && !token) {
+      alert('Please login to message the pandit');
+      clearPendingChat();
+    }
+  }, [pendingPanditChat, token, initiateChat, clearPendingChat]);
+
+  // Listen for AI guide trigger
+  useEffect(() => {
+    if (shouldOpenAIGuide) {
+      setMode('guide');
+      clearMessages();
+      setIsOpen(true);
+      setHasInteracted(true);
+      setShowPopup(false);
+      clearAIGuide();
+    }
+  }, [shouldOpenAIGuide, setMode, clearMessages, clearAIGuide]);
 
   useEffect(() => {
     if (isOpen && activeBookingId && token && mode === 'interaction') {
@@ -52,9 +97,6 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  const [showPopup, setShowPopup] = useState(false);
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -90,13 +132,16 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   };
 
   const getModeLabel = () => {
-    if (mode === 'interaction') return `Chat with ${panditName || 'Pandit'}`;
+    if (mode === 'interaction') return `Chat with ${displayPanditName || 'Pandit'}`;
     return 'PanditYatra AI Guide';
   };
 
   const getWelcomeMessage = () => {
+    if (mode === 'interaction') {
+      return `You're now connected to ${displayPanditName || 'the pandit'}. Feel free to ask any questions before booking.`;
+    }
     if (bookingId) {
-      return `You're now connected to ${panditName || 'the pandit'}. Feel free to ask any questions about your puja.`;
+      return `You're now connected to ${displayPanditName || 'the pandit'}. Feel free to ask any questions about your puja.`;
     }
     return "Namaste! I'm PanditYatra's AI helper. I can help you book pujas, find pandits, or explain app features.";
   };
@@ -185,17 +230,29 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                   <X size={20} />
                 </button>
                 <div className="flex items-center gap-3.5 pr-8">
-                  <div className="w-[45px] h-[45px] rounded-full bg-white flex items-center justify-center border border-white/20 shrink-0 overflow-hidden shadow-inner p-1">
-                    <img src={panditLogo} alt="Logo" className="w-full h-full object-contain" />
+                  <div className="w-[45px] h-[45px] rounded-full bg-white flex items-center justify-center border border-white/20 shrink-0 overflow-hidden shadow-inner">
+                    {mode === 'interaction' && displayPanditProfilePic ? (
+                      <img src={displayPanditProfilePic} alt={displayPanditName} className="w-full h-full object-cover" />
+                    ) : (
+                      <img src={panditLogo} alt="Logo" className="w-full h-full object-contain p-1" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white text-[17px] font-bold tracking-tight leading-snug truncate m-0 p-0">
                       {getModeLabel()}
                     </h3>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-400" : "bg-[#a3e635]")} />
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        mode === 'interaction' 
+                          ? (isConnected ? "bg-green-400" : "bg-yellow-400 animate-pulse")
+                          : "bg-green-400"
+                      )} />
                       <span className="text-[13px] text-white/90 font-medium">
-                        Online — {isConnected ? 'Live Chat' : 'PanditYatra AI Support'}
+                        {mode === 'interaction' 
+                          ? (isConnected ? 'Connected — Live Chat' : 'Connecting...')
+                          : 'Online — PanditYatra AI Support'
+                        }
                       </span>
                     </div>
                   </div>
@@ -230,13 +287,23 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                 )}
 
                 {messages.map((msg: any, idx: number) => (
-                  <div key={msg.id || idx} className={cn("flex flex-col gap-1 w-full", msg.sender === 'user' ? "items-end text-right" : "items-start text-left")}>
+                  <div key={`${msg.id || 'msg'}-${idx}-${msg.timestamp}`} className={cn("flex flex-col gap-1 w-full", msg.sender === 'user' ? "items-end text-right" : "items-start text-left")}>
                     <div className={cn("flex gap-2.5", msg.sender === 'user' ? "flex-row-reverse" : "flex-row")}>
                       <div className={cn(
-                        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
+                        "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm overflow-hidden",
                         msg.sender === 'user' ? "bg-orange-500 text-white" : "bg-white border border-orange-100 text-orange-600"
                       )}>
-                        {msg.sender === 'user' ? <User size={15} /> : <Bot size={15} />}
+                        {msg.sender === 'user' ? (
+                          user?.profile_pic ? (
+                            <img src={user.profile_pic} alt="You" className="w-full h-full object-cover" />
+                          ) : (
+                            <User size={15} />
+                          )
+                        ) : mode === 'interaction' && displayPanditProfilePic ? (
+                          <img src={displayPanditProfilePic} alt={displayPanditName} className="w-full h-full object-cover" />
+                        ) : (
+                          <Bot size={15} />
+                        )}
                       </div>
                       <div className={cn(
                         "max-w-[82%] space-y-1",
