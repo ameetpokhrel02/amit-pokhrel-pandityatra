@@ -28,3 +28,4 @@ django-allauth==0.58.2
 groq
 
 nepali-datetime
+reportlab==4.1.0

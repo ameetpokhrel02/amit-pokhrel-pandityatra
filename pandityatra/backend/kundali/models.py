@@ -6,12 +6,14 @@ class Kundali(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     dob = models.DateField()
     time = models.TimeField()
+    place = models.CharField(max_length=200, blank=True, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
-    timezone = models.CharField(max_length=10)
+    timezone = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     lagna = models.FloatField(null=True)
     midheaven = models.FloatField(null=True)
+    ai_prediction = models.TextField(blank=True, null=True)
 
 
 class KundaliPlanet(models.Model):

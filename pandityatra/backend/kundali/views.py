@@ -15,7 +15,8 @@ def generate_kundali(request):
     time = request.data["time"]
     lat = float(request.data["latitude"])
     lon = float(request.data["longitude"])
-    tz = request.data["timezone"]
+    tz = request.data.get("timezone", "Asia/Kathmandu")
+    place = request.data.get("place", "")
 
     # Create Kundali
     # Robustly parse time (handle AM/PM and other formats)
@@ -45,6 +46,7 @@ def generate_kundali(request):
         user=user,
         dob=dob,
         time=parsed_time,
+        place=place,
         latitude=lat,
         longitude=lon,
         timezone=tz,
@@ -68,18 +70,14 @@ def generate_kundali(request):
         )
 
     # Save Planets
-    for planet, longitude in planets.items():
-        rashi = get_rashi(longitude)
-        nakshatra = get_nakshatra(longitude)
-        house = get_house_from_longitude(longitude, cusps)
-
+    for planet, pdata in planets.items():
         KundaliPlanet.objects.create(
             kundali=kundali,
             planet=planet,
-            longitude=longitude,
-            rashi=rashi,
-            nakshatra=nakshatra,
-            house=house
+            longitude=pdata["longitude"],
+            rashi=get_rashi(pdata["longitude"]),
+            nakshatra=get_nakshatra(pdata["longitude"]),
+            house=pdata["house"]
         )
 
     # AI prediction
@@ -114,7 +112,7 @@ def generate_kundali(request):
 @permission_classes([IsAuthenticated])
 def list_kundalis(request):
     user = request.user
-    kundalis = Kundali.objects.filter(user=user).order_by('-created_at')
+    kundalis = Kundali.objects.filter(user=user).prefetch_related('planets').order_by('-created_at')
     
     data = []
     for k in kundalis:
@@ -122,8 +120,20 @@ def list_kundalis(request):
             "id": k.id,
             "dob": k.dob,
             "time": k.time,
-            "place": f"{k.latitude}, {k.longitude}", # You might want to store place name in model later
-            "created_at": k.created_at
+            "latitude": k.latitude,
+            "longitude": k.longitude,
+            "place": k.place or f"{k.latitude}, {k.longitude}",
+            "created_at": k.created_at,
+            "ai_prediction": k.ai_prediction if hasattr(k, 'ai_prediction') else None,
+            "planets": [
+                {
+                    "planet": p.planet,
+                    "longitude": p.longitude,
+                    "rashi": p.rashi,
+                    "nakshatra": p.nakshatra,
+                    "house": p.house
+                } for p in k.planets.all()
+            ]
         })
     
     return Response(data)

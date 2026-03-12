@@ -21,7 +21,8 @@ import {
     ShoppingCart,
     ClipboardList,
     ChevronDown,
-    Store
+    Store,
+    Receipt,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
@@ -50,6 +51,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const [expandedItems, setExpandedItems] = useState<string[]>(() => {
         // Auto-expand Marketplace if we're on a marketplace sub-tab
         if (location.search.includes('tab=marketplace')) return ['Marketplace'];
+        if (location.search.includes('tab=purchases')) return ['My Purchases'];
         return [];
     });
 
@@ -64,6 +66,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         if (location.search.includes('tab=marketplace') && !expandedItems.includes('Marketplace')) {
             setExpandedItems(prev => [...prev, 'Marketplace']);
         }
+        if (location.search.includes('tab=purchases') && !expandedItems.includes('My Purchases')) {
+            setExpandedItems(prev => [...prev, 'My Purchases']);
+        }
     }, [location.search]);
 
     // Define navigation items based on role
@@ -75,6 +80,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 { icon: ShoppingCart, label: 'My Cart', path: '/dashboard?tab=marketplace&sub=cart' },
                 { icon: Heart, label: 'My Favorites', path: '/dashboard?tab=marketplace&sub=favorites' },
                 { icon: ClipboardList, label: 'My Orders', path: '/dashboard?tab=marketplace&sub=orders' },
+            ]},
+            { icon: Receipt, label: 'My Purchases', path: '/dashboard?tab=purchases', children: [
+                { icon: Calendar, label: 'Booking History', path: '/dashboard?tab=purchases&sub=bookings' },
+                { icon: Package, label: 'Shop Orders', path: '/dashboard?tab=purchases&sub=shop-orders' },
             ]},
             { icon: MessageCircle, label: 'Messages', path: '/messages' },
             { icon: User, label: 'Profile', path: '/profile' },
@@ -168,8 +177,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                 const Icon = item.icon;
                                 const hasChildren = item.children && item.children.length > 0;
                                 const isExpanded = expandedItems.includes(item.label);
+                                // Extract the tab param from the item path for matching
+                                const itemTabParam = new URLSearchParams(item.path.split('?')[1] || '').get('tab');
+                                const currentTabParam = new URLSearchParams(location.search).get('tab');
                                 const isParentActive = item.path.includes('?')
-                                    ? location.search.includes('tab=marketplace')
+                                    ? itemTabParam === currentTabParam
                                     : location.pathname === item.path;
                                 const isDirectActive = item.path.includes('?')
                                     ? location.pathname + location.search === item.path

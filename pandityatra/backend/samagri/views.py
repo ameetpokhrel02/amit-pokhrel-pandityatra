@@ -1,13 +1,22 @@
 import json
+import io
 import stripe
 from groq import Groq
 
 from django.db import transaction
 from django.conf import settings
+from django.http import HttpResponse
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
 from users.permissions import IsAdminOrReadOnly
 from services.models import Puja
@@ -432,6 +441,146 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         except ShopOrder.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['get'], url_path='invoice')
+    def invoice(self, request, pk=None):
+        """GET /api/samagri/checkout/{id}/invoice/ — Download PDF invoice for a shop order"""
+        try:
+            order = ShopOrder.objects.prefetch_related(
+                'items', 'items__samagri_item'
+            ).get(id=pk, user=request.user)
+        except ShopOrder.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=30*mm, bottomMargin=20*mm,
+                                leftMargin=20*mm, rightMargin=20*mm)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Custom styles
+        title_style = ParagraphStyle('InvoiceTitle', parent=styles['Title'],
+                                     fontSize=24, textColor=colors.HexColor('#EA580C'),
+                                     spaceAfter=4*mm)
+        subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'],
+                                        fontSize=10, textColor=colors.grey,
+                                        spaceAfter=2*mm)
+        heading_style = ParagraphStyle('SectionHead', parent=styles['Heading2'],
+                                       fontSize=13, textColor=colors.HexColor('#1F2937'),
+                                       spaceBefore=6*mm, spaceAfter=3*mm)
+        normal = styles['Normal']
+        bold_style = ParagraphStyle('BoldNormal', parent=normal, fontName='Helvetica-Bold')
+
+        # --- Header ---
+        elements.append(Paragraph("🙏 PanditYatra", title_style))
+        elements.append(Paragraph("Your Spiritual Journey Partner — Shop Invoice", subtitle_style))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#EA580C'),
+                                   spaceAfter=4*mm, spaceBefore=2*mm))
+
+        # --- Invoice Info ---
+        info_data = [
+            [Paragraph(f"<b>Invoice #:</b> INV-SHOP-{order.id}", normal),
+             Paragraph(f"<b>Date:</b> {order.created_at.strftime('%B %d, %Y')}", normal)],
+            [Paragraph(f"<b>Order ID:</b> #{order.id}", normal),
+             Paragraph(f"<b>Status:</b> {order.get_status_display()}", normal)],
+        ]
+        info_table = Table(info_data, colWidths=[doc.width * 0.5, doc.width * 0.5])
+        info_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 4*mm))
+
+        # --- Customer Info ---
+        elements.append(Paragraph("Bill To", heading_style))
+        elements.append(Paragraph(f"<b>{order.full_name}</b>", normal))
+        elements.append(Paragraph(f"{order.shipping_address}, {order.city}", normal))
+        elements.append(Paragraph(f"Phone: {order.phone_number}", normal))
+        elements.append(Paragraph(f"Email: {order.user.email}", normal))
+        elements.append(Spacer(1, 4*mm))
+
+        # --- Items Table ---
+        elements.append(Paragraph("Order Items", heading_style))
+        table_data = [
+            [Paragraph('<b>#</b>', normal),
+             Paragraph('<b>Item</b>', normal),
+             Paragraph('<b>Qty</b>', normal),
+             Paragraph('<b>Unit Price</b>', normal),
+             Paragraph('<b>Total</b>', normal)],
+        ]
+        for idx, item in enumerate(order.items.all(), 1):
+            name = item.samagri_item.name if item.samagri_item else (item.item_name or 'N/A')
+            line_total = item.quantity * item.price_at_purchase
+            table_data.append([
+                str(idx),
+                name,
+                str(item.quantity),
+                f"Rs. {item.price_at_purchase:,.2f}",
+                f"Rs. {line_total:,.2f}",
+            ])
+        # Totals row
+        table_data.append(['', '', '', Paragraph('<b>Subtotal</b>', normal),
+                          Paragraph(f"<b>Rs. {order.total_amount:,.2f}</b>", normal)])
+        table_data.append(['', '', '', Paragraph('<b>Shipping</b>', normal), 'Free'])
+        table_data.append(['', '', '', Paragraph('<b>Grand Total</b>', bold_style),
+                          Paragraph(f"<b>Rs. {order.total_amount:,.2f}</b>", bold_style)])
+
+        item_table = Table(table_data, colWidths=[
+            doc.width * 0.06, doc.width * 0.44, doc.width * 0.1,
+            doc.width * 0.2, doc.width * 0.2
+        ])
+        item_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FFF7ED')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#9A3412')),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (2, 0), (-1, -1), 'CENTER'),
+            ('ALIGN', (3, 0), (-1, -1), 'RIGHT'),
+            ('ALIGN', (4, 0), (-1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -len(table_data)+len(order.items.all())), 0.5, colors.HexColor('#E5E7EB')),
+            ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#EA580C')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -4), [colors.white, colors.HexColor('#FFFBF5')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LINEABOVE', (3, -3), (-1, -3), 0.5, colors.HexColor('#D1D5DB')),
+            ('LINEABOVE', (3, -1), (-1, -1), 1.5, colors.HexColor('#EA580C')),
+        ]))
+        elements.append(item_table)
+        elements.append(Spacer(1, 6*mm))
+
+        # --- Payment Info ---
+        elements.append(Paragraph("Payment Details", heading_style))
+        payment_info = [
+            [Paragraph('<b>Payment Method:</b>', normal),
+             Paragraph(order.payment_method or 'N/A', normal)],
+            [Paragraph('<b>Transaction ID:</b>', normal),
+             Paragraph(order.transaction_id or 'N/A', normal)],
+            [Paragraph('<b>Payment Status:</b>', normal),
+             Paragraph(order.get_status_display(), normal)],
+        ]
+        pay_table = Table(payment_info, colWidths=[doc.width * 0.35, doc.width * 0.65])
+        pay_table.setStyle(TableStyle([
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        elements.append(pay_table)
+        elements.append(Spacer(1, 8*mm))
+
+        # --- Footer ---
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#D1D5DB'),
+                                   spaceAfter=3*mm))
+        footer_style = ParagraphStyle('Footer', parent=normal, fontSize=8,
+                                      textColor=colors.grey, alignment=TA_CENTER)
+        elements.append(Paragraph("Thank you for shopping with PanditYatra!", footer_style))
+        elements.append(Paragraph("This is a computer-generated invoice. No signature required.", footer_style))
+        elements.append(Paragraph("support@pandityatra.com | www.pandityatra.com", footer_style))
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="PanditYatra_Invoice_SHOP_{order.id}.pdf"'
+        return response
 
 
 # --- Wishlist/Favorites ViewSet ---

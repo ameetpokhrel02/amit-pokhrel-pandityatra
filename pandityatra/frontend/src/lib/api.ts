@@ -177,14 +177,21 @@ export interface Booking {
     pandit: number; // or object
     pandit_name?: string; // helper for UI
     pandit_full_name?: string; // from serializer
+    pandit_expertise?: string;
     status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
     booking_date: string;
     booking_time?: string;
     notes?: string;
+    service_fee?: number;
+    samagri_fee?: number;
     total_fee?: number;
     payment_status?: boolean;
     payment_method?: string;
+    transaction_id?: string;
     service_name?: string;
+    service_location?: string;
+    service_duration?: number;
+    created_at?: string;
 
     // Daily.co Integration
     daily_room_url?: string;
@@ -325,7 +332,8 @@ export async function generateKundali(payload: {
     time: string;
     latitude: number;
     longitude: number;
-    timezone: string
+    timezone: string;
+    place?: string;
 }) {
     const response = await apiClient.post('/kundali/generate/', payload);
     return response.data;
@@ -431,6 +439,34 @@ export async function fetchMyOrders(): Promise<ShopOrder[]> {
 export async function fetchOrderDetail(id: number): Promise<ShopOrder> {
     const response = await apiClient.get(`/samagri/checkout/${id}/detail/`);
     return response.data;
+}
+
+export async function downloadShopInvoice(orderId: number): Promise<void> {
+    const response = await apiClient.get(`/samagri/checkout/${orderId}/invoice/`, {
+        responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `PanditYatra_Invoice_SHOP_${orderId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+}
+
+export async function downloadBookingInvoice(bookingId: number): Promise<void> {
+    const response = await apiClient.get(`/bookings/${bookingId}/invoice/`, {
+        responseType: 'blob',
+    });
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `PanditYatra_Invoice_Booking_${bookingId}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
 }
 
 // Helper to standardize error messages

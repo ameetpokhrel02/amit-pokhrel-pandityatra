@@ -25,11 +25,20 @@ import {
   XCircle,
   CreditCard,
   Store,
+  Download,
+  Receipt,
+  MapPin,
+  Phone,
+  User2,
+  IndianRupee,
+  Eye,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchBookings, fetchPandits, fetchMyOrders } from "@/lib/api";
+import { fetchBookings, fetchPandits, fetchMyOrders, downloadBookingInvoice, downloadShopInvoice } from "@/lib/api";
 import type { Booking, Pandit, ShopOrder } from "@/lib/api";
 import { useFavorites, type FavoriteItem } from "@/hooks/useFavorites";
 import { useCart, type CartItem } from "@/hooks/useCart";
@@ -51,6 +60,13 @@ const CustomerDashboard: React.FC = () => {
   // Orders
   const [orders, setOrders] = useState<ShopOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // All bookings for Purchases tab
+  const [allBookings, setAllBookings] = useState<Booking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [expandedBooking, setExpandedBooking] = useState<number | null>(null);
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [downloadingInvoice, setDownloadingInvoice] = useState<string | null>(null);
 
   // Favorites & Cart from context
   const {
@@ -130,6 +146,9 @@ const CustomerDashboard: React.FC = () => {
     if (activeTab === "marketplace") {
       loadOrders();
     }
+    if (activeTab === "purchases") {
+      loadPurchasesData();
+    }
   }, [activeTab]);
 
   const loadOrders = async () => {
@@ -141,6 +160,46 @@ const CustomerDashboard: React.FC = () => {
       console.error("Failed to load orders", error);
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  const loadPurchasesData = async () => {
+    setBookingsLoading(true);
+    setOrdersLoading(true);
+    try {
+      const [bookingsData, ordersData] = await Promise.all([
+        fetchBookings(),
+        fetchMyOrders(),
+      ]);
+      setAllBookings(bookingsData);
+      setOrders(ordersData);
+    } catch (error) {
+      console.error("Failed to load purchases data", error);
+    } finally {
+      setBookingsLoading(false);
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleDownloadBookingInvoice = async (bookingId: number) => {
+    setDownloadingInvoice(`booking-${bookingId}`);
+    try {
+      await downloadBookingInvoice(bookingId);
+    } catch (error) {
+      console.error("Failed to download booking invoice", error);
+    } finally {
+      setDownloadingInvoice(null);
+    }
+  };
+
+  const handleDownloadShopInvoice = async (orderId: number) => {
+    setDownloadingInvoice(`order-${orderId}`);
+    try {
+      await downloadShopInvoice(orderId);
+    } catch (error) {
+      console.error("Failed to download shop invoice", error);
+    } finally {
+      setDownloadingInvoice(null);
     }
   };
 
@@ -175,6 +234,38 @@ const CustomerDashboard: React.FC = () => {
         return <XCircle className="h-4 w-4" />;
       default:
         return <Package className="h-4 w-4" />;
+    }
+  };
+
+  const getBookingStatusColor = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return "bg-green-100 text-green-700 border-green-200";
+      case "ACCEPTED":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "CANCELLED":
+      case "FAILED":
+        return "bg-red-100 text-red-700 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getBookingStatusIcon = (status: string) => {
+    switch (status) {
+      case "COMPLETED":
+        return <CheckCircle2 className="h-4 w-4" />;
+      case "ACCEPTED":
+        return <Calendar className="h-4 w-4" />;
+      case "PENDING":
+        return <Clock className="h-4 w-4" />;
+      case "CANCELLED":
+      case "FAILED":
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Calendar className="h-4 w-4" />;
     }
   };
 
@@ -213,6 +304,10 @@ const CustomerDashboard: React.FC = () => {
                   {cartItems.length + favoriteItems.length}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="purchases" className="flex items-center gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">
+              <Receipt className="h-4 w-4" />
+              <span className="hidden sm:inline">My Purchases</span>
             </TabsTrigger>
             <TabsTrigger value="kundali" className="flex items-center gap-1.5 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm">
               <FileText className="h-4 w-4" />
@@ -938,6 +1033,505 @@ const CustomerDashboard: React.FC = () => {
             </div>
           )}
 
+            </div>
+          </TabsContent>
+
+          {/* ========================= MY PURCHASES TAB ========================= */}
+          <TabsContent value="purchases" className="mt-4">
+            <div className="space-y-6">
+              {/* Purchases Sub-tabs */}
+              <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl w-fit">
+                {[
+                  { key: 'bookings', label: 'Booking History', icon: Calendar, count: allBookings.length },
+                  { key: 'shop-orders', label: 'Shop Orders', icon: Package, count: orders.length },
+                ].map((sub) => {
+                  const subTab = searchParams.get('sub') || 'bookings';
+                  const isActive = subTab === sub.key;
+                  return (
+                    <button
+                      key={sub.key}
+                      onClick={() => setSearchParams({ tab: 'purchases', sub: sub.key })}
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        isActive
+                          ? 'bg-white dark:bg-gray-700 shadow-sm text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <sub.icon className="h-4 w-4" />
+                      <span className="hidden sm:inline">{sub.label}</span>
+                      {sub.count > 0 && (
+                        <Badge className="h-5 min-w-[20px] px-1 flex items-center justify-center bg-orange-600 hover:bg-orange-600 text-[10px]">
+                          {sub.count}
+                        </Badge>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ---------- SUB: BOOKING HISTORY ---------- */}
+              {(searchParams.get('sub') || 'bookings') === 'bookings' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <Calendar className="h-6 w-6 text-orange-600" />
+                      Booking History
+                      {allBookings.length > 0 && (
+                        <Badge variant="secondary" className="bg-orange-100 text-orange-700">
+                          {allBookings.length} bookings
+                        </Badge>
+                      )}
+                    </h2>
+                  </div>
+
+                  {bookingsLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600" />
+                    </div>
+                  ) : allBookings.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-20 h-20 bg-orange-50 rounded-full flex items-center justify-center mb-4">
+                          <Calendar className="h-10 w-10 text-orange-200" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">No bookings yet</h3>
+                        <p className="text-muted-foreground mb-6 max-w-sm">
+                          Book a puja with our verified pandits to get started on your spiritual journey.
+                        </p>
+                        <Button onClick={() => navigate("/booking")} className="bg-orange-600 hover:bg-orange-700">
+                          <Calendar className="h-4 w-4 mr-2" />
+                          Book a Puja
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      <AnimatePresence>
+                        {allBookings.map((booking) => {
+                          const isExpanded = expandedBooking === booking.id;
+                          return (
+                            <motion.div
+                              key={booking.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Card className="overflow-hidden hover:shadow-md transition-shadow">
+                                {/* Header Row */}
+                                <div className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-gray-800/50 dark:to-gray-800/30 px-6 py-3 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Booking </span>
+                                      <span className="font-bold">#{booking.id}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Date </span>
+                                      <span className="font-medium">
+                                        {new Date(booking.booking_date).toLocaleDateString("en-IN", {
+                                          year: "numeric", month: "short", day: "numeric",
+                                        })}
+                                      </span>
+                                    </div>
+                                    {booking.booking_time && (
+                                      <div>
+                                        <span className="text-muted-foreground">Time </span>
+                                        <span className="font-medium">{booking.booking_time}</span>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <span className="text-muted-foreground">Total </span>
+                                      <span className="font-bold text-orange-600">
+                                        ₹{Number(booking.total_fee || 0).toLocaleString("en-IN")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    className={`${getBookingStatusColor(booking.status)} border gap-1.5 font-medium`}
+                                    variant="outline"
+                                  >
+                                    {getBookingStatusIcon(booking.status)}
+                                    {booking.status}
+                                  </Badge>
+                                </div>
+
+                                {/* Main Content */}
+                                <CardContent className="p-6">
+                                  <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                    {/* Left: Service Info */}
+                                    <div className="flex-1 space-y-2">
+                                      <h3 className="text-lg font-semibold">{booking.service_name}</h3>
+                                      <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
+                                        <div className="flex items-center gap-1.5">
+                                          <User2 className="h-4 w-4" />
+                                          <span>{booking.pandit_full_name || booking.pandit_name || 'Pandit'}</span>
+                                        </div>
+                                        {booking.pandit_expertise && (
+                                          <div className="flex items-center gap-1.5">
+                                            <FileText className="h-4 w-4" />
+                                            <span>{booking.pandit_expertise}</span>
+                                          </div>
+                                        )}
+                                        {booking.service_location && (
+                                          <div className="flex items-center gap-1.5">
+                                            <MapPin className="h-4 w-4" />
+                                            <span>{booking.service_location}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Right: Actions */}
+                                    <div className="flex flex-wrap gap-2">
+                                      {(booking.daily_room_url || booking.video_room_url) &&
+                                        ['ACCEPTED', 'PENDING'].includes(booking.status) && (
+                                        <Button
+                                          size="sm"
+                                          className="bg-blue-600 hover:bg-blue-700"
+                                          onClick={() => navigate(`/puja-room/${booking.id}`)}
+                                        >
+                                          <Video className="h-4 w-4 mr-1.5" />
+                                          Join Video
+                                        </Button>
+                                      )}
+                                      {booking.recording_url && booking.recording_available && (
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => window.open(booking.recording_url!, '_blank')}
+                                        >
+                                          <Video className="h-4 w-4 mr-1.5" />
+                                          Recording
+                                        </Button>
+                                      )}
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                                        onClick={() => handleDownloadBookingInvoice(booking.id)}
+                                        disabled={downloadingInvoice === `booking-${booking.id}`}
+                                      >
+                                        {downloadingInvoice === `booking-${booking.id}` ? (
+                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-1.5" />
+                                        ) : (
+                                          <Download className="h-4 w-4 mr-1.5" />
+                                        )}
+                                        Invoice
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setExpandedBooking(isExpanded ? null : booking.id)}
+                                      >
+                                        {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Expanded Details */}
+                                  <AnimatePresence>
+                                    {isExpanded && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {/* Fee Breakdown */}
+                                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4 space-y-2">
+                                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                                              <IndianRupee className="h-4 w-4 text-orange-600" />
+                                              Fee Breakdown
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Service Fee</span>
+                                                <span>₹{Number(booking.service_fee || 0).toLocaleString("en-IN")}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Samagri Fee</span>
+                                                <span>₹{Number(booking.samagri_fee || 0).toLocaleString("en-IN")}</span>
+                                              </div>
+                                              <div className="flex justify-between font-bold border-t pt-1">
+                                                <span>Total</span>
+                                                <span className="text-orange-600">₹{Number(booking.total_fee || 0).toLocaleString("en-IN")}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Payment Details */}
+                                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4 space-y-2">
+                                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                                              <CreditCard className="h-4 w-4 text-blue-600" />
+                                              Payment Details
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Status</span>
+                                                <Badge variant="outline" className={booking.payment_status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}>
+                                                  {booking.payment_status ? 'Paid' : 'Unpaid'}
+                                                </Badge>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Method</span>
+                                                <span className="font-medium">{booking.payment_method || 'N/A'}</span>
+                                              </div>
+                                              {booking.transaction_id && (
+                                                <div className="flex justify-between">
+                                                  <span className="text-muted-foreground">Transaction ID</span>
+                                                  <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                                    {booking.transaction_id.length > 20 ? booking.transaction_id.slice(0, 20) + '...' : booking.transaction_id}
+                                                  </span>
+                                                </div>
+                                              )}
+                                              {booking.created_at && (
+                                                <div className="flex justify-between">
+                                                  <span className="text-muted-foreground">Booked On</span>
+                                                  <span>{new Date(booking.created_at).toLocaleDateString("en-IN", {
+                                                    year: 'numeric', month: 'short', day: 'numeric'
+                                                  })}</span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ---------- SUB: SHOP ORDERS ---------- */}
+              {searchParams.get('sub') === 'shop-orders' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <Package className="h-6 w-6 text-blue-600" />
+                      Shop Orders
+                      {orders.length > 0 && (
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                          {orders.length} orders
+                        </Badge>
+                      )}
+                    </h2>
+                  </div>
+
+                  {ordersLoading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600" />
+                    </div>
+                  ) : orders.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                          <Package className="h-10 w-10 text-blue-200" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-2">No shop orders yet</h3>
+                        <p className="text-muted-foreground mb-6 max-w-sm">
+                          Purchase puja samagri and spiritual items from our shop.
+                        </p>
+                        <Button onClick={() => navigate("/shop")} className="bg-orange-600 hover:bg-orange-700">
+                          <ShoppingBag className="h-4 w-4 mr-2" />
+                          Browse Shop
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      <AnimatePresence>
+                        {orders.map((order) => {
+                          const isExpanded = expandedOrder === order.id;
+                          return (
+                            <motion.div
+                              key={order.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Card className="overflow-hidden hover:shadow-md transition-shadow">
+                                {/* Header */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800/50 dark:to-gray-800/30 px-6 py-3 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Order </span>
+                                      <span className="font-bold">#{order.id}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Placed </span>
+                                      <span className="font-medium">
+                                        {new Date(order.created_at).toLocaleDateString("en-IN", {
+                                          year: "numeric", month: "short", day: "numeric",
+                                        })}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Items </span>
+                                      <span className="font-medium">{order.items.length}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Total </span>
+                                      <span className="font-bold text-orange-600">
+                                        ₹{Number(order.total_amount).toLocaleString("en-IN")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    className={`${getStatusColor(order.status)} border gap-1.5 font-medium`}
+                                    variant="outline"
+                                  >
+                                    {getStatusIcon(order.status)}
+                                    {order.status}
+                                  </Badge>
+                                </div>
+
+                                {/* Items List */}
+                                <CardContent className="p-6">
+                                  <div className="space-y-3">
+                                    {order.items.map((item, idx) => (
+                                      <div key={idx} className="flex items-center gap-4 py-2 border-b last:border-0">
+                                        <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+                                          <Package className="h-5 w-5 text-orange-400" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-medium text-sm line-clamp-1">{item.item_name}</p>
+                                          <p className="text-xs text-muted-foreground">
+                                            Qty: {item.quantity} × ₹{Number(item.price_at_purchase).toLocaleString("en-IN")}
+                                          </p>
+                                        </div>
+                                        <p className="font-semibold text-sm">
+                                          ₹{(Number(item.price_at_purchase) * item.quantity).toLocaleString("en-IN")}
+                                        </p>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  {/* Actions Row */}
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 pt-4 border-t gap-3">
+                                    <div className="flex flex-wrap gap-2">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-orange-600 border-orange-200 hover:bg-orange-50"
+                                        onClick={() => handleDownloadShopInvoice(order.id)}
+                                        disabled={downloadingInvoice === `order-${order.id}`}
+                                      >
+                                        {downloadingInvoice === `order-${order.id}` ? (
+                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-1.5" />
+                                        ) : (
+                                          <Download className="h-4 w-4 mr-1.5" />
+                                        )}
+                                        Download Invoice
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => navigate("/shop")}
+                                      >
+                                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                                        Buy Again
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                                      >
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        {isExpanded ? 'Less' : 'Details'}
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  {/* Expanded Payment & Shipping Details */}
+                                  <AnimatePresence>
+                                    {isExpanded && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          {/* Payment Details */}
+                                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4 space-y-2">
+                                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                                              <CreditCard className="h-4 w-4 text-blue-600" />
+                                              Payment Details
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Method</span>
+                                                <span className="font-medium">{order.payment_method || 'N/A'}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Amount</span>
+                                                <span className="font-bold text-orange-600">₹{Number(order.total_amount).toLocaleString("en-IN")}</span>
+                                              </div>
+                                              {order.transaction_id && (
+                                                <div className="flex justify-between">
+                                                  <span className="text-muted-foreground">Transaction ID</span>
+                                                  <span className="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                                                    {order.transaction_id.length > 20 ? order.transaction_id.slice(0, 20) + '...' : order.transaction_id}
+                                                  </span>
+                                                </div>
+                                              )}
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Date</span>
+                                                <span>{new Date(order.created_at).toLocaleDateString("en-IN", {
+                                                  year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                })}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+
+                                          {/* Shipping Details */}
+                                          <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg p-4 space-y-2">
+                                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                                              <Truck className="h-4 w-4 text-green-600" />
+                                              Shipping Details
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Name</span>
+                                                <span className="font-medium">{order.full_name}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Phone</span>
+                                                <span>{order.phone_number}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Address</span>
+                                                <span className="text-right max-w-[200px]">{order.shipping_address}</span>
+                                              </div>
+                                              <div className="flex justify-between">
+                                                <span className="text-muted-foreground">City</span>
+                                                <span>{order.city}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </CardContent>
+                              </Card>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </TabsContent>
 

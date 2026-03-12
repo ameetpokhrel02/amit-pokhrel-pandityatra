@@ -19,12 +19,19 @@ NAKSHATRAS = [
     "Purva Bhadrapada","Uttara Bhadrapada","Revati"
 ]
 
+RASHIS = [
+    "Mesha (Aries)", "Vrishabha (Taurus)", "Mithuna (Gemini)",
+    "Karka (Cancer)", "Simha (Leo)", "Kanya (Virgo)",
+    "Tula (Libra)", "Vrischika (Scorpio)", "Dhanu (Sagittarius)",
+    "Makara (Capricorn)", "Kumbha (Aquarius)", "Meena (Pisces)"
+]
+
 # -------------------------
 # Helpers
 # -------------------------
 
 def get_rashi(lon):
-    return int(lon // 30)
+    return RASHIS[int(lon // 30) % 12]
 
 def get_nakshatra(lon):
     return NAKSHATRAS[int(lon // (13.333333))]

@@ -2,8 +2,17 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django.http import HttpResponse
 from datetime import datetime, timedelta
 from decimal import Decimal # 🚨 ADDED
+import io
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, HRFlowable
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
 
 from .models import Booking, BookingStatus
 
@@ -297,3 +306,132 @@ class BookingViewSet(viewsets.ModelViewSet):
             current_time += timedelta(minutes=30)
 
         return Response({"available_slots": slots})
+
+    @action(detail=True, methods=["get"], url_path="invoice")
+    def invoice(self, request, pk=None):
+        """GET /api/bookings/{id}/invoice/ — Download PDF invoice for a booking"""
+        try:
+            booking = Booking.objects.select_related(
+                'user', 'pandit', 'pandit__user', 'service'
+            ).get(id=pk, user=request.user)
+        except Booking.DoesNotExist:
+            return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=30*mm, bottomMargin=20*mm,
+                                leftMargin=20*mm, rightMargin=20*mm)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        # Custom styles
+        title_style = ParagraphStyle('InvoiceTitle', parent=styles['Title'],
+                                     fontSize=24, textColor=colors.HexColor('#EA580C'),
+                                     spaceAfter=4*mm)
+        subtitle_style = ParagraphStyle('Subtitle', parent=styles['Normal'],
+                                        fontSize=10, textColor=colors.grey,
+                                        spaceAfter=2*mm)
+        heading_style = ParagraphStyle('SectionHead', parent=styles['Heading2'],
+                                       fontSize=13, textColor=colors.HexColor('#1F2937'),
+                                       spaceBefore=6*mm, spaceAfter=3*mm)
+        normal = styles['Normal']
+        bold_style = ParagraphStyle('BoldNormal', parent=normal, fontName='Helvetica-Bold')
+
+        # --- Header ---
+        elements.append(Paragraph("PanditYatra", title_style))
+        elements.append(Paragraph("Your Spiritual Journey Partner — Booking Invoice", subtitle_style))
+        elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#EA580C'),
+                                   spaceAfter=4*mm, spaceBefore=2*mm))
+
+        # --- Invoice Info ---
+        info_data = [
+            [Paragraph(f"<b>Invoice #:</b> INV-BK-{booking.id}", normal),
+             Paragraph(f"<b>Booking Date:</b> {booking.booking_date.strftime('%B %d, %Y')}", normal)],
+            [Paragraph(f"<b>Booking ID:</b> #{booking.id}", normal),
+             Paragraph(f"<b>Status:</b> {booking.get_status_display()}", normal)],
+            [Paragraph(f"<b>Booking Time:</b> {booking.booking_time.strftime('%I:%M %p')}", normal),
+             Paragraph(f"<b>Location:</b> {booking.get_service_location_display()}", normal)],
+        ]
+        info_table = Table(info_data, colWidths=[doc.width * 0.5, doc.width * 0.5])
+        info_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 4*mm))
+
+        # --- Customer Info ---
+        elements.append(Paragraph("Customer", heading_style))
+        elements.append(Paragraph(f"<b>{booking.user.full_name}</b>", normal))
+        elements.append(Paragraph(f"Email: {booking.user.email}", normal))
+        if hasattr(booking.user, 'phone_number') and booking.user.phone_number:
+            elements.append(Paragraph(f"Phone: {booking.user.phone_number}", normal))
+        elements.append(Spacer(1, 3*mm))
+
+        # --- Pandit Info ---
+        elements.append(Paragraph("Pandit", heading_style))
+        pandit_name = booking.pandit.user.full_name if booking.pandit and booking.pandit.user else 'N/A'
+        elements.append(Paragraph(f"<b>{pandit_name}</b>", normal))
+        if booking.pandit and booking.pandit.expertise:
+            elements.append(Paragraph(f"Expertise: {booking.pandit.expertise}", normal))
+        elements.append(Spacer(1, 3*mm))
+
+        # --- Service Details Table ---
+        elements.append(Paragraph("Service Details", heading_style))
+        table_data = [
+            [Paragraph('<b>Description</b>', normal), Paragraph('<b>Amount</b>', normal)],
+            [f"Puja: {booking.service_name}", f"Rs. {booking.service_fee:,.2f}"],
+        ]
+        if booking.samagri_required:
+            table_data.append(["Samagri (Materials)", f"Rs. {booking.samagri_fee:,.2f}"])
+        table_data.append([Paragraph('<b>Total</b>', bold_style),
+                          Paragraph(f"<b>Rs. {booking.total_fee:,.2f}</b>", bold_style)])
+
+        svc_table = Table(table_data, colWidths=[doc.width * 0.65, doc.width * 0.35])
+        svc_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FFF7ED')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#9A3412')),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -2), 0.5, colors.HexColor('#E5E7EB')),
+            ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#EA580C')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#FFFBF5')]),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor('#EA580C')),
+        ]))
+        elements.append(svc_table)
+        elements.append(Spacer(1, 6*mm))
+
+        # --- Payment Info ---
+        elements.append(Paragraph("Payment Details", heading_style))
+        payment_info = [
+            [Paragraph('<b>Payment Status:</b>', normal),
+             Paragraph('Paid' if booking.payment_status else 'Unpaid', normal)],
+            [Paragraph('<b>Payment Method:</b>', normal),
+             Paragraph(booking.payment_method or 'N/A', normal)],
+            [Paragraph('<b>Transaction ID:</b>', normal),
+             Paragraph(booking.transaction_id or 'N/A', normal)],
+        ]
+        pay_table = Table(payment_info, colWidths=[doc.width * 0.35, doc.width * 0.65])
+        pay_table.setStyle(TableStyle([
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ]))
+        elements.append(pay_table)
+        elements.append(Spacer(1, 8*mm))
+
+        # --- Footer ---
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor('#D1D5DB'),
+                                   spaceAfter=3*mm))
+        footer_style = ParagraphStyle('Footer', parent=normal, fontSize=8,
+                                      textColor=colors.grey, alignment=TA_CENTER)
+        elements.append(Paragraph("Thank you for choosing PanditYatra!", footer_style))
+        elements.append(Paragraph("This is a computer-generated invoice. No signature required.", footer_style))
+        elements.append(Paragraph("support@pandityatra.com | www.pandityatra.com", footer_style))
+
+        doc.build(elements)
+        buffer.seek(0)
+        response = HttpResponse(buffer, content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="PanditYatra_Invoice_Booking_{booking.id}.pdf"'
+        return response

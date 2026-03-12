@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Calendar, Clock, MapPin, Eye, FileText, Download } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { FaSpinner } from 'react-icons/fa';
+import { pdf } from '@react-pdf/renderer';
+import { KundaliPDF } from '@/pages/Kundali/KundaliPDF';
 
 const KundaliHistory: React.FC = () => {
     const [charts, setCharts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedChart, setSelectedChart] = useState<any>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
     useEffect(() => {
         fetchCharts();
@@ -30,6 +34,43 @@ const KundaliHistory: React.FC = () => {
     const handleViewDetails = (chart: any) => {
         setSelectedChart(chart);
         setIsDetailOpen(true);
+    };
+
+    const handleDownloadPDF = async (chart: any) => {
+        try {
+            setDownloadingId(chart.id);
+            const dobParts = chart.dob ? chart.dob.split('-') : [];
+            const timeParts = chart.time ? String(chart.time).split(':') : [];
+            const formData = {
+                name: `Chart #${chart.id}`,
+                gender: '',
+                year: dobParts[0] || '',
+                month: dobParts[1] || '',
+                day: dobParts[2] || '',
+                hour: timeParts[0] || '',
+                minute: timeParts[1] || '',
+                place: chart.place || `${chart.latitude}, ${chart.longitude}`,
+            };
+            const result = {
+                planets: chart.planets || [],
+                ai_prediction: chart.ai_prediction || 'No prediction available.',
+                source: 'online' as const,
+            };
+            const pdfDoc = <KundaliPDF formData={formData} result={result} />;
+            const blob = await pdf(pdfDoc).toBlob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PanditYatra_Kundali_${chart.id}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("PDF download failed:", error);
+        } finally {
+            setDownloadingId(null);
+        }
     };
 
     if (loading) {
@@ -69,19 +110,34 @@ const KundaliHistory: React.FC = () => {
                                     <Calendar className="h-4 w-4" /> {chart.dob}
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Clock className="h-4 w-4" /> {chart.time}
+                                    <Clock className="h-4 w-4" /> {String(chart.time)}
                                 </div>
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <MapPin className="h-4 w-4 truncate" /> {chart.place}
                                 </div>
                             </div>
-                            <Button
-                                variant="outline"
-                                className="w-full mt-4 border-primary text-primary hover:bg-orange-50"
-                                onClick={() => handleViewDetails(chart)}
-                            >
-                                <Eye className="mr-2 h-4 w-4" /> View Analysis
-                            </Button>
+                            <div className="flex gap-2 mt-4">
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 border-primary text-primary hover:bg-orange-50"
+                                    onClick={() => handleViewDetails(chart)}
+                                >
+                                    <Eye className="mr-2 h-4 w-4" /> View
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    className="flex-1 border-orange-300 text-orange-600 hover:bg-orange-50"
+                                    onClick={() => handleDownloadPDF(chart)}
+                                    disabled={downloadingId === chart.id}
+                                >
+                                    {downloadingId === chart.id ? (
+                                        <FaSpinner className="animate-spin mr-2 h-4 w-4" />
+                                    ) : (
+                                        <Download className="mr-2 h-4 w-4" />
+                                    )}
+                                    PDF
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ))}
@@ -108,11 +164,11 @@ const KundaliHistory: React.FC = () => {
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Time</p>
-                                    <p className="font-semibold text-[#3E2723]">{selectedChart.time}</p>
+                                    <p className="font-semibold text-[#3E2723]">{String(selectedChart.time)}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Place</p>
-                                    <p className="font-semibold text-[#3E2723] truncate" title={selectedChart.place}>{selectedChart.place.split(',')[0]}</p>
+                                    <p className="font-semibold text-[#3E2723] truncate" title={selectedChart.place}>{selectedChart.place?.split(',')[0]}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Generated</p>
@@ -120,20 +176,52 @@ const KundaliHistory: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Planetes (Mock logic since list view doesn't have nested data by default, 
-                                but in a real app we'd fetch specific ID details or backend would include them) */}
-                            <div className="bg-muted/30 p-6 rounded-xl border">
-                                <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                    <Eye className="h-5 w-5 text-primary" /> Visual Details
-                                </h4>
-                                <p className="text-muted-foreground">
-                                    Detailed planetary data and visual charts are currently available in the download report.
-                                    A full interactive SVG chart is being prepared for the next release.
-                                </p>
-                                <Button className="mt-4 bg-primary text-white hover:bg-primary/90" onClick={() => window.open('/kundali', '_blank')}>
-                                    <Download className="mr-2 h-4 w-4" /> Download Full PDF
-                                </Button>
-                            </div>
+                            {/* Planetary Positions */}
+                            {selectedChart.planets && selectedChart.planets.length > 0 && (
+                                <div className="bg-muted/30 p-6 rounded-xl border">
+                                    <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                        🌟 Planetary Positions
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {selectedChart.planets.map((p: any) => (
+                                            <div key={p.planet} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0 text-sm">
+                                                <span className="font-medium">{p.planet}</span>
+                                                <div className="flex gap-4 text-muted-foreground">
+                                                    <span>{p.rashi}</span>
+                                                    <span className="text-xs bg-orange-50 px-2 py-0.5 rounded">{p.nakshatra}</span>
+                                                    <span className="text-xs">{Number(p.longitude).toFixed(2)}°</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* AI Prediction */}
+                            {selectedChart.ai_prediction && (
+                                <div className="bg-orange-50/50 p-6 rounded-xl border border-orange-100">
+                                    <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                        🔮 AI Prediction
+                                    </h4>
+                                    <p className="text-sm text-[#3E2723]/80 whitespace-pre-line leading-relaxed">
+                                        {selectedChart.ai_prediction}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Download PDF */}
+                            <Button
+                                className="w-full bg-primary text-white hover:bg-primary/90"
+                                onClick={() => handleDownloadPDF(selectedChart)}
+                                disabled={downloadingId === selectedChart.id}
+                            >
+                                {downloadingId === selectedChart.id ? (
+                                    <FaSpinner className="animate-spin mr-2" />
+                                ) : (
+                                    <Download className="mr-2 h-4 w-4" />
+                                )}
+                                Download Full PDF Report
+                            </Button>
                         </div>
                     )}
                 </DialogContent>

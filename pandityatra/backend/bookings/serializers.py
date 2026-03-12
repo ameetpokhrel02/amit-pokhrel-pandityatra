@@ -76,7 +76,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'id', 'user_full_name', 'pandit', 'pandit_full_name', 'pandit_expertise',
             'service_name', 'service_location', 'booking_date', 'booking_time', 
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status',
-            'payment_method',
+            'payment_method', 'transaction_id',
             'service_duration', 'created_at',
             'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
