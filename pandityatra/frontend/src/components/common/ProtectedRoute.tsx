@@ -25,9 +25,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // Check if role is allowed (if specified)
   if (allowedRoles && role && !allowedRoles.includes(role)) {
+    // superadmin can access all admin routes
+    if (role === 'superadmin' && allowedRoles.includes('admin')) {
+      return <>{children}</>;
+    }
     // Redirect based on role
     if (role === 'pandit') {
       return <Navigate to="/pandit/dashboard" replace />;
+    } else if (role === 'admin' || role === 'superadmin') {
+      return <Navigate to="/admin/dashboard" replace />;
     } else {
       return <Navigate to="/dashboard" replace />;
     }

@@ -117,9 +117,9 @@ const Books = () => {
             image: book.image || '/images/bhasma.png',
         });
         toast({
-            title: "Added to Cart",
+            title: "✅ Added to Cart",
             description: `${book.name} has been added to your cart.`,
-            className: "bg-green-600 text-white border-green-700 shadow-lg"
+            className: "bg-green-600 text-white border-none shadow-2xl"
         });
         openDrawer();
     };

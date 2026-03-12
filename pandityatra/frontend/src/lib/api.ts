@@ -304,6 +304,86 @@ export async function fetchAdminStats(): Promise<AdminStats> {
 }
 
 // ----------------------
+// Superadmin: Manage Admins
+// ----------------------
+export interface AdminUser {
+    id: number;
+    full_name: string;
+    email: string;
+    phone_number: string;
+    profile_pic: string | null;
+    role: 'admin' | 'superadmin';
+    is_active: boolean;
+    date_joined: string;
+}
+
+export async function fetchAdminUsers(): Promise<AdminUser[]> {
+    const response = await apiClient.get('/users/admin/admins/');
+    return response.data;
+}
+
+export async function createAdminUser(payload: {
+    email: string;
+    full_name: string;
+    phone_number?: string;
+    password: string;
+    role: 'admin' | 'superadmin';
+}) {
+    const response = await apiClient.post('/users/admin/admins/create/', payload);
+    return response.data;
+}
+
+export async function updateAdminUser(userId: number, payload: { action: string; role?: string }) {
+    const response = await apiClient.patch(`/users/admin/admins/${userId}/`, payload);
+    return response.data;
+}
+
+export async function deleteAdminUser(userId: number) {
+    const response = await apiClient.delete(`/users/admin/admins/${userId}/delete/`);
+    return response.data;
+}
+
+// ----------------------
+// Site Content (CMS)
+// ----------------------
+export interface SiteContentItem {
+    id: number;
+    key: string;
+    key_label: string;
+    value: string;
+    updated_at: string;
+    updated_by: number | null;
+    updated_by_name: string | null;
+}
+
+export async function fetchAdminSiteContent(): Promise<{
+    contents: SiteContentItem[];
+    available_keys: { key: string; label: string }[];
+    existing_keys: string[];
+}> {
+    const response = await apiClient.get('/users/admin/site-content/');
+    return response.data;
+}
+
+export async function updateSiteContent(items: { key: string; value: string }[]) {
+    const response = await apiClient.put('/users/admin/site-content/', { items });
+    return response.data;
+}
+
+export async function fetchPublicSiteContent(): Promise<Record<string, string>> {
+    const response = await apiClient.get('/users/site-content/');
+    return response.data;
+}
+
+// ----------------------
+// Admin: Change Password
+// ----------------------
+export async function changePassword(payload: { current_password: string; new_password: string }) {
+    const response = await apiClient.post('/users/admin/change-password/', payload);
+    return response.data;
+}
+
+// ----------------------
 // Profile APIs
 // ----------------------
 export async function updateUserProfile(data: any) {
@@ -321,6 +401,132 @@ export async function updatePanditProfile(id: number, data: any) {
 // ----------------------
 export async function submitContactForm(payload: { name: string; email: string; subject?: string; message: string }) {
     const response = await apiClient.post('/users/contact/', payload);
+    return response.data;
+}
+
+// ----------------------
+// Admin Pandits API
+// ----------------------
+export interface AdminPanditData {
+    id: number;
+    name: string;
+    email: string;
+    phone: string;
+    avatar: string | null;
+    expertise: string;
+    language: string;
+    experience_years: number;
+    rating: number;
+    review_count: number;
+    is_verified: boolean;
+    is_available: boolean;
+    verification_status: string;
+    bio: string;
+    date_joined: string;
+}
+
+export async function fetchAdminAllPandits() {
+    const response = await apiClient.get('/pandits/admin/all/');
+    return response.data as {
+        pandits: AdminPanditData[];
+        stats: { total: number; verified: number; pending: number; online: number };
+    };
+}
+
+// ----------------------
+// Reviews APIs
+// ----------------------
+export interface SiteReviewData {
+    id: number;
+    user_name: string;
+    user_avatar: string | null;
+    role: 'customer' | 'pandit';
+    rating: number;
+    comment: string;
+    created_at: string;
+}
+
+export interface PanditReviewData {
+    id: number;
+    customer_name: string;
+    customer_avatar: string | null;
+    pandit_name: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+}
+
+export async function fetchRecentPanditReviews(): Promise<{
+    reviews: PanditReviewData[];
+    average_rating: number;
+    total_reviews: number;
+}> {
+    const response = await apiClient.get('/reviews/pandit-reviews/');
+    return response.data;
+}
+
+export async function fetchSiteReviews(): Promise<{
+    reviews: SiteReviewData[];
+    average_rating: number;
+    total_reviews: number;
+    breakdown: Record<string, number>;
+}> {
+    const response = await apiClient.get('/reviews/site-reviews/');
+    return response.data;
+}
+
+export async function submitSiteReview(payload: { rating: number; comment: string }) {
+    const response = await apiClient.post('/reviews/site-reviews/', payload);
+    return response.data;
+}
+
+// Admin Reviews
+export interface AdminPanditReview {
+    id: number;
+    type: 'pandit';
+    customer_name: string;
+    customer_email: string;
+    customer_avatar: string | null;
+    pandit_name: string;
+    rating: number;
+    professionalism: number;
+    knowledge: number;
+    punctuality: number;
+    comment: string;
+    is_verified: boolean;
+    created_at: string;
+    booking_id: number;
+}
+
+export interface AdminSiteReview {
+    id: number;
+    type: 'site';
+    user_name: string;
+    user_email: string;
+    user_avatar: string | null;
+    role: 'customer' | 'pandit';
+    rating: number;
+    comment: string;
+    is_approved: boolean;
+    created_at: string;
+}
+
+export async function fetchAdminReviews() {
+    const response = await apiClient.get('/reviews/admin-reviews/');
+    return response.data as {
+        pandit_reviews: AdminPanditReview[];
+        site_reviews: AdminSiteReview[];
+        stats: { pandit_avg: number; pandit_total: number; site_avg: number; site_total: number };
+    };
+}
+
+export async function toggleReviewStatus(type: 'pandit' | 'site', id: number) {
+    const response = await apiClient.patch('/reviews/admin-reviews/', { type, id });
+    return response.data;
+}
+
+export async function deleteReview(type: 'pandit' | 'site', id: number) {
+    const response = await apiClient.delete(`/reviews/admin-reviews/?type=${type}&id=${id}`);
     return response.data;
 }
 

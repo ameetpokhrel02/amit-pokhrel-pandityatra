@@ -60,7 +60,7 @@ User = get_user_model()
 def admin_dashboard(request):
     user = request.user
 
-    if not (user.is_staff or user.is_superuser or user.role == "admin"):
+    if not (user.is_staff or user.is_superuser or user.role in ("admin", "superadmin")):
         return Response({"detail": "Admin only"}, status=403)
 
     total_users = User.objects.count()

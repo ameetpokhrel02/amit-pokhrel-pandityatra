@@ -1,11 +1,15 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
-from .models import Review
-from .serializers import ReviewSerializer
+from django.db import models
+from django.db.models import Avg, Count
+from .models import Review, SiteReview
+from .serializers import ReviewSerializer, SiteReviewSerializer
 from bookings.models import Booking, BookingStatus
 from notifications.services import notify_review_received
+from rest_framework.pagination import PageNumberPagination
 
 # ---------------------------
 # Create Review
@@ -27,8 +31,6 @@ class CreateReviewView(generics.CreateAPIView):
         
         # 2. Booking must be completed
         if booking.status != BookingStatus.COMPLETED:
-             # For dev/testing allowing it, but in prod should be strict
-             # raise permissions.PermissionDenied("Booking must be completed to review.")
              pass 
 
         # 3. Check if already reviewed
@@ -53,3 +55,206 @@ class CreateReviewView(generics.CreateAPIView):
             request=self.request,
             pandit=booking.pandit
         )
+
+
+# ---------------------------
+# Recent Pandit Reviews (public, for home page)
+# ---------------------------
+class RecentPanditReviewsView(generics.ListAPIView):
+    """Get recent pandit reviews with customer info — public endpoint"""
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.AllowAny]
+    
+    def get_queryset(self):
+        return Review.objects.select_related(
+            'customer', 'pandit', 'pandit__user'
+        ).order_by('-created_at')[:20]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        data = []
+        for r in queryset:
+            data.append({
+                'id': r.id,
+                'customer_name': r.customer.full_name or r.customer.username,
+                'customer_avatar': r.customer.profile_pic.url if r.customer.profile_pic else None,
+                'pandit_name': r.pandit.user.full_name or r.pandit.user.username,
+                'rating': r.rating,
+                'comment': r.comment,
+                'created_at': r.created_at,
+            })
+        
+        # Aggregate stats
+        stats = Review.objects.aggregate(
+            avg_rating=Avg('rating'),
+            total=Count('id'),
+        )
+        
+        return Response({
+            'reviews': data,
+            'average_rating': round(stats['avg_rating'] or 0, 1),
+            'total_reviews': stats['total'],
+        })
+
+
+# ---------------------------
+# Site Reviews (public list + authenticated create)
+# ---------------------------
+class SiteReviewListCreateView(APIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        reviews = SiteReview.objects.filter(is_approved=True).select_related('user').order_by('-created_at')[:30]
+        serializer = SiteReviewSerializer(reviews, many=True)
+        
+        stats = SiteReview.objects.filter(is_approved=True).aggregate(
+            avg_rating=Avg('rating'),
+            total=Count('id'),
+            star_5=Count('id', filter=models.Q(rating=5)),
+            star_4=Count('id', filter=models.Q(rating=4)),
+            star_3=Count('id', filter=models.Q(rating=3)),
+            star_2=Count('id', filter=models.Q(rating=2)),
+            star_1=Count('id', filter=models.Q(rating=1)),
+        )
+        
+        return Response({
+            'reviews': serializer.data,
+            'average_rating': round(stats['avg_rating'] or 0, 1),
+            'total_reviews': stats['total'],
+            'breakdown': {
+                '5': stats['star_5'],
+                '4': stats['star_4'],
+                '3': stats['star_3'],
+                '2': stats['star_2'],
+                '1': stats['star_1'],
+            }
+        })
+    
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Determine role
+        role = 'customer'
+        if hasattr(request.user, 'pandit_profile'):
+            role = 'pandit'
+        
+        # Check if user already submitted
+        existing = SiteReview.objects.filter(user=request.user).first()
+        if existing:
+            # Update existing review
+            serializer = SiteReviewSerializer(existing, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        serializer = SiteReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user, role=role)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+# ---------------------------
+# Admin: All Reviews (pandit + site) — admin only
+# ---------------------------
+class AdminAllReviewsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+    
+    def get(self, request):
+        review_type = request.query_params.get('type', 'all')  # 'pandit', 'site', 'all'
+        
+        pandit_reviews_data = []
+        site_reviews_data = []
+        
+        if review_type in ('pandit', 'all'):
+            pandit_qs = Review.objects.select_related(
+                'customer', 'pandit', 'pandit__user', 'booking'
+            ).order_by('-created_at')
+            
+            for r in pandit_qs:
+                pandit_reviews_data.append({
+                    'id': r.id,
+                    'type': 'pandit',
+                    'customer_name': r.customer.full_name or r.customer.username,
+                    'customer_email': r.customer.email,
+                    'customer_avatar': r.customer.profile_pic.url if r.customer.profile_pic else None,
+                    'pandit_name': r.pandit.user.full_name or r.pandit.user.username,
+                    'rating': r.rating,
+                    'professionalism': r.professionalism,
+                    'knowledge': r.knowledge,
+                    'punctuality': r.punctuality,
+                    'comment': r.comment,
+                    'is_verified': r.is_verified,
+                    'created_at': r.created_at,
+                    'booking_id': r.booking_id,
+                })
+        
+        if review_type in ('site', 'all'):
+            site_qs = SiteReview.objects.select_related('user').order_by('-created_at')
+            
+            for r in site_qs:
+                site_reviews_data.append({
+                    'id': r.id,
+                    'type': 'site',
+                    'user_name': r.user.full_name or r.user.username,
+                    'user_email': r.user.email,
+                    'user_avatar': r.user.profile_pic.url if r.user.profile_pic else None,
+                    'role': r.role,
+                    'rating': r.rating,
+                    'comment': r.comment,
+                    'is_approved': r.is_approved,
+                    'created_at': r.created_at,
+                })
+        
+        # Stats
+        pandit_stats = Review.objects.aggregate(
+            avg_rating=Avg('rating'), total=Count('id'),
+        )
+        site_stats = SiteReview.objects.aggregate(
+            avg_rating=Avg('rating'), total=Count('id'),
+        )
+        
+        return Response({
+            'pandit_reviews': pandit_reviews_data,
+            'site_reviews': site_reviews_data,
+            'stats': {
+                'pandit_avg': round(pandit_stats['avg_rating'] or 0, 1),
+                'pandit_total': pandit_stats['total'],
+                'site_avg': round(site_stats['avg_rating'] or 0, 1),
+                'site_total': site_stats['total'],
+            }
+        })
+    
+    def patch(self, request):
+        """Toggle approve/verify status of a review"""
+        review_type = request.data.get('type')  # 'pandit' or 'site'
+        review_id = request.data.get('id')
+        
+        if review_type == 'pandit':
+            review = get_object_or_404(Review, id=review_id)
+            review.is_verified = not review.is_verified
+            review.save()
+            return Response({'status': 'ok', 'is_verified': review.is_verified})
+        elif review_type == 'site':
+            review = get_object_or_404(SiteReview, id=review_id)
+            review.is_approved = not review.is_approved
+            review.save()
+            return Response({'status': 'ok', 'is_approved': review.is_approved})
+        
+        return Response({'detail': 'Invalid type'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request):
+        """Delete a review"""
+        review_type = request.query_params.get('type')
+        review_id = request.query_params.get('id')
+        
+        if review_type == 'pandit':
+            review = get_object_or_404(Review, id=review_id)
+            review.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        elif review_type == 'site':
+            review = get_object_or_404(SiteReview, id=review_id)
+            review.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+        return Response({'detail': 'Invalid type'}, status=status.HTTP_400_BAD_REQUEST)

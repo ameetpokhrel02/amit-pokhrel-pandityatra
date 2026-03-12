@@ -46,7 +46,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         # Admin sees everything
-        if user.is_superuser or user.is_staff or user.role == "admin":
+        if user.is_superuser or user.is_staff or user.role in ("admin", "superadmin"):
             return Booking.objects.all().select_related("user", "pandit", "service")
 
         # Pandit sees his bookings
@@ -182,7 +182,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         user = request.user
 
-        if not (user.is_superuser or user.is_staff or user.role == "admin"):
+        if not (user.is_superuser or user.is_staff or user.role in ("admin", "superadmin")):
             return Response({"detail": "Admin only"}, status=403)
 
         if booking.status in [BookingStatus.CANCELLED, BookingStatus.COMPLETED]:

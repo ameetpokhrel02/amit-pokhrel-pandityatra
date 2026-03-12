@@ -118,9 +118,9 @@ const Samagri = () => {
             image: item.image || '/images/bhasma.png', // Fallback image if null
         });
         toast({
-            title: "Added to Cart",
+            title: "✅ Added to Cart",
             description: `${item.name} has been added to your cart.`,
-            className: "bg-green-600 text-white border-green-700 shadow-lg"
+            className: "bg-green-600 text-white border-none shadow-2xl"
         });
         openDrawer();
     };
@@ -137,13 +137,13 @@ const Samagri = () => {
         
         const isNowFavorite = !isFavorite(item.id);
         toast({
-            title: isNowFavorite ? "Added to Favorites" : "Removed from Favorites",
+            title: isNowFavorite ? "❤️ Added to Favorites" : "Removed from Favorites",
             description: isNowFavorite 
                 ? `${item.name} has been added to your favorites.`
                 : `${item.name} has been removed from your favorites.`,
             className: isNowFavorite 
-                ? "bg-pink-600 text-white border-pink-700 shadow-lg"
-                : "bg-gray-600 text-white border-gray-700 shadow-lg"
+                ? "bg-pink-600 text-white border-none shadow-2xl"
+                : "bg-gray-600 text-white border-none shadow-2xl"
         });
     };
 

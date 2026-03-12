@@ -4,6 +4,60 @@ from rest_framework.response import Response
 from pandits.models import Pandit
 from payments.models import PanditWithdrawal # Updated imports: Withdrawal moved to payments app
 from pandits.serializers import PanditSerializer
+from django.db.models import Avg, Count
+
+
+# ===========================
+# ADMIN: LIST ALL PANDITS
+# ===========================
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_all_pandits(request):
+    """List all pandits with details for admin dashboard"""
+    if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+        return Response({"detail": "Admin only"}, status=403)
+    
+    pandits = Pandit.objects.select_related('user').annotate(
+        review_count=Count('reviews'),
+        avg_rating=Avg('reviews__rating'),
+    ).order_by('-date_joined')
+    
+    data = []
+    for p in pandits:
+        data.append({
+            'id': p.id,
+            'name': p.user.full_name or p.user.username,
+            'email': p.user.email,
+            'phone': p.user.phone_number if hasattr(p.user, 'phone_number') else '',
+            'avatar': p.user.profile_pic.url if p.user.profile_pic else None,
+            'expertise': p.expertise,
+            'language': p.language,
+            'experience_years': p.experience_years,
+            'rating': float(p.avg_rating or p.rating),
+            'review_count': p.review_count,
+            'is_verified': p.is_verified,
+            'is_available': p.is_available,
+            'verification_status': p.verification_status,
+            'bio': p.bio,
+            'date_joined': p.date_joined,
+        })
+    
+    # Stats
+    total = len(data)
+    verified = sum(1 for p in data if p['is_verified'])
+    pending = sum(1 for p in data if p['verification_status'] == 'PENDING')
+    online = sum(1 for p in data if p['is_available'])
+    
+    return Response({
+        'pandits': data,
+        'stats': {
+            'total': total,
+            'verified': verified,
+            'pending': pending,
+            'online': online,
+        }
+    })
 
 
 # ===========================

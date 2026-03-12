@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import apiClient from '@/lib/api-client'
 import { useToast } from "@/hooks/use-toast"
 import { PanditCalendar } from '@/components/pandit/PanditCalendar'
+import { fetchSiteReviews, submitSiteReview } from '@/lib/api'
 import {
     Calendar as CalendarIcon,
     Wallet,
@@ -18,7 +21,10 @@ import {
     Video,
     TrendingUp,
     AlertCircle,
-    Loader2
+    Loader2,
+    Star,
+    Send,
+    MessageSquareHeart,
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -34,6 +40,7 @@ import {
 const PanditDashboard = () => {
     const { t } = useTranslation('dashboard')
     const { toast } = useToast()
+    const [searchParams] = useSearchParams()
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState<any>(null)
     const [nextPuja, setNextPuja] = useState<any>(null)
@@ -41,8 +48,26 @@ const PanditDashboard = () => {
     const [todaySchedule, setTodaySchedule] = useState<any[]>([])
     const [isOnline, setIsOnline] = useState(false)
 
+    // App Feedback state
+    const [feedbackRating, setFeedbackRating] = useState(0)
+    const [feedbackComment, setFeedbackComment] = useState('')
+    const [feedbackHover, setFeedbackHover] = useState(0)
+    const [feedbackSubmitting, setFeedbackSubmitting] = useState(false)
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+    const [appAvgRating, setAppAvgRating] = useState(0)
+    const [appTotalReviews, setAppTotalReviews] = useState(0)
+
+    // Determine default tab from URL
+    const urlTab = searchParams.get('tab')
+    const defaultTab = urlTab === 'feedback' ? 'feedback' : 'overview'
+
     useEffect(() => {
         fetchDashboardData()
+        // Load app review stats
+        fetchSiteReviews().then(data => {
+            setAppAvgRating(data.average_rating)
+            setAppTotalReviews(data.total_reviews)
+        }).catch(() => {})
     }, [])
 
     const fetchDashboardData = async () => {
@@ -85,6 +110,28 @@ const PanditDashboard = () => {
             fetchDashboardData() // Refresh data
         } catch (error) {
             toast({ title: "Error", description: "Failed to update booking", variant: "destructive" })
+        }
+    }
+
+    const handleFeedbackSubmit = async () => {
+        if (feedbackRating === 0) {
+            toast({ title: '⭐ Please select a rating', className: 'bg-red-600 text-white border-none shadow-2xl' })
+            return
+        }
+        if (!feedbackComment.trim()) {
+            toast({ title: '✏️ Please write your feedback', className: 'bg-red-600 text-white border-none shadow-2xl' })
+            return
+        }
+        setFeedbackSubmitting(true)
+        try {
+            await submitSiteReview({ rating: feedbackRating, comment: feedbackComment.trim() })
+            setFeedbackSubmitted(true)
+            toast({ title: '✅ Feedback submitted!', description: 'Thank you for sharing your experience.', className: 'bg-green-600 text-white border-none shadow-2xl' })
+        } catch (err: any) {
+            const msg = err?.response?.data?.detail || 'Failed to submit feedback.'
+            toast({ title: 'Error', description: msg, className: 'bg-red-600 text-white border-none shadow-2xl' })
+        } finally {
+            setFeedbackSubmitting(false)
         }
     }
 
@@ -155,10 +202,14 @@ const PanditDashboard = () => {
                 </div>
 
                 {/* Tabs */}
-                <Tabs defaultValue="overview" className="w-full">
-                    <TabsList className="grid w-full md:w-[400px] grid-cols-2">
+                <Tabs defaultValue={defaultTab} className="w-full">
+                    <TabsList className="grid w-full md:w-[520px] grid-cols-3">
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                        <TabsTrigger value="feedback" className="gap-1.5">
+                            <MessageSquareHeart className="h-4 w-4" />
+                            App Feedback
+                        </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="overview" className="space-y-6 mt-4">
@@ -367,6 +418,121 @@ const PanditDashboard = () => {
 
                     <TabsContent value="calendar" className="mt-4">
                         <PanditCalendar />
+                    </TabsContent>
+
+                    {/* App Feedback Tab */}
+                    <TabsContent value="feedback" className="mt-4">
+                        <div className="max-w-2xl mx-auto space-y-6">
+                            {/* App Rating Overview */}
+                            <Card className="border-orange-100 bg-gradient-to-r from-orange-50/50 to-white">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 rounded-full bg-orange-100">
+                                            <Star className="h-6 w-6 text-orange-600 fill-orange-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-lg">PanditYatra App Rating</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <div className="flex gap-0.5">
+                                                    {[1, 2, 3, 4, 5].map(s => (
+                                                        <Star key={s} size={16} className={s <= Math.round(appAvgRating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'} />
+                                                    ))}
+                                                </div>
+                                                <span className="font-bold text-lg">{appAvgRating}</span>
+                                                <span className="text-sm text-muted-foreground">({appTotalReviews} reviews)</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            {/* Feedback Form */}
+                            {feedbackSubmitted ? (
+                                <Card className="border-green-200 bg-green-50/30">
+                                    <CardContent className="py-12 text-center">
+                                        <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                                        <h3 className="text-xl font-bold text-green-800">Thank You!</h3>
+                                        <p className="text-green-600 mt-2">
+                                            Your feedback has been submitted successfully.
+                                            <br />It will be reviewed and published on our platform.
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <MessageSquareHeart className="h-5 w-5 text-orange-600" />
+                                            Share Your Feedback About PanditYatra
+                                        </CardTitle>
+                                        <CardDescription>
+                                            How has your experience been as a pandit on our platform? Your feedback helps us improve.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-5">
+                                        {/* Star Selector */}
+                                        <div>
+                                            <label className="text-sm font-medium text-slate-700 block mb-2">
+                                                How would you rate PanditYatra?
+                                            </label>
+                                            <div className="flex gap-2">
+                                                {[1, 2, 3, 4, 5].map(s => (
+                                                    <button
+                                                        key={s}
+                                                        type="button"
+                                                        onClick={() => setFeedbackRating(s)}
+                                                        onMouseEnter={() => setFeedbackHover(s)}
+                                                        onMouseLeave={() => setFeedbackHover(0)}
+                                                        className="transition-transform hover:scale-125 p-1"
+                                                    >
+                                                        <Star
+                                                            size={32}
+                                                            className={s <= (feedbackHover || feedbackRating)
+                                                                ? 'text-yellow-400 fill-yellow-400 drop-shadow-sm'
+                                                                : 'text-gray-300'}
+                                                        />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {feedbackRating > 0 && (
+                                                <p className="text-sm text-orange-600 mt-1 font-medium">
+                                                    {['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][feedbackRating]}
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Comment */}
+                                        <div>
+                                            <label className="text-sm font-medium text-slate-700 block mb-1.5">
+                                                Your Feedback
+                                            </label>
+                                            <Textarea
+                                                placeholder="Share your experience — what you like, what can be improved, how it has helped your work as a pandit..."
+                                                value={feedbackComment}
+                                                onChange={e => setFeedbackComment(e.target.value)}
+                                                className="min-h-[120px] border-slate-200 focus:border-orange-400"
+                                                maxLength={500}
+                                            />
+                                            <p className="text-xs text-muted-foreground mt-1">{feedbackComment.length}/500</p>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button
+                                            onClick={handleFeedbackSubmit}
+                                            disabled={feedbackSubmitting}
+                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-full font-semibold text-base py-5"
+                                        >
+                                            {feedbackSubmitting ? (
+                                                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                            ) : (
+                                                <Send className="h-5 w-5 mr-2" />
+                                            )}
+                                            Submit Feedback
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            )}
+                        </div>
                     </TabsContent>
                 </Tabs>
             </div>

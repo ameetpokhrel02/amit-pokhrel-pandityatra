@@ -59,7 +59,7 @@ const LoginOTPVerification: React.FC = () => {
       });
       // Redirect based on role
       const userRole = (resp as any)?.role || 'user';
-      if (userRole === 'admin') {
+      if (userRole === 'admin' || userRole === 'superadmin') {
         navigate('/admin/dashboard', { replace: true });
       } else if (userRole === 'pandit') {
         navigate('/pandit/dashboard', { replace: true });

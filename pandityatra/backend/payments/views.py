@@ -757,7 +757,7 @@ from rest_framework.permissions import IsAdminUser
 @api_view(["POST"])
 @permission_classes([IsAuthenticated]) # Should be IsAdminUser in prod, but using IsAuthenticated + check
 def approve_withdrawal(request, id):
-    if not (request.user.is_superuser or request.user.role == 'admin'):
+    if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
         return Response({"error": "Admin only"}, status=403)
         
     try:
@@ -787,7 +787,7 @@ def approve_withdrawal(request, id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_payouts(request):
-    if not (request.user.is_superuser or request.user.role == 'admin'):
+    if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
         return Response({"error": "Admin only"}, status=403)
 
     data = []
@@ -812,7 +812,7 @@ def admin_payouts(request):
 @permission_classes([IsAuthenticated])
 def admin_withdrawal_requests(request):
     """List of all withdrawal requests for Admin"""
-    if not (request.user.is_superuser or request.user.role == 'admin'):
+    if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
         return Response({"error": "Admin only"}, status=403)
         
     withdrawals = PanditWithdrawal.objects.select_related('pandit__user').order_by('-created_at')

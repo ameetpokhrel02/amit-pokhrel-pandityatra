@@ -151,10 +151,12 @@ class UserSerializer(serializers.ModelSerializer):
             'profile_pic',
             'role',
             'is_active', 
+            'is_superuser',
+            'is_staff',
             'date_joined',
             'pandit_profile'
         )
-        read_only_fields = ('id', 'role', 'is_active', 'date_joined')
+        read_only_fields = ('id', 'role', 'is_active', 'is_superuser', 'is_staff', 'date_joined')
 
     def get_pandit_profile(self, obj):
         if obj.role == 'pandit' and hasattr(obj, 'pandit_profile'):
@@ -185,3 +187,20 @@ class ContactMessageSerializer(serializers.ModelSerializer):
         model = ContactMessage
         fields = ('id', 'name', 'email', 'subject', 'message', 'created_at')
         read_only_fields = ('id', 'created_at')
+
+
+from .models import SiteContent
+
+class SiteContentSerializer(serializers.ModelSerializer):
+    key_label = serializers.CharField(source='get_key_display', read_only=True)
+    updated_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SiteContent
+        fields = ('id', 'key', 'key_label', 'value', 'updated_at', 'updated_by', 'updated_by_name')
+        read_only_fields = ('id', 'updated_at', 'updated_by', 'updated_by_name')
+
+    def get_updated_by_name(self, obj):
+        if obj.updated_by:
+            return obj.updated_by.full_name or obj.updated_by.email
+        return None

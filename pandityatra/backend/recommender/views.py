@@ -357,6 +357,6 @@ class RecommendationLogViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         """Only return current user's logs"""
-        if self.request.user.role == 'admin':
+        if self.request.user.role in ('admin', 'superadmin'):
             return RecommendationLog.objects.all()
         return RecommendationLog.objects.filter(user=self.request.user)

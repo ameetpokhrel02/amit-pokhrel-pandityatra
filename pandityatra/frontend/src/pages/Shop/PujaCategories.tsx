@@ -92,8 +92,9 @@ const PujaCategories = () => {
     }, 1);
 
     toast({
-      title: "Added to Cart",
+      title: "✅ Added to Cart",
       description: `${puja.name || 'Puja service'} has been added to your cart.`,
+      className: "bg-green-600 text-white border-none shadow-2xl"
     });
   };
 

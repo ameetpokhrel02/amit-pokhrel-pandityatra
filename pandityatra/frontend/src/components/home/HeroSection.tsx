@@ -132,7 +132,7 @@ const HeroSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="container relative z-10 px-4 py-8 grid lg:grid-cols-2 gap-12 items-center">
+      <div className="container mx-auto max-w-7xl relative z-10 px-4 py-8 grid lg:grid-cols-2 gap-12 items-center">
 
         {/* Left Side: Text & Search */}
         <motion.div
@@ -215,8 +215,8 @@ const HeroSection: React.FC = () => {
               <span className="text-lg">{t('get_started')}</span>
             </Button>
             <Link to="/about">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800">
-                <FaPlay className="mr-2 text-orange-500" /> {t('watch_demo')}
+              <Button size="lg" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 flex items-center">
+                <FaPlay className="mr-2" /> {t('watch_demo')}
               </Button>
             </Link>
           </div>

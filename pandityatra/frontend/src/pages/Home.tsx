@@ -14,7 +14,8 @@ import {
   KundaliHighlight,
   AppDownloadSection,
   ShopByCategory,
-  PanchangHighlight
+  PanchangHighlight,
+  ReviewsSection
 } from '@/components/home';
 import PanchangWidget from '@/components/panchang/PanchangWidget';
 
@@ -25,7 +26,7 @@ const HomePage: React.FC = () => {
   // Redirect logged-in admin/pandit users to their dashboards
   useEffect(() => {
     if (token && role) {
-      if (role === 'admin') {
+      if (role === 'admin' || role === 'superadmin') {
         navigate('/admin/dashboard', { replace: true });
       } else if (role === 'pandit') {
         navigate('/pandit/dashboard', { replace: true });
@@ -58,6 +59,9 @@ const HomePage: React.FC = () => {
 
       {/* Kundali Highlight */}
       <KundaliHighlight />
+
+      {/* Reviews & Ratings */}
+      <ReviewsSection />
 
       {/* App Download Section */}
       <AppDownloadSection />

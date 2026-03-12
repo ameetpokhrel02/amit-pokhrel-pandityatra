@@ -14,7 +14,7 @@ def admin_cancel_and_refund(request, booking_id):
     user = request.user
 
     # Only Admin / Staff
-    if not (user.is_superuser or user.is_staff or user.role == "admin"):
+    if not (user.is_superuser or user.is_staff or user.role in ("admin", "superadmin")):
         return Response({"detail": "Admin only"}, status=403)
 
     try:

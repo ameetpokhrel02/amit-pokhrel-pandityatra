@@ -23,6 +23,11 @@ import {
     ChevronDown,
     Store,
     Receipt,
+    Star,
+    MessageSquareHeart,
+    Crown,
+    FileText,
+    Shield,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
@@ -49,10 +54,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const [expandedItems, setExpandedItems] = useState<string[]>(() => {
+        const expanded: string[] = [];
         // Auto-expand Marketplace if we're on a marketplace sub-tab
-        if (location.search.includes('tab=marketplace')) return ['Marketplace'];
-        if (location.search.includes('tab=purchases')) return ['My Purchases'];
-        return [];
+        if (location.search.includes('tab=marketplace')) expanded.push('Marketplace');
+        if (location.search.includes('tab=purchases')) expanded.push('My Purchases');
+        // Auto-expand admin sidebar items based on path
+        if (location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) expanded.push('Pandits');
+        if (location.pathname.includes('/admin/inventory') || location.pathname.includes('/admin/services')) expanded.push('Inventory');
+        return expanded;
     });
 
     const toggleExpanded = (label: string) => {
@@ -61,7 +70,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         );
     };
 
-    // Auto-expand Marketplace when URL changes to a marketplace tab
+    // Auto-expand when URL changes
     useEffect(() => {
         if (location.search.includes('tab=marketplace') && !expandedItems.includes('Marketplace')) {
             setExpandedItems(prev => [...prev, 'Marketplace']);
@@ -69,7 +78,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         if (location.search.includes('tab=purchases') && !expandedItems.includes('My Purchases')) {
             setExpandedItems(prev => [...prev, 'My Purchases']);
         }
-    }, [location.search]);
+        if ((location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) && !expandedItems.includes('Pandits')) {
+            setExpandedItems(prev => [...prev, 'Pandits']);
+        }
+        if ((location.pathname.includes('/admin/inventory') || location.pathname.includes('/admin/services')) && !expandedItems.includes('Inventory')) {
+            setExpandedItems(prev => [...prev, 'Inventory']);
+        }
+    }, [location.pathname, location.search]);
 
     // Define navigation items based on role
     const navItems = {
@@ -96,22 +111,45 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: Calendar, label: 'Bookings', path: '/pandit/bookings' },
             { icon: MessageCircle, label: 'Messages', path: '/pandit/messages' },
             { icon: Wallet, label: 'Earnings', path: '/pandit/earnings' },
+            { icon: MessageSquareHeart, label: 'App Feedback', path: '/pandit/dashboard?tab=feedback' },
         ],
         admin: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
             { icon: Users, label: 'Users', path: '/admin/users' },
-            { icon: AlertTriangle, label: 'Pandit Verification', path: '/admin/pandits' },
+            { icon: User, label: 'Pandits', path: '/admin/pandits-list', children: [
+                { icon: Users, label: 'All Pandits', path: '/admin/pandits-list' },
+                { icon: AlertTriangle, label: 'Verification', path: '/admin/pandits' },
+            ]},
             { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
-            { icon: BookOpen, label: 'Services', path: '/admin/services' },
-            { icon: Package, label: 'Inventory (Samagri)', path: '/admin/inventory' },
+            { icon: Package, label: 'Inventory', path: '/admin/inventory', children: [
+                { icon: Package, label: 'Samagri', path: '/admin/inventory' },
+                { icon: BookOpen, label: 'Services', path: '/admin/services' },
+            ]},
             { icon: Wallet, label: 'Payments', path: '/admin/payments' },
-            { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' }, // Added Payouts
-            { icon: Menu, label: 'Activity Logs', path: '/admin/activity-logs' }, // I used Menu icon because Activity requires import, and Menu is already imported. I will just use CheckCircle for now, wait, I can add Activity
+            { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
+            { icon: Star, label: 'Reviews', path: '/admin/reviews' },
+            { icon: FileText, label: 'Site Content', path: '/admin/site-content' },
+            { icon: Menu, label: 'Activity Logs', path: '/admin/activity-logs' },
+            // Manage Admins — only visible if superadmin (injected below)
             { icon: Settings, label: 'Settings', path: '/admin/settings' },
+            { icon: User, label: 'My Profile', path: '/admin/profile' },
         ]
     };
 
-    const currentNavItems = navItems[userRole as keyof typeof navItems] || navItems.user;
+    // Inject "Manage Admins" for superadmin only
+    const actualRole = user?.role;
+    let currentNavItems: NavItem[] = navItems[userRole as keyof typeof navItems] || navItems.user;
+    if (userRole === 'admin' && actualRole === 'superadmin') {
+        // Insert "Manage Admins" before Settings
+        const settingsIdx = currentNavItems.findIndex(item => item.label === 'Settings');
+        const manageAdminsItem: NavItem = { icon: Crown, label: 'Manage Admins', path: '/admin/manage-admins' };
+        if (settingsIdx !== -1) {
+            currentNavItems = [...currentNavItems];
+            currentNavItems.splice(settingsIdx, 0, manageAdminsItem);
+        } else {
+            currentNavItems = [...currentNavItems, manageAdminsItem];
+        }
+    }
 
     const handleLogoutClick = () => {
         setShowLogoutDialog(true);
@@ -290,7 +328,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{user?.full_name}</p>
-                                    <p className="text-xs text-gray-500 capitalize">{userRole}</p>
+                                    <p className="text-xs text-gray-500 capitalize">{actualRole === 'superadmin' ? 'Super Admin' : userRole}</p>
                                 </div>
                             </div>
                             <Button
@@ -314,7 +352,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                     <div className="h-6 w-px bg-gray-200 mx-2" />
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700 capitalize px-2 py-1 bg-gray-100 rounded-md">
-                            {userRole} Mode
+                            {actualRole === 'superadmin' ? 'Super Admin' : userRole} Mode
                         </span>
                     </div>
                 </div>

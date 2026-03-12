@@ -47,7 +47,7 @@ const LoginPage: React.FC = () => {
     if (token) {
       if (hasJustLoggedIn && role) {
         // Redirect based on role
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'superadmin') {
           navigate('/admin/dashboard', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
@@ -57,7 +57,7 @@ const LoginPage: React.FC = () => {
         setHasJustLoggedIn(false);
       } else if (!hasJustLoggedIn && !loading) {
         // Already logged in - session restore
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'superadmin') {
           navigate('/admin/dashboard', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
@@ -375,7 +375,7 @@ const LoginPage: React.FC = () => {
                 theme="outline"
                 shape="pill"
                 size="large"
-                width="100%"
+                width={400}
                 text="continue_with"
               />
             </div>

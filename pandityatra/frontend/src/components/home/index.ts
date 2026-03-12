@@ -6,6 +6,7 @@ import KundaliHighlight from './KundaliHighlight';
 import AppDownloadSection from './AppDownloadSection';
 import ShopByCategory from './ShopByCategory';
 import PanchangHighlight from './PanchangHighlight';
+import ReviewsSection from './ReviewsSection';
 
 export {
     HeroSection,
@@ -15,5 +16,6 @@ export {
     KundaliHighlight,
     AppDownloadSection,
     ShopByCategory,
-    PanchangHighlight
+    PanchangHighlight,
+    ReviewsSection
 };

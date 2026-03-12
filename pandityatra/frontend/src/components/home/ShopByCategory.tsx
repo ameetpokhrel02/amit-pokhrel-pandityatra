@@ -34,7 +34,7 @@ const ShopByCategory: React.FC = () => {
 
     return (
         <section className="py-20 bg-white overflow-hidden">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto max-w-7xl px-4">
                 {/* Section Header - Centered */}
                 <div className="flex flex-col items-center text-center mb-16 max-w-3xl mx-auto">
                     <motion.div

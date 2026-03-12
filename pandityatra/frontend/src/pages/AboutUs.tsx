@@ -59,7 +59,7 @@ const AboutUs: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="container px-4">
+                    <div className="container mx-auto max-w-7xl px-4">
                         <div className="grid lg:grid-cols-2 gap-12 items-center">
                             <div className="text-center lg:text-left">
                                 <motion.h1
@@ -110,7 +110,7 @@ const AboutUs: React.FC = () => {
 
                 {/* Mission Section */}
                 <section className="py-20 px-4">
-                    <div className="container">
+                    <div className="container mx-auto max-w-7xl">
                         <div className="grid md:grid-cols-2 gap-12 items-center">
                             <div>
                                 <h2 className="text-3xl font-bold mb-6">Our Mission</h2>
@@ -157,7 +157,7 @@ const AboutUs: React.FC = () => {
 
                 {/* Importance of Rituals */}
                 <section className="py-20 bg-orange-50/30 px-4">
-                    <div className="container">
+                    <div className="container mx-auto max-w-7xl">
                         <h2 className="text-3xl font-bold text-center mb-12">The Essence of Rituals</h2>
                         <div className="grid md:grid-cols-3 gap-8">
                             {[
@@ -194,7 +194,7 @@ const AboutUs: React.FC = () => {
 
                 {/* Featured Temples (Placeholder for 'some temples') */}
                 <section className="py-20 px-4 bg-background">
-                    <div className="container">
+                    <div className="container mx-auto max-w-7xl">
                         <div className="flex justify-between items-end mb-12">
                             <div>
                                 <h2 className="text-3xl font-bold mb-2">Sacred Destinations</h2>
@@ -272,7 +272,7 @@ const AboutUs: React.FC = () => {
                     <div className="absolute inset-0 pointer-events-none opacity-20">
                         <img src={panditsGrp} alt="" className="w-full h-full object-cover mix-blend-overlay" />
                     </div>
-                    <div className="container relative z-10">
+                    <div className="container mx-auto max-w-7xl relative z-10">
                         <h2 className="text-4xl md:text-5xl font-black mb-6 uppercase tracking-tight">Digital <span className="text-orange-200">Devotion</span></h2>
                         <p className="text-orange-50 max-w-2xl mx-auto mb-8 text-xl font-medium">
                             Connecting Rituals Online - Experience the divine connection from anywhere in the world.

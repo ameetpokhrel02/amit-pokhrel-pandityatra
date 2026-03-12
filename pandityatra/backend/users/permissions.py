@@ -3,7 +3,7 @@ from rest_framework import permissions
 class IsAdmin(permissions.BasePermission):
     """
     Custom permission to only allow admins and superusers.
-    Checks for is_superuser OR is_staff OR role == 'admin'.
+    Checks for is_superuser OR is_staff OR role in ('admin', 'superadmin').
     """
     def has_permission(self, request, view):
         if not request.user or not request.user.is_authenticated:
@@ -12,7 +12,7 @@ class IsAdmin(permissions.BasePermission):
         return (
             request.user.is_superuser or 
             request.user.is_staff or 
-            getattr(request.user, 'role', '') == 'admin'
+            getattr(request.user, 'role', '') in ('admin', 'superadmin')
         )
 
 class IsAdminOrReadOnly(permissions.BasePermission):

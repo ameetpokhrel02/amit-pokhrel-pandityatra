@@ -62,6 +62,11 @@ import AdminSettings from './pages/admin/AdminSettings'
 import AdminSamagri from './pages/admin/AdminSamagri'
 import AdminServices from './pages/admin/AdminServices'
 import AdminActivityLogs from './pages/admin/AdminActivityLogs'
+import AdminReviews from './pages/admin/AdminReviews'
+import AdminPanditsList from './pages/admin/AdminPanditsList'
+import AdminProfile from './pages/admin/AdminProfile'
+import AdminSiteContent from './pages/admin/AdminSiteContent'
+import ManageAdmins from './pages/admin/ManageAdmins'
 
 // Profile
 import EditProfile from './pages/customer/Profile'
@@ -240,6 +245,12 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    <Route path="/admin/pandits-list" element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminPanditsList />
+                      </ProtectedRoute>
+                    } />
+
                     <Route path="/admin/bookings" element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <AdminBookings />
@@ -285,6 +296,30 @@ function App() {
                     <Route path="/admin/activity-logs" element={
                       <ProtectedRoute allowedRoles={['admin']}>
                         <AdminActivityLogs />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/reviews" element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminReviews />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/profile" element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminProfile />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/site-content" element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminSiteContent />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/manage-admins" element={
+                      <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+                        <ManageAdmins />
                       </ProtectedRoute>
                     } />
 

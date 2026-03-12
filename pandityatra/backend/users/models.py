@@ -31,8 +31,9 @@ class User(AbstractUser):
         ('user', 'User'),
         ('pandit', 'Pandit'),
         ('admin', 'Admin'),
+        ('superadmin', 'Super Admin'),
     )
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user')
+    role = models.CharField(max_length=12, choices=ROLE_CHOICES, default='user')
 
     # 4. Configuration: Ensure fields are included
     # Note: email is now mandatory, phone is optional
@@ -92,3 +93,36 @@ class ContactMessage(models.Model):
 
     def __str__(self):
         return f"Message from {self.name} - {self.subject}"
+
+
+class SiteContent(models.Model):
+    """
+    Editable site content managed by admins (CMS).
+    Each row represents a named content block.
+    """
+    CONTENT_KEYS = (
+        ('hero_title', 'Home Hero Title'),
+        ('hero_subtitle', 'Home Hero Subtitle'),
+        ('about_title', 'About Page Title'),
+        ('about_text', 'About Page Text'),
+        ('contact_address', 'Contact Address'),
+        ('contact_phone', 'Contact Phone'),
+        ('contact_email', 'Contact Email'),
+        ('announcement', 'Festival Announcement'),
+        ('footer_text', 'Footer Text'),
+    )
+
+    key = models.CharField(max_length=50, unique=True, choices=CONTENT_KEYS)
+    value = models.TextField(blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        'users.User', on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ['key']
+        verbose_name = 'Site Content'
+        verbose_name_plural = 'Site Content'
+
+    def __str__(self):
+        return f"{self.get_key_display()} — {self.value[:50]}"

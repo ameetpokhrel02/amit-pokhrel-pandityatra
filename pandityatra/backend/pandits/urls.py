@@ -7,7 +7,7 @@ from .views import (
     pandit_dashboard_stats, toggle_availability,
     PanditViewSet, PanditCalendarView, delete_availability_block
 )
-from .admin_views import approve_withdrawal, list_withdrawals, admin_pandit_earnings
+from .admin_views import approve_withdrawal, list_withdrawals, admin_pandit_earnings, admin_all_pandits
 
 router = DefaultRouter()
 router.register(r'my-services', PanditServiceViewSet, basename='pandit-services')
@@ -37,6 +37,7 @@ urlpatterns = [
 
     # Admin
     path("admin/pending/", list_pending_pandits),
+    path("admin/all/", admin_all_pandits),
     path("admin/verify/<int:pandit_id>/", verify_pandit),
     path("admin/reject/<int:pandit_id>/", reject_pandit),
     path("admin/withdrawals/", list_withdrawals),

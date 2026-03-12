@@ -106,7 +106,7 @@ const FeaturedPandits: React.FC = () => {
 
   return (
     <section className="py-16 bg-gradient-to-b from-orange-50/50 to-white">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto max-w-7xl px-4">
         {/* Section Header */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4">
@@ -311,8 +311,7 @@ const FeaturedPandits: React.FC = () => {
           <Link to="/pandits">
             <Button
               size="lg"
-              variant="outline"
-              className="border-orange-200 text-orange-600 hover:bg-orange-50 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+              className="bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 transition-all duration-300 hover:scale-105"
             >
               View All Pandits
               <FaChevronRight className="h-4 w-4 ml-2" />
