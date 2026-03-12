@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,12 @@ import {
     DollarSign,
     Package,
     MessageCircle,
-    Bell
+    Bell,
+    Heart,
+    ShoppingCart,
+    ClipboardList,
+    ChevronDown,
+    Store
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
@@ -29,18 +34,48 @@ interface DashboardLayoutProps {
     userRole?: 'user' | 'pandit' | 'admin';
 }
 
+interface NavItem {
+    icon: any;
+    label: string;
+    path: string;
+    children?: NavItem[];
+}
+
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, userRole = 'user' }) => {
     const { logout, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+    const [expandedItems, setExpandedItems] = useState<string[]>(() => {
+        // Auto-expand Marketplace if we're on a marketplace sub-tab
+        if (location.search.includes('tab=marketplace')) return ['Marketplace'];
+        return [];
+    });
+
+    const toggleExpanded = (label: string) => {
+        setExpandedItems(prev =>
+            prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+        );
+    };
+
+    // Auto-expand Marketplace when URL changes to a marketplace tab
+    useEffect(() => {
+        if (location.search.includes('tab=marketplace') && !expandedItems.includes('Marketplace')) {
+            setExpandedItems(prev => [...prev, 'Marketplace']);
+        }
+    }, [location.search]);
 
     // Define navigation items based on role
     const navItems = {
         user: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
             { icon: Calendar, label: 'My Bookings', path: '/my-bookings' },
+            { icon: Store, label: 'Marketplace', path: '/dashboard?tab=marketplace', children: [
+                { icon: ShoppingCart, label: 'My Cart', path: '/dashboard?tab=marketplace&sub=cart' },
+                { icon: Heart, label: 'My Favorites', path: '/dashboard?tab=marketplace&sub=favorites' },
+                { icon: ClipboardList, label: 'My Orders', path: '/dashboard?tab=marketplace&sub=orders' },
+            ]},
             { icon: MessageCircle, label: 'Messages', path: '/messages' },
             { icon: User, label: 'Profile', path: '/profile' },
             { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
@@ -128,32 +163,107 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         </Link>
 
                         {/* Navigation Links */}
-                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-                            {currentNavItems.map((item) => {
+                        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                            {currentNavItems.map((item: NavItem) => {
                                 const Icon = item.icon;
-                                const isActive = location.pathname === item.path;
+                                const hasChildren = item.children && item.children.length > 0;
+                                const isExpanded = expandedItems.includes(item.label);
+                                const isParentActive = item.path.includes('?')
+                                    ? location.search.includes('tab=marketplace')
+                                    : location.pathname === item.path;
+                                const isDirectActive = item.path.includes('?')
+                                    ? location.pathname + location.search === item.path
+                                    : location.pathname === item.path;
+
                                 return (
-                                    <Link
-                                        to={item.path}
-                                        key={item.path}
-                                        onClick={() => {
-                                            // Close mobile sidebar after navigation
-                                            if (window.innerWidth < 768) {
-                                                setIsSidebarOpen(false);
-                                            }
-                                        }}
-                                    >
-                                        <div className={`
-                                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                                    ${isActive
-                                                ? 'bg-orange-50 text-primary font-medium'
-                                                : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
-                                `}>
-                                            <Icon size={20} />
-                                            <span>{item.label}</span>
-                                        </div>
-                                    </Link>
-                                )
+                                    <div key={item.path}>
+                                        {/* Parent item */}
+                                        {hasChildren ? (
+                                            <button
+                                                className={`
+                                                    w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                                                    ${isParentActive
+                                                        ? 'bg-orange-50 text-primary font-medium'
+                                                        : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
+                                                `}
+                                                onClick={() => {
+                                                    toggleExpanded(item.label);
+                                                    if (!isExpanded) {
+                                                        navigate(item.path);
+                                                    }
+                                                }}
+                                            >
+                                                <Icon size={20} />
+                                                <span className="flex-1 text-left">{item.label}</span>
+                                                <ChevronDown
+                                                    size={16}
+                                                    className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                                                />
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                to={item.path}
+                                                onClick={() => {
+                                                    if (window.innerWidth < 768) setIsSidebarOpen(false);
+                                                }}
+                                            >
+                                                <div className={`
+                                                    flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                                                    ${isDirectActive
+                                                        ? 'bg-orange-50 text-primary font-medium'
+                                                        : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
+                                                `}>
+                                                    <Icon size={20} />
+                                                    <span>{item.label}</span>
+                                                </div>
+                                            </Link>
+                                        )}
+
+                                        {/* Children with tree-style lines */}
+                                        {hasChildren && (
+                                            <AnimatePresence>
+                                                {isExpanded && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="ml-5 pl-4 border-l-2 border-orange-200 mt-1 space-y-0.5">
+                                                            {item.children!.map((child: NavItem, idx: number) => {
+                                                                const ChildIcon = child.icon;
+                                                                const isChildActive = location.pathname + location.search === child.path;
+                                                                const isLast = idx === item.children!.length - 1;
+                                                                return (
+                                                                    <Link
+                                                                        to={child.path}
+                                                                        key={child.path}
+                                                                        onClick={() => {
+                                                                            if (window.innerWidth < 768) setIsSidebarOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <div className={`
+                                                                            relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm
+                                                                            ${isChildActive
+                                                                                ? 'bg-orange-50 text-primary font-medium'
+                                                                                : 'text-gray-500 hover:bg-orange-50/60 hover:text-gray-800'}
+                                                                        `}>
+                                                                            {/* Tree branch line */}
+                                                                            <div className="absolute -left-4 top-1/2 w-3 h-px bg-orange-200" />
+                                                                            <ChildIcon size={16} />
+                                                                            <span>{child.label}</span>
+                                                                        </div>
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+                                        )}
+                                    </div>
+                                );
                             })}
                         </nav>
 

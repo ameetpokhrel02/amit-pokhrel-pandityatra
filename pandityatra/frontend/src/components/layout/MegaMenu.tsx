@@ -12,30 +12,99 @@ interface MegaMenuProps {
 }
 
 const containerVariants = {
-    hidden: { opacity: 0, y: -20 },
+    hidden: { opacity: 0, y: 10, scale: 0.98 },
     visible: {
         opacity: 1,
         y: 0,
+        scale: 1,
         transition: {
-            duration: 0.3,
-            staggerChildren: 0.05
+            duration: 0.2,
+            ease: 'easeOut',
+            staggerChildren: 0.03
         }
     },
     exit: {
         opacity: 0,
-        y: -10,
-        transition: { duration: 0.2 }
+        y: 5,
+        scale: 0.98,
+        transition: { duration: 0.15 }
     }
 };
 
 const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, x: -10 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.2 } }
 };
+
+// Default categories with images if no data from API
+const defaultCategories = [
+    {
+        id: 1,
+        name: 'Puja Essentials',
+        slug: 'puja-essentials',
+        description: 'Agarbatti, Dhoop, Camphor & more',
+        image: '/images/puja1.svg',
+        icon: 'Flame',
+        is_active: true
+    },
+    {
+        id: 2,
+        name: 'Brass Murtis',
+        slug: 'brass-murti',
+        description: 'Divine idols & sacred statues',
+        image: '/images/puja1.svg',
+        icon: 'Crown',
+        is_active: true
+    },
+    {
+        id: 3,
+        name: 'Holy Books',
+        slug: 'holy-books',
+        description: 'Scriptures, Granths & Paaths',
+        image: '/images/puja1.svg',
+        icon: 'BookOpen',
+        is_active: true
+    },
+    {
+        id: 4,
+        name: 'Puja Thalis',
+        slug: 'puja-thalis',
+        description: 'Complete thali sets & accessories',
+        image: '/images/puja1.svg',
+        icon: 'CircleDot',
+        is_active: true
+    },
+    {
+        id: 5,
+        name: 'Festival Special',
+        slug: 'festival-special',
+        description: 'Seasonal & festival items',
+        image: '/images/puja1.svg',
+        icon: 'Sparkles',
+        is_active: true
+    },
+    {
+        id: 6,
+        name: 'Rudraksha & Malas',
+        slug: 'rudraksha-malas',
+        description: 'Authentic beads & prayer malas',
+        image: '/images/puja1.svg',
+        icon: 'Gem',
+        is_active: true
+    }
+];
 
 const MegaMenu: React.FC<MegaMenuProps> = ({ categories, isOpen, onClose }) => {
     const { t } = useTranslation();
     if (!isOpen) return null;
+
+    // Use API categories if available, otherwise use defaults
+    const displayCategories = categories.length > 0 ? categories : defaultCategories;
+    const activeCategories = displayCategories.filter(c => c.is_active).slice(0, 6);
+
+    // Split into two columns
+    const leftColumn = activeCategories.slice(0, 3);
+    const rightColumn = activeCategories.slice(3, 6);
 
     return (
         <motion.div
@@ -43,116 +112,122 @@ const MegaMenu: React.FC<MegaMenuProps> = ({ categories, isOpen, onClose }) => {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] border border-white/20 dark:border-gray-800/50 overflow-hidden rounded-[2.5rem] ring-1 ring-black/5 dark:ring-white/5"
+            className="bg-white dark:bg-gray-900 shadow-2xl border border-gray-100 dark:border-gray-800 rounded-2xl overflow-hidden"
             onMouseEnter={(e) => e.stopPropagation()}
-            style={{ minHeight: '350px', width: '900px', position: 'absolute', top: 'calc(100% + 1px)', left: '50%', transform: 'translateX(-50%)', zIndex: 100, pointerEvents: 'auto' }}
+            style={{ 
+                width: '580px', 
+                position: 'relative',
+                zIndex: 100, 
+                pointerEvents: 'auto' 
+            }}
         >
-            <div className="container mx-auto px-10 py-12">
-                <div className="flex gap-14">
-                    {/* Main Categories Section */}
-                    <div className="flex-1">
-                        <motion.h2
-                            variants={itemVariants}
-                            className="text-2xl font-playfair font-black text-gray-900 dark:text-white mb-10 flex items-center gap-3"
-                        >
-                            <div className="p-2 bg-orange-100 dark:bg-orange-950/30 rounded-lg">
-                                <LucideIcons.ShoppingBag className="w-6 h-6 text-orange-600" />
-                            </div>
-                            {t('shop_by_category')}
-                        </motion.h2>
-
-                        <div className="grid grid-cols-2 gap-x-10 gap-y-10">
-                            {categories.filter(c => c.is_active).map((category) => {
-                                const IconComponent = (LucideIcons as any)[category.icon || 'Flower2'] || LucideIcons.Flower2;
-
-                                return (
-                                    <motion.div key={category.id} variants={itemVariants}>
-                                        <Link
-                                            to={`/shop/samagri?category=${category.slug}`}
-                                            onClick={onClose}
-                                            className="group block"
-                                        >
-                                            <div className="flex items-center gap-5 p-2 rounded-2xl transition-all duration-300">
-                                                <div className="w-16 h-16 shrink-0 rounded-2xl bg-white dark:bg-gray-800/50 shadow-[0_8px_16px_rgba(0,0,0,0.04)] border border-gray-100 dark:border-gray-700/50 flex items-center justify-center text-orange-600 dark:text-orange-400 group-hover:scale-110 group-hover:bg-orange-600 group-hover:text-white group-hover:shadow-orange-200 dark:group-hover:shadow-none transition-all duration-500 overflow-hidden">
-                                                    {category.image ? (
-                                                        <img src={category.image} alt={category.name} className="w-full h-full object-cover p-2" />
-                                                    ) : (
-                                                        <IconComponent className="w-8 h-8" />
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 group-hover:text-orange-600 transition-colors">
-                                                        {t(`categories.${category.slug}.name`, category.name)}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1 mt-1 font-medium leading-relaxed opacity-0 group-hover:opacity-100 transform translate-x-[-10px] group-hover:translate-x-0 transition-all duration-300">
-                                                        {t(`categories.${category.slug}.desc`, category.description || t('samagri_desc'))}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
+            {/* Subtle top border accent */}
+            <div className="h-1 bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400" />
+            
+            <div className="p-6">
+                {/* Two Column Grid */}
+                <div className="grid grid-cols-2 gap-x-8">
+                    {/* Left Column */}
+                    <div className="space-y-1">
+                        {leftColumn.map((category) => {
+                            const IconComponent = (LucideIcons as any)[category.icon || 'Flower2'] || LucideIcons.Flower2;
+                            
+                            return (
+                                <motion.div key={category.id} variants={itemVariants}>
+                                    <Link
+                                        to={`/shop/samagri?category=${category.slug}`}
+                                        onClick={onClose}
+                                        className="group flex items-center gap-4 p-3 rounded-xl hover:bg-orange-50/80 dark:hover:bg-orange-950/20 transition-all duration-200"
+                                    >
+                                        {/* Category Image/Icon */}
+                                        <div className="w-12 h-12 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-colors">
+                                            {category.image ? (
+                                                <img 
+                                                    src={category.image} 
+                                                    alt={category.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <IconComponent className="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform" />
+                                            )}
+                                        </div>
+                                        
+                                        {/* Text Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-orange-600 transition-colors text-sm">
+                                                {t(`categories.${category.slug}.name`, category.name)}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                                {t(`categories.${category.slug}.desc`, category.description || 'Shop now')}
+                                            </p>
+                                        </div>
+                                    </Link>
+                                </motion.div>
+                            );
+                        })}
                     </div>
 
-                    {/* Featured/Promo Section */}
-                    <motion.div variants={itemVariants} className="w-80 shrink-0 hidden lg:block">
-                        <div className="h-full bg-gradient-to-br from-orange-600 via-orange-500 to-amber-500 rounded-[2rem] p-8 text-white relative overflow-hidden group shadow-2xl shadow-orange-200 dark:shadow-none">
-                            <div className="relative z-10 h-full flex flex-col">
-                                <span className="bg-white/20 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] w-fit border border-white/10">{t('featured')}</span>
-                                <h4 className="text-3xl font-playfair font-black mt-6 leading-[1.15]">
-                                    {t('categories.brass-murti.name', 'Authentic Brass Murti Collection')}
-                                </h4>
-                                <p className="text-sm text-orange-50/90 mt-4 font-medium leading-relaxed">
-                                    {t('categories.brass-murti.desc', 'Divine craftsmanship for your home temple.')}
-                                </p>
-                                <div className="mt-auto pt-8">
+                    {/* Right Column */}
+                    <div className="space-y-1">
+                        {rightColumn.map((category) => {
+                            const IconComponent = (LucideIcons as any)[category.icon || 'Flower2'] || LucideIcons.Flower2;
+                            
+                            return (
+                                <motion.div key={category.id} variants={itemVariants}>
                                     <Link
-                                        to="/shop/samagri?category=brass-murti"
+                                        to={`/shop/samagri?category=${category.slug}`}
                                         onClick={onClose}
-                                        className="inline-flex items-center gap-3 bg-white text-orange-600 px-7 py-4 rounded-xl font-black text-sm hover:bg-orange-50 transition-all hover:gap-5 shadow-xl active:scale-95"
+                                        className="group flex items-center gap-4 p-3 rounded-xl hover:bg-orange-50/80 dark:hover:bg-orange-950/20 transition-all duration-200"
                                     >
-                                        {t('book_now')} <LucideIcons.ArrowRight className="w-5 h-5" />
+                                        {/* Category Image/Icon */}
+                                        <div className="w-12 h-12 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 flex items-center justify-center overflow-hidden flex-shrink-0 group-hover:border-orange-200 dark:group-hover:border-orange-800 transition-colors">
+                                            {category.image ? (
+                                                <img 
+                                                    src={category.image} 
+                                                    alt={category.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <IconComponent className="w-6 h-6 text-orange-500 group-hover:scale-110 transition-transform" />
+                                            )}
+                                        </div>
+                                        
+                                        {/* Text Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-orange-600 transition-colors text-sm">
+                                                {t(`categories.${category.slug}.name`, category.name)}
+                                            </h3>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                                {t(`categories.${category.slug}.desc`, category.description || 'Shop now')}
+                                            </p>
+                                        </div>
                                     </Link>
-                                </div>
-                            </div>
-
-                            {/* Decorative elements */}
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
-                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-3xl -ml-20 -mb-20 group-hover:scale-150 transition-transform duration-1000" />
-                            <LucideIcons.Sparkles className="absolute top-10 right-10 w-12 h-12 opacity-20 animate-pulse" />
-                            <LucideIcons.Gem className="absolute -bottom-10 -right-10 w-48 h-48 opacity-10 rotate-[25deg] group-hover:rotate-0 transition-all duration-1000 group-hover:scale-110" />
-                        </div>
-                    </motion.div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
 
-                {/* Footer info */}
-                <motion.div
+                {/* Footer - View All */}
+                <motion.div 
                     variants={itemVariants}
-                    className="mt-12 pt-8 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between"
+                    className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800"
                 >
-                    <div className="flex items-center gap-10">
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
-                            <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-950/20 flex items-center justify-center">
-                                <LucideIcons.Truck className="w-4 h-4 text-orange-600" />
-                            </div>
-                            {t('next_day_delivery')}
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest">
-                            <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-950/20 flex items-center justify-center">
-                                <LucideIcons.ShieldCheck className="w-4 h-4 text-emerald-600" />
-                            </div>
-                            {t('spiritual_purity')}
-                        </div>
-                    </div>
                     <Link
                         to="/shop/samagri"
                         onClick={onClose}
-                        className="text-sm font-black text-orange-600 hover:text-orange-700 flex items-center gap-2 group p-2 rounded-lg hover:bg-orange-50 dark:hover:bg-orange-950/10 transition-colors"
+                        className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 hover:from-orange-100 hover:to-amber-100 dark:hover:from-orange-950/50 dark:hover:to-amber-950/40 transition-all group"
                     >
-                        {t('explore_all')}
-                        <LucideIcons.ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
+                                <LucideIcons.ShoppingBag className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{t('explore_all', 'View All Products')}</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">{t('browse_complete_collection', 'Browse our complete collection')}</p>
+                            </div>
+                        </div>
+                        <LucideIcons.ArrowRight className="w-5 h-5 text-orange-500 group-hover:translate-x-1 transition-transform" />
                     </Link>
                 </motion.div>
             </div>

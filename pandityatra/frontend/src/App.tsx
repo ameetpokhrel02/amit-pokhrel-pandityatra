@@ -102,9 +102,9 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <CartProvider>
-        <FavoritesProvider>
           <ChatProvider>
           <AuthProvider>
+        <FavoritesProvider>
             <ThemeProvider defaultTheme="system" storageKey="pandityatra-theme">
               <ErrorBoundary>
                 <Offline />
@@ -332,9 +332,9 @@ function App() {
                 </BrowserRouter>
               </ErrorBoundary>
             </ThemeProvider>
+        </FavoritesProvider>
           </AuthProvider>
           </ChatProvider>
-        </FavoritesProvider>
       </CartProvider>
     </GoogleOAuthProvider>
   )

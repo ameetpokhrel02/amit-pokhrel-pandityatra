@@ -88,3 +88,22 @@ class ShopOrderItem(models.Model):
     def __str__(self):
         item_name = self.samagri_item.name if self.samagri_item else self.item_name
         return f"{self.quantity} x {item_name} for Order #{self.order.id}"
+
+
+# --- Wishlist/Favorites Model ---
+
+class Wishlist(models.Model):
+    """Stores user's favorite/wishlist items persistently"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist_items')
+    samagri_item = models.ForeignKey(SamagriItem, on_delete=models.CASCADE, related_name='wishlisted_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'samagri_item')
+        ordering = ['-created_at']
+        verbose_name = "Wishlist Item"
+        verbose_name_plural = "Wishlist Items"
+
+    def __str__(self):
+        return f"{self.user.email} - {self.samagri_item.name}"
+

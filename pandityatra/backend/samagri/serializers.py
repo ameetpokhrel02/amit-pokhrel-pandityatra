@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem
+from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem, Wishlist
 from services.serializers import PujaSerializer
 
 # --- 1. Category Serializer ---
@@ -72,3 +72,25 @@ class WritablePujaSamagriRequirementSerializer(serializers.ModelSerializer):
     class Meta:
         model = PujaSamagriRequirement
         fields = ['puja', 'samagri_item', 'quantity']
+
+
+# --- 5. Wishlist Serializers ---
+
+class WishlistSerializer(serializers.ModelSerializer):
+    """Serializer for reading wishlist items"""
+    item = SamagriItemSerializer(source='samagri_item', read_only=True)
+
+    class Meta:
+        model = Wishlist
+        fields = ['id', 'item', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+
+class WishlistAddSerializer(serializers.Serializer):
+    """Serializer for adding item to wishlist"""
+    item_id = serializers.IntegerField(required=True)
+
+    def validate_item_id(self, value):
+        if not SamagriItem.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Item not found.")
+        return value

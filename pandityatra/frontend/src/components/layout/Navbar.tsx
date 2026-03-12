@@ -33,8 +33,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
 import logo from '@/assets/images/PanditYatralogo.png';
-import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown } from 'lucide-react';
+import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown, Heart } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { usePWA } from '@/hooks/usePWA';
@@ -49,7 +50,9 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const { items: cartItems, openDrawer: openCartDrawer } = useCart();
+  const { items: favoriteItems, openDrawer: openFavoritesDrawer } = useFavorites();
   const cartItemCount = cartItems.length;
+  const favoriteItemCount = favoriteItems.length;
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { isInstallable, installPWA } = usePWA();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -234,7 +237,7 @@ const Navbar: React.FC = () => {
                 {navItems.filter(item => !item.hideOnDesktop).map(item => (
                   <div
                     key={item.path}
-                    className={`relative py-2 ${item.hideOnSmallDesktop ? 'hidden xl:block' : ''}`}
+                    className={`relative py-2 ${item.hideOnSmallDesktop ? 'hidden xl:block' : ''} ${item.hasMegaMenu ? 'shop-menu-trigger' : ''}`}
                     onMouseEnter={() => {
                       if (item.hasMegaMenu) {
                         setIsMegaMenuOpen(true);
@@ -245,32 +248,37 @@ const Navbar: React.FC = () => {
                   >
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-1 xl:gap-2 text-sm font-medium px-2 xl:px-4 py-2 rounded-full transition-all duration-200 ${isActive(item.path)
+                      className={`flex items-center gap-1 xl:gap-2 text-sm font-medium px-2 xl:px-4 py-2 rounded-full transition-all duration-200 ${isActive(item.path) || (item.hasMegaMenu && isMegaMenuOpen)
                         ? 'text-orange-600 bg-orange-50'
                         : 'text-gray-600 hover:text-orange-600 hover:bg-orange-50/50'
                         }`}
                     >
                       <span className="hidden xl:block">{item.icon}</span>
                       <span>{item.name}</span>
-                      {item.hasMegaMenu && <ChevronDown className={`w-3 h-3 transition-transform ${isMegaMenuOpen ? 'rotate-180' : ''}`} />}
+                      {item.hasMegaMenu && <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isMegaMenuOpen ? 'rotate-180' : ''}`} />}
                     </Link>
+                    
+                    {/* Mega Menu positioned under Shop item */}
+                    {item.hasMegaMenu && (
+                      <AnimatePresence>
+                        {isMegaMenuOpen && (
+                          <div
+                            className="absolute top-full left-1/2 -translate-x-1/2 pt-3 z-50"
+                            onMouseEnter={() => setIsMegaMenuOpen(true)}
+                          >
+                            {/* Arrow indicator */}
+                            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-white dark:bg-gray-900 border-l border-t border-gray-100 dark:border-gray-800 rotate-45 z-10" />
+                            <MegaMenu
+                              categories={categories.filter(c => c.is_active)}
+                              isOpen={isMegaMenuOpen}
+                              onClose={() => setIsMegaMenuOpen(false)}
+                            />
+                          </div>
+                        )}
+                      </AnimatePresence>
+                    )}
                   </div>
                 ))}
-
-                <AnimatePresence>
-                  {isMegaMenuOpen && (
-                    <div
-                      className="absolute top-full right-0 mt-0 pt-2 z-50"
-                      onMouseEnter={() => setIsMegaMenuOpen(true)}
-                    >
-                      <MegaMenu
-                        categories={categories.filter(c => c.is_active)}
-                        isOpen={isMegaMenuOpen}
-                        onClose={() => setIsMegaMenuOpen(false)}
-                      />
-                    </div>
-                  )}
-                </AnimatePresence>
               </div>
             )}
 
@@ -294,6 +302,16 @@ const Navbar: React.FC = () => {
             )}
 
             <ThemeToggle />
+
+            {/* Favorites */}
+            <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openFavoritesDrawer}>
+              <Heart className="w-5 h-5" />
+              {favoriteItemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600 hover:bg-orange-600 text-[10px]">
+                  {favoriteItemCount}
+                </Badge>
+              )}
+            </Button>
 
             {/* Cart */}
             <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openCartDrawer}>
@@ -393,6 +411,16 @@ const Navbar: React.FC = () => {
 
           {/* Mobile View Toggle */}
           <div className="flex lg:hidden items-center gap-2">
+            {/* Mobile Favorites */}
+            <Button variant="ghost" size="icon" className="relative rounded-full" onClick={openFavoritesDrawer}>
+              <Heart className="w-5 h-5" />
+              {favoriteItemCount > 0 && (
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600">
+                  {favoriteItemCount}
+                </Badge>
+              )}
+            </Button>
+            
             {/* Mobile Cart */}
             <Button variant="ghost" size="icon" className="relative rounded-full" onClick={openCartDrawer}>
               <ShoppingCart className="w-5 h-5" />

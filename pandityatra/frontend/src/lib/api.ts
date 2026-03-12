@@ -398,6 +398,41 @@ export async function deleteSamagriCategory(id: number) {
     return response.data;
 }
 
+// --- Shop Orders API ---
+
+export interface ShopOrderItem {
+    id: number;
+    samagri_item: number | null;
+    item_name: string;
+    quantity: number;
+    price_at_purchase: string | number;
+}
+
+export interface ShopOrder {
+    id: number;
+    user_email: string;
+    total_amount: string | number;
+    status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+    full_name: string;
+    phone_number: string;
+    shipping_address: string;
+    city: string;
+    payment_method: string;
+    transaction_id: string | null;
+    items: ShopOrderItem[];
+    created_at: string;
+}
+
+export async function fetchMyOrders(): Promise<ShopOrder[]> {
+    const response = await apiClient.get('/samagri/checkout/my-orders/');
+    return response.data;
+}
+
+export async function fetchOrderDetail(id: number): Promise<ShopOrder> {
+    const response = await apiClient.get(`/samagri/checkout/${id}/detail/`);
+    return response.data;
+}
+
 // Helper to standardize error messages
 function handleApiError(error: any) {
     if (error.response) {

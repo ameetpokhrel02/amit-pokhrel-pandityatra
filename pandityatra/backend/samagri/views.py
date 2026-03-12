@@ -16,14 +16,16 @@ from adminpanel.utils import log_activity
 
 from .models import (
     SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus, 
-    SamagriCategory, PujaSamagriRequirement
+    SamagriCategory, PujaSamagriRequirement, Wishlist
 )
 from .serializers import (
     SamagriCategorySerializer, 
     SamagriItemSerializer, 
     ShopOrderSerializer,
     ShopCheckoutSerializer,
-    PujaSamagriRequirementSerializer
+    PujaSamagriRequirementSerializer,
+    WishlistSerializer,
+    WishlistAddSerializer
 )
 
 # --- AI-based Samagri Recommendation Endpoint ---
@@ -409,3 +411,123 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='my-orders')
+    def my_orders(self, request):
+        """GET /api/samagri/checkout/my-orders/ — List current user's shop orders"""
+        orders = ShopOrder.objects.filter(user=request.user).prefetch_related(
+            'items', 'items__samagri_item'
+        ).order_by('-created_at')
+        serializer = ShopOrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'], url_path='detail')
+    def order_detail(self, request, pk=None):
+        """GET /api/samagri/checkout/{id}/detail/ — Single order detail"""
+        try:
+            order = ShopOrder.objects.prefetch_related(
+                'items', 'items__samagri_item'
+            ).get(id=pk, user=request.user)
+            serializer = ShopOrderSerializer(order)
+            return Response(serializer.data)
+        except ShopOrder.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# --- Wishlist/Favorites ViewSet ---
+
+class WishlistViewSet(viewsets.ViewSet):
+    """
+    ViewSet for managing user's wishlist/favorites.
+    
+    Endpoints:
+    - GET /api/wishlist/ → List all user's favorites
+    - POST /api/wishlist/add/ → Add item to favorites
+    - DELETE /api/wishlist/remove/{id}/ → Remove item from favorites
+    - GET /api/wishlist/check/{item_id}/ → Check if item is in favorites
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def list(self, request):
+        """GET /api/wishlist/ - Get user's wishlist items"""
+        wishlist = Wishlist.objects.filter(user=request.user).select_related('samagri_item', 'samagri_item__category')
+        serializer = WishlistSerializer(wishlist, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='add')
+    def add_to_wishlist(self, request):
+        """POST /api/wishlist/add/ - Add item to wishlist"""
+        serializer = WishlistAddSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        item_id = serializer.validated_data['item_id']
+        samagri_item = SamagriItem.objects.get(id=item_id)
+
+        wishlist_item, created = Wishlist.objects.get_or_create(
+            user=request.user,
+            samagri_item=samagri_item
+        )
+
+        if created:
+            return Response({
+                "message": "Item added to favorites",
+                "item": WishlistSerializer(wishlist_item).data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                "message": "Item already in favorites",
+                "item": WishlistSerializer(wishlist_item).data
+            }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['delete'], url_path='remove/(?P<item_id>[^/.]+)')
+    def remove_from_wishlist(self, request, item_id=None):
+        """DELETE /api/wishlist/remove/{item_id}/ - Remove item from wishlist"""
+        try:
+            wishlist_item = Wishlist.objects.get(
+                user=request.user,
+                samagri_item_id=item_id
+            )
+            wishlist_item.delete()
+            return Response({"message": "Item removed from favorites"}, status=status.HTTP_200_OK)
+        except Wishlist.DoesNotExist:
+            return Response({"error": "Item not in favorites"}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'], url_path='check/(?P<item_id>[^/.]+)')
+    def check_favorite(self, request, item_id=None):
+        """GET /api/wishlist/check/{item_id}/ - Check if item is in favorites"""
+        is_favorite = Wishlist.objects.filter(
+            user=request.user,
+            samagri_item_id=item_id
+        ).exists()
+        return Response({"is_favorite": is_favorite})
+
+    @action(detail=False, methods=['post'], url_path='toggle')
+    def toggle_favorite(self, request):
+        """POST /api/wishlist/toggle/ - Toggle item in wishlist (add if not exists, remove if exists)"""
+        serializer = WishlistAddSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        item_id = serializer.validated_data['item_id']
+        samagri_item = SamagriItem.objects.get(id=item_id)
+
+        wishlist_item, created = Wishlist.objects.get_or_create(
+            user=request.user,
+            samagri_item=samagri_item
+        )
+
+        if created:
+            return Response({
+                "action": "added",
+                "message": "Item added to favorites",
+                "is_favorite": True,
+                "item": WishlistSerializer(wishlist_item).data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            wishlist_item.delete()
+            return Response({
+                "action": "removed",
+                "message": "Item removed from favorites",
+                "is_favorite": False
+            }, status=status.HTTP_200_OK)

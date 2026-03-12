@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement
+from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, Wishlist
 
 @admin.register(SamagriCategory)
 class SamagriCategoryAdmin(admin.ModelAdmin):
@@ -43,3 +43,11 @@ class PujaSamagriRequirementAdmin(admin.ModelAdmin):
     list_display = ('puja', 'samagri_item', 'quantity', 'unit')
     list_filter = ('puja',)
     autocomplete_fields = ('samagri_item',)
+
+
+@admin.register(Wishlist)
+class WishlistAdmin(admin.ModelAdmin):
+    list_display = ('user', 'samagri_item', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('user__email', 'samagri_item__name')
+    readonly_fields = ('created_at',)

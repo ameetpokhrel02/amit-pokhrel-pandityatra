@@ -13,7 +13,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Star,
-    X
+    X,
+    Heart
 } from 'lucide-react';
 import {
     Select,
@@ -29,6 +30,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
 import {
     fetchSamagriItems,
     fetchSamagriCategories,
@@ -50,6 +52,7 @@ const Samagri = () => {
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
+    const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedItem, setSelectedItem] = useState<SamagriItem | null>(null);
 
     useEffect(() => {
@@ -120,6 +123,28 @@ const Samagri = () => {
             className: "bg-green-600 text-white border-green-700 shadow-lg"
         });
         openDrawer();
+    };
+
+    const handleToggleFavorite = (item: SamagriItem) => {
+        toggleFavorite({
+            id: item.id,
+            type: 'samagri',
+            name: item.name,
+            price: Number(item.price),
+            image: item.image || undefined,
+            description: item.description || undefined,
+        });
+        
+        const isNowFavorite = !isFavorite(item.id);
+        toast({
+            title: isNowFavorite ? "Added to Favorites" : "Removed from Favorites",
+            description: isNowFavorite 
+                ? `${item.name} has been added to your favorites.`
+                : `${item.name} has been removed from your favorites.`,
+            className: isNowFavorite 
+                ? "bg-pink-600 text-white border-pink-700 shadow-lg"
+                : "bg-gray-600 text-white border-gray-700 shadow-lg"
+        });
     };
 
     return (
@@ -238,6 +263,22 @@ const Samagri = () => {
                                             <Badge className="absolute top-3 left-3 bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 rounded-full z-10">
                                                 Hot
                                             </Badge>
+
+                                            {/* Favorite Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggleFavorite(item);
+                                                }}
+                                                className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center z-10 transition-all duration-200 ${
+                                                    isFavorite(item.id)
+                                                        ? 'bg-red-500 text-white shadow-lg shadow-red-200'
+                                                        : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white shadow-md'
+                                                }`}
+                                                title={isFavorite(item.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                            >
+                                                <Heart className={`w-4 h-4 ${isFavorite(item.id) ? 'fill-current' : ''}`} />
+                                            </button>
 
                                             {item.image ? (
                                                 <img
