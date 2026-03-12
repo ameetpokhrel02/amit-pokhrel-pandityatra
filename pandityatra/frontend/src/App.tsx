@@ -22,6 +22,7 @@ import CartPage from './pages/Shop/Cart'
 import CheckoutPage from './pages/Shop/Checkout'
 import ShopPaymentSuccess from './pages/Shop/ShopPaymentSuccess'
 import ShopPaymentFailure from './pages/Shop/ShopPaymentFailure'
+import ShopEsewaVerify from './pages/Shop/ShopEsewaVerify'
 
 // Auth
 import LoginPage from './pages/auth/Login'
@@ -126,6 +127,7 @@ function App() {
                     } />
                     <Route path="/shop/payment/success" element={<ShopPaymentSuccess />} />
                     <Route path="/shop/payment/cancel" element={<ShopPaymentFailure />} />
+                    <Route path="/shop/payment/esewa/verify" element={<ShopEsewaVerify />} />
                     <Route path="/pandits" element={<PanditList />} />
                     <Route path="/pandits/:id" element={<PanditProfile />} />
 

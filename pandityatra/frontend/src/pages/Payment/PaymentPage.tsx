@@ -321,8 +321,8 @@ const PaymentPage: React.FC = () => {
                       }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-[#5C2D91] flex items-center justify-center shadow-sm">
-                        <Wallet className="w-7 h-7 text-white" />
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
+                        <img src="/images/khalti.webp" alt="Khalti" className="w-full h-full object-contain" />
                       </div>
                       <div className="text-left flex-1">
                         <p className="font-bold text-[#5C2D91] text-lg">Khalti</p>

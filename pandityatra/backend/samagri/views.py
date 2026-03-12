@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from users.permissions import IsAdminOrReadOnly
 from services.models import Puja
-from payments.utils import initiate_khalti_payment, convert_npr_to_usd
+from payments.utils import initiate_khalti_payment, initiate_esewa_payment, convert_npr_to_usd
 from adminpanel.utils import log_activity
 
 from .models import (
@@ -379,6 +379,29 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                     order.transaction_id = checkout_session.id
                     order.save()
                     return Response({"payment_url": checkout_session.url, "order_id": order.id})
+
+                elif payment_method == 'ESEWA':
+                    # eSewa (NPR) - Nepal's Leading Digital Wallet
+                    success_url = f"{settings.FRONTEND_URL}/shop/payment/esewa/verify"
+                    failure_url = f"{settings.FRONTEND_URL}/shop/payment/cancel?order_id={order.id}"
+                    
+                    success, payment_url, form_data, transaction_uuid = initiate_esewa_payment(
+                        total_amount,
+                        f"SHOP-{order.id}",
+                        success_url,
+                        failure_url
+                    )
+                    if success:
+                        order.transaction_id = transaction_uuid
+                        order.save()
+                        return Response({
+                            "payment_url": payment_url,
+                            "form_data": form_data,
+                            "order_id": order.id,
+                            "gateway": "ESEWA"
+                        })
+                    else:
+                        raise Exception(f"eSewa Error: {payment_url}")
 
         except SamagriItem.DoesNotExist:
             return Response({"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND)

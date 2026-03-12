@@ -56,7 +56,7 @@ const CheckoutPage: React.FC = () => {
         phone_number: '',
         shipping_address: '',
         city: '',
-        payment_method: 'STRIPE' as 'STRIPE' | 'KHALTI'
+        payment_method: 'ESEWA' as 'STRIPE' | 'KHALTI' | 'ESEWA'
     });
 
     if (items.length === 0) {
@@ -97,7 +97,12 @@ const CheckoutPage: React.FC = () => {
                 items: items.map(it => ({ id: it.id, quantity: it.quantity }))
             };
             const response = await apiClient.post('/samagri/checkout/initiate/', payload);
-            if (response.data.payment_url) {
+            
+            // Handle different payment gateways
+            if (response.data.gateway === 'ESEWA' && response.data.form_data) {
+                // eSewa requires form POST submission
+                submitEsewaForm(response.data.payment_url, response.data.form_data);
+            } else if (response.data.payment_url) {
                 window.location.href = response.data.payment_url;
             }
         } catch (err: any) {
@@ -106,6 +111,24 @@ const CheckoutPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    // eSewa requires form submission instead of redirect
+    const submitEsewaForm = (url: string, formData: Record<string, string>) => {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        
+        Object.entries(formData).forEach(([key, value]) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
     };
 
     return (
@@ -185,36 +208,59 @@ const CheckoutPage: React.FC = () => {
                                 </CardHeader>
                                 <CardContent className="p-6">
                                     <RadioGroup
-                                        defaultValue="STRIPE"
+                                        defaultValue="ESEWA"
                                         onValueChange={(v) => setFormData({ ...formData, payment_method: v as any })}
-                                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                        className="space-y-3"
                                     >
+                                        {/* eSewa - Nepal's Leading Digital Wallet */}
                                         <Label
-                                            htmlFor="stripe"
-                                            className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-all ${formData.payment_method === 'STRIPE' ? 'border-orange-500 bg-orange-50/50' : 'border-gray-200'}`}
+                                            htmlFor="esewa"
+                                            className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.payment_method === 'ESEWA' ? 'border-[#60BB46] bg-[#60BB46]/5 shadow-md' : 'border-gray-200 hover:border-[#60BB46]/50'}`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <RadioGroupItem value="STRIPE" id="stripe" />
+                                                <RadioGroupItem value="ESEWA" id="esewa" className="text-[#60BB46]" />
+                                                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
+                                                    <img src="/images/esewa.jpg" alt="eSewa" className="w-full h-full object-contain" />
+                                                </div>
                                                 <div>
-                                                    <p className="font-bold">Card / International</p>
-                                                    <p className="text-xs text-gray-500">Stripe Secure (USD)</p>
+                                                    <p className="font-bold text-[#60BB46]">eSewa</p>
+                                                    <p className="text-xs text-gray-500">Nepal's Leading Digital Wallet (NPR)</p>
                                                 </div>
                                             </div>
-                                            <CreditCard className="text-gray-400" />
                                         </Label>
 
+                                        {/* Khalti */}
                                         <Label
                                             htmlFor="khalti"
-                                            className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer hover:bg-gray-50 transition-all ${formData.payment_method === 'KHALTI' ? 'border-orange-500 bg-orange-50/50' : 'border-gray-200'}`}
+                                            className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.payment_method === 'KHALTI' ? 'border-[#5C2D91] bg-[#5C2D91]/5 shadow-md' : 'border-gray-200 hover:border-[#5C2D91]/50'}`}
                                         >
                                             <div className="flex items-center gap-3">
-                                                <RadioGroupItem value="KHALTI" id="khalti" />
+                                                <RadioGroupItem value="KHALTI" id="khalti" className="text-[#5C2D91]" />
+                                                <div className="w-10 h-10 rounded-lg overflow-hidden bg-white shadow-sm flex items-center justify-center p-1">
+                                                    <img src="/images/khalti.webp" alt="Khalti" className="w-full h-full object-contain" />
+                                                </div>
                                                 <div>
-                                                    <p className="font-bold">Khalti / Nepal</p>
-                                                    <p className="text-xs text-gray-500">Mobile Wallet (NPR)</p>
+                                                    <p className="font-bold text-[#5C2D91]">Khalti</p>
+                                                    <p className="text-xs text-gray-500">Digital Wallet & Mobile Banking (NPR)</p>
                                                 </div>
                                             </div>
-                                            <Wallet className="text-purple-600" />
+                                        </Label>
+
+                                        {/* Stripe - International */}
+                                        <Label
+                                            htmlFor="stripe"
+                                            className={`flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-all ${formData.payment_method === 'STRIPE' ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 hover:border-blue-300'}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <RadioGroupItem value="STRIPE" id="stripe" className="text-blue-600" />
+                                                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center shadow-sm">
+                                                    <CreditCard className="w-6 h-6 text-white" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-blue-600">Card / International</p>
+                                                    <p className="text-xs text-gray-500">Visa, Mastercard, etc. (USD)</p>
+                                                </div>
+                                            </div>
                                         </Label>
                                     </RadioGroup>
                                 </CardContent>
@@ -268,15 +314,26 @@ const CheckoutPage: React.FC = () => {
                                     <Button
                                         form="checkout-form"
                                         disabled={loading || !cartValid}
-                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-xl shadow-lg ring-offset-2 focus:ring-2 focus:ring-orange-500 transition-all active:scale-[0.98]"
+                                        className={`w-full h-14 text-white font-bold text-lg rounded-xl shadow-lg ring-offset-2 focus:ring-2 transition-all active:scale-[0.98] ${
+                                            formData.payment_method === 'ESEWA' 
+                                                ? 'bg-[#60BB46] hover:bg-[#4fa339] focus:ring-[#60BB46]' 
+                                                : formData.payment_method === 'KHALTI'
+                                                ? 'bg-[#5C2D91] hover:bg-[#4a2475] focus:ring-[#5C2D91]'
+                                                : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                                        }`}
                                     >
                                         {loading ? (
                                             <>
                                                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                                Initiating Sacred Payment...
+                                                Initiating Payment...
                                             </>
                                         ) : (
-                                            `Secure Payment (${formData.payment_method})`
+                                            <span className="flex items-center justify-center gap-2">
+                                                {formData.payment_method === 'ESEWA' && (
+                                                    <img src="/images/esewa.jpg" alt="" className="w-6 h-6 rounded" />
+                                                )}
+                                                Pay with {formData.payment_method === 'STRIPE' ? 'Card' : formData.payment_method === 'KHALTI' ? 'Khalti' : 'eSewa'}
+                                            </span>
                                         )}
                                     </Button>
                                 </CardContent>
