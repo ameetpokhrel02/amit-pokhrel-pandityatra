@@ -89,6 +89,8 @@ export default defineConfig({
     include: ['react', 'react-dom'],
   },
   server: { 
+    port: 5173,
+    strictPort: true,  // Will fail if 5173 is in use instead of auto-switching
     proxy: { 
       '/media': { target: 'http://localhost:8000', changeOrigin: true },
       '/api': { target: 'http://localhost:8000', changeOrigin: true }
