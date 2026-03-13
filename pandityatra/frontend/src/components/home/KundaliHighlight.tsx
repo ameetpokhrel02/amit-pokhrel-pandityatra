@@ -20,9 +20,17 @@ import {
   GiStarFormation,
   GiMagicSwirl
 } from 'react-icons/gi';
+import { fetchKundaliPublicStats } from '@/lib/api';
 
 const KundaliHighlight: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState(0);
+  const [liveStats, setLiveStats] = useState({
+    totalKundalis: 0,
+    averageRating: 0,
+    totalReviews: 0,
+    languages: 3,
+    apiTimeMs: 0,
+  });
 
 
 
@@ -33,6 +41,39 @@ const KundaliHighlight: React.FC = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    const loadPublicStats = async () => {
+      const start = performance.now();
+      try {
+        const stats = await fetchKundaliPublicStats();
+        const elapsed = Math.round(performance.now() - start);
+
+        setLiveStats({
+          totalKundalis: stats.total_kundalis || 0,
+          averageRating: stats.average_rating || 0,
+          totalReviews: stats.total_reviews || 0,
+          languages: stats.languages_supported || 3,
+          apiTimeMs: Math.max(1, elapsed),
+        });
+      } catch {
+        const elapsed = Math.round(performance.now() - start);
+        setLiveStats((prev) => ({
+          ...prev,
+          apiTimeMs: Math.max(1, elapsed),
+        }));
+      }
+    };
+
+    loadPublicStats();
+  }, []);
+
+  const formatKundaliCount = (count: number) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K+`;
+    }
+    return `${count}+`;
+  };
 
   const features = [
     {
@@ -75,10 +116,10 @@ const KundaliHighlight: React.FC = () => {
   ];
 
   const stats = [
-    { number: "50K+", label: "Kundalis Generated" },
-    { number: "99.9%", label: "Accuracy Rate" },
-    { number: "0 sec", label: "Loading Time" },
-    { number: "15+", label: "Languages" }
+    { number: formatKundaliCount(liveStats.totalKundalis), label: "Kundalis Generated" },
+    { number: `${liveStats.averageRating.toFixed(1)}/5`, label: `Average Rating (${liveStats.totalReviews})` },
+    { number: `${liveStats.apiTimeMs} ms`, label: "Live API Time" },
+    { number: `${liveStats.languages}`, label: "Languages" }
   ];
 
   return (

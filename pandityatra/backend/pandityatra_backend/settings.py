@@ -147,10 +147,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization & Localization
 LANGUAGE_CODE = 'en-us'
 
-# Support for English and Nepali
+# Support for English, Nepali and Hindi
 LANGUAGES = [
     ('en', 'English'),
     ('ne', 'Nepali (नेपाली)'),
+    ('hi', 'Hindi (हिन्दी)'),
 ]
 
 LOCALE_PATHS = [

@@ -550,6 +550,18 @@ export async function getSavedKundalis() {
     return response.data;
 }
 
+export interface KundaliPublicStats {
+    total_kundalis: number;
+    average_rating: number;
+    total_reviews: number;
+    languages_supported: number;
+}
+
+export async function fetchKundaliPublicStats(): Promise<KundaliPublicStats> {
+    const response = await apiClient.get('/kundali/public-stats/');
+    return response.data;
+}
+
 // ----------------------
 // Samagri/Shop APIs
 // ----------------------

@@ -1,9 +1,12 @@
 from .models import Kundali, KundaliPlanet, KundaliHouse
 from .services.astro import calculate_chart, get_nakshatra, get_rashi, get_house_from_longitude
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from kundali.services.ai import get_ai_prediction
+from django.db.models import Avg, Count
+from django.conf import settings
+from reviews.models import SiteReview, Review
 
 
 @api_view(["POST"])
@@ -137,3 +140,36 @@ def list_kundalis(request):
         })
     
     return Response(data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_kundali_stats(request):
+    """Public landing stats for Kundali section."""
+    total_kundalis = Kundali.objects.count()
+
+    site_rating_stats = SiteReview.objects.filter(is_approved=True).aggregate(
+        avg_rating=Avg('rating'),
+        total_reviews=Count('id'),
+    )
+    pandit_rating_stats = Review.objects.aggregate(
+        avg_rating=Avg('rating'),
+        total_reviews=Count('id'),
+    )
+
+    site_total = site_rating_stats['total_reviews'] or 0
+    pandit_total = pandit_rating_stats['total_reviews'] or 0
+    combined_total = site_total + pandit_total
+
+    combined_sum = (
+        float(site_rating_stats['avg_rating'] or 0) * site_total
+        + float(pandit_rating_stats['avg_rating'] or 0) * pandit_total
+    )
+    combined_avg = (combined_sum / combined_total) if combined_total else 0
+
+    return Response({
+        "total_kundalis": total_kundalis,
+        "average_rating": round(combined_avg, 1),
+        "total_reviews": combined_total,
+        "languages_supported": len(getattr(settings, 'LANGUAGES', [])),
+    })
