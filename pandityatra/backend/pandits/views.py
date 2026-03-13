@@ -359,7 +359,10 @@ def pandit_dashboard_stats(request):
             "time": next_puja.booking_time,
             "location": next_puja.service_location,
             "status": next_puja.status,
-            "videoLink": next_puja.daily_room_url or next_puja.video_room_url
+            "videoLink": next_puja.daily_room_url or next_puja.video_room_url,
+            "payment_status": next_puja.payment_status,
+            "payment_method": next_puja.payment_method,
+            "transaction_id": next_puja.transaction_id,
         }
 
     # 3. Today's Schedule (NEW)
@@ -377,7 +380,10 @@ def pandit_dashboard_stats(request):
             "customer": b.user.full_name,
             "status": b.status,
              # Video link only if status is Accepted
-            "video_link": (b.daily_room_url or b.video_room_url) if b.status == BookingStatus.ACCEPTED else None
+            "video_link": (b.daily_room_url or b.video_room_url) if b.status == BookingStatus.ACCEPTED else None,
+            "payment_status": b.payment_status,
+            "payment_method": b.payment_method,
+            "transaction_id": b.transaction_id,
         })
 
     # 4. Booking Queue (Top 5 pending/upcoming)
@@ -394,7 +400,10 @@ def pandit_dashboard_stats(request):
             "service": b.service_name,
             "date": b.booking_date,
             "time": b.booking_time,
-            "status": b.status
+            "status": b.status,
+            "payment_status": b.payment_status,
+            "payment_method": b.payment_method,
+            "transaction_id": b.transaction_id,
         })
         
     # 5. Earnings Snapshot

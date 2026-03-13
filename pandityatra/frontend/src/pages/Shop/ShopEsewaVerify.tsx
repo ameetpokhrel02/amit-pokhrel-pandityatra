@@ -29,6 +29,7 @@ const ShopEsewaVerify: React.FC = () => {
 
   const verifyPayment = async () => {
     const data = searchParams.get('data');
+    const orderId = searchParams.get('order_id');
 
     if (!data) {
       setError('Invalid payment parameters');
@@ -38,7 +39,10 @@ const ShopEsewaVerify: React.FC = () => {
     }
 
     try {
-      const result = await apiClient.get(`/payments/esewa/verify/?data=${encodeURIComponent(data)}`);
+      const verifyUrl = orderId
+        ? `/payments/esewa/verify/?data=${encodeURIComponent(data)}&order_id=${encodeURIComponent(orderId)}`
+        : `/payments/esewa/verify/?data=${encodeURIComponent(data)}`;
+      const result = await apiClient.get(verifyUrl);
 
       if (result.data.success && result.data.type === 'SHOP_ORDER') {
         setSuccess(true);

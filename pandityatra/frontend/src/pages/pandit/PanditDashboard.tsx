@@ -259,6 +259,11 @@ const PanditDashboard = () => {
                                                             <div>
                                                                 <p className="font-medium">{item.title}</p>
                                                                 <p className="text-sm text-muted-foreground">{item.customer}</p>
+                                                                <div className="mt-1">
+                                                                    <Badge variant="outline" className={item.payment_status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}>
+                                                                        {item.payment_status ? 'Paid' : 'Unpaid'}
+                                                                    </Badge>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-2">
@@ -315,6 +320,15 @@ const PanditDashboard = () => {
                                                     <p className="font-medium text-green-600">{nextPuja.status}</p>
                                                 </div>
                                             </div>
+                                            <div className="flex items-center gap-3 p-3 bg-background rounded-lg border">
+                                                <Wallet className="h-5 w-5 text-muted-foreground" />
+                                                <div>
+                                                    <p className="text-xs text-muted-foreground">Payment</p>
+                                                    <Badge variant="outline" className={nextPuja.payment_status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}>
+                                                        {nextPuja.payment_status ? `Paid${nextPuja.payment_method ? ` (${nextPuja.payment_method})` : ''}` : 'Unpaid'}
+                                                    </Badge>
+                                                </div>
+                                            </div>
                                         </CardContent>
                                         <CardFooter className="flex gap-3 justify-end pt-2">
                                             <Button variant="outline" className="gap-2" onClick={() => handleBookingAction(nextPuja.id, 'Completed')}>
@@ -346,6 +360,7 @@ const PanditDashboard = () => {
                                                         <TableHead>{t('puja')}</TableHead>
                                                         <TableHead>{t('date_time')}</TableHead>
                                                         <TableHead>{t('status')}</TableHead>
+                                                        <TableHead>Payment</TableHead>
                                                         <TableHead className="text-right">{t('action')}</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
@@ -361,6 +376,11 @@ const PanditDashboard = () => {
                                                             <TableCell>
                                                                 <Badge variant={booking.status === 'ACCEPTED' ? 'default' : 'secondary'}>
                                                                     {booking.status}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge variant="outline" className={booking.payment_status ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}>
+                                                                    {booking.payment_status ? `Paid${booking.payment_method ? ` (${booking.payment_method})` : ''}` : 'Unpaid'}
                                                                 </Badge>
                                                             </TableCell>
                                                             <TableCell className="text-right">

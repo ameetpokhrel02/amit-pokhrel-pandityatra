@@ -1,0 +1,105 @@
+/usr/local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.1.0)/charset_normalizer (3.4.5) doesn't match a supported version!
+  warnings.warn(
+admin
+ [X] 0001_initial
+ [X] 0002_logentry_remove_auto_add
+ [X] 0003_logentry_add_action_flag_choices
+adminpanel
+ [X] 0001_initial
+ [X] 0002_activitylog
+ai
+ (no migrations)
+auth
+ [X] 0001_initial
+ [X] 0002_alter_permission_name_max_length
+ [X] 0003_alter_user_email_max_length
+ [X] 0004_alter_user_username_opts
+ [X] 0005_alter_user_last_login_null
+ [X] 0006_require_contenttypes_0002
+ [X] 0007_alter_validators_add_error_messages
+ [X] 0008_alter_user_username_max_length
+ [X] 0009_alter_user_last_name_max_length
+ [X] 0010_alter_group_name_max_length
+ [X] 0011_update_proxy_permissions
+ [X] 0012_alter_user_first_name_max_length
+bookings
+ [X] 0001_initial
+ [X] 0002_rename_fee_booking_samagri_fee_booking_accepted_at_and_more
+ [X] 0003_bookingsamagriitem
+ [X] 0004_bookingsamagriitem_recommendation
+ [X] 0005_bookingsamagriitem_samagri_item_and_more
+ [X] 0006_alter_booking_service_location
+ [X] 0007_booking_total_fee_usd_booking_video_room_url
+ [X] 0008_booking_transaction_id
+ [X] 0009_booking_customer_location_booking_customer_timezone
+ [X] 0010_booking_recording_url
+ [X] 0011_alter_booking_unique_together
+ [X] 0012_booking_daily_room_name_booking_daily_room_url_and_more
+chat
+ [X] 0001_initial
+ [X] 0002_add_chatmessage_dual_mode
+ [X] 0003_rename_chat_chatme_mode_idx_chat_chatme_mode_12cbdf_idx_and_more
+ [X] 0004_chatroom_is_pre_booking_alter_chatroom_booking_and_more
+contenttypes
+ [X] 0001_initial
+ [X] 0002_remove_content_type_name
+kundali
+ [X] 0001_initial
+ [X] 0002_kundali_lagna_kundali_midheaven_kundalihouse
+ [X] 0003_kundali_ai_prediction
+ [X] 0004_kundali_place_alter_kundali_timezone
+notifications
+ [X] 0001_initial
+ [X] 0002_alter_notification_notification_type
+ [X] 0003_alter_notification_notification_type
+panchang
+ [X] 0001_initial
+pandits
+ [X] 0001_initial
+ [X] 0002_pandit_user
+ [X] 0003_alter_pandit_user
+ [X] 0004_remove_pandit_full_name_pandit_date_joined_and_more
+ [X] 0005_alter_pandit_options_pandit_certification_file_and_more
+ [X] 0006_alter_pandit_options_and_more
+ [X] 0007_pandit_available_balance_pandit_total_earnings_and_more
+ [X] 0008_remove_pandit_available_balance_and_more
+ [X] 0009_panditservice
+ [X] 0010_panditavailability
+payments
+ [X] 0001_initial
+ [X] 0002_payment_amount_npr_payment_amount_usd_and_more
+ [X] 0003_panditwithdrawal
+recommender
+ [X] 0001_initial
+ [X] 0002_initial
+reviews
+ [X] 0001_initial
+ [X] 0002_sitereview
+samagri
+ [X] 0001_initial
+ [X] 0002_samagriitem_stock_quantity
+ [X] 0003_samagriitem_created_at_samagriitem_is_active_and_more
+ [X] 0004_samagriitem_image
+ [X] 0005_shoporderitem_item_name_and_more
+ [X] 0006_alter_samagricategory_options_samagricategory_icon_and_more
+ [X] 0007_alter_samagricategory_slug
+ [X] 0008_wishlist
+services
+ [X] 0001_initial
+ [X] 0002_remove_puja_duration_minutes_remove_puja_pandit_and_more
+ [X] 0003_pujacategory_puja_category
+sessions
+ [X] 0001_initial
+users
+ [X] 0001_initial
+ [X] 0002_remove_user_phone_user_phone_number
+ [X] 0003_user_full_name
+ [X] 0004_platformsetting
+ [X] 0005_alter_user_email
+ [X] 0006_contactmessage
+ [X] 0007_remove_user_profile_pic_url_user_profile_pic
+ [X] 0008_alter_user_role_sitecontent
+video
+ [X] 0001_initial
+ [X] 0002_rename_video_room_videoparticipant_room_and_more
+ [X] 0003_videoroom_recording_url

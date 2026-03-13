@@ -399,7 +399,7 @@ class KhaltiVerifyView(APIView):
     """
     Verify Khalti payment
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
     
     def get(self, request):
         """Handle redirect from Khalti"""
@@ -413,12 +413,12 @@ class KhaltiVerifyView(APIView):
         
         # 1. Try finding Booking Payment
         try:
-            payment = Payment.objects.filter(transaction_id=pidx, user=request.user).first()
+            payment = Payment.objects.filter(transaction_id=pidx).first()
             if payment:
                 return self.handle_booking_verification(payment, pidx)
 
             # 2. Try finding Shop Order
-            order = ShopOrder.objects.filter(transaction_id=pidx, user=request.user).first()
+            order = ShopOrder.objects.filter(transaction_id=pidx).first()
             if order:
                 return self.handle_shop_verification(order, pidx)
                 
@@ -506,12 +506,13 @@ class EsewaVerifyView(APIView):
     """
     Verify eSewa payment
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
     
     def get(self, request):
         """Handle redirect from eSewa"""
         # eSewa sends data as base64 encoded JSON in 'data' parameter
         encoded_data = request.query_params.get('data')
+        order_id = request.query_params.get('order_id')
         
         if not encoded_data:
             return Response(
@@ -523,26 +524,31 @@ class EsewaVerifyView(APIView):
             import json
             import base64
             
-            # Decode the data
-            decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+            # Decode the data (handle urlsafe base64 and missing padding)
+            padded = encoded_data + '=' * (-len(encoded_data) % 4)
+            try:
+                decoded_data = base64.b64decode(padded).decode('utf-8')
+            except Exception:
+                decoded_data = base64.urlsafe_b64decode(padded).decode('utf-8')
             payment_data = json.loads(decoded_data)
             
             transaction_uuid = payment_data.get('transaction_uuid')
             
             # Find payment by transaction_uuid
-            payment = Payment.objects.filter(
-                transaction_id=transaction_uuid, 
-                user=request.user
-            ).first()
+            payment = Payment.objects.filter(transaction_id=transaction_uuid).first()
             
             if payment:
                 return self.handle_booking_verification(payment, encoded_data)
             
             # Try finding Shop Order
-            order = ShopOrder.objects.filter(
-                transaction_id=transaction_uuid, 
-                user=request.user
-            ).first()
+            order = ShopOrder.objects.filter(transaction_id=transaction_uuid).first()
+
+            # Fallback for shop flow if transaction_id was updated after a previous verify
+            if not order and order_id:
+                try:
+                    order = ShopOrder.objects.filter(id=int(order_id)).first()
+                except (TypeError, ValueError):
+                    order = None
             
             if order:
                 return self.handle_shop_verification(order, encoded_data)
@@ -611,7 +617,10 @@ class EsewaVerifyView(APIView):
         
         if success:
             order.status = ShopOrderStatus.PAID
-            order.transaction_id = transaction_code
+            # Keep original transaction UUID for idempotent callback re-verification.
+            # Only set transaction_id if it was empty.
+            if not order.transaction_id:
+                order.transaction_id = transaction_code
             order.save()
             
             return Response({

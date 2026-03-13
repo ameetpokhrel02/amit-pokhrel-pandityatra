@@ -227,7 +227,11 @@ def initiate_esewa_payment(amount_npr, order_id, return_url, failure_url):
     Returns form data to be submitted to eSewa
     """
     try:
-        esewa_url = getattr(settings, 'ESEWA_API_URL', 'https://rc-epay.esewa.com.np')
+        test_mode = str(getattr(settings, 'ESEWA_TEST_MODE', 'true')).lower() in ('true', '1', 'yes', 'on')
+        if test_mode:
+            esewa_url = getattr(settings, 'ESEWA_SANDBOX_API_URL', 'https://rc-epay.esewa.com.np')
+        else:
+            esewa_url = getattr(settings, 'ESEWA_API_URL', 'https://epay.esewa.com.np')
         secret_key = getattr(settings, 'ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
         product_code = getattr(settings, 'ESEWA_PRODUCT_CODE', 'EPAYTEST')
         
@@ -273,8 +277,12 @@ def verify_esewa_payment(encoded_data):
     try:
         import json
         
-        # Decode base64 data
-        decoded_data = base64.b64decode(encoded_data).decode('utf-8')
+        # Decode base64/url-safe base64 data (eSewa may omit padding)
+        padded = encoded_data + '=' * (-len(encoded_data) % 4)
+        try:
+            decoded_data = base64.b64decode(padded).decode('utf-8')
+        except Exception:
+            decoded_data = base64.urlsafe_b64decode(padded).decode('utf-8')
         payment_data = json.loads(decoded_data)
         
         transaction_code = payment_data.get('transaction_code')
@@ -293,6 +301,11 @@ def verify_esewa_payment(encoded_data):
         if signature != expected_signature:
             logger.error("eSewa signature mismatch")
             return False, None, "Invalid signature"
+
+        configured_product_code = getattr(settings, 'ESEWA_PRODUCT_CODE', 'EPAYTEST')
+        if product_code != configured_product_code:
+            logger.error("eSewa product code mismatch")
+            return False, None, "Invalid product code"
         
         if status == 'COMPLETE':
             return True, transaction_code, payment_data

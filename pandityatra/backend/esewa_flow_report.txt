@@ -1,0 +1,20 @@
+/usr/local/lib/python3.10/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.1.0)/charset_normalizer (3.4.5) doesn't match a supported version!
+  warnings.warn(
+
+=== BOOKING eSewa PATH ===
+Booking used: id=1, created_now=False, current_paid=False
+Initiate success=True, has_form_data=True, has_url=True
+Utility verify success=True, transaction_code=TEST-4BFB58A641
+API status=200
+API body={'success': True, 'booking_id': 1, 'transaction_id': 'TEST-4BFB58A641', 'type': 'BOOKING'}
+Post-state: booking.payment_status=True, booking.payment_method=ESEWA, payment.status=COMPLETED
+
+=== SHOP ORDER eSewa PATH ===
+Shop order used: id=16, created_now=False, current_status=PENDING
+Initiate success=True, has_form_data=True, has_url=True
+Utility verify success=True, transaction_code=TEST-269FE7F418
+API status=200
+API body={'success': True, 'order_id': 16, 'transaction_id': 'TEST-269FE7F418', 'type': 'SHOP_ORDER'}
+Post-state: order.status=PAID, order.transaction_id=TEST-269FE7F418
+
+=== eSewa path check completed ===

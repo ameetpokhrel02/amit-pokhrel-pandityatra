@@ -1,0 +1,5 @@
+rollback_start
+booking_rolled_back 1
+payment_rolled_back 6
+shop_order_rolled_back 16
+rollback_done

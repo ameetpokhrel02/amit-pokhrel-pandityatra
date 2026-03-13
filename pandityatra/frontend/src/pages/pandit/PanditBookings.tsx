@@ -14,6 +14,9 @@ interface Booking {
   booking_time: string;
   status: string;
   user_full_name: string;
+  payment_status: boolean;
+  payment_method?: string;
+  transaction_id?: string;
   video_room_url?: string;
   daily_room_url?: string;
 }
@@ -70,6 +73,15 @@ const PanditBookings = () => {
                   <p><span className="font-semibold">Client:</span> {booking.user_full_name}</p>
                   <p><span className="font-semibold">Date:</span> {booking.booking_date}</p>
                   <p><span className="font-semibold">Time:</span> {booking.booking_time}</p>
+                  <p>
+                    <span className="font-semibold">Payment:</span>{' '}
+                    <span className={booking.payment_status ? 'text-green-700 font-medium' : 'text-yellow-700 font-medium'}>
+                      {booking.payment_status ? `Paid${booking.payment_method ? ` (${booking.payment_method})` : ''}` : 'Unpaid'}
+                    </span>
+                  </p>
+                  {booking.transaction_id && (
+                    <p><span className="font-semibold">Transaction:</span> {booking.transaction_id}</p>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   {booking.status === 'PENDING' && (

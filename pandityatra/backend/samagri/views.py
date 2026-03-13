@@ -393,7 +393,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
 
                 elif payment_method == 'ESEWA':
                     # eSewa (NPR) - Nepal's Leading Digital Wallet
-                    success_url = f"{settings.FRONTEND_URL}/shop/payment/esewa/verify"
+                    success_url = f"{settings.FRONTEND_URL}/shop/payment/esewa/verify?order_id={order.id}"
                     failure_url = f"{settings.FRONTEND_URL}/shop/payment/cancel?order_id={order.id}"
                     
                     success, payment_url, form_data, transaction_uuid = initiate_esewa_payment(
