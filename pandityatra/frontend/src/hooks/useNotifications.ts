@@ -29,6 +29,7 @@ export const useNotifications = () => {
     default: true
   });
   const [loading, setLoading] = useState(false);
+  const [authFailed, setAuthFailed] = useState(false);
 
   // Check browser notification permission on mount
   useEffect(() => {
@@ -44,13 +45,18 @@ export const useNotifications = () => {
 
   // Fetch notifications when user is authenticated
   useEffect(() => {
-    if (user && token) {
+    if (user && token && !authFailed) {
       fetchNotifications();
       // Set up periodic refresh
       const interval = setInterval(fetchNotifications, 30000); // Every 30 seconds
       return () => clearInterval(interval);
     }
-  }, [user, token]);
+  }, [user, token, authFailed]);
+
+  useEffect(() => {
+    // Reset auth failure flag when token changes (e.g. relogin/refresh)
+    setAuthFailed(false);
+  }, [token]);
 
   const fetchNotifications = async () => {
     if (!token) return;
@@ -63,6 +69,11 @@ export const useNotifications = () => {
       setNotifications(notificationData);
       setUnreadCount(notificationData.filter((n: Notification) => !n.is_read).length);
     } catch (error) {
+      const status = (error as any)?.response?.status;
+      if (status === 401) {
+        setAuthFailed(true);
+        return;
+      }
       console.error('Failed to fetch notifications:', error);
     } finally {
       setLoading(false);

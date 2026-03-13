@@ -44,10 +44,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         })
         .catch(() => {
-          setUser(null);
-          setRole(null);
-        })
-        .catch(() => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refresh');
+          localStorage.removeItem('role');
+          setToken(null);
           setUser(null);
           setRole(null);
         })
