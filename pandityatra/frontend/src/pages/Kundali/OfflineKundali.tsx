@@ -81,7 +81,7 @@ const SavedChartsList = ({ onSelectChart }: { onSelectChart: (c: any) => void })
 };
 
 // Generator Form Component
-const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) => {
+const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthenticated, onRequireLogin }: any) => {
   const { latitude, longitude } = geo;
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -118,7 +118,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
     setLastSavedId(null);
 
     // 1. ONLINE MODE
-    if (isOnline) {
+    if (isOnline && isAuthenticated) {
       try {
         const { generateKundali } = await import('@/lib/api');
         const payload = {
@@ -362,7 +362,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
                 <Check className="w-4 h-4" />
                 Automatically saved to your dashboard (Chart #{lastSavedId})
               </div>
-            ) : result.source === 'offline' && isOnline ? (
+            ) : result.source === 'offline' && isOnline && isAuthenticated ? (
               <Button
                 onClick={async () => {
                   try {
@@ -404,6 +404,14 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo }: any) 
                 ) : (
                   <><FaSave className="mr-2" /> Save to Dashboard</>
                 )}
+              </Button>
+            ) : result.source === 'offline' && isOnline && !isAuthenticated ? (
+              <Button
+                onClick={onRequireLogin}
+                variant="outline"
+                className="mt-2 w-full font-bold py-3 border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50"
+              >
+                <FaSave className="mr-2" /> Login to Save to Dashboard
               </Button>
             ) : result.source === 'offline' && !isOnline ? (
               <div className="mt-2 text-center text-xs text-amber-600 font-medium bg-amber-50 p-2 rounded-lg border border-amber-200">
@@ -479,41 +487,6 @@ const OfflineKundali: React.FC = () => {
     };
   }, []);
 
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setShowAuthDialog(true);
-    }
-  }, [isAuthenticated]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow flex items-center justify-center p-4 bg-background">
-          <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-            <DialogContent className="sm:max-w-md bg-background border-[#FF6F00]">
-              <DialogHeader>
-                <DialogTitle className="text-[#3E2723] flex items-center gap-2">
-                  <FaUserAstronaut className="text-[#FF6F00]" /> Authentication Required
-                </DialogTitle>
-                <DialogDescription className="text-[#3E2723]/70">
-                  You need to be logged in to access the Offline Kundali Generator.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="sm:justify-start">
-                <Button type="button" className="bg-[#FF6F00] text-white" onClick={() => navigate('/login')}>Login Now</Button>
-                <Button type="button" variant="outline" className="border-[#FF6F00] text-[#FF6F00]" onClick={() => navigate('/')}>Go Home</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -525,12 +498,22 @@ const OfflineKundali: React.FC = () => {
             <span className={isOnline ? 'text-green-700 font-medium px-3 py-1 bg-green-100 rounded-full text-sm' : 'text-red-600 font-medium px-3 py-1 bg-red-100 rounded-full text-sm'}>
               <FaWifi className="inline mr-1" /> {isOnline ? 'Online Mode' : 'Offline Mode'}
             </span>
+            {!isAuthenticated && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50"
+                onClick={() => navigate('/login')}
+              >
+                Login for cloud save
+              </Button>
+            )}
           </div>
         </div>
 
         <div id="generator-form" className="max-w-6xl mx-auto pb-12 px-4 md:px-8">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            {isOnline && (
+            {isOnline && isAuthenticated && (
               <TabsList className="grid w-full grid-cols-2 mb-8 max-w-md mx-auto">
                 <TabsTrigger value="generator">New Chart</TabsTrigger>
                 <TabsTrigger value="history">Saved Charts</TabsTrigger>
@@ -542,6 +525,8 @@ const OfflineKundali: React.FC = () => {
                 initialData={formData}
                 setFormData={setFormData}
                 isOnline={isOnline}
+                isAuthenticated={isAuthenticated}
+                onRequireLogin={() => navigate('/login')}
                 geo={{ latitude, longitude, isNepalTime, error: geoError }}
               />
             </TabsContent>
