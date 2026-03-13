@@ -5,12 +5,17 @@ class ReviewSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.full_name', read_only=True)
     customer_avatar = serializers.SerializerMethodField()
     
+    pandit_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
+    service_name = serializers.CharField(source='booking.service_name', read_only=True)
+    
     class Meta:
         model = Review
         fields = [
             'id', 
             'customer_name', 
             'customer_avatar',
+            'pandit_name',
+            'service_name',
             'rating', 
             'comment', 
             'created_at'

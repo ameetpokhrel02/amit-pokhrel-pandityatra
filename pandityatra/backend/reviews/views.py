@@ -98,6 +98,18 @@ class RecentPanditReviewsView(generics.ListAPIView):
 
 
 # ---------------------------
+# My Reviews (for customer profile)
+# ---------------------------
+class MyReviewsView(generics.ListAPIView):
+    """List reviews given by the current user"""
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return Review.objects.filter(customer=self.request.user).order_by('-created_at')
+
+
+# ---------------------------
 # Site Reviews (public list + authenticated create)
 # ---------------------------
 class SiteReviewListCreateView(APIView):

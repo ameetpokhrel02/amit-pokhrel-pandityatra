@@ -69,6 +69,10 @@ class BookingListSerializer(serializers.ModelSerializer):
     pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
     pandit_expertise = serializers.CharField(source='pandit.expertise', read_only=True)
     service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
+    is_reviewed = serializers.SerializerMethodField()
+
+    def get_is_reviewed(self, obj):
+        return hasattr(obj, 'review')
 
     class Meta:
         model = Booking
@@ -77,7 +81,7 @@ class BookingListSerializer(serializers.ModelSerializer):
             'service_name', 'service_location', 'booking_date', 'booking_time', 
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status',
             'payment_method', 'transaction_id',
-            'service_duration', 'created_at',
+            'service_duration', 'created_at', 'is_reviewed',
             'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = fields
@@ -94,6 +98,10 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     pandit_language = serializers.CharField(source='pandit.language', read_only=True)
     service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
     service_description = serializers.CharField(source='service.description', read_only=True)
+    is_reviewed = serializers.SerializerMethodField()
+
+    def get_is_reviewed(self, obj):
+        return hasattr(obj, 'review')
 
     class Meta:
         model = Booking
@@ -105,7 +113,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'notes', 'samagri_required',
             'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'payment_method',
             'customer_timezone', 'customer_location',
-            'created_at', 'updated_at', 'accepted_at', 'completed_at',
+            'created_at', 'updated_at', 'accepted_at', 'completed_at', 'is_reviewed',
             'daily_room_url', 'daily_room_name', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = fields
@@ -125,13 +133,17 @@ class BookingSerializer(serializers.ModelSerializer):
     # Read-only fields for display
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
+    is_reviewed = serializers.SerializerMethodField()
+
+    def get_is_reviewed(self, obj):
+        return hasattr(obj, 'review')
 
     class Meta:
         model = Booking
         fields = [
             'id', 'user', 'user_full_name', 'pandit', 'pandit_full_name', 
             'service_name', 'service_location', 'booking_date', 'booking_time', 
-            'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at',
+            'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at', 'is_reviewed',
             'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
         read_only_fields = ['id', 'user', 'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at']
