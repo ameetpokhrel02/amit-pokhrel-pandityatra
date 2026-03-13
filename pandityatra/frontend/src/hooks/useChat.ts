@@ -10,6 +10,27 @@ export interface ChatProductType {
   image: string | null;
 }
 
+export interface ChatPanditType {
+  id: number;
+  name: string;
+  language?: string;
+  expertise?: string;
+  rating?: number;
+  experience_years?: number;
+  is_available?: boolean;
+  profile_pic?: string | null;
+}
+
+export interface ChatBookingType {
+  id: number;
+  status: string;
+  service_name?: string;
+  booking_date?: string;
+  booking_time?: string;
+  pandit_name?: string;
+  payment_status?: boolean;
+}
+
 export interface ChatActionType {
   type: 'ADD_TO_CART' | 'SWITCH_MODE';
   product?: {
@@ -30,6 +51,8 @@ export interface ChatMessageType {
   timestamp: string;
   mode?: 'guide' | 'interaction';
   products?: ChatProductType[];
+  pandits?: ChatPanditType[];
+  bookings?: ChatBookingType[];
   actions?: ChatActionType[];
 }
 
@@ -196,9 +219,17 @@ export function useChat(initialBookingId?: string): UseChat {
 
       try {
         if (mode === 'guide') {
-          const response = await publicApi.post('/chat/quick-chat/', {
-            message: content,
-          });
+          let response;
+          try {
+            response = await publicApi.post('/ai/chat/', {
+              message: content,
+            });
+          } catch {
+            // Backward compatibility fallback
+            response = await publicApi.post('/chat/quick-chat/', {
+              message: content,
+            });
+          }
 
           const actions = response.data.actions || [];
           
@@ -217,6 +248,8 @@ export function useChat(initialBookingId?: string): UseChat {
             timestamp: new Date().toISOString(),
             mode: 'guide',
             products: response.data.products || [],
+            pandits: response.data.pandits || response.data.cards?.pandits || [],
+            bookings: response.data.bookings || response.data.cards?.bookings || [],
             actions: actions,
           };
 

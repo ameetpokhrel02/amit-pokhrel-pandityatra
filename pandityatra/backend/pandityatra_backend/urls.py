@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/samagri/', include('samagri.urls')),
     path('api/kundali/', include('kundali.urls')),
     path('api/chat/', include('chat.urls')),  # Chat endpoints
+    path('api/ai/', include('ai.urls')),  # AI Gateway endpoints
     path('api/payments/', include('payments.urls')),  # Payment endpoints
     path('api/reviews/', include('reviews.urls')), # Review endpoints
 

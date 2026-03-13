@@ -426,7 +426,16 @@ class QuickChatView(APIView):
     permission_classes = [AllowAny]
     
     def post(self, request):
-        return QuickGuideChat().post(request)
+        try:
+            from ai.service import AIOrchestrator
+            message = request.data.get('message', '').strip()
+            if not message:
+                return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+            payload = AIOrchestrator().run(request, message)
+            return Response(payload)
+        except Exception:
+            # Safety fallback to previous implementation
+            return QuickGuideChat().post(request)
 
 
 class GuideHistoryView(generics.ListAPIView):

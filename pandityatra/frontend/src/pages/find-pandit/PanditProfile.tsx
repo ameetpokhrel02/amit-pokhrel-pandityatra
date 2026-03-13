@@ -22,6 +22,7 @@ import { Check, Clock } from "lucide-react";
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { useChatTrigger } from '@/contexts/ChatContext';
+import { useAuth } from '@/hooks/useAuth';
 
 const PanditProfile = () => {
     const { id } = useParams<{ id: string }>();
@@ -31,6 +32,7 @@ const PanditProfile = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedService, setSelectedService] = useState<any>(null);
     const { openChatWithPandit } = useChatTrigger();
+    const { token } = useAuth();
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -178,6 +180,10 @@ const PanditProfile = () => {
                                         size="lg"
                                         onClick={() => {
                                             if (pandit && id) {
+                                                if (!token) {
+                                                    navigate('/login');
+                                                    return;
+                                                }
                                                 openChatWithPandit(id, fullName, profilePic);
                                             }
                                         }}

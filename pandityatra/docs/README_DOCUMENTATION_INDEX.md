@@ -4,6 +4,12 @@
 
 **New to this feature?** Start with one of these:
 
+0. **[FINAL_PROJECT_REPORT.md](./FINAL_PROJECT_REPORT.md)** (15 min read)
+   - Final consolidated report
+   - Introduction, objectives, features
+   - End-to-end system working
+   - Final status and recommendations
+
 1. **[CHATBOT_README.md](./CHATBOT_README.md)** (5 min read)
    - Quick overview
    - User experience flow

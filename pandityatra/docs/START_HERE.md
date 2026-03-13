@@ -2,6 +2,8 @@
 
 ## 📌 What Is This?
 
+For a consolidated closure document, read [FINAL_PROJECT_REPORT.md](./FINAL_PROJECT_REPORT.md).
+
 A **complete, production-ready dual-mode chatbot system** for PanditYatra that:
 
 1. **Quick Guide Mode** - AI helps users learn how to use the app (no login needed)

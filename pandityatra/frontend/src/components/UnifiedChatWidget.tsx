@@ -327,6 +327,36 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                         ))}
                       </div>
                     )}
+
+                    {msg.pandits && msg.pandits.length > 0 && (
+                      <div className={cn("flex flex-col gap-2 w-full", msg.sender === 'user' ? "items-end pr-10" : "items-start pl-10")}>
+                        {msg.pandits.map((pandit: any) => (
+                          <div key={pandit.id} className="w-full max-w-xs bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
+                            <div className="font-semibold text-orange-800">{pandit.name}</div>
+                            <div className="text-xs text-gray-600 mt-1">{pandit.expertise || 'Vedic Services'}</div>
+                            <div className="text-xs text-gray-500 mt-1">
+                              {pandit.language ? `Language: ${pandit.language} • ` : ''}
+                              {typeof pandit.rating === 'number' ? `Rating: ${pandit.rating}` : 'Rating: N/A'}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg.bookings && msg.bookings.length > 0 && (
+                      <div className={cn("flex flex-col gap-2 w-full", msg.sender === 'user' ? "items-end pr-10" : "items-start pl-10")}>
+                        {msg.bookings.map((booking: any) => (
+                          <div key={booking.id} className="w-full max-w-xs bg-white border border-orange-100 rounded-xl p-3 shadow-sm">
+                            <div className="font-semibold text-orange-800">Booking #{booking.id}</div>
+                            <div className="text-xs text-gray-600 mt-1">{booking.service_name || 'Puja Service'}</div>
+                            <div className="text-xs text-gray-500 mt-1">Status: {booking.status}</div>
+                            {booking.booking_date && (
+                              <div className="text-xs text-gray-500 mt-1">Date: {booking.booking_date}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     
                     {msg.actions && msg.actions.map((action: any, aIdx: number) => (
                       action.type === 'SWITCH_MODE' && (
