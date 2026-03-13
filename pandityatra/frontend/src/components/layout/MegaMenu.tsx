@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { type SamagriCategory } from '@/lib/api';
 import * as LucideIcons from 'lucide-react';
@@ -11,7 +11,7 @@ interface MegaMenuProps {
     onClose: () => void;
 }
 
-const containerVariants = {
+const containerVariants: Variants = {
     hidden: { opacity: 0, y: 10, scale: 0.98 },
     visible: {
         opacity: 1,
@@ -19,7 +19,7 @@ const containerVariants = {
         scale: 1,
         transition: {
             duration: 0.2,
-            ease: 'easeOut',
+            ease: [0.25, 0.1, 0.25, 1],
             staggerChildren: 0.03
         }
     },
@@ -31,7 +31,7 @@ const containerVariants = {
     }
 };
 
-const itemVariants = {
+const itemVariants: Variants = {
     hidden: { opacity: 0, x: -10 },
     visible: { opacity: 1, x: 0, transition: { duration: 0.2 } }
 };
