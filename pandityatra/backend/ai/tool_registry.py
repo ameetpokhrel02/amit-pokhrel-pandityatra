@@ -21,6 +21,25 @@ def get_tool_specs():
         {
             "type": "function",
             "function": {
+                "name": TOOL_NAMES["RECOMMEND_PUJA_SAMAGRI"],
+                "description": "Fetch puja-specific samagri from database, suggest alternatives for missing items, and prepare add-to-cart actions.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "puja_id": {"type": "integer"},
+                        "location": {"type": "string", "default": "ONLINE"},
+                        "budget_preference": {"type": "string", "default": "standard"},
+                        "user_notes": {"type": "string"},
+                        "auto_add_alternatives": {"type": "boolean", "default": True},
+                        "limit": {"type": "integer", "default": 12}
+                    },
+                    "required": ["puja_id"]
+                }
+            }
+        },
+        {
+            "type": "function",
+            "function": {
                 "name": TOOL_NAMES["FIND_PANDITS"],
                 "description": "Find verified pandits by language/expertise.",
                 "parameters": {

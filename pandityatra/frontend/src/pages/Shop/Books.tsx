@@ -12,7 +12,8 @@ import {
     Eye,
     Star,
     X,
-    ShoppingBag
+    ShoppingBag,
+    Heart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
+import { useFavorites } from '@/hooks/useFavorites';
 import {
     fetchSamagriItems,
     fetchSamagriCategories,
@@ -46,6 +48,7 @@ const Books = () => {
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
+    const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedBook, setSelectedBook] = useState<SamagriItem | null>(null);
 
     useEffect(() => {
@@ -122,6 +125,28 @@ const Books = () => {
             className: "bg-green-600 text-white border-none shadow-2xl"
         });
         openDrawer();
+    };
+
+    const handleToggleFavorite = (book: SamagriItem) => {
+        toggleFavorite({
+            id: book.id,
+            type: 'samagri',
+            name: book.name,
+            price: Number(book.price),
+            image: book.image || undefined,
+            description: book.description || undefined,
+        });
+
+        const isNowFavorite = !isFavorite(book.id);
+        toast({
+            title: isNowFavorite ? "❤️ Added to Favorites" : "Removed from Favorites",
+            description: isNowFavorite
+                ? `${book.name} has been added to your favorites.`
+                : `${book.name} has been removed from your favorites.`,
+            className: isNowFavorite
+                ? "bg-pink-600 text-white border-none shadow-2xl"
+                : "bg-gray-600 text-white border-none shadow-2xl"
+        });
     };
 
     return (
@@ -213,6 +238,22 @@ const Books = () => {
                                 >
                                     <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col">
                                         <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden p-8 flex items-center justify-center">
+                                            {/* Favorite Button */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggleFavorite(book);
+                                                }}
+                                                className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center z-10 transition-all duration-200 ${
+                                                    isFavorite(book.id)
+                                                        ? 'bg-red-500 text-white shadow-lg shadow-red-200'
+                                                        : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white shadow-md'
+                                                }`}
+                                                title={isFavorite(book.id) ? 'Remove from favorites' : 'Add to favorites'}
+                                            >
+                                                <Heart className={`w-4 h-4 ${isFavorite(book.id) ? 'fill-current' : ''}`} />
+                                            </button>
+
                                             {book.image ? (
                                                 <img
                                                     src={book.image}
@@ -388,13 +429,26 @@ const Books = () => {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <Button
-                                        onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }}
-                                        disabled={selectedBook.stock_quantity === 0}
-                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-orange-600/20 gap-3"
-                                    >
-                                        <ShoppingCart className="w-6 h-6" /> Add to Cart
-                                    </Button>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <Button
+                                            onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }}
+                                            disabled={selectedBook.stock_quantity === 0}
+                                            className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xl shadow-orange-600/20 gap-2"
+                                        >
+                                            <ShoppingCart className="w-5 h-5" /> Add
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleToggleFavorite(selectedBook)}
+                                            className={`w-full h-12 rounded-xl border ${isFavorite(selectedBook.id)
+                                                ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100'
+                                                : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                                        >
+                                            <Heart className={`w-5 h-5 mr-2 ${isFavorite(selectedBook.id) ? 'fill-current' : ''}`} />
+                                            {isFavorite(selectedBook.id) ? 'Saved' : 'Wishlist'}
+                                        </Button>
+                                    </div>
                                     <p className="text-center text-xs text-gray-400 italic">
                                         Pure knowledge delivered to your doorstep.
                                     </p>

@@ -475,6 +475,11 @@ export async function fetchRecentPanditReviews(): Promise<{
     return response.data;
 }
 
+export async function fetchPanditMyReviews(): Promise<PanditReviewData[]> {
+    const response = await apiClient.get('/reviews/pandit/my-reviews/');
+    return response.data?.results || response.data;
+}
+
 export async function fetchSiteReviews(): Promise<{
     reviews: SiteReviewData[];
     average_rating: number;

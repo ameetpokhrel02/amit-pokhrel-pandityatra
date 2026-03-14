@@ -46,6 +46,7 @@ const profileFormSchema = z.object({
         message: "Bio must be at least 10 characters.",
     }),
     profile_pic: z.any().optional(),
+    certification_file: z.any().optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
@@ -69,6 +70,7 @@ const PanditProfile = () => {
             language: user?.pandit_profile?.language || "",
             experience_years: user?.pandit_profile?.experience_years || 0,
             bio: user?.pandit_profile?.bio || "",
+            certification_file: undefined,
         },
         mode: "onChange",
     })
@@ -123,6 +125,10 @@ const PanditProfile = () => {
             formData.append('language', data.language);
             formData.append('experience_years', String(data.experience_years));
             formData.append('bio', data.bio);
+
+            if (data.certification_file instanceof File) {
+                formData.append('certification_file', data.certification_file);
+            }
 
             if (data.profile_pic instanceof File) {
                 formData.append('user_data.profile_pic', data.profile_pic);
@@ -319,6 +325,28 @@ const PanditProfile = () => {
                                         <FormControl>
                                             <Textarea placeholder="Tell us about yourself..." className="h-32" {...field} />
                                         </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="certification_file"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Certification Upload</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="file"
+                                                accept=".pdf,.jpg,.jpeg,.png"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    field.onChange(file || undefined);
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <p className="text-xs text-muted-foreground">Accepted: PDF, JPG, PNG</p>
                                         <FormMessage />
                                     </FormItem>
                                 )}

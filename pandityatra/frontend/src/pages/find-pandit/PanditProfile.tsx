@@ -106,6 +106,30 @@ const PanditProfile = () => {
         });
     };
 
+    const handleQuickBookNow = () => {
+        if (!pandit) return;
+
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        const firstService = pandit.services?.[0];
+        if (!firstService) {
+            document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        navigate('/booking', {
+            state: {
+                panditId: pandit.id,
+                serviceId: firstService.puja_details?.id,
+                serviceName: firstService.puja_details?.name,
+                price: firstService.custom_price,
+            }
+        });
+    };
+
     return (
         <div className="flex flex-col min-h-screen bg-background pt-20">
             <Navbar />
@@ -172,25 +196,35 @@ const PanditProfile = () => {
                                     >
                                         View Services
                                     </Button>
+
+                                    <div className="grid grid-cols-[1fr_auto] gap-3">
+                                        <Button
+                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                                            size="lg"
+                                            onClick={handleQuickBookNow}
+                                        >
+                                            Book Now
+                                        </Button>
                                     
-                                    {/* Message Pandit Button - Pre-booking Chat */}
-                                    <Button
-                                        variant="outline"
-                                        className="w-full border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
-                                        size="lg"
-                                        onClick={() => {
-                                            if (pandit && id) {
-                                                if (!token) {
-                                                    navigate('/login');
-                                                    return;
+                                        {/* Icon-only Message Button */}
+                                        <Button
+                                            variant="outline"
+                                            className="h-11 w-11 border-orange-300 text-orange-700 hover:bg-orange-50 hover:border-orange-400"
+                                            size="icon"
+                                            title="Message Pandit"
+                                            onClick={() => {
+                                                if (pandit && id) {
+                                                    if (!token) {
+                                                        navigate('/login');
+                                                        return;
+                                                    }
+                                                    openChatWithPandit(id, fullName, profilePic);
                                                 }
-                                                openChatWithPandit(id, fullName, profilePic);
-                                            }
-                                        }}
-                                    >
-                                        <MessageCircle className="w-4 h-4 mr-2" />
-                                        Message Pandit
-                                    </Button>
+                                            }}
+                                        >
+                                            <MessageCircle className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <Separator className="mb-6" />

@@ -51,6 +51,9 @@ import PanditServices from './pages/pandit/PanditServices' //
 import PanditBookings from './pages/pandit/PanditBookings'
 import PanditMessages from './pages/pandit/PanditMessages'
 import PanditPrivateProfile from './pages/pandit/PanditProfile'
+import PanditCalendarPage from './pages/pandit/PanditCalendarPage'
+import PanditReviews from './pages/pandit/PanditReviews'
+import PanditAppFeedback from './pages/pandit/PanditAppFeedback'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPandits from './pages/admin/AdminPandits'
@@ -219,9 +222,27 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    <Route path="/pandit/calendar" element={
+                      <ProtectedRoute allowedRoles={['pandit']}>
+                        <PanditCalendarPage />
+                      </ProtectedRoute>
+                    } />
+
                     <Route path="/pandit/messages" element={
                       <ProtectedRoute allowedRoles={['pandit']}>
                         <PanditMessages />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/pandit/reviews" element={
+                      <ProtectedRoute allowedRoles={['pandit']}>
+                        <PanditReviews />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/pandit/app-feedback" element={
+                      <ProtectedRoute allowedRoles={['pandit']}>
+                        <PanditAppFeedback />
                       </ProtectedRoute>
                     } />
 

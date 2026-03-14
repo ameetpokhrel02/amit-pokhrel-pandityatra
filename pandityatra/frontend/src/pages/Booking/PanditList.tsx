@@ -1,7 +1,7 @@
 // In frontend/src/pages/Booking/PanditList.tsx
 
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { fetchPandits } from '../../lib/api';
 import type { Pandit } from '../../lib/api';
 import { LoadingSpinner } from '../../components/common/LoadingSpinner';
@@ -20,11 +20,12 @@ import {
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import MotionSearch from '@/components/ui/motion-search';
-import { fadeInUp, subtleHover } from '@/components/ui/motion-variants';
-import { useFavorites } from '@/hooks/useFavorites';
-import { Heart, Star, MapPin, Languages, Video, Calendar, ShieldCheck } from 'lucide-react';
+import { fadeInUp } from '@/components/ui/motion-variants';
+import { Star, MapPin, Languages, MessageCircle, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { useChatTrigger } from '@/contexts/ChatContext';
+import { useAuth } from '@/hooks/useAuth';
 
 export const PanditList = () => {
     const [pandits, setPandits] = useState<Pandit[]>([]);
@@ -32,8 +33,10 @@ export const PanditList = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const debounceRef = useRef<number | null>(null);
-    const { isFavorite, toggleFavorite } = useFavorites();
     const location = useLocation();
+    const navigate = useNavigate();
+    const { openChatWithPandit } = useChatTrigger();
+    const { token } = useAuth();
 
     // Filters State
     const [specializationFilter, setSpecializationFilter] = useState<string>("all");
@@ -136,6 +139,32 @@ export const PanditList = () => {
     // Extract Unique Options for Filters
     const specializations = useMemo(() => Array.from(new Set(pandits.map(p => p.expertise?.split(',')[0].trim()))).filter(Boolean), [pandits]);
     const languagesList = useMemo(() => Array.from(new Set(pandits.flatMap(p => p.language?.split(',').map(l => l.trim())))).filter(Boolean), [pandits]);
+
+    const handleMessagePandit = (pandit: Pandit) => {
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        openChatWithPandit(
+            String(pandit.id),
+            pandit.user_details?.full_name || 'Pandit',
+            pandit.user_details?.profile_pic
+        );
+    };
+
+    const handleBookNow = (pandit: Pandit) => {
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
+        navigate('/booking', {
+            state: {
+                panditId: pandit.id,
+            },
+        });
+    };
 
 
     if (isLoading) {
@@ -344,17 +373,27 @@ export const PanditList = () => {
                                                 <span className="text-lg font-bold text-orange-600">₹1100</span>
                                             </div>
                                             <div className="flex gap-2">
-                                                <Button size="icon" variant="outline" className="h-9 w-9 border-gray-200 text-gray-600 hover:text-orange-600 hover:bg-orange-50">
-                                                    <Video className="w-4 h-4" />
-                                                </Button>
-                                                <Button size="icon" variant="outline" className="h-9 w-9 border-gray-200 text-gray-600 hover:text-orange-600 hover:bg-orange-50">
-                                                    <Calendar className="w-4 h-4" />
+                                                <Button
+                                                    size="icon"
+                                                    variant="outline"
+                                                    className="h-9 w-9 border-orange-200 text-orange-700 hover:bg-orange-50"
+                                                    onClick={() => handleMessagePandit(pandit)}
+                                                    title="Message pandit"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
                                                 </Button>
                                             </div>
                                         </div>
 
+                                        <Button
+                                            onClick={() => handleBookNow(pandit)}
+                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                                        >
+                                            Book Now
+                                        </Button>
+
                                         <Link to={`/pandits/${pandit.id}`} className="w-full">
-                                            <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold">
+                                            <Button variant="outline" className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 font-semibold">
                                                 View Profile
                                             </Button>
                                         </Link>

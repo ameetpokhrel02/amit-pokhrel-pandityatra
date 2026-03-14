@@ -110,6 +110,23 @@ class MyReviewsView(generics.ListAPIView):
 
 
 # ---------------------------
+# Pandit Reviews (reviews received by logged-in pandit)
+# ---------------------------
+class PanditMyReviewsView(generics.ListAPIView):
+    """List reviews received by current authenticated pandit."""
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if getattr(user, 'role', '') != 'pandit' or not hasattr(user, 'pandit_profile'):
+            return Review.objects.none()
+        return Review.objects.filter(pandit=user.pandit_profile).select_related(
+            'customer', 'pandit', 'pandit__user', 'booking'
+        ).order_by('-created_at')
+
+
+# ---------------------------
 # Site Reviews (public list + authenticated create)
 # ---------------------------
 class SiteReviewListCreateView(APIView):

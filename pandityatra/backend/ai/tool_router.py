@@ -10,6 +10,16 @@ class ToolRouter:
     def execute(self, request, tool_name: str, args: dict):
         if tool_name == TOOL_NAMES["SEARCH_SAMAGRI"]:
             return mcp_tools.search_samagri(request, args.get("query", ""), args.get("limit", 5))
+        if tool_name == TOOL_NAMES["RECOMMEND_PUJA_SAMAGRI"]:
+            return mcp_tools.recommend_puja_samagri(
+                request=request,
+                puja_id=int(args.get("puja_id")),
+                location=args.get("location", "ONLINE"),
+                budget_preference=args.get("budget_preference", "standard"),
+                user_notes=args.get("user_notes", ""),
+                auto_add_alternatives=bool(args.get("auto_add_alternatives", True)),
+                limit=int(args.get("limit", 12)),
+            )
         if tool_name == TOOL_NAMES["FIND_PANDITS"]:
             return mcp_tools.find_pandits(args.get("language"), args.get("expertise"), args.get("limit", 5))
         if tool_name == TOOL_NAMES["GET_BOOKING_STATUS"]:

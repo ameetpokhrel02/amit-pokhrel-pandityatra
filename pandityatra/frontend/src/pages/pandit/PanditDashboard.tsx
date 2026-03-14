@@ -201,6 +201,22 @@ const PanditDashboard = () => {
                     </div>
                 </div>
 
+                {/* Quick Actions */}
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/services'}>
+                        Add New Service
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/calendar'}>
+                        Open Calendar
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/messages'}>
+                        View Messages
+                    </Button>
+                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/earnings'}>
+                        Withdraw Earnings
+                    </Button>
+                </div>
+
                 {/* Tabs */}
                 <Tabs defaultValue={defaultTab} className="w-full">
                     <TabsList className="grid w-full md:w-[520px] grid-cols-3">

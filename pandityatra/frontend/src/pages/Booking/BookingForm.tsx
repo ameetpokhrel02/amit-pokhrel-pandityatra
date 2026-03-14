@@ -68,13 +68,14 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const navigate = useNavigate();
   const location = useRouterLocation();
   const { timezone, latitude, longitude, formatWithNepalTime, country, currency } = useLocation();
-  const { addItem, openDrawer } = useCart();
+  const { items: cartItems, addItem, removeItem, openDrawer } = useCart();
   const state = location.state as { panditId?: number; serviceId?: number; serviceName?: string; price?: string } | null;
 
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [samagriRequirements, setSamagriRequirements] = useState<any[]>([]);
+  const [missingSamagri, setMissingSamagri] = useState<any[]>([]);
   const [aiSamagriLoading, setAiSamagriLoading] = useState(false);
 
   // State for custom price if passed from service card
@@ -158,50 +159,111 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const fetchAIRecommendations = async (serviceId: number) => {
     setAiSamagriLoading(true);
     try {
-      const response = await apiClient.post('/samagri/ai_recommend/', {
+      // Primary: MCP-style endpoint from AI app
+      const response = await apiClient.post('/ai/puja-samagri/', {
         puja_id: serviceId,
         user_notes: formData.notes || '',
         location: formData.service_location,
         customer_timezone: timezone,
         customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
-        budget_preference: 'standard' // Could be made dynamic
+        budget_preference: 'standard',
+        auto_add_alternatives: true,
+        limit: 12,
       });
 
-      // Enhanced recommendations with auto-selection logic
-      const recommendations = response.data.recommendations || [];
-      const enhancedRecommendations = recommendations.map((item: any) => ({
-        ...item,
-        isAutoSelected: item.is_essential || item.confidence > 0.8,
-        reason: item.reason || `Recommended for ${formData.service_location} puja`,
-        confidence: item.confidence || 0.7
+      const products = response.data.products || [];
+      const actions = response.data.actions || [];
+      const missing = response.data.missing_items || [];
+
+      const normalized = products.map((item: any) => ({
+        id: item.id,
+        name: item.name,
+        image: item.image || null,
+        quantity: Number(item.quantity || 1),
+        unit: item.unit || 'pcs',
+        is_essential: Boolean(item.is_essential),
+        is_alternative: Boolean(item.is_alternative),
+        reason: item.for_item ? `Alternative for ${item.for_item}` : 'Recommended from puja requirements',
+        confidence: item.is_alternative ? 0.7 : 0.95,
+        in_stock: Number(item.stock || 0) > 0,
+        price: Number(item.price || 0),
       }));
 
-      setSamagriRequirements(enhancedRecommendations);
+      setSamagriRequirements(normalized);
+      setMissingSamagri(missing);
 
-      // Auto-add essential items to cart
-      const essentialItems = enhancedRecommendations.filter((item: any) => item.isAutoSelected);
-      if (essentialItems.length > 0) {
-        essentialItems.forEach((item: any) => {
+      // Auto add from actions but only if not already in cart (missing-only behavior)
+      const cartKeySet = new Set(cartItems.map(ci => String(ci.id)));
+      actions
+        .filter((a: any) => a.type === 'ADD_TO_CART' && a.product)
+        .forEach((a: any) => {
+          const product = a.product;
+          const cartId = product.id ? `samagri-${product.id}` : `samagri-${product.title}`;
+          if (cartKeySet.has(String(cartId))) return;
+
           addItem({
-            id: item.id ? `samagri-${item.id}` : `samagri-${item.name}`,
-            title: item.name,
-            price: item.price ? parseFloat(item.price) : 0,
+            id: cartId,
+            title: product.title,
+            price: Number(product.price || 0),
+            image: product.image,
             meta: {
               type: 'samagri',
               pujaId: serviceId,
-              isEssential: true,
               aiRecommended: true,
-              confidence: item.confidence
-            }
-          }, item.quantity);
+            },
+          }, Number(a.quantity || 1));
+          cartKeySet.add(String(cartId));
         });
-      }
     } catch (err) {
-      console.error("Failed to load AI samagri recommendations", err);
-      setSamagriRequirements([]);
+      // Fallback: older AI endpoint
+      try {
+        const response = await apiClient.post('/samagri/ai_recommend/', {
+          puja_id: serviceId,
+          user_notes: formData.notes || '',
+          location: formData.service_location,
+          customer_timezone: timezone,
+          customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
+          budget_preference: 'standard'
+        });
+
+        const recommendations = response.data.recommendations || [];
+        const enhancedRecommendations = recommendations.map((item: any) => ({
+          ...item,
+          image: item.image || null,
+          isAutoSelected: item.is_essential || item.confidence > 0.8,
+          reason: item.reason || `Recommended for ${formData.service_location} puja`,
+          confidence: item.confidence || 0.7
+        }));
+
+        setSamagriRequirements(enhancedRecommendations);
+        setMissingSamagri([]);
+      } catch (fallbackErr) {
+        console.error("Failed to load AI samagri recommendations", fallbackErr);
+        setSamagriRequirements([]);
+        setMissingSamagri([]);
+      }
     } finally {
       setAiSamagriLoading(false);
     }
+  };
+
+  const getCartItemId = (req: any) => (req.id ? `samagri-${req.id}` : `samagri-${req.name}`);
+
+  const isInCart = (req: any) => cartItems.some(ci => String(ci.id) === String(getCartItemId(req)));
+
+  const toggleCartItem = (req: any) => {
+    const cartId = getCartItemId(req);
+    if (isInCart(req)) {
+      removeItem(cartId);
+      return;
+    }
+
+    addItem({
+      id: cartId,
+      title: req.name,
+      price: req.price ? Number(req.price) : 0,
+      meta: { type: 'samagri', pujaId: formData.service }
+    }, Number(req.quantity || 1));
   };
 
   const fetchAvailableSlots = async () => {
@@ -241,13 +303,20 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   const handleAddAllToCart = () => {
     if (samagriRequirements.length === 0) return;
+    const cartKeySet = new Set(cartItems.map(ci => String(ci.id)));
     samagriRequirements.forEach((req: any) => {
+      const cartId = getCartItemId(req);
+      if (cartKeySet.has(String(cartId))) return;
+      if (req.in_stock === false) return;
+
       addItem({
-        id: req.id ? `samagri-${req.id}` : `samagri-${req.name}`,
+        id: cartId,
         title: req.name,
-        price: req.price ? parseFloat(req.price) : 0,
+        price: req.price ? Number(req.price) : 0,
         meta: { type: 'samagri', pujaId: formData.service }
-      }, req.quantity);
+      }, Number(req.quantity || 1));
+
+      cartKeySet.add(String(cartId));
     });
     openDrawer();
   };
@@ -547,31 +616,69 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                         <span className="text-xs text-orange-800 font-medium animate-pulse">Consulting Vedic experts...</span>
                       </div>
                     ) : samagriRequirements.length > 0 ? (
-                      <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {samagriRequirements.map((req: any, idx: number) => (
-                          <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-50 hover:border-orange-200 transition-all shadow-sm">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-inner">
-                                <span className="text-orange-600 font-bold text-sm tracking-tighter">{req.name?.slice(0, 2).toUpperCase()}</span>
+                      <div className="space-y-3">
+                        {missingSamagri.length > 0 && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-xs font-bold text-amber-800 mb-2">Missing Original Items</p>
+                            <div className="space-y-1.5">
+                              {missingSamagri.map((m: any, i: number) => (
+                                <p key={`${m.name}-${i}`} className="text-xs text-amber-700">
+                                  • {m.name} ({m.quantity} {m.unit}) — {m.reason === 'out_of_stock' ? 'out of stock' : 'not available'}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                          {samagriRequirements.map((req: any, idx: number) => (
+                            <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-50 hover:border-orange-200 transition-all shadow-sm">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-inner overflow-hidden">
+                                  {req.image ? (
+                                    <img
+                                      src={req.image}
+                                      alt={req.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-orange-600 font-bold text-sm tracking-tighter">{req.name?.slice(0, 2).toUpperCase()}</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
+                                  <p className="text-[11px] text-gray-500 font-medium">
+                                    {req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}
+                                    {req.is_alternative ? ' • Alternative' : ''}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
-                                <p className="text-[11px] text-gray-500 font-medium">{req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}</p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant={isInCart(req) ? 'destructive' : 'outline'}
+                                  onClick={() => toggleCartItem(req)}
+                                  className="h-8 px-3 text-xs"
+                                >
+                                  {isInCart(req) ? 'Remove' : 'Add'}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
+                                  }}
+                                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full shrink-0"
+                                  title="Remove from suggestion"
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
-                              }}
-                              className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     ) : (
                       <div className="py-8 text-center text-orange-800/40 italic text-sm">No items found in our sacred database.</div>

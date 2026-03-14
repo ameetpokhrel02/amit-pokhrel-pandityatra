@@ -21,6 +21,7 @@ import {
     FaEdit
 } from 'react-icons/fa';
 import { GiPrayerBeads } from 'react-icons/gi';
+import { format } from 'date-fns';
 
 interface CalendarEvent {
     id: string;
@@ -47,7 +48,11 @@ interface BlockTimeData {
     reason: string;
 }
 
-export const PanditCalendar: React.FC = () => {
+interface PanditCalendarProps {
+    festivalDateKeys?: string[];
+}
+
+export const PanditCalendar: React.FC<PanditCalendarProps> = ({ festivalDateKeys = [] }) => {
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
@@ -59,6 +64,11 @@ export const PanditCalendar: React.FC = () => {
     });
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+
+    const isFestivalDate = (date: Date) => {
+        const key = format(date, 'yyyy-MM-dd');
+        return festivalDateKeys.includes(key);
+    };
 
     // Mock data - replace with actual API calls
     useEffect(() => {
@@ -297,6 +307,31 @@ export const PanditCalendar: React.FC = () => {
             {/* Calendar */}
             <Card>
                 <CardContent className="p-6">
+                    <style>{`
+                        .fc .fc-daygrid-day.festival-day {
+                            background-color: #fff7ed;
+                        }
+                        .fc .fc-daygrid-day.festival-day .fc-daygrid-day-number {
+                            position: relative;
+                            color: #c2410c;
+                            font-weight: 700;
+                        }
+                        .fc .fc-daygrid-day.festival-day .fc-daygrid-day-number::after {
+                            content: '';
+                            width: 6px;
+                            height: 6px;
+                            border-radius: 9999px;
+                            background: #f97316;
+                            display: inline-block;
+                            margin-left: 6px;
+                            vertical-align: middle;
+                        }
+                        .fc .festival-header {
+                            background: #fff7ed !important;
+                            color: #c2410c !important;
+                            font-weight: 700;
+                        }
+                    `}</style>
                     {loading ? (
                         <div className="flex justify-center items-center h-96">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -318,6 +353,8 @@ export const PanditCalendar: React.FC = () => {
                             events={events}
                             dateClick={handleDateClick}
                             eventClick={handleEventClick}
+                            dayCellClassNames={(arg) => (isFestivalDate(arg.date) ? ['festival-day'] : [])}
+                            dayHeaderClassNames={(arg) => (isFestivalDate(arg.date) ? ['festival-header'] : [])}
                             height="auto"
                             slotMinTime="06:00:00"
                             slotMaxTime="22:00:00"

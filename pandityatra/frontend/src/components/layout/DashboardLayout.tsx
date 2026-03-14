@@ -107,11 +107,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         pandit: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/pandit/dashboard' },
             { icon: User, label: 'My Profile', path: '/pandit/profile' },
-            { icon: BookOpen, label: 'Services', path: '/pandit/services' },
-            { icon: Calendar, label: 'Bookings', path: '/pandit/bookings' },
+            { icon: BookOpen, label: 'My Services', path: '/pandit/services' },
+            { icon: Calendar, label: 'Calendar', path: '/pandit/calendar' },
+            { icon: ClipboardList, label: 'Bookings', path: '/pandit/bookings' },
             { icon: MessageCircle, label: 'Messages', path: '/pandit/messages' },
             { icon: Wallet, label: 'Earnings', path: '/pandit/earnings' },
-            { icon: MessageSquareHeart, label: 'App Feedback', path: '/pandit/dashboard?tab=feedback' },
+            { icon: Star, label: 'Reviews', path: '/pandit/reviews' },
+            { icon: MessageSquareHeart, label: 'App Feedback', path: '/pandit/app-feedback' },
         ],
         admin: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
