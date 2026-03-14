@@ -406,6 +406,26 @@ class ProfileView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request):
+        """Allows full update of user profile fields exposed by serializer."""
+        user = request.user
+        data = request.data.copy()
+        if 'phone_number' in data and not data['phone_number']:
+            del data['phone_number']
+        if 'email' in data and not data['email']:
+            del data['email']
+        serializer = UserSerializer(user, data=data, partial=False)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        """Delete the currently authenticated user's account."""
+        user = request.user
+        user.delete()
+        return Response({"detail": "Account deleted successfully."}, status=status.HTTP_200_OK)
+
 
 class AdminStatsView(APIView):
     """

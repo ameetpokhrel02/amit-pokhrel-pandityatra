@@ -491,7 +491,7 @@ class PanditViewSet(viewsets.ModelViewSet):
             # Allow admins OR the pandit themselves to update their profile
             return [permissions.IsAuthenticated()]
         if self.action in ['destroy']:
-             return [permissions.IsAdminUser()]
+             return [permissions.IsAuthenticated()]
         if self.action in ['create']:
             return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
@@ -523,6 +523,23 @@ class PanditViewSet(viewsets.ModelViewSet):
                 return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
              
         return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = request.user
+
+        # Admin can delete any pandit profile
+        if user.is_staff or user.is_superuser or getattr(user, 'role', '') in ('admin', 'superadmin'):
+            return super().destroy(request, *args, **kwargs)
+
+        # Pandit can delete only own profile
+        if getattr(user, 'role', '') == 'pandit' and instance.user == user:
+            instance.delete()
+            user.role = 'user'
+            user.save(update_fields=['role'])
+            return Response({"detail": "Pandit profile deleted successfully."}, status=status.HTTP_200_OK)
+
+        return Response({"detail": "You do not have permission to delete this profile."}, status=403)
 
     def get_queryset(self):
         queryset = Pandit.objects.all()

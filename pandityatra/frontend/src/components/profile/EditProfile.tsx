@@ -5,13 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/api-client';
+import { deleteUserProfile } from '@/lib/api';
 import { Loader2, Camera, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useNavigate } from 'react-router-dom';
+import { ActionConfirmationDialog } from '@/components/common/ActionConfirmationDialog';
 
 export const EditProfile = () => {
-    const { user, refreshUser } = useAuth();
+    const { user, refreshUser, logout } = useAuth();
     const { toast } = useToast();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -78,6 +84,28 @@ export const EditProfile = () => {
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        setDeleting(true);
+        try {
+            await deleteUserProfile();
+            toast({
+                title: 'Account deleted',
+                description: 'Your account has been deleted successfully.'
+            });
+            logout();
+            navigate('/');
+        } catch (error: any) {
+            toast({
+                title: 'Delete failed',
+                description: error?.response?.data?.detail || 'Could not delete your account.',
+                variant: 'destructive',
+            });
+        } finally {
+            setDeleting(false);
+            setShowDeleteDialog(false);
         }
     };
 
@@ -158,10 +186,32 @@ export const EditProfile = () => {
                 </div>
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full sm:w-auto bg-[#FF6F00] hover:bg-orange-700 rounded-xl px-8 shadow-lg shadow-orange-200">
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+                <Button type="submit" disabled={loading || deleting} className="w-full sm:w-auto bg-[#FF6F00] hover:bg-orange-700 rounded-xl px-8 shadow-lg shadow-orange-200">
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                </Button>
+                <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={loading || deleting}
+                    onClick={() => setShowDeleteDialog(true)}
+                    className="w-full sm:w-auto"
+                >
+                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete Account
+                </Button>
+            </div>
+
+            <ActionConfirmationDialog
+                open={showDeleteDialog}
+                onOpenChange={setShowDeleteDialog}
+                onConfirm={handleDeleteAccount}
+                title="Delete Account?"
+                description="Are you sure you want to delete your account from PanditYatra? This action cannot be undone."
+                confirmLabel="Yes, Delete"
+                isLoading={deleting}
+            />
         </form>
     );
 };

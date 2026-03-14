@@ -391,8 +391,18 @@ export async function updateUserProfile(data: any) {
     return response.data;
 }
 
+export async function deleteUserProfile() {
+    const response = await apiClient.delete('/users/profile/');
+    return response.data;
+}
+
 export async function updatePanditProfile(id: number, data: any) {
     const response = await apiClient.patch(`/pandits/${id}/`, data);
+    return response.data;
+}
+
+export async function deletePanditProfile(id: number) {
+    const response = await apiClient.delete(`/pandits/${id}/`);
     return response.data;
 }
 

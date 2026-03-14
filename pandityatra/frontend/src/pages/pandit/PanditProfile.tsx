@@ -9,10 +9,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Camera } from "lucide-react"
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { updatePanditProfile } from '@/lib/api';
+import { deletePanditProfile, updatePanditProfile } from '@/lib/api';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useNavigate } from 'react-router-dom';
+import { ActionConfirmationDialog } from '@/components/common/ActionConfirmationDialog';
 import {
     Form,
     FormControl,
@@ -53,7 +55,10 @@ const PanditProfile = () => {
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const { user, refreshUser } = useAuth();
     const { toast } = useToast();
+    const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileFormSchema) as any,
@@ -149,6 +154,42 @@ const PanditProfile = () => {
             setIsSaving(false);
         }
     }
+
+    const handleDeletePanditProfile = async () => {
+        if (!user?.pandit_profile?.id) {
+            toast({
+                title: 'Delete Failed',
+                description: 'Pandit profile not found.',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await deletePanditProfile(user.pandit_profile.id);
+
+            if (refreshUser) {
+                await refreshUser();
+            }
+
+            toast({
+                title: 'Profile Deleted',
+                description: 'Pandit profile deleted. Your account is now a normal user account.',
+            });
+
+            navigate('/profile');
+        } catch (error) {
+            toast({
+                title: 'Delete Failed',
+                description: 'Could not delete pandit profile. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+        }
+    };
 
     return (
         <DashboardLayout userRole="pandit">
@@ -283,9 +324,29 @@ const PanditProfile = () => {
                                 )}
                             />
 
-                            <Button type="submit" disabled={isSaving}>
+                            <div className="flex flex-col sm:flex-row gap-3">
+                            <Button type="submit" disabled={isSaving || isDeleting}>
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                disabled={isSaving || isDeleting}
+                                onClick={() => setShowDeleteDialog(true)}
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete Pandit Profile'}
+                            </Button>
+                            </div>
+
+                            <ActionConfirmationDialog
+                                open={showDeleteDialog}
+                                onOpenChange={setShowDeleteDialog}
+                                onConfirm={handleDeletePanditProfile}
+                                title="Delete Pandit Profile?"
+                                description="Are you sure you want to delete your pandit profile from PanditYatra? Your account will remain as a normal user account."
+                                confirmLabel="Yes, Delete"
+                                isLoading={isDeleting}
+                            />
                         </CardContent>
                     </Card>
                 </form>
