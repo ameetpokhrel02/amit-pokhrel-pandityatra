@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'video',  # Video call integration
     'ai',  # AI Pandit module
     'panchang', # Nepali Panchang & Calendar
+    'drf_spectacular',  # API documentation with OpenAPI/Swagger
 ]
 
 # Django Channels Configuration
@@ -192,6 +193,31 @@ mimetypes.add_type("image/svg+xml", ".svgz", True)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'users.User'
 
+# Swagger / OpenAPI Settings
+# Note:
+# - Using the existing frontend public asset for branding so we don't need to add a new backend static file.
+# - If you later move the logo into backend staticfiles, you can replace the logo URL with '/static/logo.png'.
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PanditYatra API',
+    'DESCRIPTION': 'AI-Powered Pandit Booking, Puja, Samagri, Chat, Video & Kundali platform API.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '/api',
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'displayRequestDuration': True,
+        'persistAuthorization': True,
+        'filter': True,
+        'tryItOutEnabled': True,
+        'docExpansion': 'list',
+        'defaultModelsExpandDepth': 1,
+        'defaultModelExpandDepth': 1,
+        'logoUrl': f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')}/images/AAApandityatra.png",
+    },
+    'SWAGGER_UI_FAVICON_HREF': f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')}/images/AAApandityatra.png",
+}
+
 # Django REST Framework Settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -201,8 +227,11 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
+
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
 
 # Simple JWT Configuration
 SIMPLE_JWT = {
@@ -255,3 +284,4 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 # AI Configuration
 GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
 GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+

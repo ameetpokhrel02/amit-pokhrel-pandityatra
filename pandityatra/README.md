@@ -13,6 +13,7 @@
 ## 🌟 Key Features
 
 ### For Devotees
+
 - **🤖 AI Chatbot**: Intelligent assistant for ritual guidance and information
 - **🔍 Smart Pandit Discovery**: Find verified pandits based on specialization, location, and availability
 - **📅 Online Booking System**: Schedule pujas with instant confirmation
@@ -23,6 +24,7 @@
 - **🙏 Temple Directory**: Explore sacred destinations with HD images
 
 ### For Pandits
+
 - **✅ Verification System**: Multi-stage approval process
 - **📆 Schedule Management**: Calendar integration and availability control
 - **💰 Payment Integration**: Secure online transactions
@@ -34,86 +36,146 @@
 ## 🏗️ Architecture
 
 ### Backend (Django)
-```
+
+```text
 pandityatra/backend/
+├── pandityatra_backend/ # Django core settings, ASGI/WSGI, root URLs
+├── adminpanel/          # Admin workflows and moderation tools
 ├── users/          # Authentication & user management
 ├── pandits/        # Pandit profiles & verification
 ├── bookings/       # Booking system & scheduling
 ├── chat/           # WebSocket chat (Django Channels)
-├── recommender/    # AI recommendation engine
+├── ai/             # AI assistant + MCP-style tool orchestration layer
+├── recommender/    # Recommendation engine and ranking logic
 ├── kundali/        # Horoscope analysis
+├── panchang/       # Panchang calendar and festival intelligence
 ├── samagri/        # Sacred items catalog
 ├── payments/       # Payment processing
 ├── reviews/        # Rating & review system
+├── notifications/  # In-app notifications and alerts
+├── video/          # Daily.co video consultation integration
 └── services/       # Service catalog
 ```
 
 ### Frontend (React + TypeScript)
-```
+
+```text
 pandityatra/frontend/src/
 ├── components/     # Reusable UI components
 ├── pages/          # Route pages
 ├── contexts/       # React Context (Auth, Cart)
+├── lib/            # Shared API helpers and utilities
 ├── services/       # API integration
 ├── hooks/          # Custom hooks
-└── types/          # TypeScript interfaces
+├── i18n/           # Internationalization resources
+├── types/          # TypeScript interfaces
+└── utils/          # Formatting, constants, and helper utilities
 ```
 
 ---
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.11+
-- Node.js 18+
-- pnpm 8+
-- Redis 7+ (for WebSocket)
-- PostgreSQL 15+ (production) / SQLite (development)
+### ✅ Version Requirements
 
-### Installation
+- **Python**: 3.11+
+- **Node.js**: 18+
+- **pnpm**: 8+
+- **Docker**: 24+
+- **Docker Compose**: v2+
 
-1. **Clone Repository**
+### 1) Clone Repository
+
 ```bash
 git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra.git
 cd amit-pokhrel-pandityatra/pandityatra
 ```
 
-2. **Backend Setup**
+### 2) Configure Environment
+
+Use the root env file (already used by Docker + Django in this project):
+
+```bash
+cp .env.example .env
+```
+
+Then update important values in `.env` (especially `SECRET_KEY`, email, payment keys, AI keys).
+
+---
+
+### 3) Run Backend + Database + Redis with Docker (Recommended)
+
+This starts:
+
+- Django backend (`web`)
+- PostgreSQL (`db`)
+- Redis (`redis`)
+- pgAdmin and Adminer
+
+```bash
+docker compose up --build -d
+```
+
+Run migrations and create admin user:
+
+```bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+```
+
+Useful Docker commands:
+
+```bash
+docker compose logs -f web
+docker compose ps
+docker compose down
+```
+
+---
+
+### 4) Run Frontend (Vite)
+
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+
+Frontend runs at `http://localhost:5173`.
+
+---
+
+### 5) Access Services
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- Admin Panel: `http://localhost:8000/admin`
+- Swagger Docs: `http://localhost:8000/api/docs/`
+- ReDoc: `http://localhost:8000/api/redoc/`
+- pgAdmin: `http://localhost:5050`
+- Adminer: `http://localhost:8080`
+
+---
+
+### 6) Optional: Run Backend Locally (Without Docker)
+
+If you want local backend instead of Docker, ensure PostgreSQL + Redis are running locally and set proper values in `.env`.
+
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py createsuperuser
 python manage.py runserver
 ```
-
-3. **Frontend Setup**
-```bash
-cd ../frontend
-pnpm install
-pnpm dev
-```
-
-4. **Redis Setup** (for real-time chat)
-```bash
-# Windows: Download from https://redis.io/download
-# Linux/Mac:
-brew install redis
-redis-server
-```
-
-5. **Access Application**
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- Admin Panel: `http://localhost:8000/admin`
 
 ---
 
 ## 🛠️ Technology Stack
 
 ### Backend
+
 - **Framework**: Django 5.2.9
 - **WebSocket**: Django Channels + Daphne
 - **API**: Django REST Framework
@@ -123,6 +185,7 @@ redis-server
 - **Authentication**: JWT (djangorestframework-simplejwt)
 
 ### Frontend
+
 - **Framework**: React 18 + Vite
 - **Language**: TypeScript 5.6
 - **UI Library**: shadcn/ui + Tailwind CSS 4
@@ -132,6 +195,7 @@ redis-server
 - **HTTP Client**: Axios
 
 ### DevOps
+
 - **Containerization**: Docker + Docker Compose
 - **Package Manager**: pnpm (frontend), pip (backend)
 - **Version Control**: Git + GitHub
@@ -190,8 +254,9 @@ Developed by: Amit Pokhrel
 ## 📞 Support
 
 For issues, questions, or suggestions:
+
 - GitHub Issues: [Report here](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra/issues)
-- Email: ameetpokhrel02@gmail.com
+- Email: [ameetpokhrel02@gmail.com](mailto:ameetpokhrel02@gmail.com)
 
 ---
 

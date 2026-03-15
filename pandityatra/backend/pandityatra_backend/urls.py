@@ -18,6 +18,8 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.auth.decorators import login_required, user_passes_test
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 # JWT Imports
 from rest_framework_simplejwt.views import (
@@ -61,6 +63,41 @@ urlpatterns = [
 
     # Notifications endpoints
     path('api/notifications/', include('notifications.urls')),
+
+    # API Documentation (admin-only)
+    path(
+        'api/schema/',
+        login_required(
+            user_passes_test(
+                lambda user: user.is_active and user.is_staff,
+                login_url='/admin/login/',
+            )(SpectacularAPIView.as_view()),
+            login_url='/admin/login/',
+        ),
+        name='schema',
+    ),
+    path(
+        'api/docs/',
+        login_required(
+            user_passes_test(
+                lambda user: user.is_active and user.is_staff,
+                login_url='/admin/login/',
+            )(SpectacularSwaggerView.as_view(url_name='schema')),
+            login_url='/admin/login/',
+        ),
+        name='swagger-ui',
+    ),
+    path(
+        'api/redoc/',
+        login_required(
+            user_passes_test(
+                lambda user: user.is_active and user.is_staff,
+                login_url='/admin/login/',
+            )(SpectacularRedocView.as_view(url_name='schema')),
+            login_url='/admin/login/',
+        ),
+        name='redoc',
+    ),
 ]
 
 if settings.DEBUG:
