@@ -41,23 +41,8 @@
 | Document | Purpose | Time |
 |----------|---------|------|
 | [DUAL_MODE_CHATBOT_CHECKLIST.md](./DUAL_MODE_CHATBOT_CHECKLIST.md) | Deployment and testing checklist | 20 min |
-| [QUICK_START.sh](./QUICK_START.sh) | Linux/Mac automated setup | Run |
-| [QUICK_START.bat](./QUICK_START.bat) | Windows automated setup | Run |
 
-## 🚀 Quick Setup (Choose Your Platform)
-
-### Linux / Mac
-```bash
-cd pandityatra
-chmod +x QUICK_START.sh
-./QUICK_START.sh
-```
-
-### Windows
-```cmd
-cd pandityatra
-QUICK_START.bat
-```
+## 🚀 Quick Setup
 
 ### Manual
 ```bash
@@ -96,8 +81,7 @@ Documentation/
 ### Setup Scripts
 ```
 Setup/
-├── QUICK_START.sh     (Linux/Mac - automated setup)
-└── QUICK_START.bat    (Windows - automated setup)
+└── Manual setup via this document and project README
 ```
 
 ### Backend Implementation
@@ -130,7 +114,7 @@ Frontend Changes (frontend/src/):
 
 ### Path 1: "I Just Want to Use It" (15 minutes)
 1. Read: [CHATBOT_README.md](./CHATBOT_README.md)
-2. Run: `QUICK_START.sh` or `QUICK_START.bat`
+2. Run: the manual setup steps in this document
 3. Test: Click chat button, type "How to book a puja?"
 4. Done! 🎉
 
@@ -169,7 +153,7 @@ Frontend Changes (frontend/src/):
 - **Technical deep dive** → [DUAL_MODE_CHATBOT_DOCUMENTATION.md](./DUAL_MODE_CHATBOT_DOCUMENTATION.md)
 - **Integrate into my page** → [DUAL_MODE_CHATBOT_USAGE_GUIDE.md](./DUAL_MODE_CHATBOT_USAGE_GUIDE.md)
 - **Deploy to production** → [DUAL_MODE_CHATBOT_CHECKLIST.md](./DUAL_MODE_CHATBOT_CHECKLIST.md)
-- **Set up quickly** → [QUICK_START.sh](./QUICK_START.sh) or [QUICK_START.bat](./QUICK_START.bat)
+- **Set up quickly** → Follow the manual setup section in this document
 - **Understand architecture** → [VISUAL_SUMMARY.md](./VISUAL_SUMMARY.md)
 - **See code examples** → [DUAL_MODE_CHATBOT_USAGE_GUIDE.md](./DUAL_MODE_CHATBOT_USAGE_GUIDE.md)
 - **Troubleshoot issues** → [DUAL_MODE_CHATBOT_DOCUMENTATION.md](./DUAL_MODE_CHATBOT_DOCUMENTATION.md#troubleshooting)
@@ -240,7 +224,7 @@ Frontend Changes (frontend/src/):
 For questions about:
 - **Architecture** → See [VISUAL_SUMMARY.md](./VISUAL_SUMMARY.md)
 - **API details** → See [DUAL_MODE_CHATBOT_DOCUMENTATION.md](./DUAL_MODE_CHATBOT_DOCUMENTATION.md#api-reference)
-- **Setup** → See [QUICK_START.sh](./QUICK_START.sh) or [QUICK_START.bat](./QUICK_START.bat)
+- **Setup** → See the manual setup section in this file
 - **Usage** → See [DUAL_MODE_CHATBOT_USAGE_GUIDE.md](./DUAL_MODE_CHATBOT_USAGE_GUIDE.md)
 - **Deployment** → See [DUAL_MODE_CHATBOT_CHECKLIST.md](./DUAL_MODE_CHATBOT_CHECKLIST.md)
 
@@ -273,7 +257,7 @@ For questions about:
 **Choose Your Path:**
 
 1. **Just Want to Use It?**
-   - Run `QUICK_START.sh` (or .bat on Windows)
+   - Follow the manual setup steps in this file
    - Open http://localhost:5173
    - Click chat button
    - Done! 🎉
@@ -308,8 +292,7 @@ For questions about:
 │ Technical Ref:      DUAL_MODE_CHATBOT_DOCUMENTATION.md     │
 │ Code Examples:      DUAL_MODE_CHATBOT_USAGE_GUIDE.md       │
 │ Deployment:         DUAL_MODE_CHATBOT_CHECKLIST.md         │
-│ Auto Setup (Linux): QUICK_START.sh                         │
-│ Auto Setup (Windows): QUICK_START.bat                      │
+│ Setup:              Manual steps in this document          │
 │                                                             │
 │ API Endpoint:       POST /api/chat/                        │
 │ WebSocket:          ws://localhost:8000/ws/puja/<id>/      │

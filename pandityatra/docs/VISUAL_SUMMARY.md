@@ -373,11 +373,8 @@ DOCUMENTATION
 ├─ DUAL_MODE_CHATBOT_CHECKLIST.md
 │  └─ Setup & testing steps
 │
-├─ QUICK_START.sh
-│  └─ Linux/Mac automated setup
-│
-└─ QUICK_START.bat
-   └─ Windows automated setup
+└─ Manual setup
+    └─ See CHATBOT_README.md / README_DOCUMENTATION_INDEX.md
 ```
 
 ## ✨ Feature Completeness

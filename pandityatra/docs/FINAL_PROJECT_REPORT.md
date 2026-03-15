@@ -163,53 +163,35 @@ This report summarizes project goals, completed features, technical architecture
 
 - AI_RECOMMENDER_GUIDE.md
 - AI_RECOMMENDER_TESTING.md
-- AUDIT_CHECKLIST.md
 - AUTHENTICATION_STATUS.md
 - BOOKING_SYSTEM_COMPLETE.md
-- BUILD_FIXES_SUMMARY.md
 - CHATBOT_README.md
-- COMPLETION_SUMMARY.md
 - CUSTOMER_DASHBOARD_FIXES.md
 - DATABASE_BACKEND_AUDIT.md
 - DATABASE_ENHANCEMENTS.md
-- DOCKER_STATUS.md
 - DUAL_MODE_CHATBOT_CHECKLIST.md
 - DUAL_MODE_CHATBOT_DOCUMENTATION.md
 - DUAL_MODE_CHATBOT_USAGE_GUIDE.md
-- ENHANCEMENT_IMPLEMENTATION_SUMMARY.md
-- FEATURES_COMPLETED.md
-- FULL_CHECKLIST.md
 - IMPLEMENTATION_SUMMARY.md
 - PANDIT_CALENDAR_README.md
 - PANDIT_VERIFICATION_IMPLEMENTATION.md
 - PAYMENT_SETUP.md
-- PHASE1_COMPLETE_LIST.md
-- PHASE1_DELIVERY.md
-- PHASE2_DOCUMENTATION_INDEX.md
-- PHASE2_IMPLEMENTATION_STATUS.md
-- PROJECT_ANALYSIS.md
-- QUICK_REFERENCE.md
 - README_DOCUMENTATION_INDEX.md
-- START_HERE.md
-- SYSTEM_STATUS_REPORT.md
 - TESTING_GUIDE.md
 - VISUAL_SUMMARY.md
 
 ### 9.2 Supporting Reference Assets
 
-- API.pdf
 - FYP Screens.pdf
-- PanditYatra Proposal.pdf
-- PanditYatra_FYP gant chart diagram copy.pdf
-- Survey Result.pdf
 - auth flow.pdf
-- review .pdf
-- user story flow.pdf
 
 ### 9.3 Diagram/Script Directories
 
 - diagrams/
-- payment script/
+
+### 9.4 Archived Materials
+
+Older status snapshots, submission PDFs, utility scripts, and intermediate planning files were moved to `archive/docs_cleanup_2026-03-15/` during docs cleanup to keep the active documentation set focused.
 
 This final report is the consolidated closure document that connects all above materials into one executive + technical overview.
 
