@@ -5,8 +5,17 @@
 [![Django](https://img.shields.io/badge/Django-5.2.9-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-24+-2496ED.svg)](https://www.docker.com/)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04+-E95420.svg)](https://ubuntu.com/)
 
 **PanditYatra** is a comprehensive digital platform connecting devotees with verified pandits for Hindu religious ceremonies and rituals. Built with AI-powered recommendations, real-time chat, and seamless booking system.
+
+## 🔗 Quick Navigation
+
+- [Root Environment Example (.env.example)](.env.example)
+- [Backend Folder](backend/)
+- [Frontend Folder](frontend/)
+- [Docker Compose File](docker-compose.yml)
 
 ---
 
@@ -83,6 +92,7 @@ pandityatra/frontend/src/
 - **pnpm**: 8+
 - **Docker**: 24+
 - **Docker Compose**: v2+
+- **OS (Recommended)**: Ubuntu 22.04+ / macOS / Windows 10+
 
 ### 1) Clone Repository
 
@@ -95,8 +105,16 @@ cd amit-pokhrel-pandityatra/pandityatra
 
 Use the root env file (already used by Docker + Django in this project):
 
+#### Linux / macOS (Env setup)
+
 ```bash
 cp .env.example .env
+```
+
+#### Windows (PowerShell) (Env setup)
+
+```powershell
+Copy-Item .env.example .env
 ```
 
 Then update important values in `.env` (especially `SECRET_KEY`, email, payment keys, AI keys).
@@ -135,6 +153,8 @@ docker compose down
 
 ### 4) Run Frontend (Vite)
 
+#### Linux / macOS / Windows
+
 ```bash
 cd frontend
 pnpm install
@@ -161,10 +181,23 @@ Frontend runs at `http://localhost:5173`.
 
 If you want local backend instead of Docker, ensure PostgreSQL + Redis are running locally and set proper values in `.env`.
 
+#### Linux / macOS (Local backend)
+
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+#### Windows (PowerShell) (Local backend)
+
+```powershell
+cd backend
+python -m venv venv
+.\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
