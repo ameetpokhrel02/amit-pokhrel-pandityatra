@@ -273,6 +273,9 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
     }
 }
 
+// ----------------------
+// Google Login APIs
+// ----------------------
 export async function googleLogin(idToken: string) {
     try {
         const response = await apiClient.post('/users/google-login/', { id_token: idToken });
