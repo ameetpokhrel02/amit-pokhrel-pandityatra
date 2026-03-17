@@ -5,6 +5,7 @@ import os
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta 
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -19,10 +20,42 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
+def env_bool(name: str, default: bool = False) -> bool:
+    return os.getenv(name, str(default)).lower() in ('true', '1', 'yes', 'on')
+
+
+def env_list(name: str, default: str = ''):
+    raw = os.getenv(name, default)
+    return [item.strip() for item in raw.split(',') if item.strip()]
+
+
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-43jvp0e$qvj%e8m&l#3@@s_pc%apgv%xg!o@_pqx&=v2&c8b@z')
-DEBUG = os.getenv('DEBUG', 'True').lower() in ('true', '1', 'yes', 'on')
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+DEBUG = env_bool('DEBUG', False)
+
+# Host allowlist for local web + Expo/mobile development.
+# Use ALLOWED_HOSTS in .env to override.
+default_allowed_hosts = [
+    'localhost',
+    '127.0.0.1',
+    '0.0.0.0',
+    'host.docker.internal',
+    '.local',
+    '.exp.direct',
+    '.expo.dev',
+    '.ngrok-free.app',
+]
+
+raw_allowed_hosts = env_list('ALLOWED_HOSTS', ','.join(default_allowed_hosts))
+ALLOWED_HOSTS = [host.strip().strip('"').strip("'") for host in raw_allowed_hosts if host.strip().strip('"').strip("'")]
+
+# Accept wildcard even when env is set like ALLOWED_HOSTS="*"
+if '*' in ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
+
+# In debug, fallback to wildcard to avoid DisallowedHost during mobile LAN/tunnel testing.
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -67,12 +100,17 @@ INSTALLED_APPS = [
 # Django Channels Configuration
 ASGI_APPLICATION = 'pandityatra_backend.asgi.application'
 
+redis_url = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+parsed_redis = urlparse(redis_url)
+redis_host = parsed_redis.hostname or 'redis'
+redis_port = parsed_redis.port or 6379
+
 # Channel Layers - Redis for WebSocket backend
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('redis', 6379)],  # Use 'localhost' for local dev, 'redis' for Docker
+            "hosts": [(redis_host, redis_port)],
         },
     },
 }
@@ -183,6 +221,7 @@ STATICFILES_DIRS = [
 # Media files (User uploaded content like Samagri images)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+SERVE_MEDIA_FILES = env_bool('SERVE_MEDIA_FILES', DEBUG)
 
 # Ensure MIME types are correct for SVG
 import mimetypes
@@ -255,6 +294,14 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', False)
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', os.getenv('FRONTEND_URL', 'http://localhost:5173'))
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')},http://localhost:8000")
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
+CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
 
 # Payment Gateway Configuration
 # Stripe (for international payments)

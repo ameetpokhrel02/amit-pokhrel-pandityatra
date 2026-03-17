@@ -1,23 +1,210 @@
-from urllib import request
-from django.shortcuts import render
-import json
 import logging
+from datetime import datetime, timedelta, timezone as dt_timezone
 
-# Create your views here.
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 
 from .models import VideoRoom, VideoParticipant
+from .serializers import VideoRoomDetailSerializer, VideoRoomUpdateSerializer
+from .permissions import can_access_booking
 from notifications.email_utils import send_recording_ready_email
 from bookings.models import Booking
 from .utils import daily_service
 from .services.room_creator import ensure_video_room_for_booking
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_room_or_404(room_id):
+    if str(room_id).isdigit():
+        room = VideoRoom.objects.filter(id=int(room_id)).select_related("booking", "booking__pandit", "booking__user").first()
+        if room:
+            return room
+    return get_object_or_404(
+        VideoRoom.objects.select_related("booking", "booking__pandit", "booking__user"),
+        room_name=room_id,
+    )
+
+
+def _booking_start_dt(booking):
+    if not booking.booking_date or not booking.booking_time:
+        return None
+
+    naive_dt = datetime.combine(booking.booking_date, booking.booking_time)
+    return timezone.make_aware(naive_dt, timezone.get_current_timezone())
+
+
+def _booking_time_window_ok(booking):
+    start_dt = _booking_start_dt(booking)
+    if not start_dt:
+        return False, "Booking start time is not configured"
+
+    now = timezone.now()
+    early_buffer = start_dt - timedelta(minutes=30)
+    late_buffer = start_dt + timedelta(hours=4)
+    ok = early_buffer <= now <= late_buffer
+    if ok:
+        return True, "ok"
+    return False, "Room can be joined only around the scheduled booking time"
+
+
+def _validate_booking_video_state(booking):
+    if booking.service_location != "ONLINE":
+        return False, "Booking is not an online service"
+    if not booking.payment_status:
+        return False, "Booking payment is not completed"
+    if booking.status not in {"ACCEPTED", "COMPLETED"}:
+        return False, "Booking must be accepted before joining video room"
+    return True, "ok"
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_room_auto(request):
+    booking_id = request.data.get("booking_id")
+    if not booking_id:
+        return Response({"error": "booking_id is required"}, status=400)
+
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if not can_access_booking(request.user, booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    is_valid, reason = _validate_booking_video_state(booking)
+    if not is_valid:
+        return Response({"error": reason}, status=400)
+
+    room = ensure_video_room_for_booking(booking)
+    start_dt = _booking_start_dt(booking)
+
+    return Response(
+        {
+            "room_id": room.room_name,
+            "room_url": room.room_url,
+            "start_time": start_dt.astimezone(dt_timezone.utc).isoformat() if start_dt else None,
+        },
+        status=201,
+    )
+
+
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def room_details(request, room_id):
+    room = _resolve_room_or_404(room_id)
+    if not can_access_booking(request.user, room.booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    if request.method == "PATCH":
+        serializer = VideoRoomUpdateSerializer(room, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+    return Response(
+        VideoRoomDetailSerializer(
+            room,
+            context={"booking_start_time": _booking_start_dt(room.booking)},
+        ).data
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_recording(request, room_id):
+    room = _resolve_room_or_404(room_id)
+    if not can_access_booking(request.user, room.booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    recording_url = request.data.get("recording_url")
+    recording_file = request.FILES.get("recording")
+
+    if not recording_url and not recording_file:
+        return Response({"error": "recording_url or recording file is required"}, status=400)
+
+    if recording_file:
+        filename = f"recordings/video_room_{room.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}.webm"
+        saved_path = default_storage.save(filename, ContentFile(recording_file.read()))
+        room.recording_url = request.build_absolute_uri(default_storage.url(saved_path))
+    else:
+        room.recording_url = recording_url
+
+    room.save(update_fields=["recording_url"])
+
+    booking = room.booking
+    booking.recording_url = room.recording_url
+    booking.recording_available = True
+    booking.save(update_fields=["recording_url", "recording_available"])
+
+    return Response({"success": True, "recording_url": room.recording_url})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def validate_room_access(request, room_id):
+    room = _resolve_room_or_404(room_id)
+
+    if not can_access_booking(request.user, room.booking):
+        return Response({"valid": False, "reason": "Not authorized"}, status=403)
+
+    state_ok, state_reason = _validate_booking_video_state(room.booking)
+    if not state_ok:
+        return Response({"valid": False, "reason": state_reason}, status=400)
+
+    window_ok, window_reason = _booking_time_window_ok(room.booking)
+    if not window_ok:
+        return Response({"valid": False, "reason": window_reason}, status=400)
+
+    return Response({
+        "valid": True,
+        "room_id": room.room_name,
+        "booking_id": room.booking.id,
+        "status": room.status,
+        "start_time": _booking_start_dt(room.booking).isoformat() if _booking_start_dt(room.booking) else None,
+        "timezone": str(timezone.get_current_timezone()),
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def start_room(request, room_id):
+    room = _resolve_room_or_404(room_id)
+    booking = room.booking
+
+    if not can_access_booking(request.user, booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    room.status = "live"
+    room.save(update_fields=["status"])
+
+    if not booking.puja_start_time:
+        booking.puja_start_time = timezone.now()
+        booking.save(update_fields=["puja_start_time"])
+
+    return Response({"success": True, "room_status": room.status, "started_at": booking.puja_start_time})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def end_room(request, room_id):
+    room = _resolve_room_or_404(room_id)
+    booking = room.booking
+
+    if not can_access_booking(request.user, booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    now = timezone.now()
+    room.status = "ended"
+    room.ended_at = now
+    room.save(update_fields=["status", "ended_at"])
+
+    booking.puja_end_time = now
+    booking.save(update_fields=["puja_end_time"])
+
+    return Response({"success": True, "room_status": room.status, "ended_at": now})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

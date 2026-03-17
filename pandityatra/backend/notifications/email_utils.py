@@ -81,3 +81,42 @@ def send_recording_ready_email(booking):
         'recording_ready_email.html',
         context
     )
+
+
+def send_room_reminder_email(booking):
+    """Send a 5-minute reminder email to customer and pandit for online session."""
+    room_url = booking.daily_room_url or booking.video_room_url
+
+    customer_context = {
+        'user_name': booking.user.full_name,
+        'puja_name': booking.service_name,
+        'booking_date': booking.booking_date,
+        'booking_time': booking.booking_time,
+        'room_url': room_url,
+        'role': 'customer',
+        'is_reminder': True,
+    }
+    send_puja_email(
+        booking.user.email,
+        f"Reminder: {booking.service_name} starts in 5 minutes",
+        'room_ready_email.html',
+        customer_context,
+    )
+
+    if booking.pandit and booking.pandit.user.email:
+        pandit_context = {
+            'user_name': booking.pandit.user.full_name,
+            'puja_name': booking.service_name,
+            'booking_date': booking.booking_date,
+            'booking_time': booking.booking_time,
+            'room_url': room_url,
+            'role': 'pandit',
+            'is_reminder': True,
+        }
+        send_puja_email(
+            booking.pandit.user.email,
+            f"Reminder: {booking.service_name} starts in 5 minutes",
+            'room_ready_email.html',
+            pandit_context,
+        )
+

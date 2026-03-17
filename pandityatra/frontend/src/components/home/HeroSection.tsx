@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -80,6 +80,13 @@ const HeroSection: React.FC = () => {
     if (searchData.date) params.append('date', searchData.date);
     if (searchData.time) params.append('time', searchData.time);
     navigate(`/pandits${params.toString() ? '?' + params.toString() : ''}`);
+  };
+
+  const scrollToHowItWorks = () => {
+    document.getElementById('how-it-works')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
   };
 
   return (
@@ -214,11 +221,13 @@ const HeroSection: React.FC = () => {
               <MiniOrbit size={32} className="mr-2 group-hover:scale-110 transition-transform" />
               <span className="text-lg">{t('get_started')}</span>
             </Button>
-            <Link to="/about">
-              <Button size="lg" className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 flex items-center">
-                <FaPlay className="mr-2" /> {t('watch_demo')}
-              </Button>
-            </Link>
+            <Button
+              size="lg"
+              className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 flex items-center"
+              onClick={scrollToHowItWorks}
+            >
+              <FaPlay className="mr-2" /> {t('watch_demo')}
+            </Button>
           </div>
         </motion.div>
 

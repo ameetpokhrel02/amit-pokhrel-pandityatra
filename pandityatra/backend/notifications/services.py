@@ -184,6 +184,25 @@ def notify_puja_room_ready(booking):
     )
 
 
+def notify_puja_room_reminder(booking):
+    """Notify both participants 5 minutes before scheduled online puja."""
+    create_notification(
+        user=booking.user,
+        notification_type='PUJA_ROOM_READY',
+        title='Puja starts in 5 minutes ⏰',
+        message=f'Your {booking.service_name} session will start soon. Please join the video room.',
+        booking=booking,
+    )
+
+    create_notification(
+        user=booking.pandit.user,
+        notification_type='PUJA_ROOM_READY',
+        title='Upcoming puja in 5 minutes ⏰',
+        message=f'{booking.service_name} with {booking.user.full_name} starts in 5 minutes. Please join the room.',
+        booking=booking,
+    )
+
+
 def notify_review_received(review):
     """Notify pandit when they receive a review"""
     create_notification(

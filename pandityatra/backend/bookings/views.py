@@ -29,6 +29,7 @@ from notifications.services import (
     notify_booking_completed,
     notify_booking_cancelled
 )
+from video.services.room_creator import ensure_video_room_for_booking
 
 
 class BookingViewSet(viewsets.ModelViewSet):
@@ -129,6 +130,15 @@ class BookingViewSet(viewsets.ModelViewSet):
             booking.accepted_at = timezone.now()
             # 🔔 Notify customer that booking is accepted
             notify_booking_accepted(booking)
+
+            # Auto-create video room for online bookings
+            if booking.service_location == 'ONLINE':
+                try:
+                    ensure_video_room_for_booking(booking)
+                except Exception as e:
+                    # Keep booking acceptance successful even if room setup retries later
+                    import logging
+                    logging.getLogger(__name__).error(f"Failed to auto-create video room on booking accept: {e}")
             
         if new_status == BookingStatus.COMPLETED:
             booking.completed_at = timezone.now()

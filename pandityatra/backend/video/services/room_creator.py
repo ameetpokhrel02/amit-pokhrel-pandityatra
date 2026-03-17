@@ -1,36 +1,44 @@
+from django.conf import settings
+from django.utils.text import slugify
+
 from video.models import VideoRoom
-from video.services.daily import create_daily_room_for_booking
 from notifications.email_utils import send_room_ready_email
 from notifications.services import notify_puja_room_ready
 
+
+def _build_internal_room_name(booking):
+    """Generate deterministic room name per booking (idempotent with OneToOne room)."""
+    title = booking.service.name if booking.service else booking.service_name
+    title_slug = slugify(title)[:40] if title else "puja"
+    return f"bk-{booking.id}-{title_slug}"
+
+
+def _build_internal_room_url(room_name):
+    base = getattr(settings, "FRONTEND_URL", "http://localhost:5173").rstrip("/")
+    return f"{base}/video/{room_name}"
+
+
 def ensure_video_room_for_booking(booking):
-    
+
     # Prevent duplicate rooms
     if hasattr(booking, "video_room"):
         return booking.video_room
-    
-    # Get service info for metadata
-    puja_title = booking.service.name if booking.service else booking.service_name
-    pandit_id = booking.pandit_id
 
-    room_name, room_url = create_daily_room_for_booking(
-        booking_id=booking.id,
-        puja_type=puja_title,
-        pandit_id=pandit_id
-    )
+    room_name = _build_internal_room_name(booking)
+    room_url = _build_internal_room_url(room_name)
 
     video_room = VideoRoom.objects.create(
         booking=booking,
-        provider="daily",
+        provider="webrtc",
         room_name=room_name,
         room_url=room_url,
         status="scheduled"
     )
 
-    # Update Booking with the new fields
+    # Update Booking fields (legacy fields retained for compatibility)
     booking.daily_room_url = room_url
     booking.daily_room_name = room_name
-    booking.video_room_url = room_url # Legacy support
+    booking.video_room_url = room_url
     booking.save(update_fields=['daily_room_url', 'daily_room_name', 'video_room_url'])
 
     # 🔔 Trigger Notifications for puja room ready
@@ -48,8 +56,8 @@ def ensure_video_room_for_booking(booking):
 def close_video_room(booking):
     from video.models import VideoRoom
     room = VideoRoom.objects.filter(booking=booking).first()
-    if room and room.status != "closed":
-        room.status = "closed"
+    if room and room.status != "ended":
+        room.status = "ended"
         room.save()
 
     return room

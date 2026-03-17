@@ -8,20 +8,22 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
-from chat import routing as chat_routing
-from chat.middleware import JWTAuthMiddleware
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pandityatra_backend.settings')
 
 # Initialize Django ASGI application early to populate Django apps
 django_asgi_app = get_asgi_application()
 
+from chat import routing as chat_routing  # noqa: E402
+from video import routing as video_routing  # noqa: E402
+from chat.middleware import JWTAuthMiddleware  # noqa: E402
+
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
     "websocket": JWTAuthMiddleware(
         AuthMiddlewareStack(
             URLRouter(
-                chat_routing.websocket_urlpatterns
+                chat_routing.websocket_urlpatterns + video_routing.websocket_urlpatterns
             )
         )
     ),

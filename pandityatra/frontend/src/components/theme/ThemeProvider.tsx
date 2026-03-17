@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useState } from "react"
 
 type Theme = "dark" | "light" | "system"
 
@@ -28,22 +28,33 @@ export function ThemeProvider({
         () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
     )
 
+    const resolvedTheme = useMemo<"light" | "dark">(() => {
+        if (theme !== "system") return theme
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    }, [theme])
+
     useEffect(() => {
         const root = window.document.documentElement
 
         root.classList.remove("light", "dark")
+        root.classList.add(resolvedTheme)
+        root.style.colorScheme = resolvedTheme
+    }, [resolvedTheme])
 
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light"
+    useEffect(() => {
+        if (theme !== "system") return
 
-            root.classList.add(systemTheme)
-            return
+        const media = window.matchMedia("(prefers-color-scheme: dark)")
+        const onChange = () => {
+            const root = window.document.documentElement
+            const next = media.matches ? "dark" : "light"
+            root.classList.remove("light", "dark")
+            root.classList.add(next)
+            root.style.colorScheme = next
         }
 
-        root.classList.add(theme)
+        media.addEventListener("change", onChange)
+        return () => media.removeEventListener("change", onChange)
     }, [theme])
 
     const value = {

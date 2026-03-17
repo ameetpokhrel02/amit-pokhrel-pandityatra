@@ -139,6 +139,41 @@
   }
 }
 
+/* Global fallback fixes for screens using hardcoded light utility classes */
+.dark .bg-white,
+.dark .bg-gray-50,
+.dark .bg-slate-50,
+.dark .bg-orange-50 {
+  background-color: hsl(var(--card)) !important;
+}
+
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-\[\#3E2723\] {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-orange-100,
+.dark .border-orange-200 {
+  border-color: hsl(var(--border)) !important;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #14100f;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #3b302b, #2a211e);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #4b3b35, #332823);
+}
+
 /* stylelint-disable-next-line at-rule-no-unknown */
 @layer components {
 

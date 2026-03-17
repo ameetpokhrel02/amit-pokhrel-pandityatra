@@ -90,15 +90,15 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 right-0 z-[70] h-full w-full max-w-md bg-white shadow-2xl flex flex-col"
+            className="fixed top-0 right-0 z-[70] h-full w-full max-w-md bg-white dark:bg-gray-900 shadow-2xl flex flex-col"
           >
-            <div className="p-6 border-b flex items-center justify-between bg-white sticky top-0 z-10">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between bg-white dark:bg-gray-900 sticky top-0 z-10">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-orange-50 rounded-lg">
+                <div className="p-2 bg-orange-50 dark:bg-gray-800 rounded-lg">
                   <Bell className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Notifications</h2>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Notifications</h2>
                   {unreadCount > 0 && (
                     <p className="text-sm text-orange-600 font-medium">
                       You have {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
@@ -110,7 +110,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 variant="ghost"
                 size="icon"
                 onClick={onClose}
-                className="rounded-full hover:bg-gray-100"
+                className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <X className="w-5 h-5" />
               </Button>
@@ -135,14 +135,14 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
               )}
 
               {/* Controls */}
-              <div className="px-6 py-4 flex items-center justify-between bg-gray-50/50">
+              <div className="px-6 py-4 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/40">
                 <div className="flex gap-2">
                   <button
                     onClick={() => setFilter('all')}
                     className={`px-3 py-1 text-sm rounded-full transition-colors ${
                       filter === 'all' 
                       ? 'bg-gray-900 text-white font-medium' 
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                      : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     All
@@ -152,7 +152,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     className={`px-3 py-1 text-sm rounded-full transition-colors ${
                       filter === 'unread' 
                       ? 'bg-orange-600 text-white font-medium' 
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+                      : 'bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
                     }`}
                   >
                     Unread
@@ -172,19 +172,19 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                 )}
               </div>
 
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center py-20 gap-3">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                    <p className="text-sm text-gray-500">Fetching notifications...</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Fetching notifications...</p>
                   </div>
                 ) : filteredNotifications.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 px-10 text-center">
-                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                    <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                       <BellOff className="w-8 h-8 text-gray-300" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">Quiet for now</h3>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Quiet for now</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       {filter === 'unread' 
                         ? "You've read all your notifications. Great job!" 
                         : "When you receive notifications, they'll appear here."}
@@ -194,8 +194,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                   filteredNotifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className={`p-5 hover:bg-orange-50/30 cursor-pointer transition-all border-l-4 ${
-                        !notification.is_read ? 'bg-orange-50/50 border-orange-500' : 'border-transparent'
+                      className={`p-5 hover:bg-orange-50/30 dark:hover:bg-gray-800/50 cursor-pointer transition-all border-l-4 ${
+                        !notification.is_read ? 'bg-orange-50/50 dark:bg-gray-800/40 border-orange-500' : 'border-transparent'
                       }`}
                       onClick={() => handleNotificationClick(notification)}
                     >
@@ -207,7 +207,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
                             <h4 className={`text-sm font-bold truncate ${
-                              !notification.is_read ? 'text-gray-900' : 'text-gray-600'
+                              !notification.is_read ? 'text-gray-900 dark:text-gray-100' : 'text-gray-600 dark:text-gray-300'
                             }`}>
                               {notification.title}
                             </h4>
@@ -216,12 +216,12 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
                             )}
                           </div>
                           
-                          <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
                             {notification.message}
                           </p>
                           
                           <div className="flex items-center justify-between mt-3">
-                            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                            <div className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
                               <Clock className="w-3 h-3" />
                               {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                             </div>
@@ -261,7 +261,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </div>
 
             {/* Footer shadow/fade */}
-            <div className="h-6 bg-gradient-to-t from-gray-50/50 to-transparent flex-shrink-0" />
+            <div className="h-6 bg-gradient-to-t from-gray-50/50 dark:from-gray-900/80 to-transparent flex-shrink-0" />
           </motion.div>
         </>
       )}

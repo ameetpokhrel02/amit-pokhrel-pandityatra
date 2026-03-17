@@ -34,7 +34,7 @@ services:
     build:
       context: .                 # ← Important: Now points to root
       dockerfile: Dockerfile     # ← Uses the new root Dockerfile
-    command: gunicorn pandityatra_backend.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: daphne -b 0.0.0.0 -p 8000 pandityatra_backend.asgi:application
     env_file:
       - .env
     volumes:
@@ -44,7 +44,42 @@ services:
     environment:
       - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
       - REDIS_URL=redis://redis:6379/0
-      - DEBUG=1
+      - DEBUG=0
+      - SERVE_MEDIA_FILES=1
+      - ALLOWED_HOSTS="*"
+      - CORS_ALLOW_ALL_ORIGINS=False
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173
+      - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  video-reminder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "while true; do
+      python manage.py send_video_reminders;
+      sleep 60;
+      done"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=0
+      - SERVE_MEDIA_FILES=1
+      - ALLOWED_HOSTS="*"
+      - CORS_ALLOW_ALL_ORIGINS=False
+      - CORS_ALLOWED_ORIGINS=http://localhost:5173
+      - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:

@@ -94,7 +94,7 @@ const HowItWorks: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-slate-900 dark:via-slate-900 dark:to-orange-900/20">
+    <section id="how-it-works" className="py-20 relative overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-slate-900 dark:via-slate-900 dark:to-orange-900/20">
 
       {/* Background Animated Elements */}
       <div className="absolute inset-0 pointer-events-none">

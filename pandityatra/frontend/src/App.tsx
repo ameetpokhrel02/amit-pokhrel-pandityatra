@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth'
 import { CartProvider } from './hooks/useCart'
 import { FavoritesProvider } from './hooks/useFavorites'
@@ -358,6 +358,7 @@ function App() {
 
                     {/* 🎥 Video */}
                     <Route path="/puja-room/:id" element={<PujaRoom />} />
+                    <Route path="/video/:id" element={<PujaRoom />} />
                     <Route path="/recording/:bookingId" element={<RecordingView />} />
 
                     {/* 💬 Chat */}

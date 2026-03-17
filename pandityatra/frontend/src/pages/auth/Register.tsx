@@ -14,11 +14,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
-import { FaUser, FaUserTie, FaPhone, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
+import { FaUser, FaUserTie, FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
 import { Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
+import { COUNTRY_OPTIONS, detectUserCountryCode, formatInternationalPhone, getCountryOption } from './country-phone';
 
 const RegisterPage: React.FC = () => {
   const { register, googleLogin, token } = useAuth();
@@ -30,12 +31,16 @@ const RegisterPage: React.FC = () => {
   // Form fields
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('NP');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDetectingCountry, setIsDetectingCountry] = useState(false);
+
+  const selectedCountry = getCountryOption(countryCode);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -51,6 +56,27 @@ const RegisterPage: React.FC = () => {
     }
   }, [role, navigate]);
 
+  useEffect(() => {
+    let active = true;
+
+    const detectCountry = async () => {
+      setIsDetectingCountry(true);
+      try {
+        const detected = await detectUserCountryCode();
+        if (!active || !detected) return;
+        const exists = COUNTRY_OPTIONS.some((country) => country.code === detected);
+        if (exists) setCountryCode(detected);
+      } finally {
+        if (active) setIsDetectingCountry(false);
+      }
+    };
+
+    void detectCountry();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const handleRegister = async () => {
     setError(null);
     setLoading(true);
@@ -60,7 +86,7 @@ const RegisterPage: React.FC = () => {
         email: email.trim(),
         role: 'user',
       };
-      if (phone.trim()) payload.phone_number = phone.trim();
+      if (phone.trim()) payload.phone_number = formatInternationalPhone(phone, selectedCountry.dialCode);
       if (password.trim()) payload.password = password.trim();
 
       await register(payload);
@@ -159,18 +185,37 @@ const RegisterPage: React.FC = () => {
               {/* Phone */}
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaPhone className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="98XXXXXXXX"
-                    type="tel"
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                  />
+                <div className="space-y-1">
+                  <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
+                    <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
+                        aria-label="Select country"
+                      >
+                        {COUNTRY_OPTIONS.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {country.flag} {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="98XXXXXXXX"
+                      inputMode="numeric"
+                      type="tel"
+                      className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                    />
+                  </div>
+
+                  <p className="text-xs text-gray-500 px-1">
+                    {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
+                  </p>
                 </div>
               </div>
 

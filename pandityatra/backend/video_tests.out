@@ -1,0 +1,111 @@
+/usr/local/lib/python3.11/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.1.0)/charset_normalizer (3.4.5) doesn't match a supported version!
+  warnings.warn(
+Found 6 test(s).
+Creating test database for alias 'default' ('test_pandityatra_db')...
+Operations to perform:
+  Synchronize unmigrated apps: channels, channels_redis, corsheaders, daphne, drf_spectacular, messages, rest_framework, rest_framework_simplejwt, staticfiles
+  Apply all migrations: admin, adminpanel, ai, auth, bookings, chat, contenttypes, kundali, notifications, panchang, pandits, payments, recommender, reviews, samagri, services, sessions, users, video
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0001_initial... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying users.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying pandits.0001_initial... OK
+  Applying services.0001_initial... OK
+  Applying services.0002_remove_puja_duration_minutes_remove_puja_pandit_and_more... OK
+  Applying pandits.0002_pandit_user... OK
+  Applying pandits.0003_alter_pandit_user... OK
+  Applying pandits.0004_remove_pandit_full_name_pandit_date_joined_and_more... OK
+  Applying pandits.0005_alter_pandit_options_pandit_certification_file_and_more... OK
+  Applying pandits.0006_alter_pandit_options_and_more... OK
+  Applying pandits.0007_pandit_available_balance_pandit_total_earnings_and_more... OK
+  Applying pandits.0008_remove_pandit_available_balance_and_more... OK
+  Applying pandits.0009_panditservice... OK
+  Applying pandits.0010_panditavailability... OK
+  Applying adminpanel.0001_initial... OK
+  Applying adminpanel.0002_activitylog... OK
+  Applying ai.0001_initial... OK
+  Applying samagri.0001_initial... OK
+  Applying recommender.0001_initial... OK
+  Applying bookings.0001_initial... OK
+  Applying bookings.0002_rename_fee_booking_samagri_fee_booking_accepted_at_and_more... OK
+  Applying bookings.0003_bookingsamagriitem... OK
+  Applying bookings.0004_bookingsamagriitem_recommendation... OK
+  Applying bookings.0005_bookingsamagriitem_samagri_item_and_more... OK
+  Applying bookings.0006_alter_booking_service_location... OK
+  Applying bookings.0007_booking_total_fee_usd_booking_video_room_url... OK
+  Applying bookings.0008_booking_transaction_id... OK
+  Applying bookings.0009_booking_customer_location_booking_customer_timezone... OK
+  Applying bookings.0010_booking_recording_url... OK
+  Applying bookings.0011_alter_booking_unique_together... OK
+  Applying bookings.0012_booking_daily_room_name_booking_daily_room_url_and_more... OK
+  Applying chat.0001_initial... OK
+  Applying chat.0002_add_chatmessage_dual_mode... OK
+  Applying chat.0003_rename_chat_chatme_mode_idx_chat_chatme_mode_12cbdf_idx_and_more... OK
+  Applying chat.0004_chatroom_is_pre_booking_alter_chatroom_booking_and_more... OK
+  Applying kundali.0001_initial... OK
+  Applying kundali.0002_kundali_lagna_kundali_midheaven_kundalihouse... OK
+  Applying kundali.0003_kundali_ai_prediction... OK
+  Applying kundali.0004_kundali_place_alter_kundali_timezone... OK
+  Applying notifications.0001_initial... OK
+  Applying notifications.0002_alter_notification_notification_type... OK
+  Applying notifications.0003_alter_notification_notification_type... OK
+  Applying panchang.0001_initial... OK
+  Applying payments.0001_initial... OK
+  Applying payments.0002_payment_amount_npr_payment_amount_usd_and_more... OK
+  Applying payments.0003_panditwithdrawal... OK
+  Applying recommender.0002_initial... OK
+  Applying reviews.0001_initial... OK
+  Applying reviews.0002_sitereview... OK
+  Applying samagri.0002_samagriitem_stock_quantity... OK
+  Applying samagri.0003_samagriitem_created_at_samagriitem_is_active_and_more... OK
+  Applying samagri.0004_samagriitem_image... OK
+  Applying samagri.0005_shoporderitem_item_name_and_more... OK
+  Applying samagri.0006_alter_samagricategory_options_samagricategory_icon_and_more... OK
+  Applying samagri.0007_alter_samagricategory_slug... OK
+  Applying samagri.0008_wishlist... OK
+  Applying services.0003_pujacategory_puja_category... OK
+  Applying sessions.0001_initial... OK
+  Applying users.0002_remove_user_phone_user_phone_number... OK
+  Applying users.0003_user_full_name... OK
+  Applying users.0004_platformsetting... OK
+  Applying users.0005_alter_user_email... OK
+  Applying users.0006_contactmessage... OK
+  Applying users.0007_remove_user_profile_pic_url_user_profile_pic... OK
+  Applying users.0008_alter_user_role_sitecontent... OK
+  Applying video.0001_initial... OK
+  Applying video.0002_rename_video_room_videoparticipant_room_and_more... OK
+  Applying video.0003_videoroom_recording_url... OK
+  Applying video.0004_videoroom_reminder_sent_at... OK
+System check identified no issues (0 silenced).
+test_booking_acceptance_auto_creates_video_room (video.tests.BookingToVideoFlowTests.test_booking_acceptance_auto_creates_video_room) ... ok
+test_create_room_and_get_room_details (video.tests.VideoApiTests.test_create_room_and_get_room_details) ... ok
+test_patch_start_end_and_validate (video.tests.VideoApiTests.test_patch_start_end_and_validate) ... ok
+test_room_access_denied_for_non_participant (video.tests.VideoApiTests.test_room_access_denied_for_non_participant) ... ok
+test_reminder_command_sends_once_and_marks_room (video.tests.VideoReminderCommandTests.test_reminder_command_sends_once_and_marks_room) ... Video reminder run completed: sent=1, skipped=0, checked=1
+Video reminder run completed: sent=0, skipped=0, checked=0
+ok
+test_websocket_auth_signaling_and_chat_flow (video.tests.VideoWebSocketFlowTests.test_websocket_auth_signaling_and_chat_flow) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 2.634s
+
+OK
+Destroying test database for alias 'default' ('test_pandityatra_db')...
