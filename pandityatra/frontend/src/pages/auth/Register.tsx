@@ -134,6 +134,14 @@ const RegisterPage: React.FC = () => {
               </SelectItem>
             </SelectContent>
           </Select>
+
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="w-full text-sm font-semibold text-gray-600 underline underline-offset-4 hover:text-orange-600 pt-1"
+          >
+            Explore as Guest
+          </button>
         </div>
 
         {/* User Registration Form (Shows when 'user' is selected) */}

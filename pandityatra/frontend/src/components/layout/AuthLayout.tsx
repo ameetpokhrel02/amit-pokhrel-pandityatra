@@ -3,7 +3,7 @@ import panditLogo from '@/assets/images/PanditYatralogo.png';
 import sideImage from '@/assets/images/pandit_loging.webp';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { X, Calendar, User, CheckCircle2 } from 'lucide-react';
+import { X, Calendar, CheckCircle2 } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
