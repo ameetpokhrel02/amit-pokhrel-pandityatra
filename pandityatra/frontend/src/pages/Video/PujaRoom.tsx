@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
 import VideoTile from "./VideoTile"
-import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff, Send } from "lucide-react"
+import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff, Send, FileText, Maximize2, Minimize2 } from "lucide-react"
 
 type SignalPayload = {
   type: string
@@ -53,6 +53,13 @@ function getErrorMessage(err: unknown, fallback: string) {
   return fallback
 }
 
+function isPaymentValidationError(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false
+  const maybeResponse = err as { response?: { data?: { error?: string; reason?: string } } }
+  const reason = (maybeResponse.response?.data?.reason || maybeResponse.response?.data?.error || '').toLowerCase()
+  return reason.includes('payment') && reason.includes('not completed')
+}
+
 export default function PujaRoom() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -73,6 +80,11 @@ export default function PujaRoom() {
   const [recordingError, setRecordingError] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<RoomChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
+  const [participantNames, setParticipantNames] = useState<Record<string, string>>({})
+  const [callStartedAt, setCallStartedAt] = useState<number | null>(null)
+  const [recordingStartedAt, setRecordingStartedAt] = useState<number | null>(null)
+  const [nowTs, setNowTs] = useState<number>(Date.now())
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const wsRef = useRef<WebSocket | null>(null)
   const peersRef = useRef<Map<number, RTCPeerConnection>>(new Map())
@@ -80,8 +92,49 @@ export default function PujaRoom() {
   const localStreamRef = useRef<MediaStream | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const recordedChunksRef = useRef<Blob[]>([])
+  const chatBottomRef = useRef<HTMLDivElement | null>(null)
+  const videoStageRef = useRef<HTMLDivElement | null>(null)
 
   const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+  const remoteCount = Object.keys(remoteStreams).length
+  const totalParticipants = remoteCount + (localStream ? 1 : 0)
+  const callDurationLabel = useMemo(() => {
+    if (!callStartedAt) return '00:00'
+    const diff = Math.max(0, Math.floor((nowTs - callStartedAt) / 1000))
+    const mins = String(Math.floor(diff / 60)).padStart(2, '0')
+    const secs = String(diff % 60).padStart(2, '0')
+    return `${mins}:${secs}`
+  }, [callStartedAt, nowTs])
+
+  const recordingDurationLabel = useMemo(() => {
+    if (!recordingStartedAt) return '00:00'
+    const diff = Math.max(0, Math.floor((nowTs - recordingStartedAt) / 1000))
+    const mins = String(Math.floor(diff / 60)).padStart(2, '0')
+    const secs = String(diff % 60).padStart(2, '0')
+    return `${mins}:${secs}`
+  }, [nowTs, recordingStartedAt])
+
+  useEffect(() => {
+    if (!((isConnected && callStartedAt) || isRecording)) return
+    const interval = window.setInterval(() => {
+      setNowTs(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [callStartedAt, isConnected, isRecording])
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [chatMessages])
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement))
+    }
+
+    document.addEventListener('fullscreenchange', onFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
+  }, [])
   const iceServers = useMemo(() => {
     const raw = import.meta.env.VITE_ICE_SERVERS_JSON
     if (!raw) {
@@ -202,6 +255,9 @@ export default function PujaRoom() {
 
     if (data.type === 'connected') {
       myUserIdRef.current = data.user_id || user?.id || null
+      if (data.user_id && data.username) {
+        setParticipantNames((prev) => ({ ...prev, [String(data.user_id)]: data.username || `Participant ${data.user_id}` }))
+      }
       sendSignal({ type: 'join' })
       return
     }
@@ -221,8 +277,17 @@ export default function PujaRoom() {
 
     const remoteUserId = data.user_id
 
+    if (data.username) {
+      setParticipantNames((prev) => ({ ...prev, [String(remoteUserId)]: data.username || `Participant ${remoteUserId}` }))
+    }
+
     if (data.type === 'participant-left') {
       cleanupPeer(remoteUserId)
+      setParticipantNames((prev) => {
+        const next = { ...prev }
+        delete next[String(remoteUserId)]
+        return next
+      })
       return
     }
 
@@ -265,7 +330,10 @@ export default function PujaRoom() {
     peersRef.current.clear()
 
     setRemoteStreams({})
+    setParticipantNames({})
     setIsConnected(false)
+    setCallStartedAt(null)
+    setRecordingStartedAt(null)
   }, [])
 
   const stopLocalMedia = useCallback(() => {
@@ -360,6 +428,7 @@ export default function PujaRoom() {
       mediaRecorderRef.current = recorder
       setRecordingError(null)
       setIsRecording(true)
+      setRecordingStartedAt(Date.now())
     } catch (err) {
       console.error('Failed to start recording', err)
       setRecordingError('Unable to start recording')
@@ -392,6 +461,7 @@ export default function PujaRoom() {
 
     mediaRecorderRef.current = null
     setIsRecording(false)
+    setRecordingStartedAt(null)
 
     if (blob) {
       await uploadRecordingBlob(blob)
@@ -433,6 +503,18 @@ export default function PujaRoom() {
     setIsVideoOn(enabled)
   }, [isVideoOn, localStream])
 
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else if (videoStageRef.current?.requestFullscreen) {
+        await videoStageRef.current.requestFullscreen()
+      }
+    } catch (err) {
+      console.error('Fullscreen toggle failed', err)
+    }
+  }, [])
+
   const resolveRoomContext = useCallback(async () => {
     if (!id) throw new Error('Missing video room ID')
 
@@ -459,8 +541,30 @@ export default function PujaRoom() {
     }
   }, [id])
 
-  const validateRoomAccess = useCallback(async (resolvedRoomId: string) => {
-    await apiClient.get(`/video/${encodeURIComponent(resolvedRoomId)}/validate/`)
+  const validateRoomAccess = useCallback(async (resolvedRoomId: string, resolvedBookingId?: string | null) => {
+    try {
+      await apiClient.get(`/video/${encodeURIComponent(resolvedRoomId)}/validate/`)
+      return
+    } catch (err: unknown) {
+      // Fallback for stale booking.payment_status values on some environments:
+      // if payment API confirms completion for the booking owner, allow proceeding.
+      if (!resolvedBookingId || !/^\d+$/.test(resolvedBookingId) || !isPaymentValidationError(err)) {
+        throw err
+      }
+
+      try {
+        const statusResponse = await apiClient.get(`/payments/check-status/${resolvedBookingId}/`)
+        const paymentState = String(statusResponse.data?.payment_status || '').toUpperCase()
+        const bookingPaid = Boolean(statusResponse.data?.booking_paid)
+        const isCompleted = paymentState === 'COMPLETED' || bookingPaid
+
+        if (!isCompleted) {
+          throw err
+        }
+      } catch {
+        throw err
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -479,7 +583,7 @@ export default function PujaRoom() {
 
       try {
         const { resolvedRoomId, resolvedBookingId } = await resolveRoomContext()
-        await validateRoomAccess(resolvedRoomId)
+        await validateRoomAccess(resolvedRoomId, resolvedBookingId)
 
         const media = await navigator.mediaDevices.getUserMedia({
           video: true,
@@ -503,6 +607,7 @@ export default function PujaRoom() {
         activeSocket.onopen = () => {
           setIsConnected(true)
           setError(null)
+          setCallStartedAt(Date.now())
         }
 
         activeSocket.onmessage = async (event) => {
@@ -574,23 +679,23 @@ export default function PujaRoom() {
       animate={{ opacity: 1 }}
     >
       {/* Video Area */}
-      <div className="w-full lg:w-[70%] aspect-video lg:h-full p-4 bg-black">
+      <div ref={videoStageRef} className="w-full lg:w-[68%] aspect-video lg:h-full p-3 sm:p-4 bg-black">
         <Card className="h-full bg-slate-900 overflow-hidden relative border-none">
           <div className="relative w-full h-full bg-slate-900 flex items-center justify-center">
-            {Object.keys(remoteStreams).length > 0 ? (
-              <div className="w-full h-full grid grid-cols-1 gap-2 p-2">
+            {remoteCount > 0 ? (
+              <div className={`w-full h-full grid gap-2 p-2 ${remoteCount > 1 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                 {Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
                   <VideoTile
                     key={remoteUserId}
                     stream={stream}
-                    label={`Participant ${remoteUserId}`}
+                    label={participantNames[remoteUserId] || `Participant ${remoteUserId}`}
                   />
                 ))}
               </div>
             ) : (
               <div className="text-center text-slate-400">
                 <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-orange-500" />
-                <p>Waiting for another participant to join...</p>
+                <p className="text-sm sm:text-base">Waiting for another participant to join...</p>
               </div>
             )}
 
@@ -599,28 +704,40 @@ export default function PujaRoom() {
                 stream={localStream}
                 isLocal
                 label="You"
-                className="h-32 w-48 absolute bottom-4 right-4 z-10 border-2 border-orange-500 shadow-lg"
+                className="h-24 w-36 sm:h-28 sm:w-44 md:h-32 md:w-48 absolute bottom-4 right-4 z-10 border-2 border-orange-500 shadow-lg"
               />
             )}
 
-            <div className="absolute top-4 left-4 bg-black/40 text-white text-xs px-3 py-2 rounded-lg border border-white/20">
-              {isConnected ? 'Signaling Connected' : 'Connecting signaling...'}
-              {roomId ? ` • Room ${roomId}` : ''}
+            <div className="absolute top-3 left-3 sm:top-4 sm:left-4 bg-black/50 text-white text-[11px] sm:text-xs px-3 py-2 rounded-lg border border-white/20 flex items-center gap-2">
+              <span className={`inline-block h-2 w-2 rounded-full ${isConnected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+              <span>{isConnected ? 'Connected' : 'Connecting...'}</span>
+              <span className="opacity-70">•</span>
+              <span>{callDurationLabel}</span>
+              <span className="opacity-70">•</span>
+              <span>{totalParticipants} in call</span>
             </div>
 
             {(isUploadingRecording || recordingError) && (
-              <div className="absolute top-4 right-4 bg-black/50 text-white text-xs px-3 py-2 rounded-lg border border-white/20">
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-black/60 text-white text-[11px] sm:text-xs px-3 py-2 rounded-lg border border-white/20 max-w-[80%] text-right">
                 {isUploadingRecording ? 'Uploading recording...' : recordingError}
               </div>
             )}
 
+            {isRecording && (
+              <div className="absolute top-14 left-3 sm:left-4 bg-red-600/90 text-white text-[11px] sm:text-xs px-3 py-1.5 rounded-full border border-red-300/40 shadow-md flex items-center gap-2">
+                <span className="inline-block h-2 w-2 rounded-full bg-white animate-pulse" />
+                <span className="font-semibold">REC {recordingDurationLabel}</span>
+              </div>
+            )}
+
             {/* Controls */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-4 bg-black/20 backdrop-blur-md p-2 rounded-full border border-white/10">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 sm:gap-3 bg-black/35 backdrop-blur-md p-2 rounded-full border border-white/10 shadow-lg">
               <Button
                 variant={isMicOn ? "secondary" : "destructive"}
                 size="icon"
                 className="rounded-full"
                 onClick={toggleAudio}
+                title={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
               >
                 {isMicOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
               </Button>
@@ -629,6 +746,7 @@ export default function PujaRoom() {
                 size="icon"
                 className="rounded-full"
                 onClick={toggleVideo}
+                title={isVideoOn ? 'Turn camera off' : 'Turn camera on'}
               >
                 {isVideoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
               </Button>
@@ -639,12 +757,13 @@ export default function PujaRoom() {
                 onClick={() => {
                   void leaveCall()
                 }}
+                title="Leave call"
               >
                 <PhoneOff className="h-4 w-4" />
               </Button>
               <Button
                 variant={isRecording ? "destructive" : "secondary"}
-                className="rounded-full px-4"
+                className="rounded-full px-3 sm:px-4 text-xs sm:text-sm"
                 onClick={() => {
                   if (isRecording) {
                     void stopRecordingAndUpload()
@@ -654,7 +773,18 @@ export default function PujaRoom() {
                 }}
                 disabled={!localStream || isUploadingRecording}
               >
-                {isRecording ? 'Stop Rec' : 'Record'}
+                {isRecording ? `Stop ${recordingDurationLabel}` : 'Record'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                className="rounded-full"
+                onClick={() => {
+                  void toggleFullscreen()
+                }}
+                title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              >
+                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
             </div>
           </div>
@@ -662,74 +792,78 @@ export default function PujaRoom() {
       </div>
 
       {/* Info + Chat Area */}
-      <div className="w-full lg:w-[30%] h-[500px] lg:h-full p-4 flex flex-col gap-4 border-l">
-        <Card className="flex-1 p-4 relative flex flex-col border-none shadow-none">
-          <h2 className="text-xl font-bold text-[#3E2723] mb-2">Live Puja Portal</h2>
-          <div className="flex-1 rounded-lg bg-orange-50/30 dark:bg-gray-800/30 border border-orange-100 dark:border-gray-700 p-4 relative">
-            <div className="space-y-4">
-              <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-orange-500">
-                <p className="text-xs font-bold text-orange-800 uppercase">Current Room</p>
-                <p className="text-sm font-medium">{roomId || 'Preparing...'}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-emerald-500">
-                <p className="text-xs font-bold text-emerald-800 uppercase">Booking</p>
-                <p className="text-sm font-medium">{bookingId || 'Pending lookup...'}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-blue-500">
-                <p className="text-xs font-bold text-blue-800 uppercase">Location Info</p>
-                <p className="text-sm font-medium">Remote (Nepal Time: UTC+5:45)</p>
-              </div>
-            </div>
+      <div className="w-full lg:w-[32%] h-[560px] lg:h-full p-3 sm:p-4 flex flex-col gap-3 border-l">
+        <Card className="p-4 flex flex-col border-none shadow-none h-full">
+          <h2 className="text-lg sm:text-xl font-bold text-[#3E2723] mb-3">Live Puja Portal</h2>
 
-            <div className="absolute inset-0 top-[120px] flex flex-col">
-              <div className="flex-1 overflow-y-auto bg-white/70 dark:bg-gray-900/70 rounded-lg border dark:border-gray-700 p-3 space-y-2">
-                {chatMessages.length === 0 ? (
-                  <p className="text-xs text-gray-500 text-center py-6">No in-room messages yet</p>
-                ) : (
-                  chatMessages.map((msg) => {
-                    const mine = msg.userId === user?.id
-                    return (
-                      <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs ${mine ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-800 border'}`}>
-                          <div className="font-semibold text-[10px] opacity-80 mb-1">
-                            {mine ? 'You' : (msg.username || 'Participant')}
-                          </div>
-                          <div className="whitespace-pre-wrap">{msg.message}</div>
-                        </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3 mb-3">
+            <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-orange-500">
+              <p className="text-[11px] font-bold text-orange-800 uppercase">Current Room</p>
+              <p className="text-sm font-medium truncate">{roomId || 'Preparing...'}</p>
+            </div>
+            <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-emerald-500">
+              <p className="text-[11px] font-bold text-emerald-800 uppercase">Booking</p>
+              <p className="text-sm font-medium truncate">{bookingId || 'Pending lookup...'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs mb-2 px-1">
+            <span className="text-muted-foreground">In-room chat</span>
+            <span className={`font-medium ${isConnected ? 'text-emerald-600' : 'text-amber-600'}`}>
+              {isConnected ? 'Live' : 'Reconnecting...'}
+            </span>
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto bg-white/70 dark:bg-gray-900/70 rounded-lg border dark:border-gray-700 p-3 space-y-2">
+            {chatMessages.length === 0 ? (
+              <p className="text-xs text-gray-500 text-center py-6">No in-room messages yet</p>
+            ) : (
+              chatMessages.map((msg) => {
+                const mine = msg.userId === user?.id
+                return (
+                  <div key={msg.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs ${mine ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-800 border'}`}>
+                      <div className="font-semibold text-[10px] opacity-80 mb-1">
+                        {mine ? 'You' : (msg.username || 'Participant')}
                       </div>
-                    )
-                  })
-                )}
-              </div>
+                      <div className="whitespace-pre-wrap">{msg.message}</div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+            <div ref={chatBottomRef} />
+          </div>
 
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') sendChatMessage()
-                  }}
-                  placeholder="Send a message in-room..."
-                  className="flex-1 h-9 px-3 rounded-md border dark:border-gray-700 bg-white dark:bg-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-                <Button size="icon" onClick={sendChatMessage} disabled={!chatInput.trim() || !isConnected}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') sendChatMessage()
+              }}
+              placeholder="Send a message in-room..."
+              className="flex-1 h-9 px-3 rounded-md border dark:border-gray-700 bg-white dark:bg-gray-900 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+            <Button size="icon" onClick={sendChatMessage} disabled={!chatInput.trim() || !isConnected} title="Send message">
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
-          <Button variant="outline" onClick={() => window.print()} className="border-[#3E2723]">
+          <Button variant="outline" onClick={() => window.print()} className="border-[#3E2723] hover:bg-orange-50 dark:hover:bg-gray-800 rounded-xl font-semibold">
+            <FileText className="h-4 w-4 mr-2" />
             Notes
           </Button>
           <Button
             variant="destructive"
+            className="rounded-xl font-semibold shadow-sm"
             onClick={() => {
               void leaveCall()
             }}
           >
+            <PhoneOff className="h-4 w-4 mr-2" />
             Leave Room
           </Button>
         </div>

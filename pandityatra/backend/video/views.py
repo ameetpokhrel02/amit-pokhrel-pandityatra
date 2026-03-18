@@ -56,8 +56,29 @@ def _booking_time_window_ok(booking):
 def _validate_booking_video_state(booking):
     if booking.service_location != "ONLINE":
         return False, "Booking is not an online service"
-    if not booking.payment_status:
+
+    # Robust payment validation:
+    # some historical flows may complete Payment but leave booking.payment_status stale.
+    payment_ok = bool(booking.payment_status)
+    if not payment_ok:
+        try:
+            from payments.models import Payment
+
+            has_completed_payment = Payment.objects.filter(
+                booking=booking,
+                status="COMPLETED",
+            ).exists()
+
+            if has_completed_payment:
+                booking.payment_status = True
+                booking.save(update_fields=["payment_status"])
+                payment_ok = True
+        except Exception:
+            payment_ok = bool(booking.payment_status)
+
+    if not payment_ok:
         return False, "Booking payment is not completed"
+
     if booking.status not in {"ACCEPTED", "COMPLETED"}:
         return False, "Booking must be accepted before joining video room"
     return True, "ok"
