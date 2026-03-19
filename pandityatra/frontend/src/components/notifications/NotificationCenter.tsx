@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Bell, 
@@ -25,6 +26,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
   isOpen,
   onClose
 }) => {
+  const navigate = useNavigate();
   const {
     notifications,
     unreadCount,
@@ -67,7 +69,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
     
     if (notification.action_url) {
-      window.location.href = notification.action_url;
+      navigate(notification.action_url);
     }
   };
 

@@ -38,6 +38,14 @@ type RoomChatMessage = {
   timestamp?: string
 }
 
+type ConnectionQuality = 'good' | 'fair' | 'poor' | 'unknown'
+
+type MediaDeviceOption = {
+  deviceId: string
+  kind: MediaDeviceKind
+  label: string
+}
+
 function getErrorMessage(err: unknown, fallback: string) {
   if (typeof err === 'object' && err !== null) {
     const maybeResponse = err as { response?: { data?: { error?: string; reason?: string } } }
@@ -85,6 +93,15 @@ export default function PujaRoom() {
   const [recordingStartedAt, setRecordingStartedAt] = useState<number | null>(null)
   const [nowTs, setNowTs] = useState<number>(Date.now())
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isReconnecting, setIsReconnecting] = useState(false)
+  const [reconnectCountdown, setReconnectCountdown] = useState<number>(0)
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>('unknown')
+  const [devices, setDevices] = useState<MediaDeviceOption[]>([])
+  const [selectedVideoInput, setSelectedVideoInput] = useState<string>('')
+  const [selectedAudioInput, setSelectedAudioInput] = useState<string>('')
+  const [wakeLockActive, setWakeLockActive] = useState(false)
+  const [needsMediaPermission, setNeedsMediaPermission] = useState(false)
+  const [resolvedContext, setResolvedContext] = useState<{ roomId: string; bookingId: string | null } | null>(null)
 
   const wsRef = useRef<WebSocket | null>(null)
   const peersRef = useRef<Map<number, RTCPeerConnection>>(new Map())
@@ -94,8 +111,19 @@ export default function PujaRoom() {
   const recordedChunksRef = useRef<Blob[]>([])
   const chatBottomRef = useRef<HTMLDivElement | null>(null)
   const videoStageRef = useRef<HTMLDivElement | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const reconnectTimeoutRef = useRef<number | null>(null)
+  const reconnectCountdownIntervalRef = useRef<number | null>(null)
+  const shouldReconnectRef = useRef(true)
+  const heartbeatIntervalRef = useRef<number | null>(null)
+  const heartbeatTimeoutRef = useRef<number | null>(null)
+  const statsIntervalRef = useRef<number | null>(null)
+  const wakeLockRef = useRef<any>(null)
+  const roomIdRef = useRef<string | null>(null)
+  const tokenRef = useRef<string | null>(token || null)
 
-  const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+  const wsBaseUrlRaw = (import.meta.env.VITE_WS_URL || 'ws://localhost:8000') as string
+  const wsBaseUrl = wsBaseUrlRaw.replace(/\/+$/, '')
   const remoteCount = Object.keys(remoteStreams).length
   const totalParticipants = remoteCount + (localStream ? 1 : 0)
   const callDurationLabel = useMemo(() => {
@@ -135,7 +163,8 @@ export default function PujaRoom() {
     document.addEventListener('fullscreenchange', onFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', onFullscreenChange)
   }, [])
-  const iceServers = useMemo(() => {
+
+  const parseFallbackIceServers = useCallback(() => {
     const raw = import.meta.env.VITE_ICE_SERVERS_JSON
     if (!raw) {
       return [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -152,6 +181,166 @@ export default function PujaRoom() {
 
     return [{ urls: 'stun:stun.l.google.com:19302' }]
   }, [])
+
+  const [iceServers, setIceServers] = useState<RTCIceServer[]>(() => parseFallbackIceServers())
+
+  useEffect(() => {
+    tokenRef.current = token || null
+  }, [token])
+
+  const fetchIceServers = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/video/ice-servers/')
+      const servers = response.data?.ice_servers
+      if (Array.isArray(servers) && servers.length > 0) {
+        setIceServers(servers)
+        return
+      }
+    } catch {
+      // fallback to env/local STUN config
+    }
+    setIceServers(parseFallbackIceServers())
+  }, [parseFallbackIceServers])
+
+  const clearHeartbeatTimers = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      window.clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
+    }
+    if (heartbeatTimeoutRef.current) {
+      window.clearTimeout(heartbeatTimeoutRef.current)
+      heartbeatTimeoutRef.current = null
+    }
+  }, [])
+
+  const clearStatsTimer = useCallback(() => {
+    if (statsIntervalRef.current) {
+      window.clearInterval(statsIntervalRef.current)
+      statsIntervalRef.current = null
+    }
+  }, [])
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release()
+      } catch {
+        // ignore
+      }
+      wakeLockRef.current = null
+      setWakeLockActive(false)
+    }
+  }, [])
+
+  const requestWakeLock = useCallback(async () => {
+    const navAny = navigator as any
+    if (!navAny?.wakeLock || document.visibilityState !== 'visible') return
+
+    try {
+      const sentinel = await navAny.wakeLock.request('screen')
+      wakeLockRef.current = sentinel
+      setWakeLockActive(true)
+      sentinel.addEventListener('release', () => {
+        setWakeLockActive(false)
+      })
+    } catch {
+      setWakeLockActive(false)
+    }
+  }, [])
+
+  const enumerateDevices = useCallback(async () => {
+    try {
+      const list = await navigator.mediaDevices.enumerateDevices()
+      const formatted: MediaDeviceOption[] = list
+        .filter((d) => d.kind === 'audioinput' || d.kind === 'videoinput')
+        .map((d) => ({
+          deviceId: d.deviceId,
+          kind: d.kind,
+          label: d.label || `${d.kind} (${d.deviceId.slice(0, 6)})`,
+        }))
+
+      setDevices(formatted)
+
+      const firstVideo = formatted.find((d) => d.kind === 'videoinput')
+      const firstAudio = formatted.find((d) => d.kind === 'audioinput')
+
+      if (!selectedVideoInput && firstVideo) setSelectedVideoInput(firstVideo.deviceId)
+      if (!selectedAudioInput && firstAudio) setSelectedAudioInput(firstAudio.deviceId)
+    } catch {
+      // ignore device listing errors
+    }
+  }, [selectedAudioInput, selectedVideoInput])
+
+  useEffect(() => {
+    const mediaDevices = navigator.mediaDevices
+    if (!mediaDevices?.addEventListener) return
+
+    const onDeviceChange = () => {
+      void enumerateDevices()
+    }
+
+    mediaDevices.addEventListener('devicechange', onDeviceChange)
+    return () => mediaDevices.removeEventListener('devicechange', onDeviceChange)
+  }, [enumerateDevices])
+
+  const adaptOutgoingQuality = useCallback((quality: ConnectionQuality) => {
+    const maxBitrate = quality === 'poor' ? 300_000 : quality === 'fair' ? 700_000 : 1_500_000
+
+    peersRef.current.forEach((pc) => {
+      pc.getSenders().forEach(async (sender) => {
+        if (!sender.track || sender.track.kind !== 'video') return
+        const params = sender.getParameters()
+        params.encodings = params.encodings && params.encodings.length > 0 ? params.encodings : [{}]
+        params.encodings[0].maxBitrate = maxBitrate
+        try {
+          await sender.setParameters(params)
+        } catch {
+          // browser might reject unsupported params
+        }
+      })
+    })
+  }, [])
+
+  const startConnectionMonitoring = useCallback(() => {
+    clearStatsTimer()
+    statsIntervalRef.current = window.setInterval(async () => {
+      const firstPeer = peersRef.current.values().next().value as RTCPeerConnection | undefined
+      if (!firstPeer) {
+        setConnectionQuality('unknown')
+        return
+      }
+
+      try {
+        const stats = await firstPeer.getStats()
+        let rttMs = 0
+        let packetsLost = 0
+        let packetsReceived = 0
+
+        stats.forEach((report) => {
+          if (report.type === 'candidate-pair' && (report as any).state === 'succeeded' && (report as any).currentRoundTripTime) {
+            rttMs = ((report as any).currentRoundTripTime as number) * 1000
+          }
+
+          if (report.type === 'inbound-rtp' && (report as any).kind === 'video') {
+            packetsLost += ((report as any).packetsLost as number) || 0
+            packetsReceived += ((report as any).packetsReceived as number) || 0
+          }
+        })
+
+        const totalPackets = packetsLost + packetsReceived
+        const lossPct = totalPackets > 0 ? (packetsLost / totalPackets) * 100 : 0
+
+        let quality: ConnectionQuality = 'good'
+        if (rttMs > 350 || lossPct > 8) quality = 'poor'
+        else if (rttMs > 180 || lossPct > 3) quality = 'fair'
+
+        setConnectionQuality(quality)
+        adaptOutgoingQuality(quality)
+      } catch {
+        setConnectionQuality('unknown')
+      }
+    }, 5000)
+  }, [adaptOutgoingQuality, clearStatsTimer])
 
   const sendSignal = useCallback((payload: SignalPayload) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -214,6 +403,79 @@ export default function PujaRoom() {
     return pc
   }, [cleanupPeer, iceServers, sendSignal])
 
+  const replaceTrackAcrossPeers = useCallback(async (kind: 'audio' | 'video', nextTrack: MediaStreamTrack) => {
+    for (const pc of peersRef.current.values()) {
+      const sender = pc.getSenders().find((s) => s.track?.kind === kind)
+      if (sender) {
+        try {
+          await sender.replaceTrack(nextTrack)
+        } catch {
+          // ignore individual sender replacement failures
+        }
+      }
+    }
+  }, [])
+
+  const switchVideoInput = useCallback(async (deviceId: string) => {
+    if (!deviceId) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { deviceId: { exact: deviceId } },
+        audio: false,
+      })
+      const nextVideoTrack = stream.getVideoTracks()[0]
+      if (!nextVideoTrack) return
+
+      const current = localStreamRef.current
+      if (!current) return
+
+      current.getVideoTracks().forEach((t) => {
+        t.stop()
+        current.removeTrack(t)
+      })
+      current.addTrack(nextVideoTrack)
+
+      await replaceTrackAcrossPeers('video', nextVideoTrack)
+
+      localStreamRef.current = current
+      setLocalStream(new MediaStream(current.getTracks()))
+      setSelectedVideoInput(deviceId)
+      setIsVideoOn(nextVideoTrack.enabled)
+    } catch {
+      setError('Failed to switch camera')
+    }
+  }, [replaceTrackAcrossPeers])
+
+  const switchAudioInput = useCallback(async (deviceId: string) => {
+    if (!deviceId) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: false,
+        audio: { deviceId: { exact: deviceId } },
+      })
+      const nextAudioTrack = stream.getAudioTracks()[0]
+      if (!nextAudioTrack) return
+
+      const current = localStreamRef.current
+      if (!current) return
+
+      current.getAudioTracks().forEach((t) => {
+        t.stop()
+        current.removeTrack(t)
+      })
+      current.addTrack(nextAudioTrack)
+
+      await replaceTrackAcrossPeers('audio', nextAudioTrack)
+
+      localStreamRef.current = current
+      setLocalStream(new MediaStream(current.getTracks()))
+      setSelectedAudioInput(deviceId)
+      setIsMicOn(nextAudioTrack.enabled)
+    } catch {
+      setError('Failed to switch microphone')
+    }
+  }, [replaceTrackAcrossPeers])
+
   const createOfferFor = useCallback(async (remoteUserId: number) => {
     const pc = createOrGetPeer(remoteUserId)
     const offer = await pc.createOffer()
@@ -259,6 +521,14 @@ export default function PujaRoom() {
         setParticipantNames((prev) => ({ ...prev, [String(data.user_id)]: data.username || `Participant ${data.user_id}` }))
       }
       sendSignal({ type: 'join' })
+      return
+    }
+
+    if (data.type === 'heartbeat-ack') {
+      if (heartbeatTimeoutRef.current) {
+        window.clearTimeout(heartbeatTimeoutRef.current)
+        heartbeatTimeoutRef.current = null
+      }
       return
     }
 
@@ -326,15 +596,32 @@ export default function PujaRoom() {
       wsRef.current = null
     }
 
+    if (reconnectTimeoutRef.current) {
+      window.clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
+    if (reconnectCountdownIntervalRef.current) {
+      window.clearInterval(reconnectCountdownIntervalRef.current)
+      reconnectCountdownIntervalRef.current = null
+    }
+
+    clearHeartbeatTimers()
+    clearStatsTimer()
+
     peersRef.current.forEach((pc) => pc.close())
     peersRef.current.clear()
 
     setRemoteStreams({})
     setParticipantNames({})
     setIsConnected(false)
+    setIsReconnecting(false)
+    setReconnectCountdown(0)
+    setConnectionQuality('unknown')
     setCallStartedAt(null)
     setRecordingStartedAt(null)
-  }, [])
+    void releaseWakeLock()
+  }, [clearHeartbeatTimers, clearStatsTimer, releaseWakeLock])
 
   const stopLocalMedia = useCallback(() => {
     localStreamRef.current?.getTracks().forEach((track) => track.stop())
@@ -350,14 +637,30 @@ export default function PujaRoom() {
 
     try {
       const ext = blob.type.includes('mp4') ? 'mp4' : 'webm'
-      const file = new File([blob], `puja-recording-${roomId}-${Date.now()}.${ext}`, {
-        type: blob.type || 'video/webm',
+      const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+      const chunkSize = 1024 * 1024 // 1 MB
+      const totalChunks = Math.ceil(blob.size / chunkSize)
+
+      for (let i = 0; i < totalChunks; i += 1) {
+        const start = i * chunkSize
+        const end = Math.min(start + chunkSize, blob.size)
+        const chunkBlob = blob.slice(start, end, blob.type || 'video/webm')
+        const chunkFile = new File([chunkBlob], `chunk-${i}.${ext}`, { type: chunkBlob.type || blob.type || 'video/webm' })
+
+        const fd = new FormData()
+        fd.append('upload_id', uploadId)
+        fd.append('chunk_index', String(i))
+        fd.append('total_chunks', String(totalChunks))
+        fd.append('chunk', chunkFile)
+
+        await apiClient.post(`/video/rooms/${encodeURIComponent(roomId)}/upload-recording-chunk/`, fd)
+      }
+
+      await apiClient.post(`/video/rooms/${encodeURIComponent(roomId)}/finalize-recording/`, {
+        upload_id: uploadId,
+        total_chunks: totalChunks,
+        extension: ext,
       })
-
-      const formData = new FormData()
-      formData.append('recording', file)
-
-      await apiClient.post(`/video/rooms/${encodeURIComponent(roomId)}/upload-recording/`, formData)
     } catch (err: unknown) {
       console.error('Recording upload failed', err)
       setRecordingError(getErrorMessage(err, 'Recording upload failed'))
@@ -469,6 +772,7 @@ export default function PujaRoom() {
   }, [uploadRecordingBlob])
 
   const leaveCall = useCallback(async () => {
+    shouldReconnectRef.current = false
     if (isRecording) {
       await stopRecordingAndUpload()
     }
@@ -486,18 +790,20 @@ export default function PujaRoom() {
   }, [chatInput, sendSignal])
 
   const toggleAudio = useCallback(() => {
-    if (!localStream) return
+    const activeStream = localStreamRef.current || localStream
+    if (!activeStream) return
     const enabled = !isMicOn
-    localStream.getAudioTracks().forEach((track) => {
+    activeStream.getAudioTracks().forEach((track) => {
       track.enabled = enabled
     })
     setIsMicOn(enabled)
   }, [isMicOn, localStream])
 
   const toggleVideo = useCallback(() => {
-    if (!localStream) return
+    const activeStream = localStreamRef.current || localStream
+    if (!activeStream) return
     const enabled = !isVideoOn
-    localStream.getVideoTracks().forEach((track) => {
+    activeStream.getVideoTracks().forEach((track) => {
       track.enabled = enabled
     })
     setIsVideoOn(enabled)
@@ -513,6 +819,18 @@ export default function PujaRoom() {
     } catch (err) {
       console.error('Fullscreen toggle failed', err)
     }
+  }, [])
+
+  const isPermissionDeniedError = useCallback((err: unknown): boolean => {
+    if (!err || typeof err !== 'object') return false
+
+    const maybeName = (err as { name?: string }).name
+    if (maybeName === 'NotAllowedError' || maybeName === 'PermissionDeniedError') {
+      return true
+    }
+
+    const message = ((err as { message?: string }).message || '').toLowerCase()
+    return message.includes('permission denied') || message.includes('notallowederror')
   }, [])
 
   const resolveRoomContext = useCallback(async () => {
@@ -567,13 +885,210 @@ export default function PujaRoom() {
     }
   }, [])
 
+  const scheduleReconnect = useCallback(() => {
+    if (!shouldReconnectRef.current || !roomIdRef.current || !tokenRef.current) return
+    if (reconnectTimeoutRef.current) return
+
+    const attempt = reconnectAttemptsRef.current + 1
+    reconnectAttemptsRef.current = attempt
+    const capped = Math.min(30, Math.pow(2, Math.min(attempt, 5)))
+
+    setIsReconnecting(true)
+    setReconnectCountdown(capped)
+
+    if (reconnectCountdownIntervalRef.current) {
+      window.clearInterval(reconnectCountdownIntervalRef.current)
+      reconnectCountdownIntervalRef.current = null
+    }
+
+    reconnectCountdownIntervalRef.current = window.setInterval(() => {
+      setReconnectCountdown((prev) => {
+        if (prev <= 1) {
+          if (reconnectCountdownIntervalRef.current) {
+            window.clearInterval(reconnectCountdownIntervalRef.current)
+            reconnectCountdownIntervalRef.current = null
+          }
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    reconnectTimeoutRef.current = window.setTimeout(() => {
+      reconnectTimeoutRef.current = null
+      setIsReconnecting(false)
+      const rid = roomIdRef.current
+      const tkn = tokenRef.current
+      if (!rid || !tkn) return
+      const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(rid)}/?token=${encodeURIComponent(tkn)}`
+      const socket = new WebSocket(wsUrl)
+      wsRef.current = socket
+
+      socket.onopen = () => {
+        reconnectAttemptsRef.current = 0
+        setIsConnected(true)
+        setError(null)
+        setIsReconnecting(false)
+        setReconnectCountdown(0)
+        if (reconnectCountdownIntervalRef.current) {
+          window.clearInterval(reconnectCountdownIntervalRef.current)
+          reconnectCountdownIntervalRef.current = null
+        }
+        startConnectionMonitoring()
+        void requestWakeLock()
+
+        clearHeartbeatTimers()
+        heartbeatIntervalRef.current = window.setInterval(() => {
+          if (wsRef.current?.readyState !== WebSocket.OPEN) return
+          wsRef.current.send(JSON.stringify({ type: 'heartbeat' }))
+          if (heartbeatTimeoutRef.current) window.clearTimeout(heartbeatTimeoutRef.current)
+          heartbeatTimeoutRef.current = window.setTimeout(() => {
+            wsRef.current?.close()
+          }, 12000)
+        }, 15000)
+      }
+
+      socket.onmessage = async (event) => {
+        try {
+          const data: SignalPayload = JSON.parse(event.data)
+          await handleSignalMessage(data)
+        } catch (e) {
+          console.error('Failed to handle signaling message', e)
+        }
+      }
+
+      socket.onerror = () => {
+        setError('WebSocket signaling connection failed')
+        setIsConnected(false)
+      }
+
+      socket.onclose = () => {
+        if (wsRef.current === socket) wsRef.current = null
+        setIsConnected(false)
+        clearHeartbeatTimers()
+        clearStatsTimer()
+        scheduleReconnect()
+      }
+    }, capped * 1000)
+  }, [clearHeartbeatTimers, clearStatsTimer, handleSignalMessage, requestWakeLock, startConnectionMonitoring, wsBaseUrl])
+
+  const connectSignaling = useCallback((resolvedRoomId: string, currentToken: string) => {
+    const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(resolvedRoomId)}/?token=${encodeURIComponent(currentToken)}`
+    console.info('[PujaRoom] Connecting websocket', {
+      wsUrl,
+      roomId: resolvedRoomId,
+      hasToken: Boolean(currentToken),
+      tokenLength: currentToken?.length || 0,
+    })
+    const socket = new WebSocket(wsUrl)
+    wsRef.current = socket
+
+    socket.onopen = () => {
+      reconnectAttemptsRef.current = 0
+      setIsConnected(true)
+      setError(null)
+      setIsReconnecting(false)
+      setReconnectCountdown(0)
+      if (reconnectCountdownIntervalRef.current) {
+        window.clearInterval(reconnectCountdownIntervalRef.current)
+        reconnectCountdownIntervalRef.current = null
+      }
+      setCallStartedAt((prev) => prev || Date.now())
+      startConnectionMonitoring()
+      void requestWakeLock()
+
+      clearHeartbeatTimers()
+      heartbeatIntervalRef.current = window.setInterval(() => {
+        if (wsRef.current?.readyState !== WebSocket.OPEN) return
+        wsRef.current.send(JSON.stringify({ type: 'heartbeat' }))
+        if (heartbeatTimeoutRef.current) window.clearTimeout(heartbeatTimeoutRef.current)
+        heartbeatTimeoutRef.current = window.setTimeout(() => {
+          wsRef.current?.close()
+        }, 12000)
+      }, 15000)
+    }
+
+    socket.onmessage = async (event) => {
+      try {
+        const data: SignalPayload = JSON.parse(event.data)
+        await handleSignalMessage(data)
+      } catch (e) {
+        console.error('Failed to handle signaling message', e)
+      }
+    }
+
+    socket.onerror = () => {
+      console.error('[PujaRoom] WebSocket error', { wsUrl, roomId: resolvedRoomId })
+      setError('WebSocket signaling connection failed')
+      setIsConnected(false)
+    }
+
+    socket.onclose = () => {
+      console.warn('[PujaRoom] WebSocket closed', {
+        wsUrl,
+        roomId: resolvedRoomId,
+        shouldReconnect: shouldReconnectRef.current,
+      })
+      if (wsRef.current === socket) {
+        wsRef.current = null
+      }
+      setIsConnected(false)
+      clearHeartbeatTimers()
+      clearStatsTimer()
+      if (shouldReconnectRef.current) {
+        scheduleReconnect()
+      }
+    }
+  }, [clearHeartbeatTimers, clearStatsTimer, handleSignalMessage, requestWakeLock, scheduleReconnect, startConnectionMonitoring, wsBaseUrl])
+
+  const startMediaAndConnect = useCallback(
+    async (resolvedRoomId: string, resolvedBookingId: string | null, currentToken: string) => {
+      const media = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      })
+
+      localStreamRef.current = media
+      setLocalStream(media)
+      setRoomId(resolvedRoomId)
+      setBookingId(resolvedBookingId)
+      roomIdRef.current = resolvedRoomId
+      tokenRef.current = currentToken
+      setNeedsMediaPermission(false)
+
+      await enumerateDevices()
+      void requestWakeLock()
+      connectSignaling(resolvedRoomId, currentToken)
+    },
+    [connectSignaling, enumerateDevices, requestWakeLock]
+  )
+
+  const retryMediaPermission = useCallback(async () => {
+    if (!token || !resolvedContext) return
+
+    setLoading(true)
+    setError(null)
+    try {
+      await startMediaAndConnect(resolvedContext.roomId, resolvedContext.bookingId, token)
+    } catch (err: unknown) {
+      if (isPermissionDeniedError(err)) {
+        setNeedsMediaPermission(true)
+        setError('Camera/Microphone permission is required to join the call. Please allow access and try again.')
+      } else {
+        setError(getErrorMessage(err, 'Unable to start media devices'))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [isPermissionDeniedError, resolvedContext, startMediaAndConnect, token])
+
   useEffect(() => {
     let isMounted = true
-    let activeSocket: WebSocket | null = null
 
     const init = async () => {
       setLoading(true)
       setError(null)
+      shouldReconnectRef.current = true
 
       if (!token) {
         setError('Authentication required for video call')
@@ -582,57 +1097,26 @@ export default function PujaRoom() {
       }
 
       try {
+        await fetchIceServers()
         const { resolvedRoomId, resolvedBookingId } = await resolveRoomContext()
-        await validateRoomAccess(resolvedRoomId, resolvedBookingId)
-
-        const media = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: true,
+        console.info('[PujaRoom] Resolved room context', {
+          routeParamId: id,
+          resolvedRoomId,
+          resolvedBookingId,
+          hasToken: Boolean(token),
         })
+        await validateRoomAccess(resolvedRoomId, resolvedBookingId)
+        setResolvedContext({ roomId: resolvedRoomId, bookingId: resolvedBookingId })
 
-        if (!isMounted) {
-          media.getTracks().forEach((t) => t.stop())
-          return
-        }
-
-        localStreamRef.current = media
-        setLocalStream(media)
-        setRoomId(resolvedRoomId)
-        setBookingId(resolvedBookingId)
-
-        const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(resolvedRoomId)}/?token=${encodeURIComponent(token)}`
-        activeSocket = new WebSocket(wsUrl)
-        wsRef.current = activeSocket
-
-        activeSocket.onopen = () => {
-          setIsConnected(true)
-          setError(null)
-          setCallStartedAt(Date.now())
-        }
-
-        activeSocket.onmessage = async (event) => {
-          try {
-            const data: SignalPayload = JSON.parse(event.data)
-            await handleSignalMessage(data)
-          } catch (e) {
-            console.error('Failed to handle signaling message', e)
-          }
-        }
-
-        activeSocket.onerror = () => {
-          setError('WebSocket signaling connection failed')
-          setIsConnected(false)
-        }
-
-        activeSocket.onclose = () => {
-          if (wsRef.current === activeSocket) {
-            wsRef.current = null
-          }
-          setIsConnected(false)
-        }
+        await startMediaAndConnect(resolvedRoomId, resolvedBookingId, token)
       } catch (err: unknown) {
         console.error(err)
-        setError(getErrorMessage(err, 'Unable to start WebRTC call'))
+        if (isPermissionDeniedError(err)) {
+          setNeedsMediaPermission(true)
+          setError('Camera/Microphone permission is required to join the call. Click "Enable Camera & Mic" and allow access.')
+        } else {
+          setError(getErrorMessage(err, 'Unable to start WebRTC call'))
+        }
       } finally {
         if (isMounted) setLoading(false)
       }
@@ -642,14 +1126,31 @@ export default function PujaRoom() {
 
     return () => {
       isMounted = false
+      shouldReconnectRef.current = false
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop()
       }
-      activeSocket?.close()
       closeAll()
       stopLocalMedia()
     }
-  }, [closeAll, handleSignalMessage, resolveRoomContext, stopLocalMedia, token, validateRoomAccess, wsBaseUrl])
+  }, [closeAll, fetchIceServers, isPermissionDeniedError, resolveRoomContext, startMediaAndConnect, stopLocalMedia, token, validateRoomAccess])
+
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        void requestWakeLock()
+        const hasSocket = wsRef.current && wsRef.current.readyState === WebSocket.OPEN
+        if (!hasSocket && shouldReconnectRef.current && roomIdRef.current && tokenRef.current) {
+          scheduleReconnect()
+        }
+      } else {
+        void releaseWakeLock()
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [releaseWakeLock, requestWakeLock, scheduleReconnect])
 
   if (loading) {
     return <div className="p-10 flex items-center justify-center h-screen text-orange-600 font-bold gap-2"><Loader2 className="animate-spin" /> Connecting to Sacred Space...</div>
@@ -663,6 +1164,9 @@ export default function PujaRoom() {
           <h2 className="text-2xl font-bold text-orange-700">Video Service Unavailable</h2>
           <p className="text-gray-700 dark:text-gray-300 text-center max-w-md">{error}</p>
           <div className="flex gap-3 mt-2">
+            {needsMediaPermission && (
+              <Button onClick={() => void retryMediaPermission()}>Enable Camera & Mic</Button>
+            )}
             <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
             <Button variant="destructive" onClick={() => navigate('/my-bookings')}>Return to My Bookings</Button>
             <a href="/contact" className="text-primary underline text-sm flex items-center">Contact Support</a>
@@ -715,11 +1219,25 @@ export default function PujaRoom() {
               <span>{callDurationLabel}</span>
               <span className="opacity-70">•</span>
               <span>{totalParticipants} in call</span>
+              <span className="opacity-70">•</span>
+              <span>
+                Quality:{' '}
+                {connectionQuality === 'good' && <span className="text-emerald-300">Good</span>}
+                {connectionQuality === 'fair' && <span className="text-amber-300">Fair</span>}
+                {connectionQuality === 'poor' && <span className="text-red-300">Poor</span>}
+                {connectionQuality === 'unknown' && <span className="text-slate-300">Unknown</span>}
+              </span>
             </div>
 
             {(isUploadingRecording || recordingError) && (
               <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-black/60 text-white text-[11px] sm:text-xs px-3 py-2 rounded-lg border border-white/20 max-w-[80%] text-right">
                 {isUploadingRecording ? 'Uploading recording...' : recordingError}
+              </div>
+            )}
+
+            {isReconnecting && (
+              <div className="absolute top-14 right-3 sm:right-4 bg-amber-500/90 text-black text-[11px] sm:text-xs px-3 py-1.5 rounded-full border border-amber-200/60 shadow-md">
+                Reconnecting in {reconnectCountdown}s...
               </div>
             )}
 
@@ -804,6 +1322,43 @@ export default function PujaRoom() {
             <div className="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-sm border-l-4 border-emerald-500">
               <p className="text-[11px] font-bold text-emerald-800 uppercase">Booking</p>
               <p className="text-sm font-medium truncate">{bookingId || 'Pending lookup...'}</p>
+            </div>
+          </div>
+
+          <div className="mb-3 grid grid-cols-1 gap-2">
+            <div className="text-[11px] text-muted-foreground px-1 flex items-center justify-between">
+              <span>Connection tools</span>
+              <span className={wakeLockActive ? 'text-emerald-600' : 'text-amber-600'}>
+                {wakeLockActive ? 'Wake lock active' : 'Wake lock unavailable'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+              <select
+                value={selectedVideoInput}
+                onChange={(e) => {
+                  void switchVideoInput(e.target.value)
+                }}
+                className="h-9 rounded-md border dark:border-gray-700 bg-white dark:bg-gray-900 px-2 text-xs"
+              >
+                <option value="">Select camera</option>
+                {devices.filter((d) => d.kind === 'videoinput').map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                ))}
+              </select>
+
+              <select
+                value={selectedAudioInput}
+                onChange={(e) => {
+                  void switchAudioInput(e.target.value)
+                }}
+                className="h-9 rounded-md border dark:border-gray-700 bg-white dark:bg-gray-900 px-2 text-xs"
+              >
+                <option value="">Select microphone</option>
+                {devices.filter((d) => d.kind === 'audioinput').map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>{d.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 

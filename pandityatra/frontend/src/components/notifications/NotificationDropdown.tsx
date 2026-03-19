@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Bell, 
@@ -31,6 +32,7 @@ interface NotificationDropdownProps {
 }
 
 export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ trigger }) => {
+  const navigate = useNavigate();
   const {
     notifications,
     unreadCount,
@@ -92,7 +94,7 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ trig
       markAsRead(notification.id);
     }
     if (notification.action_url) {
-      window.location.href = notification.action_url;
+      navigate(notification.action_url);
     }
   };
 

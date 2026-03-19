@@ -325,6 +325,30 @@ ESEWA_API_URL = os.environ.get('ESEWA_API_URL', 'https://epay.esewa.com.np')
 DAILY_API_KEY = os.environ.get('DAILY_API_KEY', '')
 DAILY_ENABLE_RECORDING = os.environ.get('DAILY_ENABLE_RECORDING', 'False').lower() in ('true', '1', 'yes', 'on')
 
+# WebRTC TURN/STUN (Coturn)
+TURN_ENABLED = os.environ.get('TURN_ENABLED', 'False').lower() in ('true', '1', 'yes', 'on')
+TURN_HOST = os.environ.get('TURN_HOST', 'localhost')
+TURN_PUBLIC_HOST = os.environ.get('TURN_PUBLIC_HOST', TURN_HOST)
+TURN_PORT = int(os.environ.get('TURN_PORT', '3478'))
+TURN_TLS_PORT = int(os.environ.get('TURN_TLS_PORT', '5349'))
+TURN_USERNAME = os.environ.get('TURN_USERNAME', '')
+TURN_PASSWORD = os.environ.get('TURN_PASSWORD', '')
+TURN_REALM = os.environ.get('TURN_REALM', 'pandityatra.local')
+TURN_TRANSPORTS = [
+    t.strip().lower()
+    for t in os.environ.get('TURN_TRANSPORTS', 'udp,tcp').split(',')
+    if t.strip().lower() in {'udp', 'tcp'}
+]
+# Comma-separated list of STUN urls, fallback keeps free public STUN for bootstrap.
+STUN_URLS = [
+    s.strip() for s in os.environ.get('STUN_URLS', 'stun:stun.l.google.com:19302').split(',') if s.strip()
+]
+
+# Web Push (VAPID)
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_ADMIN_EMAIL = os.environ.get('VAPID_ADMIN_EMAIL', 'mailto:admin@pandityatra.com')
+
 # Frontend URL (for payment redirects)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 

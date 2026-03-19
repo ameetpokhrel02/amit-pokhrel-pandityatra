@@ -6,7 +6,7 @@ export interface Notification {
   id: number;
   title: string;
   message: string;
-  type: 'booking' | 'payment' | 'puja' | 'system' | 'reminder';
+  type: 'booking' | 'payment' | 'puja' | 'system' | 'reminder' | 'review';
   is_read: boolean;
   created_at: string;
   booking_id?: number;
@@ -31,6 +31,17 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(false);
   const [authFailed, setAuthFailed] = useState(false);
 
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
   // Check browser notification permission on mount
   useEffect(() => {
     if ('Notification' in window) {
@@ -43,23 +54,50 @@ export const useNotifications = () => {
     }
   }, []);
 
-  // Fetch notifications when user is authenticated
-  useEffect(() => {
-    if (user && token && !authFailed) {
-      fetchNotifications();
-      // Set up periodic refresh
-      const interval = setInterval(fetchNotifications, 30000); // Every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [user, token, authFailed]);
-
   useEffect(() => {
     // Reset auth failure flag when token changes (e.g. relogin/refresh)
     setAuthFailed(false);
   }, [token]);
 
-  const fetchNotifications = async () => {
-    if (!token) return;
+  const registerPushSubscription = useCallback(async () => {
+    if (!token || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      const sw = await navigator.serviceWorker.ready;
+      const existing = await sw.pushManager.getSubscription();
+
+      let subscription = existing;
+      if (!subscription) {
+        let vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+        if (!vapidPublicKey) {
+          const keyResp = await apiClient.get('/notifications/push-vapid-key/');
+          vapidPublicKey = keyResp?.data?.vapid_public_key;
+        }
+
+        if (!vapidPublicKey) {
+          return;
+        }
+
+        subscription = await sw.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        });
+      }
+
+      const subscriptionJson = subscription.toJSON();
+      await apiClient.post('/notifications/push-tokens/', {
+        token: subscription.endpoint,
+        device_type: 'web',
+        endpoint: subscription.endpoint,
+        subscription: subscriptionJson,
+      });
+    } catch (error) {
+      console.warn('Push subscription registration failed:', error);
+    }
+  }, [token]);
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token || authFailed) return;
     
     try {
       setLoading(true);
@@ -72,13 +110,24 @@ export const useNotifications = () => {
       const status = (error as any)?.response?.status;
       if (status === 401) {
         setAuthFailed(true);
+        setNotifications([]);
+        setUnreadCount(0);
         return;
       }
       console.error('Failed to fetch notifications:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, authFailed]);
+
+  // Fetch notifications when user is authenticated
+  useEffect(() => {
+    if (user && token && !authFailed) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user, token, authFailed, fetchNotifications]);
 
   const requestPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
@@ -106,12 +155,22 @@ export const useNotifications = () => {
         default: result === 'default'
       });
 
+      if (granted) {
+        await registerPushSubscription();
+      }
+
       return granted;
     } catch (error) {
       console.error('Error requesting notification permission:', error);
       return false;
     }
   };
+
+  useEffect(() => {
+    if (permission.granted && user && token && !authFailed) {
+      registerPushSubscription();
+    }
+  }, [permission.granted, user, token, authFailed, registerPushSubscription]);
 
   const showBrowserNotification = (notification: Notification) => {
     if (!permission.granted) return;
@@ -227,6 +286,8 @@ export const useNotifications = () => {
         return '⏰';
       case 'system':
         return '🔔';
+      case 'review':
+        return '⭐';
       default:
         return '📢';
     }
@@ -244,6 +305,8 @@ export const useNotifications = () => {
         return 'yellow';
       case 'system':
         return 'gray';
+      case 'review':
+        return 'purple';
       default:
         return 'blue';
     }

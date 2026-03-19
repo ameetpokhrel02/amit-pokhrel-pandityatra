@@ -21,6 +21,8 @@ class Notification(models.Model):
         ('PANDIT_REJECTED', 'Pandit Rejected'),
         ('REMINDER', 'Reminder'),
         ('PUJA_ROOM_READY', 'Puja Room Ready'),
+        ('VIDEO_CALL_INCOMING', 'Incoming Video Call'),
+        ('RECORDING_READY_REVIEW', 'Recording Ready (Review Prompt)'),
     ]
     
     user = models.ForeignKey(
@@ -64,3 +66,45 @@ class Notification(models.Model):
         """Convert to Nepal time"""
         nepal_tz = pytz.timezone(self.user_timezone)
         return self.created_at.astimezone(nepal_tz)
+
+
+class PushNotificationToken(models.Model):
+    """
+    Stores push tokens/subscriptions for web/mobile devices.
+
+    For web push, `subscription` stores endpoint/keys payload.
+    For mobile push (FCM/APNS), `token` can store device token.
+    """
+
+    DEVICE_TYPES = [
+        ('web', 'Web'),
+        ('android', 'Android'),
+        ('ios', 'iOS'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='push_tokens'
+    )
+    token = models.CharField(max_length=500)
+    device_type = models.CharField(max_length=20, choices=DEVICE_TYPES, default='web')
+    endpoint = models.URLField(max_length=500, blank=True, null=True)
+    subscription = models.JSONField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['user', 'device_type']),
+            models.Index(fields=['token']),
+            models.Index(fields=['is_active']),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'token'], name='unique_user_push_token')
+        ]
+
+    def __str__(self):
+        return f"PushToken<{self.user_id}:{self.device_type}>"

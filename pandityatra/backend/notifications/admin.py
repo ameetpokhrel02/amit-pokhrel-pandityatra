@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Notification
+from .models import Notification, PushNotificationToken
 
 
 @admin.register(Notification)
@@ -26,3 +26,11 @@ class NotificationAdmin(admin.ModelAdmin):
             'fields': ('user_timezone', 'created_at')
         }),
     )
+
+
+@admin.register(PushNotificationToken)
+class PushNotificationTokenAdmin(admin.ModelAdmin):
+    list_display = ['id', 'user', 'device_type', 'is_active', 'updated_at']
+    list_filter = ['device_type', 'is_active', 'updated_at']
+    search_fields = ['user__username', 'user__email', 'token', 'endpoint']
+    readonly_fields = ['created_at', 'updated_at']

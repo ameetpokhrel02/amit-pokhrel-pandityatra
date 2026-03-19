@@ -1,7 +1,26 @@
 """
 Notification Service - Creates notifications for various events
 """
-from .models import Notification
+import json
+import logging
+import importlib
+from datetime import timedelta
+
+from django.conf import settings
+from django.utils import timezone
+
+from .models import Notification, PushNotificationToken
+
+
+logger = logging.getLogger(__name__)
+
+
+def _get_webpush_callable():
+    try:
+        module = importlib.import_module('pywebpush')
+        return getattr(module, 'webpush', None), getattr(module, 'WebPushException', Exception)
+    except Exception:
+        return None, Exception
 
 
 def create_notification(user, notification_type, title, message, booking=None, title_ne=None, message_ne=None):
@@ -20,7 +39,7 @@ def create_notification(user, notification_type, title, message, booking=None, t
     Returns:
         The created Notification object
     """
-    return Notification.objects.create(
+    notification = Notification.objects.create(
         user=user,
         notification_type=notification_type,
         title=title,
@@ -29,6 +48,82 @@ def create_notification(user, notification_type, title, message, booking=None, t
         title_ne=title_ne,
         message_ne=message_ne
     )
+
+    _send_push_for_notification(notification)
+    return notification
+
+
+def register_push_token(user, token, device_type='web', endpoint=None, subscription=None):
+    """Create or update user push token/subscription."""
+    if not token:
+        return None
+
+    obj, _ = PushNotificationToken.objects.update_or_create(
+        user=user,
+        token=token,
+        defaults={
+            'device_type': device_type or 'web',
+            'endpoint': endpoint,
+            'subscription': subscription,
+            'is_active': True,
+        }
+    )
+    return obj
+
+
+def _build_push_payload(notification):
+    target_url = '/my-bookings'
+    if notification.booking_id:
+        if notification.notification_type in {'PUJA_ROOM_READY', 'VIDEO_CALL_INCOMING'}:
+            target_url = f'/video/room/{notification.booking_id}'
+        elif notification.notification_type == 'RECORDING_READY_REVIEW':
+            target_url = f'/my-bookings/{notification.booking_id}?tab=recording-review'
+
+    return {
+        'title': notification.title,
+        'body': notification.message,
+        'notification_id': notification.id,
+        'notification_type': notification.notification_type,
+        'booking_id': notification.booking_id,
+        'url': target_url,
+    }
+
+
+def _send_push_for_notification(notification):
+    """Best-effort web push send for active user tokens."""
+    webpush_callable, webpush_exception = _get_webpush_callable()
+
+    if not settings.VAPID_PUBLIC_KEY or not settings.VAPID_PRIVATE_KEY or webpush_callable is None:
+        return
+
+    tokens = PushNotificationToken.objects.filter(user=notification.user, is_active=True)
+    if not tokens.exists():
+        return
+
+    payload = json.dumps(_build_push_payload(notification))
+
+    for token in tokens:
+        subscription = token.subscription
+        if not subscription and token.endpoint:
+            subscription = {'endpoint': token.endpoint}
+        if not subscription:
+            continue
+
+        try:
+            webpush_callable(
+                subscription_info=subscription,
+                data=payload,
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_claims={'sub': settings.VAPID_ADMIN_EMAIL},
+            )
+        except webpush_exception as exc:
+            status_code = getattr(getattr(exc, 'response', None), 'status_code', None)
+            if status_code in (404, 410):
+                token.is_active = False
+                token.save(update_fields=['is_active', 'updated_at'])
+            logger.warning('Web push failed for token %s: %s', token.id, exc)
+        except Exception as exc:
+            logger.warning('Unexpected push error for token %s: %s', token.id, exc)
 
 
 def notify_booking_created(booking):
@@ -181,6 +276,51 @@ def notify_puja_room_ready(booking):
         title='Puja Room Ready (Pandit)',
         message=f'The room for {booking.service_name} is ready. Start when scheduled.',
         booking=booking
+    )
+
+
+def notify_incoming_video_call(booking, caller_user):
+    """Notify the opposite participant that call is incoming."""
+    caller_id = getattr(caller_user, 'id', None)
+    recipient = booking.pandit.user if booking.user_id == caller_id else booking.user
+
+    # anti-spam guard: do not create repeated incoming-call notifications within 30 seconds
+    recent_cutoff = timezone.now() - timedelta(seconds=30)
+    exists_recent = Notification.objects.filter(
+        user=recipient,
+        booking=booking,
+        notification_type='VIDEO_CALL_INCOMING',
+        created_at__gte=recent_cutoff,
+    ).exists()
+    if exists_recent:
+        return None
+
+    caller_name = caller_user.full_name or caller_user.username
+    return create_notification(
+        user=recipient,
+        notification_type='VIDEO_CALL_INCOMING',
+        title='Incoming Video Call',
+        message=f'{caller_name} is calling you for {booking.service_name}. Join now.',
+        booking=booking,
+    )
+
+
+def notify_recording_ready_review(booking):
+    """Notify customer to review recording and leave rating after upload."""
+    create_notification(
+        user=booking.user,
+        notification_type='RECORDING_READY_REVIEW',
+        title='Recording Ready - Please Review',
+        message=f'Your {booking.service_name} recording is ready. Please review and rate your session.',
+        booking=booking,
+    )
+
+    create_notification(
+        user=booking.pandit.user,
+        notification_type='RECORDING_READY_REVIEW',
+        title='Recording Uploaded',
+        message=f'The recording for {booking.service_name} is ready for customer review.',
+        booking=booking,
     )
 
 

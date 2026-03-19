@@ -2,10 +2,15 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # ICE config for frontend WebRTC clients
+    path("ice-servers/", views.ice_servers),
+
     # Step 2 - WebRTC room REST APIs
     path("rooms/create/", views.create_room_auto),
     path("rooms/<str:room_id>/", views.room_details),
     path("rooms/<str:room_id>/upload-recording/", views.upload_recording),
+    path("rooms/<str:room_id>/upload-recording-chunk/", views.upload_recording_chunk),
+    path("rooms/<str:room_id>/finalize-recording/", views.finalize_recording_upload),
     path("rooms/<str:room_id>/start/", views.start_room),
     path("rooms/<str:room_id>/end/", views.end_room),
     path("<str:room_id>/validate/", views.validate_room_access),

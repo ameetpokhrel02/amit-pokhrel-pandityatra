@@ -6,6 +6,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
 
 from chat.models import ChatMessage
+from notifications.services import notify_incoming_video_call
 from .models import VideoParticipant, VideoRoom
 
 
@@ -50,6 +51,7 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         await self._upsert_participant(self.room.id)
+        await self._notify_incoming_call(self.room.id)
 
         await self.send(
             text_data=json.dumps(
@@ -240,6 +242,11 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
 
         participant.left_at = None
         participant.save(update_fields=["left_at"])
+
+    @database_sync_to_async
+    def _notify_incoming_call(self, room_id: int):
+        room = VideoRoom.objects.select_related("booking", "booking__pandit", "booking__user").get(id=room_id)
+        notify_incoming_video_call(room.booking, self.user)
 
     @database_sync_to_async
     def _mark_participant_left(self, room_id: int):

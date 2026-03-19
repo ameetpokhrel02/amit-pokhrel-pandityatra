@@ -53,6 +53,20 @@ yarn-debug.log*
 # ===============================
 docker-volumes/
 postgres_data/
+docker-compose.override.yml
+
+# ===============================
+# 4.1 COTURN (runtime/secrets only)
+# Keep coturn/turnserver.conf tracked (template/default config)
+# ===============================
+coturn/*.log
+coturn/turnserver.local.conf
+coturn/*.pem
+coturn/*.crt
+coturn/*.key
+coturn/*.p12
+coturn/*.pfx
+coturn/db/
 
 # ===============================
 # 5. EDITORS

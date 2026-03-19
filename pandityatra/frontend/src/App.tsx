@@ -357,8 +357,21 @@ function App() {
                     <Route path="/payment/esewa/verify" element={<EsewaVerify />} />
 
                     {/* 🎥 Video */}
-                    <Route path="/puja-room/:id" element={<PujaRoom />} />
-                    <Route path="/video/:id" element={<PujaRoom />} />
+                    <Route path="/puja-room/:id" element={
+                      <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
+                        <PujaRoom />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/video/:id" element={
+                      <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
+                        <PujaRoom />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/video/room/:id" element={
+                      <ProtectedRoute allowedRoles={['user', 'pandit', 'admin']}>
+                        <PujaRoom />
+                      </ProtectedRoute>
+                    } />
                     <Route path="/recording/:bookingId" element={<RecordingView />} />
 
                     {/* 💬 Chat */}

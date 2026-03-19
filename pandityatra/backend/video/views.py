@@ -1,5 +1,7 @@
 import logging
+import shutil
 from datetime import datetime, timedelta, timezone as dt_timezone
+from pathlib import Path
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -8,16 +10,29 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
+from django.conf import settings
 
 from .models import VideoRoom, VideoParticipant
 from .serializers import VideoRoomDetailSerializer, VideoRoomUpdateSerializer
 from .permissions import can_access_booking
 from notifications.email_utils import send_recording_ready_email
+from notifications.services import notify_recording_ready_review
 from bookings.models import Booking
 from .utils import daily_service
 from .services.room_creator import ensure_video_room_for_booking
 
 logger = logging.getLogger(__name__)
+
+
+def _recording_chunks_dir(room_id: int, upload_id: str) -> Path:
+    base = Path(settings.MEDIA_ROOT) / "recordings" / "chunks" / str(room_id) / upload_id
+    base.mkdir(parents=True, exist_ok=True)
+    return base
+
+
+def _safe_ext(ext: str) -> str:
+    cleaned = (ext or "webm").lower().strip().replace(".", "")
+    return cleaned if cleaned in {"webm", "mp4", "mkv"} else "webm"
 
 
 def _resolve_room_or_404(room_id):
@@ -84,6 +99,50 @@ def _validate_booking_video_state(booking):
     return True, "ok"
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def ice_servers(request):
+    """
+    Return ICE server config for WebRTC clients.
+    Keeps TURN credentials on backend instead of hardcoding in frontend bundles.
+    """
+    stun_urls = list(getattr(settings, "STUN_URLS", []) or ["stun:stun.l.google.com:19302"])
+    ice_servers_payload = [{"urls": stun_urls}]
+
+    turn_enabled = bool(getattr(settings, "TURN_ENABLED", False))
+    turn_host = getattr(settings, "TURN_PUBLIC_HOST", None) or getattr(settings, "TURN_HOST", None)
+    turn_port = int(getattr(settings, "TURN_PORT", 3478) or 3478)
+    turn_tls_port = int(getattr(settings, "TURN_TLS_PORT", 0) or 0)
+    turn_username = getattr(settings, "TURN_USERNAME", "")
+    turn_password = getattr(settings, "TURN_PASSWORD", "")
+    transports = list(getattr(settings, "TURN_TRANSPORTS", ["udp", "tcp"]) or ["udp", "tcp"])
+
+    if turn_enabled and turn_host and turn_username and turn_password:
+        turn_urls = []
+        if "udp" in transports:
+            turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=udp")
+        if "tcp" in transports:
+            turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=tcp")
+        if turn_tls_port and "tcp" in transports:
+            turn_urls.append(f"turns:{turn_host}:{turn_tls_port}?transport=tcp")
+
+        ice_servers_payload.append(
+            {
+                "urls": turn_urls,
+                "username": turn_username,
+                "credential": turn_password,
+            }
+        )
+
+    return Response(
+        {
+            "ice_servers": ice_servers_payload,
+            "turn_enabled": turn_enabled,
+            "issued_at": timezone.now().isoformat(),
+        }
+    )
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_room_auto(request):
@@ -116,7 +175,12 @@ def create_room_auto(request):
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def room_details(request, room_id):
-    room = _resolve_room_or_404(room_id)
+    try:
+        room = _resolve_room_or_404(room_id)
+    except Exception:
+        logger.exception("Failed to resolve room details for room_id=%s", room_id)
+        return Response({"error": "Unable to resolve room"}, status=400)
+
     if not can_access_booking(request.user, room.booking):
         return Response({"error": "Not authorized"}, status=403)
 
@@ -125,12 +189,16 @@ def room_details(request, room_id):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-    return Response(
-        VideoRoomDetailSerializer(
-            room,
-            context={"booking_start_time": _booking_start_dt(room.booking)},
-        ).data
-    )
+    try:
+        return Response(
+            VideoRoomDetailSerializer(
+                room,
+                context={"booking_start_time": _booking_start_dt(room.booking)},
+            ).data
+        )
+    except Exception:
+        logger.exception("Video room serialization failed for room_id=%s", room_id)
+        return Response({"error": "Unable to load room details"}, status=500)
 
 
 @api_view(["POST"])
@@ -159,14 +227,143 @@ def upload_recording(request, room_id):
     booking.recording_url = room.recording_url
     booking.recording_available = True
     booking.save(update_fields=["recording_url", "recording_available"])
+    notify_recording_ready_review(booking)
 
     return Response({"success": True, "recording_url": room.recording_url})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def upload_recording_chunk(request, room_id):
+    """
+    Upload recording chunks from MediaRecorder.
+    Expects multipart/form-data with:
+      - upload_id
+      - chunk_index
+      - total_chunks
+      - chunk (file)
+    """
+    room = _resolve_room_or_404(room_id)
+    if not can_access_booking(request.user, room.booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    upload_id = request.data.get("upload_id")
+    chunk_index = request.data.get("chunk_index")
+    total_chunks = request.data.get("total_chunks")
+    chunk_file = request.FILES.get("chunk")
+
+    if not upload_id or chunk_index is None or total_chunks is None or not chunk_file:
+        return Response(
+            {"error": "upload_id, chunk_index, total_chunks and chunk file are required"},
+            status=400,
+        )
+
+    try:
+        chunk_index = int(chunk_index)
+        total_chunks = int(total_chunks)
+        if chunk_index < 0 or total_chunks <= 0 or chunk_index >= total_chunks:
+            return Response({"error": "Invalid chunk indexes"}, status=400)
+    except ValueError:
+        return Response({"error": "chunk_index and total_chunks must be integers"}, status=400)
+
+    chunks_dir = _recording_chunks_dir(room.id, str(upload_id))
+    chunk_path = chunks_dir / f"{chunk_index:08d}.part"
+
+    with chunk_path.open("wb") as f:
+        for part in chunk_file.chunks():
+            f.write(part)
+
+    return Response(
+        {
+            "success": True,
+            "upload_id": str(upload_id),
+            "chunk_index": chunk_index,
+            "total_chunks": total_chunks,
+        },
+        status=202,
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def finalize_recording_upload(request, room_id):
+    """
+    Merge uploaded chunks into final media file and attach to room + booking.
+    Expects JSON body:
+      - upload_id
+      - total_chunks
+      - extension (optional, webm/mp4/mkv)
+    """
+    room = _resolve_room_or_404(room_id)
+    if not can_access_booking(request.user, room.booking):
+        return Response({"error": "Not authorized"}, status=403)
+
+    upload_id = request.data.get("upload_id")
+    total_chunks = request.data.get("total_chunks")
+    extension = _safe_ext(request.data.get("extension", "webm"))
+
+    if not upload_id or total_chunks is None:
+        return Response({"error": "upload_id and total_chunks are required"}, status=400)
+
+    try:
+        total_chunks = int(total_chunks)
+        if total_chunks <= 0:
+            return Response({"error": "total_chunks must be > 0"}, status=400)
+    except ValueError:
+        return Response({"error": "total_chunks must be an integer"}, status=400)
+
+    chunks_dir = _recording_chunks_dir(room.id, str(upload_id))
+    expected_files = [chunks_dir / f"{i:08d}.part" for i in range(total_chunks)]
+    missing = [str(p.name) for p in expected_files if not p.exists()]
+    if missing:
+        return Response(
+            {
+                "error": "Some chunks are missing",
+                "missing": missing[:20],
+                "missing_count": len(missing),
+            },
+            status=400,
+        )
+
+    final_filename = f"recordings/video_room_{room.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}.{extension}"
+    final_absolute = Path(settings.MEDIA_ROOT) / final_filename
+    final_absolute.parent.mkdir(parents=True, exist_ok=True)
+
+    with final_absolute.open("wb") as out_file:
+        for p in expected_files:
+            with p.open("rb") as c:
+                shutil.copyfileobj(c, out_file)
+
+    room.recording_url = request.build_absolute_uri(settings.MEDIA_URL + final_filename)
+    room.save(update_fields=["recording_url"])
+
+    booking = room.booking
+    booking.recording_url = room.recording_url
+    booking.recording_available = True
+    booking.save(update_fields=["recording_url", "recording_available"])
+    notify_recording_ready_review(booking)
+
+    # Cleanup temporary chunk files
+    try:
+        shutil.rmtree(chunks_dir)
+        # also cleanup parent if empty
+        parent_dir = chunks_dir.parent
+        if parent_dir.exists() and not any(parent_dir.iterdir()):
+            parent_dir.rmdir()
+    except OSError:
+        logger.warning("Failed to clean up recording chunks for room=%s upload_id=%s", room.id, upload_id)
+
+    return Response({"success": True, "recording_url": room.recording_url}, status=201)
 
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def validate_room_access(request, room_id):
-    room = _resolve_room_or_404(room_id)
+    try:
+        room = _resolve_room_or_404(room_id)
+    except Exception:
+        logger.exception("Room validation resolve failed for room_id=%s", room_id)
+        return Response({"valid": False, "reason": "Room not found"}, status=404)
 
     if not can_access_booking(request.user, room.booking):
         return Response({"valid": False, "reason": "Not authorized"}, status=403)
@@ -179,12 +376,13 @@ def validate_room_access(request, room_id):
     if not window_ok:
         return Response({"valid": False, "reason": window_reason}, status=400)
 
+    start_dt = _booking_start_dt(room.booking)
     return Response({
         "valid": True,
         "room_id": room.room_name,
         "booking_id": room.booking.id,
         "status": room.status,
-        "start_time": _booking_start_dt(room.booking).isoformat() if _booking_start_dt(room.booking) else None,
+        "start_time": start_dt.isoformat() if start_dt else None,
         "timezone": str(timezone.get_current_timezone()),
     })
 
@@ -346,14 +544,7 @@ def daily_webhook(request):
                     
                     # Notify users that recording is ready
                     try:
-                        from notifications.models import Notification
-                        Notification.objects.create(
-                            user=booking.user,
-                            notification_type='BOOKING_COMPLETED',
-                            title="Puja Recording Ready",
-                            message=f"Your {booking.service_name} recording is now available in 'My Bookings'.",
-                            booking=booking
-                        )
+                        notify_recording_ready_review(booking)
                         
                         # Send Email
                         send_recording_ready_email(booking)

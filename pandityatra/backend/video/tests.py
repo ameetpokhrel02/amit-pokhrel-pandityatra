@@ -258,3 +258,271 @@ class VideoReminderCommandTests(VideoTestDataMixin, TestCase):
         call_command("send_video_reminders")
         notify_mock.assert_not_called()
         email_mock.assert_not_called()
+
+
+class ProductionReadinessSmokeTest(VideoTestDataMixin, TestCase):
+    """
+    One high-value smoke test for production readiness:
+    ensures critical video endpoints are stable (no 500) and payload contracts hold.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.customer = self.create_user("prod_customer", role="user")
+        self.pandit_user, self.pandit = self.create_pandit("prod_pandit")
+        self.booking = self.create_booking(self.customer, self.pandit, status="ACCEPTED", payment_status=True)
+        self.room = ensure_video_room_for_booking(self.booking)
+        self.client.force_authenticate(self.customer)
+
+    def test_production_video_smoke_endpoints(self):
+        # 1) ICE config must be available and contain at least STUN urls
+        ice = self.client.get("/api/video/ice-servers/")
+        self.assertEqual(ice.status_code, 200)
+        self.assertIn("ice_servers", ice.data)
+        self.assertIsInstance(ice.data["ice_servers"], list)
+        self.assertGreaterEqual(len(ice.data["ice_servers"]), 1)
+        self.assertIn("urls", ice.data["ice_servers"][0])
+
+        # 2) Room details must resolve via slug room id
+        detail = self.client.get(f"/api/video/rooms/{self.room.room_name}/")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.data["room_id"], self.room.room_name)
+        self.assertEqual(detail.data["booking_id"], self.booking.id)
+
+        # 3) Validation endpoint must return valid=True in allowed time window
+        validate = self.client.get(f"/api/video/{self.room.room_name}/validate/")
+        self.assertEqual(validate.status_code, 200)
+        self.assertTrue(validate.data.get("valid"))
+
+
+class AsgiStartupTests(TestCase):
+    def test_asgi_application_loads(self):
+        from pandityatra_backend.asgi import application
+
+        self.assertIsNotNone(application)
+        self.assertTrue(callable(application))
+
+
+@override_settings(
+    CHANNEL_LAYERS={
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+)
+class WebSocketAsgiHandshakeSmokeTests(VideoTestDataMixin, TransactionTestCase):
+    reset_sequences = True
+
+    def setUp(self):
+        from pandityatra_backend.asgi import application
+
+        self.application = application
+        self.customer = self.create_user("ws_smoke_customer", role="user")
+        self.pandit_user, self.pandit = self.create_pandit("ws_smoke_pandit")
+        self.booking = self.create_booking(self.customer, self.pandit, when_minutes=10)
+        self.room = ensure_video_room_for_booking(self.booking)
+
+        self.customer_token = str(AccessToken.for_user(self.customer))
+
+    async def _run_handshake(self):
+        communicator = WebsocketCommunicator(
+            self.application,
+            f"/ws/video/{self.room.room_name}/?token={self.customer_token}",
+        )
+
+        connected, _ = await communicator.connect()
+        self.assertTrue(connected)
+
+        await communicator.disconnect()
+
+    def test_ws_video_asgi_handshake(self):
+        async_to_sync(self._run_handshake)()
+
+
+@override_settings(
+    CHANNEL_LAYERS={
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+)
+class VideoCallEndToEndDeploymentTests(VideoTestDataMixin, TransactionTestCase):
+    """
+    Complete video-call flow test for both customer and pandit:
+    booking -> acceptance -> room/validate -> ws signaling -> chat -> end room.
+    """
+
+    reset_sequences = True
+
+    def setUp(self):
+        from pandityatra_backend.asgi import application
+
+        self.application = application
+        self.customer = self.create_user("e2e_customer", role="user")
+        self.pandit_user, self.pandit = self.create_pandit("e2e_pandit")
+        self.booking = self.create_booking(
+            self.customer,
+            self.pandit,
+            status="PENDING",
+            payment_status=True,
+            when_minutes=12,
+        )
+
+        self.customer_client = APIClient()
+        self.customer_client.force_authenticate(self.customer)
+        self.pandit_client = APIClient()
+        self.pandit_client.force_authenticate(self.pandit_user)
+
+        self.customer_token = str(AccessToken.for_user(self.customer))
+        self.pandit_token = str(AccessToken.for_user(self.pandit_user))
+
+    async def _recv_until(self, communicator, wanted_types, max_reads=12):
+        for _ in range(max_reads):
+            message = await asyncio.wait_for(communicator.receive_json_from(), timeout=2)
+            if message.get("type") in wanted_types:
+                return message
+        self.fail(f"Did not receive expected message types: {wanted_types}")
+
+    def test_complete_video_call_flow_user_and_pandit(self):
+        # 1) Pandit accepts booking
+        accept = self.pandit_client.patch(
+            f"/api/bookings/{self.booking.id}/update_status/",
+            {"status": "ACCEPTED"},
+            format="json",
+        )
+        self.assertEqual(accept.status_code, 200)
+
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, "ACCEPTED")
+        self.assertTrue(hasattr(self.booking, "video_room"))
+        room = self.booking.video_room
+
+        # 2) Both roles can access room and validate
+        customer_room = self.customer_client.get(f"/api/video/rooms/{room.room_name}/")
+        self.assertEqual(customer_room.status_code, 200)
+
+        pandit_room = self.pandit_client.get(f"/api/video/rooms/{room.room_name}/")
+        self.assertEqual(pandit_room.status_code, 200)
+
+        customer_validate = self.customer_client.get(f"/api/video/{room.room_name}/validate/")
+        self.assertEqual(customer_validate.status_code, 200)
+        self.assertTrue(customer_validate.data.get("valid"))
+
+        pandit_validate = self.pandit_client.get(f"/api/video/{room.room_name}/validate/")
+        self.assertEqual(pandit_validate.status_code, 200)
+        self.assertTrue(pandit_validate.data.get("valid"))
+
+        # 3) Pandit can start room
+        start_resp = self.pandit_client.post(f"/api/video/rooms/{room.room_name}/start/")
+        self.assertEqual(start_resp.status_code, 200)
+
+        # 4) WebSocket signaling and chat between both roles
+        async def run_ws_flow():
+            customer_ws = WebsocketCommunicator(
+                self.application,
+                f"/ws/video/{room.room_name}/?token={self.customer_token}",
+            )
+            c_ok, _ = await customer_ws.connect()
+            self.assertTrue(c_ok)
+
+            pandit_ws = WebsocketCommunicator(
+                self.application,
+                f"/ws/video/{room.room_name}/?token={self.pandit_token}",
+            )
+            p_ok, _ = await pandit_ws.connect()
+            self.assertTrue(p_ok)
+
+            await self._recv_until(customer_ws, {"connected"})
+            await self._recv_until(customer_ws, {"chat-history"})
+            await self._recv_until(pandit_ws, {"connected"})
+
+            await customer_ws.send_json_to(
+                {
+                    "type": "offer",
+                    "sdp": {"type": "offer", "sdp": "dummy-offer-sdp"},
+                    "target_user_id": self.pandit_user.id,
+                }
+            )
+            offer_msg = await self._recv_until(pandit_ws, {"offer"})
+            self.assertEqual(offer_msg.get("target_user_id"), self.pandit_user.id)
+
+            await pandit_ws.send_json_to(
+                {
+                    "type": "answer",
+                    "sdp": {"type": "answer", "sdp": "dummy-answer-sdp"},
+                    "target_user_id": self.customer.id,
+                }
+            )
+            answer_msg = await self._recv_until(customer_ws, {"answer"})
+            self.assertEqual(answer_msg.get("target_user_id"), self.customer.id)
+
+            await customer_ws.send_json_to({"type": "chat", "message": "Namaste, audio/video check"})
+            chat_msg = await self._recv_until(pandit_ws, {"chat"})
+            self.assertEqual(chat_msg.get("message"), "Namaste, audio/video check")
+
+            await customer_ws.disconnect()
+            await pandit_ws.disconnect()
+
+        async_to_sync(run_ws_flow)()
+
+        # 5) Pandit ends room
+        end_resp = self.pandit_client.post(f"/api/video/rooms/{room.room_name}/end/")
+        self.assertEqual(end_resp.status_code, 200)
+        self.assertEqual(end_resp.data.get("room_status"), "ended")
+
+
+@override_settings(
+    CHANNEL_LAYERS={
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        }
+    }
+)
+class FrontendWebSocketContractDiagnosticTest(VideoTestDataMixin, TransactionTestCase):
+    """
+    One diagnostic test to mirror browser-like websocket conditions.
+    If this fails, root cause is backend ASGI/auth contract, not React rendering.
+    """
+
+    reset_sequences = True
+
+    def setUp(self):
+        from pandityatra_backend.asgi import application
+
+        self.application = application
+        self.customer = self.create_user("diag_customer", role="user")
+        self.pandit_user, self.pandit = self.create_pandit("diag_pandit")
+        self.booking = self.create_booking(self.customer, self.pandit, when_minutes=10)
+        self.room = ensure_video_room_for_booking(self.booking)
+        self.valid_token = str(AccessToken.for_user(self.customer))
+
+    async def _connect(self, path: str, headers=None):
+        communicator = WebsocketCommunicator(self.application, path, headers=headers or [])
+        ok, _ = await communicator.connect()
+        return communicator, ok
+
+    async def _run_diagnostic(self):
+        # 1) Missing token should be rejected
+        ws_missing, ok_missing = await self._connect(f"/ws/video/{self.room.room_name}/")
+        self.assertFalse(ok_missing)
+
+        # 2) Invalid token should be rejected
+        ws_invalid, ok_invalid = await self._connect(
+            f"/ws/video/{self.room.room_name}/?token=invalid.jwt.token"
+        )
+        self.assertFalse(ok_invalid)
+
+        # 3) Valid token with browser-like Origin header should connect
+        ws_valid, ok_valid = await self._connect(
+            f"/ws/video/{self.room.room_name}/?token={self.valid_token}",
+            headers=[(b"origin", b"http://localhost:5173")],
+        )
+        self.assertTrue(ok_valid)
+
+        first_msg = await asyncio.wait_for(ws_valid.receive_json_from(), timeout=2)
+        self.assertEqual(first_msg.get("type"), "connected")
+
+        await ws_valid.disconnect()
+
+    def test_frontend_ws_contract_diagnostic(self):
+        async_to_sync(self._run_diagnostic)()
