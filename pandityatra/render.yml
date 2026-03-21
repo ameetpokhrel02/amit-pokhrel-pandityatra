@@ -3,8 +3,7 @@ services:
     name: pandityatra-api
     env: docker
     dockerfilePath: Dockerfile          # ← Now in root
-    repo: https://github.com/yourusername/pandityatra
-    branch: main
+    repo: https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra/tree/main/pandityatra    branch: main
     rootDir: .
     
     envVars:

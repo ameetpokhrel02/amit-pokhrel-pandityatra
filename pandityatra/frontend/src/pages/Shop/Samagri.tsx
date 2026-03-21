@@ -306,7 +306,7 @@ const Samagri = () => {
                                                 <span className="text-gray-500 font-medium">
                                                     ₹{item.price}
                                                 </span>
-                                                {item.stock_quantity < 5 && (
+                                                {item.stock_quantity < 5 && item.stock_quantity > 0 && (
                                                     <span className="text-xs text-red-500 font-medium">
                                                         Only {item.stock_quantity} left!
                                                     </span>
@@ -314,23 +314,47 @@ const Samagri = () => {
                                             </div>
 
                                             <div className="mt-auto grid grid-cols-2 gap-3 pt-4 border-t border-gray-50">
-                                                <Button
-                                                    onClick={() => handleAddToCart(item)}
-                                                    variant="secondary"
-                                                    className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm shadow-sm hover:shadow-md transition-all duration-300"
-                                                    disabled={item.stock_quantity === 0}
-                                                >
-                                                    <ShoppingCart className="w-4 h-4" />
-                                                    {item.stock_quantity === 0 ? 'Out of Stock' : 'Add'}
-                                                </Button>
-                                                <Button
-                                                    variant="secondary"
-                                                    className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
-                                                    onClick={() => setSelectedItem(item)}
-                                                >
-                                                    <Eye className="w-4 h-4" /> View
-                                                </Button>
+                                                {item.stock_quantity === 0 ? (
+                                                    <>
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="w-full bg-gray-300 text-gray-500 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm cursor-not-allowed"
+                                                            disabled
+                                                        >
+                                                            <ShoppingCart className="w-4 h-4" /> Out of Stock
+                                                        </Button>
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
+                                                            onClick={() => setSelectedItem(item)}
+                                                        >
+                                                            <Eye className="w-4 h-4" /> View
+                                                        </Button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Button
+                                                            onClick={() => handleAddToCart(item)}
+                                                            variant="secondary"
+                                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm shadow-sm hover:shadow-md transition-all duration-300"
+                                                        >
+                                                            <ShoppingCart className="w-4 h-4" /> Add
+                                                        </Button>
+                                                        <Button
+                                                            variant="secondary"
+                                                            className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
+                                                            onClick={() => setSelectedItem(item)}
+                                                        >
+                                                            <Eye className="w-4 h-4" /> View
+                                                        </Button>
+                                                    </>
+                                                )}
                                             </div>
+                                            {item.stock_quantity === 0 && (
+                                                <div className="mt-2 text-center text-xs font-semibold text-orange-600 animate-pulse">
+                                                    Restocking Soon
+                                                </div>
+                                            )}
                                         </CardContent>
                                     </Card>
                                 </motion.div>
@@ -446,6 +470,11 @@ const Samagri = () => {
                                         <Badge variant="destructive">Out of Stock</Badge>
                                     )}
                                 </div>
+                                {selectedItem.stock_quantity === 0 && (
+                                    <div className="mb-4 text-center text-sm font-semibold text-orange-600 animate-pulse">
+                                        Restocking Soon
+                                    </div>
+                                )}
 
                                 <div className="flex-1">
                                     <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h4>
