@@ -13,10 +13,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { RefreshCcw, Loader2, CreditCard, RotateCcw } from "lucide-react";
-import { fetchAdminPayments, refundPayment, type Payment } from "@/lib/api";
+import { fetchAdminPayments, refundPayment, type AdminPayment } from "@/lib/api";
 
 export default function AdminPayments() {
-    const [payments, setPayments] = useState<Payment[]>([]);
+    const [payments, setPayments] = useState<AdminPayment[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
@@ -76,8 +76,8 @@ export default function AdminPayments() {
         }
     };
 
-    const formatAmount = (p: Payment) => {
-        if (p.currency === "NPR" || (p.amount_npr && p.amount_npr !== "0.00")) {
+    const formatAmount = (p: AdminPayment) => {
+        if (p.currency === "NPR" || (p.amount_npr && p.amount_npr !== 0)) {
              return `Rs. ${p.amount_npr}`;
         }
         return `USD ${p.amount_usd}`;
@@ -104,10 +104,10 @@ export default function AdminPayments() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">
-                                Rs. {payments.filter(p => !['REFUNDED', 'FAILED'].includes(p.status)).reduce((acc, curr) => acc + parseFloat(curr.amount_npr || "0"), 0).toLocaleString()}
+                                Rs. {payments.filter(p => !['REFUNDED', 'FAILED'].includes(p.status)).reduce((acc, curr) => acc + (typeof curr.amount_npr === 'string' ? parseFloat(curr.amount_npr) : curr.amount_npr || 0), 0).toLocaleString()}
                             </div>
                             <p className="text-xs text-muted-foreground">
-                                + USD {payments.filter(p => !['REFUNDED', 'FAILED'].includes(p.status)).reduce((acc, curr) => acc + parseFloat(curr.amount_usd || "0"), 0).toLocaleString()}
+                                + USD {payments.filter(p => !['REFUNDED', 'FAILED'].includes(p.status)).reduce((acc, curr) => acc + (typeof curr.amount_usd === 'string' ? parseFloat(curr.amount_usd) : curr.amount_usd || 0), 0).toLocaleString()}
                             </p>
                         </CardContent>
                     </Card>
@@ -155,16 +155,28 @@ export default function AdminPayments() {
                                                 <TableCell>{p.booking_details?.pandit_name || 'Unknown'}</TableCell>
                                                 <TableCell className="font-medium">{formatAmount(p)}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant="outline" className="uppercase text-xs">
-                                                        {p.payment_method}
-                                                    </Badge>
+                                                    <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-gray-50 border border-gray-100 w-fit">
+                                                        {p.payment_method === 'STRIPE' ? (
+                                                            <div className="flex items-center gap-1">
+                                                                <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" className="h-2 w-auto" alt="Visa" />
+                                                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" className="h-3 w-auto" alt="Mastercard" />
+                                                            </div>
+                                                        ) : p.payment_method === 'KHALTI' ? (
+                                                            <img src="/images/khalti.webp" className="h-4 w-auto object-contain" alt="Khalti" />
+                                                        ) : p.payment_method === 'ESEWA' ? (
+                                                            <img src="https://esewa.com.np/common/images/esewa_logo.png" className="h-4 w-auto object-contain" alt="eSewa" />
+                                                        ) : (
+                                                            <div className="w-4 h-4 rounded-full bg-orange-600 flex items-center justify-center text-[8px] text-white font-bold">P</div>
+                                                        )}
+                                                        <span className="text-[10px] font-bold text-gray-600 uppercase">{p.payment_method}</span>
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="font-mono text-xs text-muted-foreground">
                                                     {p.transaction_id || '-'}
                                                 </TableCell>
                                                 <TableCell>{getStatusBadge(p.status)}</TableCell>
                                                 <TableCell className="text-right">
-                                                    {(p.status === 'COMPLETED' || p.status === 'PAID') && (
+                                                    {(p.status === 'COMPLETED' || (p.status as string) === 'PAID') && (
                                                         <Button 
                                                             variant="destructive" 
                                                             size="sm"

@@ -69,6 +69,8 @@ import AdminReviews from './pages/admin/AdminReviews'
 import AdminPanditsList from './pages/admin/AdminPanditsList'
 import AdminProfile from './pages/admin/AdminProfile'
 import AdminSiteContent from './pages/admin/AdminSiteContent'
+import AdminSupport from './pages/admin/AdminSupport'
+import AdminErrorLogs from './pages/admin/AdminErrorLogs'
 import ManageAdmins from './pages/admin/ManageAdmins'
 
 // Profile
@@ -332,17 +334,9 @@ function App() {
                       </ProtectedRoute>
                     } />
 
-                    <Route path="/admin/site-content" element={
-                      <ProtectedRoute allowedRoles={['admin']}>
-                        <AdminSiteContent />
-                      </ProtectedRoute>
-                    } />
-
-                    <Route path="/admin/manage-admins" element={
-                      <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
-                        <ManageAdmins />
-                      </ProtectedRoute>
-                    } />
+                    <Route path="/admin/site-content" element={<ProtectedRoute allowedRoles={['admin']}><AdminSiteContent /></ProtectedRoute>} />
+                    <Route path="/admin/support" element={<ProtectedRoute allowedRoles={['admin']}><AdminSupport /></ProtectedRoute>} />
+                    <Route path="/admin/manage-admins" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><ManageAdmins /></ProtectedRoute>} />
 
                     {/* 💳 Payments */}
                     <Route path="/payment/:bookingId" element={

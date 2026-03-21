@@ -1,4 +1,5 @@
-import { Page, Text, View, Document, StyleSheet } from "@react-pdf/renderer";
+import { Page, Text, View, Document, StyleSheet, Svg, Line, Rect, Path, Tspan, G, Image } from "@react-pdf/renderer";
+import logo from '@/assets/images/PanditYatralogo.png';
 
 const orange = '#EA580C';
 const darkBrown = '#3E2723';
@@ -153,18 +154,94 @@ interface KundaliPDFProps {
     }>;
     ai_prediction?: string;
     source?: string;
+    lagna?: number;
   };
 }
+
+const KundaliChartPDF = ({ planets = [], lagna = 1 }: { planets: any[], lagna?: number }) => {
+    const shortPlanetNames: Record<string, string> = {
+        "Sun": "Su", "Moon": "Mo", "Mars": "Ma", "Mercury": "Me", "Jupiter": "Ju",
+        "Venus": "Ve", "Saturn": "Sa", "Rahu": "Ra", "Ketu": "Ke", "Ascendant": "As"
+    };
+
+    const planetsInHouses: Record<number, string[]> = {};
+    for (let i = 1; i <= 12; i++) planetsInHouses[i] = [];
+    planets.forEach(p => {
+        const name = shortPlanetNames[p.planet] || p.planet.substring(0, 2);
+        if (p.house >= 1 && p.house <= 12) planetsInHouses[p.house].push(name);
+    });
+
+    const getRashiForHouse = (houseNum: number) => {
+        let r = (lagna + houseNum - 1) % 12;
+        return r === 0 ? 12 : r;
+    };
+
+    const hPos: Record<number, any> = {
+        1: { x: 150, y: 100, rX: 150, rY: 55, lX: 150, lY: 35, label: "Body" },
+        2: { x: 75, y: 50, rX: 100, rY: 70, lX: 60, lY: 25, label: "Money" },
+        3: { x: 40, y: 85, rX: 65, rY: 105, lX: 25, lY: 55, label: "Siblings" },
+        4: { x: 105, y: 150, rX: 60, rY: 150, lX: 45, lY: 125, label: "Home" },
+        5: { x: 40, y: 225, rX: 65, rY: 205, lX: 25, lY: 245, label: "Study" },
+        6: { x: 75, y: 260, rX: 100, rY: 240, lX: 60, lY: 280, label: "Enemies" },
+        7: { x: 150, y: 205, rX: 150, rY: 250, lX: 150, lY: 275, label: "Partner" },
+        8: { x: 225, y: 260, rX: 200, rY: 240, lX: 240, lY: 280, label: "Longevity" },
+        9: { x: 260, y: 225, rX: 240, rY: 205, lX: 275, lY: 245, label: "Luck" },
+        10: { x: 195, y: 150, rX: 240, rY: 150, lX: 255, lY: 125, label: "Work" },
+        11: { x: 260, y: 85, rX: 240, rY: 105, lX: 275, lY: 55, label: "Gains" },
+        12: { x: 225, y: 50, rX: 200, rY: 70, lX: 240, lY: 25, label: "Loss" },
+    };
+
+    return (
+        <View style={{ alignItems: 'center', marginVertical: 20 }}>
+            <Text style={{ fontSize: 12, marginBottom: 10, color: orange, fontFamily: 'Helvetica-Bold' }}>LAGNA CHART (D1)</Text>
+            <Svg width="300" height="300" viewBox="0 0 300 300">
+                <Rect x="0" y="0" width="300" height="300" fill="white" stroke={orange} strokeWidth={2} />
+                <Line x1="0" y1="0" x2="300" y2="300" stroke={orange} strokeWidth={1} />
+                <Line x1="0" y1="300" x2="300" y2="0" stroke={orange} strokeWidth={1} />
+                <Path d="M 150 0 L 0 150 L 150 300 L 300 150 Z" stroke={orange} strokeWidth={1} fill="none" />
+                
+                {/* Rashis */}
+                <G>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                        <Text key={n} x={hPos[n].rX} y={hPos[n].rY} textAnchor="middle" style={{ fontSize: 10, fill: "#9A3412" }}>{getRashiForHouse(n).toString()}</Text>
+                    ))}
+                </G>
+
+                {/* House Labels */}
+                <G>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(n => (
+                        <Text key={n} x={hPos[n].lX} y={hPos[n].lY} textAnchor="middle" style={{ fontSize: 6, fill: "#FB923C" }}>{hPos[n].label}</Text>
+                    ))}
+                </G>
+
+                {/* Planets */}
+                <G>
+                    {Object.entries(planetsInHouses).map(([h, pList]) => {
+                        const hNum = Number(h);
+                        return (
+                            <Text key={h} x={hPos[hNum].x} y={hPos[hNum].y} textAnchor="middle" style={{ fontSize: 9, fill: darkBrown, fontFamily: 'Helvetica-Bold' }}>
+                                {pList.join(", ")}
+                            </Text>
+                        );
+                    })}
+                </G>
+            </Svg>
+        </View>
+    );
+};
 
 export const KundaliPDF = ({ formData, result }: KundaliPDFProps) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* Header */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>PanditYatra</Text>
-        <Text style={styles.subtitle}>
-          Kundali Birth Chart Report — {result.source === 'online' ? 'High Precision (Swiss Ephemeris)' : 'Approximate (Offline)'}
-        </Text>
+      <View style={[styles.headerContainer, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <View>
+          <Text style={styles.title}>PanditYatra</Text>
+          <Text style={styles.subtitle}>
+            Kundali Birth Chart Report — {result.source === 'online' ? 'High Precision (Swiss Ephemeris)' : 'Approximate (Offline)'}
+          </Text>
+        </View>
+        <Image src={logo} style={{ width: 60, height: 60 }} />
       </View>
 
       {/* Personal Info */}
@@ -194,6 +271,9 @@ export const KundaliPDF = ({ formData, result }: KundaliPDFProps) => (
           <Text style={styles.infoValue}>{new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
         </View>
       </View>
+
+      {/* Lagna Chart */}
+      <KundaliChartPDF planets={result.planets || []} lagna={result.lagna || 1} />
 
       {/* Planetary Positions Table */}
       <Text style={styles.sectionTitle}>Planetary Positions</Text>

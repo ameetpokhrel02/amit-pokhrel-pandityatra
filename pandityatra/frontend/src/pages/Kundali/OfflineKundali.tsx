@@ -21,6 +21,7 @@ import MapPicker from '@/components/kundali/MapPicker';
 import CosmicOrbit from '@/components/kundali/CosmicOrbit';
 import { pdf } from '@react-pdf/renderer';
 import { KundaliPDF } from './KundaliPDF';
+import { KundaliChart } from './KundaliChart';
 
 // Helpers
 const getZodiacSign = (longitude: number) => {
@@ -304,6 +305,13 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <div className="mb-8 flex flex-col items-center">
+                    <h4 className="font-bold text-[#E65100] mb-4 text-center text-lg uppercase tracking-widest">Lagna Chart (D1)</h4>
+                    < KundaliChart 
+                        planets={result.planets} 
+                        lagna={result.lagna || 1} 
+                    />
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-semibold text-[#3E2723] mb-2">Planetary Positions</h4>

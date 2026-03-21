@@ -349,7 +349,7 @@ def notify_review_received(review):
         user=review.pandit.user,
         notification_type='REVIEW_RECEIVED',
         title=f'New Review ⭐ {review.rating}/5',
-        message=f'{review.user.full_name} left a review: "{review.comment[:80]}..."' if review.comment else f'{review.user.full_name} rated you {review.rating} stars.',
+        message=f'{review.customer.full_name} left a review: "{review.comment[:80]}..."' if review.comment else f'{review.customer.full_name} rated you {review.rating} stars.',
         booking=review.booking
     )
 

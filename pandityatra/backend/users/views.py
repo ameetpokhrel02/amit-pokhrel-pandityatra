@@ -427,6 +427,16 @@ class ProfileView(APIView):
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_200_OK)
 
 
+from django.utils import timezone
+from datetime import timedelta
+from django.db.models import Sum
+from pandits.models import Pandit
+from bookings.models import Booking
+from payments.models import Payment
+from samagri.models import SamagriItem
+from adminpanel.models import PaymentErrorLog
+
+
 class AdminStatsView(APIView):
     """
     Returns statistics for the Admin Dashboard.
@@ -442,14 +452,75 @@ class AdminStatsView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        # Time ranges for growth calculation
+        now = timezone.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_month_end = start_of_month - timedelta(seconds=1)
+        last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Basic Stats
         total_users = User.objects.count()
         total_pandits = Pandit.objects.count()
+        total_bookings = Booking.objects.count()
+        
+        # Revenue (Completed payments)
+        revenue_this_month = Payment.objects.filter(
+            status='COMPLETED', 
+            created_at__gte=start_of_month
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        revenue_last_month = Payment.objects.filter(
+            status='COMPLETED', 
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_end
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # Growth Calculations
+        def calc_growth(current, previous):
+            if previous == 0:
+                return 100 if current > 0 else 0
+            return round(((current - previous) / previous) * 100, 1)
+
+        users_last_month = User.objects.filter(date_joined__lt=start_of_month).count()
+        users_this_month_new = User.objects.filter(date_joined__gte=start_of_month).count()
+        user_growth = calc_growth(users_this_month_new, users_last_month / 12 if users_last_month > 0 else 0) # Simplified monthly growth
+        # Better: compare new users this month vs new users last month
+        users_prev_month_new = User.objects.filter(date_joined__gte=last_month_start, date_joined__lte=last_month_end).count()
+        user_growth = calc_growth(users_this_month_new, users_prev_month_new)
+
+        pandits_this_month_new = Pandit.objects.filter(user__date_joined__gte=start_of_month).count()
+        pandits_prev_month_new = Pandit.objects.filter(user__date_joined__gte=last_month_start, user__date_joined__lte=last_month_end).count()
+        pandit_growth = calc_growth(pandits_this_month_new, pandits_prev_month_new)
+
+        bookings_this_month = Booking.objects.filter(created_at__gte=start_of_month).count()
+        bookings_prev_month = Booking.objects.filter(created_at__gte=last_month_start, created_at__lte=last_month_end).count()
+        booking_growth = calc_growth(bookings_this_month, bookings_prev_month)
+
+        revenue_growth = calc_growth(float(revenue_this_month), float(revenue_last_month))
+
+        # Insightful counts
         pending_verifications = Pandit.objects.filter(is_verified=False).count()
+        low_stock_count = SamagriItem.objects.filter(stock_quantity__lte=5).count()
+        
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start + timedelta(days=1)
+        todays_pujas_count = Booking.objects.filter(booking_date=now.date()).count()
+        
+        error_logs_count = PaymentErrorLog.objects.filter(resolved=False).count()
 
         return Response({
             "total_users": total_users,
             "total_pandits": total_pandits,
+            "total_bookings": total_bookings,
+            "revenue_this_month": float(revenue_this_month),
+            "user_growth": user_growth,
+            "pandit_growth": pandit_growth,
+            "booking_growth": booking_growth,
+            "revenue_growth": revenue_growth,
             "pending_verifications": pending_verifications,
+            "low_stock_count": low_stock_count,
+            "todays_pujas_count": todays_pujas_count,
+            "error_logs_count": error_logs_count,
             "system_status": "Healthy"
         }, status=status.HTTP_200_OK)
 # ----------------------------------------------------
@@ -544,9 +615,15 @@ def admin_platform_settings(request):
 
 class ContactView(APIView):
     """
-    Handles Contact Form submissions and saves them to the database.
+    Handles Contact Form submissions and management.
+    - POST: Create message (Public)
+    - GET: List all messages (Admin only)
+    - PATCH: Update message status/note (Admin only)
     """
-    permission_classes = [permissions.AllowAny]
+    def get_permissions(self):
+        if self.request.method == 'POST':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
 
     def post(self, request):
         from .serializers import ContactMessageSerializer
@@ -558,6 +635,55 @@ class ContactView(APIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request):
+        if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
+            return Response({"detail": "Admin only"}, status=status.HTTP_403_FORBIDDEN)
+        
+        from .models import ContactMessage
+        from .serializers import ContactMessageSerializer
+        
+        # Optionally filter by status
+        is_resolved = request.query_params.get('is_resolved')
+        messages = ContactMessage.objects.all()
+        if is_resolved is not None:
+            messages = messages.filter(is_resolved=is_resolved.lower() == 'true')
+            
+        serializer = ContactMessageSerializer(messages, many=True)
+        # Manually add is_resolved and admin_note to response if not in serializer
+        # (Though they should be in the model serializer if defined as '__all__' or included)
+        # Checking serializer definition again... it was: fields = ('id', 'name', 'email', 'subject', 'message', 'created_at')
+        # I should update the serializer or just add them here.
+        # Let's update the serializer in serializers.py later, or just return them here for now.
+        
+        # Returning full data
+        data = []
+        for msg in messages:
+            data.append({
+                'id': msg.id,
+                'name': msg.name,
+                'email': msg.email,
+                'subject': msg.subject,
+                'message': msg.message,
+                'created_at': msg.created_at,
+                'is_resolved': msg.is_resolved,
+                'admin_note': msg.admin_note
+            })
+        return Response(data)
+
+    def patch(self, request, pk=None):
+        if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
+            return Response({"detail": "Admin only"}, status=status.HTTP_403_FORBIDDEN)
+            
+        from .models import ContactMessage
+        try:
+            msg = ContactMessage.objects.get(pk=pk)
+            msg.is_resolved = request.data.get('is_resolved', msg.is_resolved)
+            msg.admin_note = request.data.get('admin_note', msg.admin_note)
+            msg.save()
+            return Response({"detail": "Message updated successfully"})
+        except ContactMessage.DoesNotExist:
+            return Response({"detail": "Message not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class GoogleLoginView(APIView):
     """

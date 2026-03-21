@@ -32,6 +32,7 @@ urlpatterns = [
     
     # Contact Form
     path('contact/', ContactView.as_view(), name='contact'),
+    path('admin/contact/<int:pk>/', ContactView.as_view(), name='admin-contact-detail'),
     
     # Forgot Password Flow
     path('forgot-password/', ForgotPasswordRequestView.as_view(), name='forgot-password-request'), # Request OTP

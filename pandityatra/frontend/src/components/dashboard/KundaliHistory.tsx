@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { FaSpinner } from 'react-icons/fa';
 import { pdf } from '@react-pdf/renderer';
 import { KundaliPDF } from '@/pages/Kundali/KundaliPDF';
+import { KundaliChart } from '@/pages/Kundali/KundaliChart';
 
 const KundaliHistory: React.FC = () => {
     const [charts, setCharts] = useState<any[]>([]);
@@ -174,6 +175,15 @@ const KundaliHistory: React.FC = () => {
                                     <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Generated</p>
                                     <p className="font-semibold text-[#3E2723]">{new Date(selectedChart.created_at).toLocaleDateString()}</p>
                                 </div>
+                            </div>
+
+                            {/* Lagna Chart */}
+                            <div className="flex flex-col items-center">
+                                <h4 className="font-bold text-[#E65100] mb-4 text-center text-lg uppercase tracking-widest">Lagna Chart (D1)</h4>
+                                <KundaliChart 
+                                    planets={selectedChart.planets || []} 
+                                    lagna={selectedChart.lagna || 1} 
+                                />
                             </div>
 
                             {/* Planetary Positions */}

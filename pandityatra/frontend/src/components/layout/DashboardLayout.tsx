@@ -131,6 +131,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
             { icon: Star, label: 'Reviews', path: '/admin/reviews' },
             { icon: FileText, label: 'Site Content', path: '/admin/site-content' },
+            { icon: MessageCircle, label: 'Support Enquiries', path: '/admin/support' },
+            { icon: AlertTriangle, label: 'Error Logs', path: '/admin/error-logs' },
             { icon: Menu, label: 'Activity Logs', path: '/admin/activity-logs' },
             // Manage Admins — only visible if superadmin (injected below)
             { icon: Settings, label: 'Settings', path: '/admin/settings' },

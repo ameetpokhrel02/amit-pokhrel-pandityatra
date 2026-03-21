@@ -3,28 +3,28 @@ import apiClient from './api-client';
 // ----------------------
 // Payments APIs
 // ----------------------
-export interface Payment {
+export interface AdminPayment {
     id: number;
-    payment_method: string;
-    amount_npr: string;
-    amount_usd: string;
-    amount: string;
+    payment_method: 'STRIPE' | 'KHALTI' | 'ESEWA';
+    amount_npr: number;
+    amount_usd: number;
+    amount: number;
     currency: string;
-    transaction_id: string;
-    status: string;
+    transaction_id: string | null;
+    status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED' | 'PROCESSING';
     created_at: string;
-    booking: number;
-    booking_details?: {
+    booking: number | null;
+    booking_details: {
         id: number;
         pandit_name: string;
-    };
-    user_details?: {
+    } | null;
+    user_details: {
         full_name: string;
         email: string;
-    };
+    } | null;
 }
 
-export async function fetchAdminPayments(): Promise<Payment[]> {
+export async function fetchAdminPayments(): Promise<AdminPayment[]> {
     const response = await apiClient.get('/payments/admin/');
     return response.data;
 }
@@ -297,7 +297,16 @@ export async function fetchProfile() {
 export interface AdminStats {
     total_users: number;
     total_pandits: number;
+    total_bookings: number;
+    revenue_this_month: number;
+    user_growth: number;
+    pandit_growth: number;
+    booking_growth: number;
+    revenue_growth: number;
     pending_verifications: number;
+    low_stock_count: number;
+    todays_pujas_count: number;
+    error_logs_count: number;
     system_status: string;
 }
 
@@ -412,8 +421,30 @@ export async function deletePanditProfile(id: number) {
 // ----------------------
 // Contact API
 // ----------------------
+export interface ContactMessage {
+    id: number;
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    created_at: string;
+    is_resolved: boolean;
+    admin_note: string | null;
+}
+
 export async function submitContactForm(payload: { name: string; email: string; subject?: string; message: string }) {
     const response = await apiClient.post('/users/contact/', payload);
+    return response.data;
+}
+
+export async function fetchContactMessages(isResolved?: boolean): Promise<ContactMessage[]> {
+    const params = isResolved !== undefined ? { is_resolved: isResolved } : {};
+    const response = await apiClient.get('/users/contact/', { params });
+    return response.data;
+}
+
+export async function updateContactMessage(id: number, data: { is_resolved?: boolean; admin_note?: string }) {
+    const response = await apiClient.patch(`/users/admin/contact/${id}/`, data);
     return response.data;
 }
 
