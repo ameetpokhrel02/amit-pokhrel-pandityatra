@@ -205,7 +205,13 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Left Column: Form */}
-      <div className="lg:col-span-1 space-y-6">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          generateChart();
+        }}
+        className="lg:col-span-1 space-y-6"
+      >
         {/* Inputs */}
         <div className="space-y-2">
           <Label htmlFor="name">Full Name</Label>
@@ -245,7 +251,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
             <Input value={formData.place} onChange={(e) => setFormData({ ...formData, place: e.target.value })} placeholder="City" className="flex-1" />
             <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0 border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50">
+                <Button type="button" variant="outline" size="icon" className="shrink-0 border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50">
                   <MapPin className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
@@ -272,7 +278,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
                   />
                 </div>
                 <DialogFooter>
-                  <Button onClick={() => setIsMapOpen(false)} className="bg-[#FF6F00] text-white">Done</Button>
+                  <Button type="button" onClick={() => setIsMapOpen(false)} className="bg-[#FF6F00] text-white">Done</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -285,10 +291,10 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
           )}
         </div>
 
-        <Button onClick={generateChart} disabled={loading} className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white">
+        <Button type="submit" disabled={loading} className="w-full bg-[#FF6F00] hover:bg-[#E65100] text-white">
           {loading ? <FaSpinner className="animate-spin mr-2" /> : <GiStarsStack className="mr-2" />} Generate Kundali
         </Button>
-      </div>
+      </form>
 
       {/* Right Column: Results */}
       <div className="lg:col-span-2">
@@ -439,6 +445,67 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
   );
 };
 
+const KundaliGuarantee = () => {
+  return (
+    <section className="py-20 px-4 md:px-8 bg-gradient-to-b from-orange-50/50 to-white overflow-hidden border-t border-orange-100">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          {/* Content */}
+          <div className="space-y-8 order-2 md:order-1 text-center md:text-left">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-orange-100 text-orange-700 font-bold text-sm tracking-wide uppercase">
+              <GiStarsStack className="w-5 h-5" />
+              Sacred Promise
+            </div>
+
+            <div className="space-y-4">
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-[#3E2723] leading-tight">
+                अब कुण्डलीको ग्यारेन्टी <br />
+                <span className="text-orange-600">पण्डितयात्राले लिन्छ !</span>
+              </h2>
+              <p className="text-xl md:text-2xl text-[#3E2723]/70 font-medium">
+                Now PanditYatra guarantees your Kundali!
+              </p>
+            </div>
+
+            <p className="text-lg text-[#3E2723]/60 leading-relaxed max-w-xl mx-auto md:mx-0">
+              Our charts are crafted with divine precision, blending ancient Vedic wisdom with modern accuracy. We ensure that every calculation reflects the true cosmic alignment of your birth.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-8 pt-4">
+              <div className="flex flex-col items-center md:items-start gap-1">
+                <span className="text-3xl font-black text-orange-600">100%</span>
+                <span className="text-xs font-bold text-[#3E2723]/40 uppercase tracking-widest text-[10px]">Accuracy</span>
+              </div>
+              <div className="w-px h-12 bg-orange-200 hidden sm:block"></div>
+              <div className="flex flex-col items-center md:items-start gap-1">
+                <span className="text-3xl font-black text-orange-600">Verified</span>
+                <span className="text-xs font-bold text-[#3E2723]/40 uppercase tracking-widest text-[10px]">Calculations</span>
+              </div>
+              <div className="w-px h-12 bg-orange-200 hidden sm:block"></div>
+              <div className="flex flex-col items-center md:items-start gap-1">
+                <span className="text-3xl font-black text-orange-600">Trusted</span>
+                <span className="text-xs font-bold text-[#3E2723]/40 uppercase tracking-widest text-[10px]">by Thousands</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Image */}
+          <div className="relative order-1 md:order-2 flex justify-center items-center">
+            <div className="absolute w-[120%] h-[120%] bg-orange-100/10 rounded-full blur-3xl -z-10"></div>
+            <div className="relative group">
+              <img
+                src="/images/kundali.png"
+                alt="Authentic Kundali"
+                className="relative z-10 w-full max-w-[450px] h-auto transition-transform duration-500 rounded-none group-hover:scale-105"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 
 const OfflineKundali: React.FC = () => {
   const { token } = useAuth();
@@ -545,6 +612,7 @@ const OfflineKundali: React.FC = () => {
           </Tabs>
         </div>
       </main>
+      <KundaliGuarantee />
       <Footer />
     </div>
   );

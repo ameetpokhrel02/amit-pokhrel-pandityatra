@@ -57,7 +57,8 @@ const ForgotPasswordPage: React.FC = () => {
       title="Forgot Password"
       subtitle="Enter your details to reset password"
     >
-      <motion.div className="space-y-4" variants={itemVariants}>
+      <form onSubmit={(e) => { e.preventDefault(); handleRequestOtp(); }}>
+        <motion.div className="space-y-4" variants={itemVariants}>
         {/* Toggle */}
         <div className="flex space-x-4 mb-2">
           <label className="flex items-center space-x-2 text-sm cursor-pointer">
@@ -117,7 +118,7 @@ const ForgotPasswordPage: React.FC = () => {
         </div>
 
         <Button
-          onClick={handleRequestOtp}
+          type="submit"
           disabled={loading || (inputType === 'phone' ? !phone : !email)}
           className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
         >
@@ -130,13 +131,14 @@ const ForgotPasswordPage: React.FC = () => {
           </Alert>
         )}
 
-        <div className="text-center text-sm text-gray-500 mt-4">
-          Remember your password?{' '}
-          <Link to="/login" className="font-bold text-primary hover:underline">
-            Login here
-          </Link>
-        </div>
-      </motion.div>
+          <div className="text-center text-sm text-gray-500 mt-4">
+            Remember your password?{' '}
+            <Link to="/login" className="font-bold text-primary hover:underline">
+              Login here
+            </Link>
+          </div>
+        </motion.div>
+      </form>
     </AuthLayout>
   );
 };

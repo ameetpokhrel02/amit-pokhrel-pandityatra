@@ -9,6 +9,7 @@ import { MessageCircle, Send, User, Clock, Search } from 'lucide-react';
 import api from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
+import { WS_BASE_URL } from '@/lib/helper';
 
 interface ChatRoom {
   id: number;
@@ -98,7 +99,7 @@ const PanditMessages: React.FC = () => {
       wsRef.current.close();
     }
 
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    const wsBaseUrl = WS_BASE_URL;
     const wsUrl = `${wsBaseUrl}/ws/chat/${roomId}/?token=${encodeURIComponent(token || '')}`;
 
     wsRef.current = new WebSocket(wsUrl);

@@ -2,9 +2,20 @@ import { useState, useEffect } from 'react';
 
 export const usePWA = () => {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [isStandalone, setIsStandalone] = useState(false);
     const [isInstallable, setIsInstallable] = useState(false);
 
     useEffect(() => {
+        // Check if already in standalone mode
+        const checkStandalone = () => {
+            const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                          (navigator as any).standalone || 
+                          document.referrer.includes('android-app://');
+            setIsStandalone(isPWA);
+        };
+
+        checkStandalone();
+
         const handler = (e: any) => {
             // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
@@ -40,5 +51,5 @@ export const usePWA = () => {
         setIsInstallable(false);
     };
 
-    return { isInstallable, installPWA };
+    return { isInstallable, isStandalone, installPWA };
 };

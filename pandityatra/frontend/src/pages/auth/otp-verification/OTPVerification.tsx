@@ -89,29 +89,30 @@ const OTPVerificationPage: React.FC = () => {
       title="Verify OTP"
       subtitle={`Enter the code sent to ${identifier}`}
     >
-      <motion.div className="space-y-6 flex flex-col items-center" variants={itemVariants}>
-        <InputOTP
-          maxLength={6}
-          value={otp}
-          onChange={(value) => setOtp(value)}
-        >
-          <InputOTPGroup className="gap-2">
-            <InputOTPSlot index={0} className="w-10 h-12 rounded-lg border-gray-300" />
-            <InputOTPSlot index={1} className="w-10 h-12 rounded-lg border-gray-300" />
-            <InputOTPSlot index={2} className="w-10 h-12 rounded-lg border-gray-300" />
-            <InputOTPSlot index={3} className="w-10 h-12 rounded-lg border-gray-300" />
-            <InputOTPSlot index={4} className="w-10 h-12 rounded-lg border-gray-300" />
-            <InputOTPSlot index={5} className="w-10 h-12 rounded-lg border-gray-300" />
-          </InputOTPGroup>
-        </InputOTP>
+      <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }} className="w-full">
+        <motion.div className="space-y-6 flex flex-col items-center" variants={itemVariants}>
+          <InputOTP
+            maxLength={6}
+            value={otp}
+            onChange={(value) => setOtp(value)}
+          >
+            <InputOTPGroup className="gap-2">
+              <InputOTPSlot index={0} className="w-10 h-12 rounded-lg border-gray-300" />
+              <InputOTPSlot index={1} className="w-10 h-12 rounded-lg border-gray-300" />
+              <InputOTPSlot index={2} className="w-10 h-12 rounded-lg border-gray-300" />
+              <InputOTPSlot index={3} className="w-10 h-12 rounded-lg border-gray-300" />
+              <InputOTPSlot index={4} className="w-10 h-12 rounded-lg border-gray-300" />
+              <InputOTPSlot index={5} className="w-10 h-12 rounded-lg border-gray-300" />
+            </InputOTPGroup>
+          </InputOTP>
 
-        <Button
-          onClick={handleVerify}
-          disabled={loading || otp.length < 6}
-          className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
-        >
-          {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Verify'}
-        </Button>
+          <Button
+            type="submit"
+            disabled={loading || otp.length < 6}
+            className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
+          >
+            {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Verify'}
+          </Button>
 
         {error && (
           <Alert variant="destructive" className="w-full">
@@ -134,7 +135,8 @@ const OTPVerificationPage: React.FC = () => {
             {resendLoading ? 'Resending...' : 'Resend'}
           </button>
         </div>
-      </motion.div>
+        </motion.div>
+      </form>
     </AuthLayout>
   );
 };

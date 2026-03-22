@@ -100,43 +100,44 @@ const LoginOTPVerification: React.FC = () => {
       title="Verify OTP"
       subtitle={`Enter the 6-digit OTP sent to ${identifier}`}
     >
-      <motion.div className="space-y-4" variants={itemVariants}>
-        <div className="space-y-2">
-          <Label htmlFor="otp" className="text-center block">Enter OTP</Label>
-          <div className="flex justify-center">
-            <InputOTP
-              maxLength={6}
-              value={otp}
-              onChange={(value) => {
-                setOtp(value);
-                setError(null);
-              }}
-            >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
+      <form onSubmit={(e) => { e.preventDefault(); handleVerify(); }}>
+        <motion.div className="space-y-4" variants={itemVariants}>
+          <div className="space-y-2">
+            <Label htmlFor="otp" className="text-center block">Enter OTP</Label>
+            <div className="flex justify-center">
+              <InputOTP
+                maxLength={6}
+                value={otp}
+                onChange={(value) => {
+                  setOtp(value);
+                  setError(null);
+                }}
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
           </div>
-        </div>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <Button
-          onClick={handleVerify}
-          disabled={loading || otp.length !== 6}
-          className="w-full"
-        >
-          {loading ? <LoadingSpinner size={18} /> : 'Verify & Login'}
-        </Button>
+          <Button
+            type="submit"
+            disabled={loading || otp.length !== 6}
+            className="w-full"
+          >
+            {loading ? <LoadingSpinner size={18} /> : 'Verify & Login'}
+          </Button>
 
         <div className="text-center text-sm space-y-2">
           <button
@@ -155,7 +156,8 @@ const LoginOTPVerification: React.FC = () => {
             Back to Login
           </button>
         </div>
-      </motion.div>
+        </motion.div>
+      </form>
     </AuthLayout>
   );
 };

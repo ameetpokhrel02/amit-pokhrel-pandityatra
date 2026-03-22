@@ -50,15 +50,7 @@ services:
       - CORS_ALLOW_ALL_ORIGINS=False
       - CORS_ALLOWED_ORIGINS=http://localhost:5173
       - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
-      - TURN_ENABLED=True
-      - TURN_HOST=coturn
-      - TURN_PUBLIC_HOST=${TURN_PUBLIC_HOST:-localhost}
-      - TURN_PORT=3478
-      - TURN_TLS_PORT=0
-      - TURN_TRANSPORTS=${TURN_TRANSPORTS:-udp,tcp}
-      - TURN_USERNAME=${TURN_USERNAME:-pandityatra}
-      - TURN_PASSWORD=${TURN_PASSWORD:-pandityatra_turn_password}
-      - TURN_REALM=${TURN_REALM:-pandityatra.local}
+      - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:

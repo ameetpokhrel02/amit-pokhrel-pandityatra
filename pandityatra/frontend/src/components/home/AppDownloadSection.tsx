@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { usePWA } from '@/hooks/usePWA';
 // import { Button } from '@/components/ui/button';
 import panditUi from '@/assets/images/pandi ui.jpg';
 import appleLogo from '@/assets/images/Apple Logo PNG.jpeg';
@@ -10,6 +11,7 @@ const AppDownloadSection: React.FC = () => {
     const ref = useRef<HTMLDivElement>(null);
 
     // Mouse position state for parallax
+    const { isInstallable, isStandalone, installPWA } = usePWA();
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -92,20 +94,27 @@ const AppDownloadSection: React.FC = () => {
                                     </div>
                                 </motion.a>
 
-                                {/* PWA Button */}
-                                <motion.a
-                                    href="#"
-                                    className="bg-white text-dark-brown px-6 py-3 rounded-xl flex items-center space-x-3 hover:bg-gray-50 transition-colors border-2 border-dark-brown/10 shadow-lg hover:shadow-xl"
-                                    whileHover={{ scale: 1.05, y: -3 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                >
-                                    <img src={pwaLogo} alt="PWA" className="w-8 h-8 object-contain rounded-md" />
-                                    <div className="text-left">
-                                        <div className="text-xs uppercase opacity-90 font-bold text-saffron">Launch as</div>
-                                        <div className="text-lg font-semibold leading-none">Web App</div>
-                                    </div>
-                                </motion.a>
+                                 {/* PWA Button */}
+                                 {(!isStandalone || isInstallable) && (
+                                     <motion.button
+                                         onClick={(e) => {
+                                             e.preventDefault();
+                                             installPWA();
+                                         }}
+                                         className="bg-white text-dark-brown px-6 py-3 rounded-xl flex items-center space-x-3 hover:bg-gray-50 transition-colors border-2 border-dark-brown/10 shadow-lg hover:shadow-xl"
+                                         whileHover={{ scale: 1.05, y: -3 }}
+                                         whileTap={{ scale: 0.95 }}
+                                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                                     >
+                                         <img src={pwaLogo} alt="PWA" className="w-8 h-8 object-contain rounded-md" />
+                                         <div className="text-left">
+                                             <div className="text-xs uppercase opacity-90 font-bold text-saffron">
+                                                 {isInstallable ? 'Install as' : 'Launch as'}
+                                             </div>
+                                             <div className="text-lg font-semibold leading-none">Web App</div>
+                                         </div>
+                                     </motion.button>
+                                 )}
                             </div>
 
                             <div className="mt-10 flex items-center space-x-4">

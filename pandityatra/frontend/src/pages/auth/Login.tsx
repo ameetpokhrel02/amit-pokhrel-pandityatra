@@ -190,199 +190,209 @@ const LoginPage: React.FC = () => {
         </motion.div>
 
         {/* Inputs */}
-        <motion.div className="space-y-4" variants={itemVariants}>
-          <div className="space-y-2">
-            {/* Input Type Toggle for BOTH OTP and Password Mode */}
-            <div className="flex space-x-4 mb-2">
-              <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  checked={inputType === 'phone'}
-                  onChange={() => setInputType('phone')}
-                  className="text-primary"
-                />
-                <span>Phone</span>
-              </label>
-              <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  checked={inputType === 'email'}
-                  onChange={() => setInputType('email')}
-                  className="text-primary"
-                />
-                <span>Email</span>
-              </label>
-              <label className="flex items-center space-x-2 text-sm cursor-pointer">
-                <input
-                  type="radio"
-                  checked={inputType === 'username'}
-                  onChange={() => setInputType('username')}
-                  className="text-primary"
-                />
-                <span>Username</span>
-              </label>
-            </div>
-
-            <Label htmlFor="identifier">
-              {inputType === 'phone' ? 'Phone Number' : inputType === 'email' ? 'Email Address' : 'Username'}
-            </Label>
-
-            {inputType === 'phone' ? (
-              <div className="space-y-1">
-                <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
-                  <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
-                    <select
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
-                      aria-label="Select country"
-                    >
-                      {COUNTRY_OPTIONS.map((country) => (
-                        <option key={country.code} value={country.code}>
-                          {country.flag} {country.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="98XXXXXXXX"
-                    inputMode="numeric"
-                    type="tel"
-                    className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
-                  />
-                </div>
-
-                <p className="text-xs text-gray-500 px-1">
-                  {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
-                </p>
-              </div>
-            ) : inputType === 'email' ? (
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                  <FaEnvelope className="w-4 h-4" />
-                </span>
-                <Input
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  type="email"
-                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                />
-              </div>
-            ) : (
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                  <FaUser className="w-4 h-4" />
-                </span>
-                <Input
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
-                  type="text"
-                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                />
-              </div>
-            )}
-          </div>
-
-          {loginMethod === 'password' && (
+        <form 
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (loginMethod === 'password') {
+              handlePasswordLogin();
+            } else {
+              handleRequestOtp();
+            }
+          }}
+          className="space-y-6"
+        >
+          {/* Inputs Section */}
+          <motion.div className="space-y-4" variants={itemVariants}>
             <div className="space-y-2">
-              <Label htmlFor="password-login" className="text-gray-600 font-semibold px-1">Password</Label>
-              <div className="relative group">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                  <FaLock className="w-4 h-4" />
-                </span>
-                <Input
-                  id="password-login"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter password"
-                  type={showPassword ? 'text' : 'password'}
-                  className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-          )}
-        </motion.div>
-
-        <motion.div className="space-y-6" variants={itemVariants}>
-
-          {/* Remember Me & Forgot Password */}
-          {loginMethod === 'password' && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember-me"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                />
-                <label
-                  htmlFor="remember-me"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-600"
-                >
-                  Remember me
+              {/* Input Type Toggle for BOTH OTP and Password Mode */}
+              <div className="flex space-x-4 mb-2">
+                <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={inputType === 'phone'}
+                    onChange={() => setInputType('phone')}
+                    className="text-primary"
+                  />
+                  <span>Phone</span>
+                </label>
+                <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={inputType === 'email'}
+                    onChange={() => setInputType('email')}
+                    className="text-primary"
+                  />
+                  <span>Email</span>
+                </label>
+                <label className="flex items-center space-x-2 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    checked={inputType === 'username'}
+                    onChange={() => setInputType('username')}
+                    className="text-primary"
+                  />
+                  <span>Username</span>
                 </label>
               </div>
-              <Link
-                to="/auth/forgot-password"
-                className="text-sm font-bold text-primary hover:underline"
-              >
-                Forgot Password?
-              </Link>
+
+              <Label htmlFor="identifier">
+                {inputType === 'phone' ? 'Phone Number' : inputType === 'email' ? 'Email Address' : 'Username'}
+              </Label>
+
+              {inputType === 'phone' ? (
+                <div className="space-y-1">
+                  <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
+                    <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
+                      <select
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(e.target.value)}
+                        className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
+                        aria-label="Select country"
+                      >
+                        {COUNTRY_OPTIONS.map((country) => (
+                          <option key={country.code} value={country.code}>
+                            {country.flag} {country.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                      placeholder="98XXXXXXXX"
+                      inputMode="numeric"
+                      type="tel"
+                      className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                    />
+                  </div>
+
+                  <p className="text-xs text-gray-500 px-1">
+                    {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
+                  </p>
+                </div>
+              ) : inputType === 'email' ? (
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                    <FaEnvelope className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email address"
+                    type="email"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+                  />
+                </div>
+              ) : (
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                    <FaUser className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="Enter username"
+                    type="text"
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+                  />
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Action Button */}
-          {loginMethod === 'password' ? (
-            <Button
-              onClick={handlePasswordLogin}
-              disabled={
-                loading ||
-                (inputType === 'phone' && !phone) ||
-                (inputType === 'email' && !email) ||
-                (inputType === 'username' && !username) ||
-                !password
-              }
-              className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
-            >
-              {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Sign In'}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleRequestOtp}
-              disabled={
-                loading ||
-                (inputType === 'phone' && !phone) ||
-                (inputType === 'email' && !email) ||
-                (inputType === 'username' && !username)
-              }
-              className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
-            >
-              {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Receive OTP'}
-            </Button>
-          )}
+            {loginMethod === 'password' && (
+              <div className="space-y-2">
+                <Label htmlFor="password-login" className="text-gray-600 font-semibold px-1">Password</Label>
+                <div className="relative group">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                    <FaLock className="w-4 h-4" />
+                  </span>
+                  <Input
+                    id="password-login"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+          <motion.div className="space-y-6" variants={itemVariants}>
+            {/* Remember Me & Forgot Password */}
+            {loginMethod === 'password' && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  />
+                  <label
+                    htmlFor="remember-me"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-600"
+                  >
+                    Remember me
+                  </label>
+                </div>
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-sm font-bold text-primary hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+            )}
 
-          {/* Register Link + Pandit Registration */}
-        </motion.div>
+            {/* Action Button */}
+            {loginMethod === 'password' ? (
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  (inputType === 'phone' && !phone) ||
+                  (inputType === 'email' && !email) ||
+                  (inputType === 'username' && !username) ||
+                  !password
+                }
+                className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
+              >
+                {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Sign In'}
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={
+                  loading ||
+                  (inputType === 'phone' && !phone) ||
+                  (inputType === 'email' && !email) ||
+                  (inputType === 'username' && !username)
+                }
+                className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
+              >
+                {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Receive OTP'}
+              </Button>
+            )}
+
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </motion.div>
+        </form>
 
         <motion.div className="space-y-3 text-center" variants={itemVariants}>
           <div className="text-sm text-gray-500">

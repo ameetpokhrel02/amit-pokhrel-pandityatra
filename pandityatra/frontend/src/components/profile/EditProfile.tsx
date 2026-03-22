@@ -180,7 +180,6 @@ export const EditProfile = () => {
                         id="phone_number"
                         value={formData.phone_number}
                         onChange={(e) => setFormData({ ...formData, phone_number: e.target.value })}
-                        required
                         className="rounded-xl border-orange-100 focus:ring-orange-200"
                     />
                 </div>

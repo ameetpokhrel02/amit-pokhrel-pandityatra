@@ -75,8 +75,7 @@ export interface UseChat {
   initiateChat: (pId: string, pName?: string, pProfilePic?: string) => Promise<void>;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-const WS_BASE_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+import { API_BASE_URL, WS_BASE_URL } from '@/lib/helper';
 
 export function useChat(initialBookingId?: string): UseChat {
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
@@ -132,7 +131,7 @@ export function useChat(initialBookingId?: string): UseChat {
     if (!bkId || !token) return;
 
     // Use backend WebSocket URL - not frontend's host
-    const wsBaseUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    const wsBaseUrl = WS_BASE_URL;
     // Pass JWT token as query parameter for authentication
     const wsUrl = `${wsBaseUrl}/ws/chat/${bkId}/?token=${encodeURIComponent(token)}`;
 

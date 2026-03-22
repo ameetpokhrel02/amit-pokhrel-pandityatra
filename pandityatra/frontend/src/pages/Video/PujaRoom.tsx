@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import apiClient from "@/lib/api-client"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { WS_BASE_URL } from "@/lib/helper"
 import { useAuth } from "@/hooks/useAuth"
 import VideoTile from "./VideoTile"
 import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff, Send, FileText, Maximize2, Minimize2 } from "lucide-react"
@@ -122,7 +123,7 @@ export default function PujaRoom() {
   const roomIdRef = useRef<string | null>(null)
   const tokenRef = useRef<string | null>(token || null)
 
-  const wsBaseUrlRaw = (import.meta.env.VITE_WS_URL || 'ws://localhost:8000') as string
+  const wsBaseUrlRaw = WS_BASE_URL;
   const wsBaseUrl = wsBaseUrlRaw.replace(/\/+$/, '')
   const remoteCount = Object.keys(remoteStreams).length
   const totalParticipants = remoteCount + (localStream ? 1 : 0)
@@ -184,9 +185,10 @@ export default function PujaRoom() {
 
   const [iceServers, setIceServers] = useState<RTCIceServer[]>(() => parseFallbackIceServers())
 
-  useEffect(() => {
-    tokenRef.current = token || null
-  }, [token])
+  // We remove the old token overriding effect as we explicitly set it on connection
+  // useEffect(() => {
+  //   tokenRef.current = token || null
+  // }, [token])
 
   const fetchIceServers = useCallback(async () => {
     try {
@@ -973,12 +975,13 @@ export default function PujaRoom() {
   }, [clearHeartbeatTimers, clearStatsTimer, handleSignalMessage, requestWakeLock, startConnectionMonitoring, wsBaseUrl])
 
   const connectSignaling = useCallback((resolvedRoomId: string, currentToken: string) => {
-    const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(resolvedRoomId)}/?token=${encodeURIComponent(currentToken)}`
+    const activeToken = localStorage.getItem('token') || currentToken
+    const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(resolvedRoomId)}/?token=${encodeURIComponent(activeToken)}`
     console.info('[PujaRoom] Connecting websocket', {
       wsUrl,
       roomId: resolvedRoomId,
-      hasToken: Boolean(currentToken),
-      tokenLength: currentToken?.length || 0,
+      hasToken: Boolean(activeToken),
+      tokenLength: activeToken?.length || 0,
     })
     const socket = new WebSocket(wsUrl)
     wsRef.current = socket
@@ -1050,10 +1053,11 @@ export default function PujaRoom() {
 
       localStreamRef.current = media
       setLocalStream(media)
+      const activeToken = localStorage.getItem('token') || currentToken
       setRoomId(resolvedRoomId)
       setBookingId(resolvedBookingId)
       roomIdRef.current = resolvedRoomId
-      tokenRef.current = currentToken
+      tokenRef.current = activeToken
       setNeedsMediaPermission(false)
 
       await enumerateDevices()
@@ -1133,7 +1137,8 @@ export default function PujaRoom() {
       closeAll()
       stopLocalMedia()
     }
-  }, [closeAll, fetchIceServers, isPermissionDeniedError, resolveRoomContext, startMediaAndConnect, stopLocalMedia, token, validateRoomAccess])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, token])
 
   useEffect(() => {
     const onVisibility = () => {

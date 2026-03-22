@@ -60,12 +60,10 @@ def _booking_time_window_ok(booking):
         return False, "Booking start time is not configured"
 
     now = timezone.now()
-    early_buffer = start_dt - timedelta(minutes=30)
     late_buffer = start_dt + timedelta(hours=4)
-    ok = early_buffer <= now <= late_buffer
-    if ok:
+    if now <= late_buffer:
         return True, "ok"
-    return False, "Room can be joined only around the scheduled booking time"
+    return False, "Room has expired (4 hours past scheduled time)"
 
 
 def _validate_booking_video_state(booking):
@@ -117,22 +115,28 @@ def ice_servers(request):
     turn_password = getattr(settings, "TURN_PASSWORD", "")
     transports = list(getattr(settings, "TURN_TRANSPORTS", ["udp", "tcp"]) or ["udp", "tcp"])
 
-    if turn_enabled and turn_host and turn_username and turn_password:
+    if turn_enabled and (turn_host or getattr(settings, "TURN_SERVER_URL", "")) and turn_username and turn_password:
         turn_urls = []
-        if "udp" in transports:
-            turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=udp")
-        if "tcp" in transports:
-            turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=tcp")
-        if turn_tls_port and "tcp" in transports:
-            turn_urls.append(f"turns:{turn_host}:{turn_tls_port}?transport=tcp")
+        full_url = getattr(settings, "TURN_SERVER_URL", "")
 
-        ice_servers_payload.append(
-            {
-                "urls": turn_urls,
-                "username": turn_username,
-                "credential": turn_password,
-            }
-        )
+        if full_url:
+            turn_urls.append(full_url)
+        else:
+            if "udp" in transports:
+                turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=udp")
+            if "tcp" in transports:
+                turn_urls.append(f"turn:{turn_host}:{turn_port}?transport=tcp")
+            if turn_tls_port and "tcp" in transports:
+                turn_urls.append(f"turns:{turn_host}:{turn_tls_port}?transport=tcp")
+
+        if turn_urls:
+            ice_servers_payload.append(
+                {
+                    "urls": turn_urls,
+                    "username": turn_username,
+                    "credential": turn_password,
+                }
+            )
 
     return Response(
         {

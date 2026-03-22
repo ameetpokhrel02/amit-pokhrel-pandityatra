@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, FileText, Phone, Mail } from 'lucide-react';
 import axios from 'axios';
+import { API_BASE_URL } from '@/lib/helper';
 import { motion } from 'framer-motion';
 
 interface PendingPandit {
@@ -39,7 +40,7 @@ const AdminVerificationDashboard: React.FC = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const response = await axios.get(
-        'http://localhost:8000/api/pandits/pending/',
+        `${API_BASE_URL}/pandits/pending/`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -61,7 +62,7 @@ const AdminVerificationDashboard: React.FC = () => {
       setActionLoading(panditId);
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:8000/api/pandits/${panditId}/verify/`,
+        `${API_BASE_URL}/pandits/${panditId}/verify/`,
         { notes: 'Approved by admin' },
         {
           headers: {
@@ -89,7 +90,7 @@ const AdminVerificationDashboard: React.FC = () => {
       setActionLoading(panditId);
       const token = localStorage.getItem('token');
       await axios.post(
-        `http://localhost:8000/api/pandits/${panditId}/reject/`,
+        `${API_BASE_URL}/pandits/${panditId}/reject/`,
         { reason: rejectReason },
         {
           headers: {

@@ -51,9 +51,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setRole(null);
         })
-        .finally(() => setLoading(false));
+      .finally(() => setLoading(false));
     }
   }, [token]);
+
+  // Sync React state when Axios interceptor refreshes the token behind the scenes
+  useEffect(() => {
+    const handleTokenRefresh = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        setToken(customEvent.detail);
+      }
+    };
+    window.addEventListener('token_refreshed', handleTokenRefresh);
+    return () => window.removeEventListener('token_refreshed', handleTokenRefresh);
+  }, []);
 
   const refreshUser = async () => {
     if (!token) return;

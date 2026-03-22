@@ -1,6 +1,7 @@
 // Helper utilities for API calls and auth headers (frontend-only)
-const rawApiBase = import.meta.env.VITE_API_URL ?? '';
+const rawApiBase = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api';
 export const API_BASE_URL = rawApiBase.replace(/\/+$|\s+/g, '').replace(/\/+$/g, '');
+export const ROOT_URL = API_BASE_URL.replace(/\/api$/, '');
 
 export function buildUrl(path: string) {
   if (!path) return API_BASE_URL;
@@ -15,4 +16,6 @@ export function authHeaders(token?: string | null) {
   return headers;
 }
 
-export default { API_BASE_URL, buildUrl, authHeaders };
+export const WS_BASE_URL = import.meta.env.VITE_WS_URL || ROOT_URL.replace('http', 'ws');
+
+export default { API_BASE_URL, WS_BASE_URL, ROOT_URL, buildUrl, authHeaders };

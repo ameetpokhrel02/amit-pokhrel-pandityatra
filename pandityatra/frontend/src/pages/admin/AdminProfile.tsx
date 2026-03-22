@@ -10,8 +10,9 @@ import { fetchProfile, updateUserProfile, changePassword } from '@/lib/api';
 import { User, Camera, Lock, Save, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { ROOT_URL } from '@/lib/helper';
 
+const API_BASE = ROOT_URL;
 export default function AdminProfile() {
     const { user, role } = useAuth();
     const [profile, setProfile] = useState<any>(null);

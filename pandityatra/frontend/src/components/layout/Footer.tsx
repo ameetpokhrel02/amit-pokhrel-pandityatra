@@ -190,10 +190,10 @@ const Footer: React.FC = () => {
                 <FaPhone className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                 <span>+977 9847226995</span>
               </div>
-              <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
+              <Link to="/contact" className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaEnvelope className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                 <span>pandityatra9@gmail.com</span>
-              </div>
+              </Link>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaMapMarkerAlt className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                 <span>Kathmandu, Nepal</span>

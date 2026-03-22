@@ -79,6 +79,7 @@ apiClient.interceptors.response.use(
                 const { access } = response.data;
 
                 localStorage.setItem('token', access);
+                window.dispatchEvent(new CustomEvent('token_refreshed', { detail: access }));
 
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
                 processQueue(null, access);

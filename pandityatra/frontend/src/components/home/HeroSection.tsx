@@ -5,6 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useAuth } from '@/hooks/useAuth';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
@@ -40,6 +47,7 @@ import {
 import MotionSearch from '@/components/ui/motion-search';
 import MiniOrbit from '@/components/kundali/MiniOrbit';
 import heroPandit from '@/assets/images/hero 3-Photoroom.png';
+import posterImage from '@/assets/images/agarbati_brands.webp';
 
 const HeroSection: React.FC = () => {
   const { t } = useTranslation();
@@ -50,6 +58,7 @@ const HeroSection: React.FC = () => {
     date: '',
     time: ''
   });
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 100]);
   const y2 = useTransform(scrollY, [0, 500], [0, -100]);
@@ -165,7 +174,13 @@ const HeroSection: React.FC = () => {
           </p>
 
           <Card className="p-4 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-xl border-orange-100/50 dark:border-orange-500/20">
-            <div className="grid md:grid-cols-3 gap-3">
+            <form 
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSearch();
+              }}
+              className="grid md:grid-cols-3 gap-3"
+            >
               <Select value={searchData.pujaType} onValueChange={(v) => setSearchData({ ...searchData, pujaType: v })}>
                 <SelectTrigger className="h-12 bg-transparent border-slate-200 dark:border-slate-700">
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
@@ -194,12 +209,12 @@ const HeroSection: React.FC = () => {
               </div>
 
               <Button
-                onClick={handleSearch}
+                type="submit"
                 className="h-12 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg transition-transform hover:scale-105"
               >
                 <FaSearch className="mr-2" /> {t('find_match')}
               </Button>
-            </div>
+            </form>
             <div className="mt-3 flex items-center justify-between text-xs text-slate-500 px-1">
               <span className="flex items-center gap-1"><FaVideo /> {t('live_or_person')}</span>
               <span className="flex items-center gap-1"><FaStar className="text-yellow-400" /> {t('average_rating')}</span>
@@ -224,10 +239,40 @@ const HeroSection: React.FC = () => {
             <Button
               size="lg"
               className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 flex items-center"
-              onClick={scrollToHowItWorks}
+              onClick={() => setIsVideoModalOpen(true)}
             >
               <FaPlay className="mr-2" /> {t('watch_demo')}
             </Button>
+
+            {/* Demo Video Modal */}
+            <Dialog open={isVideoModalOpen} onOpenChange={setIsVideoModalOpen}>
+              <DialogContent className="sm:max-w-[800px] p-0 overflow-hidden bg-black border-none ring-0">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>Watch Demo</DialogTitle>
+                </DialogHeader>
+                <div className="aspect-video w-full bg-black flex items-center justify-center relative group">
+                  <video 
+                    className="w-full h-full object-contain"
+                    controls
+                    autoPlay
+                    muted
+                    playsInline
+                    poster={posterImage}
+                  >
+                    <source 
+                      src="https://res.cloudinary.com/dm0vvpzs9/video/upload/v1774163336/demo_pandit_pwej3d.mp4" 
+                      type="video/mp4" 
+                    />
+                    Your browser does not support the video tag.
+                  </video>
+                  
+                  {/* Subtle Branding/Helper overlay that stays briefly */}
+                  <div className="absolute top-4 left-4 bg-orange-600/80 text-white px-3 py-1 rounded-full text-xs font-bold pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
+                    <FaOm /> PanditYatra Demo
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </motion.div>
 

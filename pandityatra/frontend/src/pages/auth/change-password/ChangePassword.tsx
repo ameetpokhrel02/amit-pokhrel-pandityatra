@@ -81,7 +81,8 @@ const ChangePasswordPage: React.FC = () => {
       title="Set New Password"
       subtitle="Create a new strong password"
     >
-      <motion.div className="space-y-4" variants={itemVariants}>
+      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+        <motion.div className="space-y-4" variants={itemVariants}>
         <div className="space-y-2">
           <Label htmlFor="new-password">New Password</Label>
           <div className="relative">
@@ -131,19 +132,20 @@ const ChangePasswordPage: React.FC = () => {
         </div>
 
         <Button
-          onClick={handleSubmit}
+          type="submit"
           disabled={loading || !newPassword || !confirmPassword}
           className="w-full h-12 text-base rounded-xl bg-primary hover:bg-primary/90 transition-colors"
         >
           {loading ? <LoadingSpinner size={20} className="text-white" /> : 'Reset Password'}
         </Button>
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-      </motion.div>
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </motion.div>
+      </form>
     </AuthLayout>
   );
 };

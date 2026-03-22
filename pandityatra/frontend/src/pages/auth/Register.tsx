@@ -153,118 +153,126 @@ const RegisterPage: React.FC = () => {
               exit={{ opacity: 0, height: 0 }}
               className="space-y-4 overflow-hidden"
             >
-              {/* Full Name */}
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-gray-600 font-semibold px-1">Full Name *</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaUser className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Your full name"
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaEnvelope className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    type="email"
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Phone */}
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
-                <div className="space-y-1">
-                  <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
-                    <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
-                        aria-label="Select country"
-                      >
-                        {COUNTRY_OPTIONS.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {country.flag} {country.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleRegister();
+                }}
+                className="space-y-4"
+              >
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="fullName" className="text-gray-600 font-semibold px-1">Full Name *</Label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                      <FaUser className="w-4 h-4" />
+                    </span>
                     <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      placeholder="98XXXXXXXX"
-                      inputMode="numeric"
-                      type="tel"
-                      className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                      id="fullName"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Your full name"
+                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+                      required
                     />
                   </div>
-
-                  <p className="text-xs text-gray-500 px-1">
-                    {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
-                  </p>
                 </div>
-              </div>
 
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password (Optional)</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaLock className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 px-1">Leave blank to use OTP login only.</p>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                onClick={handleRegister}
-                disabled={loading || !email || !fullName}
-                className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none mt-4"
-              >
-                {loading ? <LoadingSpinner size={24} className="text-white" /> : (
-                  <div className="flex items-center gap-2">
-                    Join PanditYatra <FaArrowRight size={14} />
+                {/* Email */}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                      <FaEnvelope className="w-4 h-4" />
+                    </span>
+                    <Input
+                      id="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      type="email"
+                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+                      required
+                    />
                   </div>
-                )}
-              </Button>
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
+                  <div className="space-y-1">
+                    <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
+                      <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
+                        <select
+                          value={countryCode}
+                          onChange={(e) => setCountryCode(e.target.value)}
+                          className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
+                          aria-label="Select country"
+                        >
+                          {COUNTRY_OPTIONS.map((country) => (
+                            <option key={country.code} value={country.code}>
+                              {country.flag} {country.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+                      <Input
+                        id="phone"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="98XXXXXXXX"
+                        inputMode="numeric"
+                        type="tel"
+                        className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                      />
+                    </div>
+
+                    <p className="text-xs text-gray-500 px-1">
+                      {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password (Optional)</Label>
+                  <div className="relative group">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                      <FaLock className="w-4 h-4" />
+                    </span>
+                    <Input
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Create a password"
+                      type={showPassword ? 'text' : 'password'}
+                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 px-1">Leave blank to use OTP login only.</p>
+                </div>
+
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={loading || !email || !fullName}
+                  className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none mt-4"
+                >
+                  {loading ? <LoadingSpinner size={24} className="text-white" /> : (
+                    <div className="flex items-center gap-2">
+                      Join PanditYatra <FaArrowRight size={14} />
+                    </div>
+                  )}
+                </Button>
+              </form>
 
               {error && (
                 <Alert variant="destructive" className="rounded-xl">

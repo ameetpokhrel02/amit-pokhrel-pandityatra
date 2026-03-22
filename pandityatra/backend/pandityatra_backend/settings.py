@@ -339,6 +339,8 @@ TURN_TRANSPORTS = [
     for t in os.environ.get('TURN_TRANSPORTS', 'udp,tcp').split(',')
     if t.strip().lower() in {'udp', 'tcp'}
 ]
+# Full TURN URL if provided (e.g. from Metered.ca)
+TURN_SERVER_URL = os.environ.get('TURN_SERVER_URL', '')
 # Comma-separated list of STUN urls, fallback keeps free public STUN for bootstrap.
 STUN_URLS = [
     s.strip() for s in os.environ.get('STUN_URLS', 'stun:stun.l.google.com:19302').split(',') if s.strip()
