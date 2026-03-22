@@ -70,7 +70,7 @@ const PujaCategories: React.FC = () => {
   };
 
   return (
-    <section className="py-20 bg-orange-50/30 overflow-hidden">
+    <section id="pujas" className="py-20 bg-orange-50/30 overflow-hidden">
       <div className="container mx-auto max-w-7xl px-4 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

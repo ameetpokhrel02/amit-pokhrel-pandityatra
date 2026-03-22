@@ -67,24 +67,18 @@ const PanchangHighlight: React.FC = () => {
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                <Link to="/kundali">
+                                <Link to="/calendar" className="w-full sm:w-auto">
                                     <Button className="bg-[#3E2723] hover:bg-[#2D1B18] text-white px-8 h-14 rounded-2xl text-lg font-bold shadow-xl shadow-brown-200 transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto">
                                         {t('panchang.explore_calendar')}
                                     </Button>
                                 </Link>
-                                <Button
-                                    className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 text-base md:text-lg transition-all duration-300 transform hover:-translate-y-1"
-                                >
-                                    Book Special Puja
-                                </Button>
-                                <Link to="/calendar" className="w-full sm:w-auto">
+                                <a href="#pujas" className="w-full sm:w-auto">
                                     <Button
-                                        variant="outline"
-                                        className="w-full border-orange-200 text-orange-700 hover:bg-orange-50 rounded-full px-8 py-3 h-auto font-bold text-base md:text-lg transition-all duration-300 transform hover:-translate-y-1"
+                                        className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-10 h-14 rounded-2xl font-bold py-3 text-lg transition-all duration-300 transform hover:-translate-y-1"
                                     >
-                                        Explore Calendar
+                                        Book Special Puja
                                     </Button>
-                                </Link>
+                                </a>
                             </div>
                         </motion.div>
                     </div>
