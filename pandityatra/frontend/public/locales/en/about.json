@@ -1,0 +1,98 @@
+{
+  "hero": {
+    "title": "Bridge to Divine Connection",
+    "subtitle": "PanditYatra simplifies your spiritual journey by connecting you with experienced pandits, sacred rituals, and authentic puja samagri across the holy land of Nepal.",
+    "explore_services": "Explore Services",
+    "about_project": "About The Project"
+  },
+  "mission": {
+    "title": "Our Mission",
+    "p1": "In today's fast-paced world, maintaining a connection with our spiritual roots can be challenging. PanditYatra was born from the desire to make traditional rituals accessible, authentic, and hassle-free.",
+    "p2": "We strive to preserve the sanctity of Sanatan Dharma while leveraging technology to bring pandits and devotees together seamlessly.",
+    "verified_pandits": "Verified Pandits",
+    "verified_desc": "Experienced & Knowledgeable",
+    "authentic_rituals": "Authentic Rituals",
+    "authentic_desc": "Strict Adherence to Vidhi",
+    "quality_samagri": "Quality Samagri",
+    "quality_desc": "Pure & Fresh Materials",
+    "temple_booking": "Temple Booking",
+    "temple_desc": "Access to Sacred Sites"
+  },
+  "essence": {
+    "title": "The Essence of Rituals",
+    "items": [
+      {
+        "title": "Spiritual Harmony",
+        "desc": "Rituals create a bridge between the material and the spiritual, bringing peace and balance to life."
+      },
+      {
+        "title": "Cultural Heritage",
+        "desc": "Preserving ancient traditions passed down through generations, keeping our culture alive."
+      },
+      {
+        "title": "Positive Energy",
+        "desc": "Sacred mantras and offerings generate positive vibrations that cleanse the environment and mind."
+      }
+    ]
+  },
+  "destinations": {
+    "title": "Sacred Destinations",
+    "subtitle": "Explore divine temples and pilgrimage sites.",
+    "view_all": "View All",
+    "learn_more": "Learn More"
+  },
+  "project": {
+    "about_title": "About PanditYatra",
+    "badge": "Connecting Global Nepali Families with Authentic Spiritual Services",
+    "desc_short": "PanditYatra is a full-stack spiritual-tech platform that brings verified pandits, live video rituals, puja samagri, and Vedic astrology tools directly to your home — no matter where you are.",
+    "overview_title": "Project Overview",
+    "overview_p1": "PanditYatra is a comprehensive web application developed as a Final Year Project for London Metropolitan University (Itahari International College). The platform addresses a real and growing need within the Nepali community — both in Nepal and abroad — to access trusted, verified pandits for important religious ceremonies like Bratabandha, Vivah (Marriage), Pasni, Graha Pravesh, and more.",
+    "overview_p2": "The application integrates modern web technologies with traditional Vedic knowledge to offer live video puja sessions, an online samagri marketplace, an offline Kundali (birth chart) generator, real-time chat between users and pandits, Panchang data, and a secure multi-gateway payment system supporting Stripe, Khalti, and eSewa.",
+    "overview_p3": "Built using React, TypeScript, Django, PostgreSQL, Redis, Docker, and WebRTC, PanditYatra demonstrates a production-grade, full-stack architecture with role-based access, admin dashboards, and progressive web app capabilities.",
+    "who_is_it_for": "Who is PanditYatra For?",
+    "who_desc": "PanditYatra is designed for the global Nepali community who want to practice their cultural and religious traditions with ease and trust.",
+    "cta_footer": "Whether you are in Kathmandu or New York, PanditYatra brings verified pandits, real-time video rituals, and complete puja solutions directly to your home.",
+    "bringing_tradition": "Bringing Tradition Online",
+    "connected_world": "A Spiritually Connected World",
+    "vision_desc": "We envision a future where every Nepali — regardless of geography — can participate in sacred rituals with the same devotion and authenticity as being physically present.",
+    "mission_badge": "🙏 Our Mission",
+    "vision_badge": "🔭 Our Vision"
+  },
+  "features": {
+    "title": "Key Features",
+    "subtitle": "Everything you need for a complete spiritual experience — all in one platform.",
+    "items": {
+      "live_puja": "Join real-time rituals with verified pandits from anywhere in the world via WebRTC.",
+      "easy_booking": "Browse pandit profiles, pick a date, select a time slot and book in seconds.",
+      "shop": "Order authentic puja materials delivered to your doorstep.",
+      "kundali": "Generate accurate Vedic birth charts offline with North-Indian style diagrams.",
+      "chat": "Message pandits before and during bookings with built-in WebSocket chat.",
+      "reviews": "Transparent community feedback helps you choose the best pandit.",
+      "verified": "Every pandit goes through admin verification before appearing on the platform.",
+      "global": "Whether in Kathmandu or New York, access authentic spiritual services."
+    }
+  },
+  "developer": {
+    "title": "Developed By",
+    "role": "Amit Pokhrel",
+    "lead_role": "Lead Developer",
+    "id": "Student ID: 23056626",
+    "university": "Itahari International College (London Metropolitan University)",
+    "project_label": "Final Year Project – 2025/2026",
+    "supervisor_ack": "Supervisor Acknowledgment",
+    "supervisor_desc": "Special thanks to our Internal and External Supervisors for their invaluable guidance and mentorship throughout this project.",
+    "internal_sup": "Internal Supervisor",
+    "nikesh_role": "Academic Tutor & Module Leader",
+    "nikesh_college": "Itahari International College",
+    "nikesh_skills": "Django, AI, Java, MERN Stack",
+    "external_sup": "External Supervisor",
+    "hemraj_role": "Team Lead & Solutions Architect",
+    "hemraj_specialty": "Data & Analytics | ETL, BI, AI, Python",
+    "hemraj_affiliation": "Audit Partnership",
+    "hemraj_alumni": "Itahari International College IIC Alumni",
+    "meet_supervisor": "Meet My Supervisor",
+    "get_in_touch": "Get In Touch",
+    "contact_us": "Contact Us",
+    "made_with_love": "Made with ❤️ for the Nepali community"
+  }
+}

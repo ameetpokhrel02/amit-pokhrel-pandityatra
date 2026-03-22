@@ -12,7 +12,7 @@ i18n
     debug: true,
     
     // Namespaces
-    ns: ['common', 'auth', 'dashboard'],
+    ns: ['common', 'auth', 'dashboard', 'about'],
     defaultNS: 'common',
 
     interpolation: {

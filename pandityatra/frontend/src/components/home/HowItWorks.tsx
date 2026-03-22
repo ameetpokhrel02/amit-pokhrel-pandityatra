@@ -129,7 +129,7 @@ const HowItWorks: React.FC = () => {
             className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4"
           >
             <GiPrayerBeads className="h-4 w-4 text-orange-500 animate-spin-slow" />
-            <span className="text-orange-700 text-sm font-medium">{t('process_subtitle', 'Simple 4-Step Process')}</span>
+            <span className="text-orange-700 text-sm font-medium">{t('process_subtitle')}</span>
           </motion.div>
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -138,10 +138,10 @@ const HowItWorks: React.FC = () => {
             transition={{ delay: 0.1 }}
             className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent"
           >
-            {t('how_it_works', 'How It Works')}
+            {t('how_it_works')}
           </motion.h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {t('how_it_works_desc', 'Experience authentic puja ceremonies from comfort of your home')}
+            {t('how_it_works_desc')}
           </p>
         </div>
 
@@ -251,9 +251,9 @@ const HowItWorks: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-1">
                 <div className="bg-green-100 p-1.5 rounded-full"><FaVideo className="text-green-600 w-3 h-3" /></div>
-                <span className="font-bold text-xs">{t('live_interaction', 'Live Interaction')}</span>
+                <span className="font-bold text-xs">{t('live_interaction')}</span>
               </div>
-              <p className="text-[10px] text-gray-500">{t('live_interaction_desc', 'Connect face-to-face with Pandits')}</p>
+              <p className="text-[10px] text-gray-500">{t('live_interaction_desc')}</p>
             </motion.div>
 
             <motion.div
@@ -263,9 +263,9 @@ const HowItWorks: React.FC = () => {
             >
               <div className="flex items-center gap-2 mb-1">
                 <div className="bg-purple-100 p-1.5 rounded-full"><GiScrollUnfurled className="text-purple-600 w-3 h-3" /></div>
-                <span className="font-bold text-xs">{t('digital_kundali', 'Digital Kundali')}</span>
+                <span className="font-bold text-xs">{t('digital_kundali')}</span>
               </div>
-              <p className="text-[10px] text-gray-500">{t('digital_kundali_desc', 'Get detailed reports instantly')}</p>
+              <p className="text-[10px] text-gray-500">{t('digital_kundali_desc')}</p>
             </motion.div>
           </div>
 
@@ -274,7 +274,7 @@ const HowItWorks: React.FC = () => {
         {/* Bottom CTA */}
         <div className="mt-16 text-center">
           <Button size="lg" className="bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-            {t('start_journey', 'Start Your Spiritual Journey')}
+            {t('start_journey')}
           </Button>
         </div>
       </div>

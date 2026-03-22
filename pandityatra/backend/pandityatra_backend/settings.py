@@ -293,7 +293,6 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # App Password n
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', False)
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', os.getenv('FRONTEND_URL', 'http://localhost:5173'))
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')},http://localhost:8000")

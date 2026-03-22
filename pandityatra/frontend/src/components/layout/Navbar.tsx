@@ -106,7 +106,7 @@ const Navbar: React.FC = () => {
   const navItems = [
     { name: t('home'), path: '/', icon: <Home className="w-4 h-4" />, hideOnDesktop: true },
     { name: t('about'), path: '/about', icon: <User className="w-4 h-4" /> },
-    { name: 'Offline Kundali', path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
+    { name: t('offline_kundali'), path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
     {
       name: t('shop'),
       path: '/shop/samagri',

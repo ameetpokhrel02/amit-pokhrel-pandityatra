@@ -16,6 +16,7 @@
 - [Backend Folder](backend/)
 - [Frontend Folder](frontend/)
 - [Docker Compose File](docker-compose.yml)
+- [About Us Page](frontend/src/pages/AboutUs.tsx)
 
 ---
 
@@ -29,7 +30,8 @@
 - **🛒 Sacred Items (Samagri)**: Order ritual items with delivery
 - **⭐ Review & Ratings**: Community-driven pandit verification
 - **💬 Real-time Chat**: Direct communication with pandits via WebSocket
-- **📊 Kundali Analysis**: AI-powered horoscope insights
+- **🎥 High-Definition Video Consultations**: Real-time interactive sessions via Daily.co integration
+- **📊 World's First Offline Kundali**: WebAssembly-powered horoscope generation (100% private & offline)
 - **🙏 Temple Directory**: Explore sacred destinations with HD images
 
 ### For Pandits
@@ -253,7 +255,7 @@ All detailed documentation is available in [`pandityatra/docs/`](pandityatra/doc
 
 ✅ **Phase 1 Complete**: Core booking system, authentication, pandit profiles  
 ✅ **Phase 2 Complete**: AI chatbot, real-time chat, recommendations  
-🚀 **Phase 3 Active**: Payment integration, mobile app, advanced analytics
+✅ **Phase 3 Complete**: Payment integration, Offline Kundali Generator, advanced analytics
 
 See [PHASE2_IMPLEMENTATION_STATUS.md](pandityatra/docs/PHASE2_IMPLEMENTATION_STATUS.md) for detailed progress.
 
@@ -279,8 +281,9 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 👥 Team
 
-**Final Year Project** - Computer Engineering  
-Developed by: Amit Pokhrel
+**Final Year Project - 2025/2026** - [Itahari International College](https://iic.edu.np/) (London Metropolitan University)  
+**Lead Developer**: Amit Pokhrel (Student ID: 23056626)  
+**Supervision**: Guidance from Internal and External Project Supervisors
 
 ---
 

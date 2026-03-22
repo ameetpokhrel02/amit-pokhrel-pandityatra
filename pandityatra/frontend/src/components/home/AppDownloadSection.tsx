@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { motion, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { usePWA } from '@/hooks/usePWA';
 // import { Button } from '@/components/ui/button';
 import panditUi from '@/assets/images/pandi ui.jpg';
@@ -8,6 +9,7 @@ import playstoreLogo from '@/assets/images/playstore.jpeg';
 import pwaLogo from '@/assets/images/PWA.png';
 
 const AppDownloadSection: React.FC = () => {
+    const { t } = useTranslation();
     const ref = useRef<HTMLDivElement>(null);
 
     // Mouse position state for parallax
@@ -54,13 +56,11 @@ const AppDownloadSection: React.FC = () => {
                             viewport={{ once: true }}
                         >
                             <h2 className="text-4xl md:text-5xl font-bold text-dark-brown mb-4 leading-tight">
-                                Carry Your Spiritual Journey <br />
-                                <span className="text-saffron">In Your Pocket</span>
+                                {t('app_download.title')} <br />
+                                <span className="text-saffron">{t('app_download.saffron_title')}</span>
                             </h2>
                             <p className="text-lg text-dark-brown/80 max-w-xl mb-8">
-                                Download the PanditYatra app for instant access to verified pandits,
-                                puja bookings, and offline Kundali generation. Experience spirituality
-                                anytime, anywhere.
+                                {t('app_download.desc')}
                             </p>
 
                             <div className="flex flex-wrap gap-4">
@@ -74,8 +74,8 @@ const AppDownloadSection: React.FC = () => {
                                 >
                                     <img src={playstoreLogo} alt="Play Store" className="w-8 h-8 object-contain rounded-md brightness-0 invert" />
                                     <div className="text-left">
-                                        <div className="text-xs uppercase opacity-90">Get it on</div>
-                                        <div className="text-lg font-semibold leading-none">Google Play</div>
+                                        <div className="text-xs uppercase opacity-90">{t('app_download.get_it_on')}</div>
+                                        <div className="text-lg font-semibold leading-none">{t('app_download.google_play')}</div>
                                     </div>
                                 </motion.a>
 
@@ -89,8 +89,8 @@ const AppDownloadSection: React.FC = () => {
                                 >
                                     <img src={appleLogo} alt="App Store" className="w-8 h-8 object-contain rounded-md brightness-0 invert" />
                                     <div className="text-left">
-                                        <div className="text-xs uppercase opacity-90">Download on the</div>
-                                        <div className="text-lg font-semibold leading-none">App Store</div>
+                                        <div className="text-xs uppercase opacity-90">{t('app_download.download_on')}</div>
+                                        <div className="text-lg font-semibold leading-none">{t('app_download.app_store')}</div>
                                     </div>
                                 </motion.a>
 
@@ -109,9 +109,9 @@ const AppDownloadSection: React.FC = () => {
                                          <img src={pwaLogo} alt="PWA" className="w-8 h-8 object-contain rounded-md" />
                                          <div className="text-left">
                                              <div className="text-xs uppercase opacity-90 font-bold text-saffron">
-                                                 {isInstallable ? 'Install as' : 'Launch as'}
+                                                 {isInstallable ? t('app_download.install_as') : t('app_download.launch_as')}
                                              </div>
-                                             <div className="text-lg font-semibold leading-none">Web App</div>
+                                             <div className="text-lg font-semibold leading-none">{t('app_download.web_app')}</div>
                                          </div>
                                      </motion.button>
                                  )}
@@ -127,7 +127,7 @@ const AppDownloadSection: React.FC = () => {
                                     ))}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-dark-brown text-lg">50k+ <span className="font-normal text-dark-brown/80">Downloads</span></p>
+                                    <p className="font-bold text-dark-brown text-lg">50k+ <span className="font-normal text-dark-brown/80">{t('app_download.downloads')}</span></p>
                                 </div>
                             </div>
                         </motion.div>
@@ -174,8 +174,8 @@ const AppDownloadSection: React.FC = () => {
                                     <span role="img" aria-label="check">✅</span>
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm text-dark-brown">Booking Confirmed</p>
-                                    <p className="text-xs text-gray-500">Satyanarayan Puja</p>
+                                    <p className="font-bold text-sm text-dark-brown">{t('app_download.booking_confirmed')}</p>
+                                    <p className="text-xs text-gray-500">{t('app_download.satyanarayan_puja')}</p>
                                 </div>
                             </motion.div>
 
@@ -192,9 +192,9 @@ const AppDownloadSection: React.FC = () => {
                             >
                                 <div className="flex items-center space-x-1 mb-1">
                                     <div className="bg-orange-100 p-1 rounded-full text-saffron font-bold text-xs">★</div>
-                                    <span className="font-bold text-dark-brown">4.9/5 Rating</span>
+                                    <span className="font-bold text-dark-brown">4.9/5 {t('app_download.rating')}</span>
                                 </div>
-                                <p className="text-xs text-gray-500">from 10k+ reviews</p>
+                                <p className="text-xs text-gray-500">{t('app_download.reviews_count')}</p>
                             </motion.div>
                         </motion.div>
                     </div>

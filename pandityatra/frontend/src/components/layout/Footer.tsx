@@ -44,13 +44,13 @@ const Footer: React.FC = () => {
     services: [
       { name: t('puja_samagri'), href: '/shop/samagri' },
       { name: t('book_puja'), href: '/booking' },
-      { name: 'Offline Kundali', href: '/kundali' },
+      { name: t('footer.offline_kundali'), href: '/kundali' },
     ],
     company: [
       { name: t('about'), href: '/about' },
       { name: t('contact'), href: '/contact' },
-      { name: 'Privacy Policy', href: '/privacy' },
-      { name: 'Terms of Service', href: '/terms' },
+      { name: t('footer.privacy_policy'), href: '/privacy' },
+      { name: t('footer.terms_of_service'), href: '/terms' },
     ],
   };
 
@@ -86,7 +86,7 @@ const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Your trusted platform for authentic puja services and spiritual guidance.
+              {t('footer.brand_desc')}
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social, index) => {
@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
 
           {/* Services Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">{t('common:services', 'Services')}</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('footer.services')}</h3>
             <ul className="space-y-2">
               {footerLinks.services.map((link, index) => (
                 <li key={index}>
@@ -127,7 +127,7 @@ const Footer: React.FC = () => {
 
           {/* Company Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">{t('common:company', 'Company')}</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('footer.company')}</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link, index) => (
                 <li key={index}>
@@ -147,15 +147,15 @@ const Footer: React.FC = () => {
 
           {/* Newsletter Column */}
           <div>
-            <h3 className="font-semibold mb-4 text-foreground">{t('common:newsletter', 'Newsletter')}</h3>
+            <h3 className="font-semibold mb-4 text-foreground">{t('footer.newsletter')}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              {t('common:newsletter_desc', 'Subscribe to get updates on new services and offers.')}
+              {t('footer.newsletter_desc')}
             </p>
             <form onSubmit={handleNewsletterSubmit} className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t('footer.newsletter_placeholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex-1 transition-all duration-300 focus:scale-105"
@@ -180,7 +180,7 @@ const Footer: React.FC = () => {
                 <Alert className="animate-in slide-in-from-top-2">
                   <FaCheckCircle className="h-4 w-4 text-green-600" />
                   <AlertDescription className="text-green-600">
-                    Subscribed successfully!
+                    {t('footer.subscribe_success')}
                   </AlertDescription>
                 </Alert>
               )}
@@ -196,7 +196,7 @@ const Footer: React.FC = () => {
               </Link>
               <div className="flex items-center gap-2 hover:text-primary transition-colors duration-300 group">
                 <FaMapMarkerAlt className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
-                <span>Kathmandu, Nepal</span>
+                <span>{t('footer.kathmandu_nepal')}</span>
               </div>
             </div>
           </div>
@@ -209,7 +209,7 @@ const Footer: React.FC = () => {
           <div className="flex flex-col items-center gap-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
               <FaLock className="h-3 w-3" />
-              {t('common:features.secure_payments')}
+              {t('footer.encrypted_secured')}
             </p>
             <div className="flex items-center justify-center gap-4">
               {/* Khalti Payment */}
@@ -236,7 +236,7 @@ const Footer: React.FC = () => {
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <FaCreditCard className="h-3 w-3" />
-              All transactions encrypted & secured
+              {t('footer.encrypted_secured')}
             </p>
           </div>
         </div>
@@ -244,7 +244,7 @@ const Footer: React.FC = () => {
         {/* Copyright */}
         <div className="border-t pt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 PanditYatra. All rights reserved.
+            © 2025 PanditYatra. {t('footer.all_rights_reserved')}
           </p>
         </div>
       </div>

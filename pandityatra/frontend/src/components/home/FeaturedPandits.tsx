@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -30,6 +31,7 @@ interface DisplayPandit {
 }
 
 const FeaturedPandits: React.FC = () => {
+  const { t } = useTranslation();
   const [sortMode, setSortMode] = useState<'rating' | 'reviews'>('rating');
 
   const [pandits, setPandits] = useState<DisplayPandit[]>([]);
@@ -93,13 +95,13 @@ const FeaturedPandits: React.FC = () => {
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4">
             <FaStar className="h-4 w-4 text-orange-500" />
-            <span className="text-orange-700 text-sm font-medium">Top Rated</span>
+            <span className="text-orange-700 text-sm font-medium">{t('featured_pandits.top_rated')}</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-orange-600 to-orange-800 bg-clip-text text-transparent">
-            Featured Pandits
+            {t('featured_pandits.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Connect with our most experienced and highly-rated spiritual guides
+            {t('featured_pandits.subtitle')}
           </p>
 
           <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -109,7 +111,7 @@ const FeaturedPandits: React.FC = () => {
               className={sortMode === 'rating' ? 'bg-orange-600 hover:bg-orange-700' : 'border-orange-200 text-orange-700 hover:bg-orange-50'}
               onClick={() => setSortMode('rating')}
             >
-              Top by Rating
+              {t('featured_pandits.top_by_rating')}
             </Button>
             <Button
               size="sm"
@@ -117,7 +119,7 @@ const FeaturedPandits: React.FC = () => {
               className={sortMode === 'reviews' ? 'bg-orange-600 hover:bg-orange-700' : 'border-orange-200 text-orange-700 hover:bg-orange-50'}
               onClick={() => setSortMode('reviews')}
             >
-              Top by Reviews
+              {t('featured_pandits.top_by_reviews')}
             </Button>
           </div>
         </div>
@@ -125,7 +127,7 @@ const FeaturedPandits: React.FC = () => {
         {/* Pandits Grid */}
         {topPandits.length === 0 ? (
           <div className="text-center text-gray-500 py-12 bg-white rounded-xl border border-dashed border-orange-200">
-            No verified top pandits available right now.
+            {t('featured_pandits.no_pandits')}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -156,7 +158,7 @@ const FeaturedPandits: React.FC = () => {
                     <h3 className="text-base font-bold text-gray-800 mb-1 group-hover:text-orange-600 transition-colors duration-300 line-clamp-1">
                       {pandit.name}
                     </h3>
-                    <p className="text-xs text-gray-500 mb-2">Top Specialist</p>
+                    <p className="text-xs text-gray-500 mb-2">{t('featured_pandits.top_specialist')}</p>
 
                     <div className="flex items-center justify-center gap-1 mb-1">
                       {[...Array(5)].map((_, i) => (
@@ -170,7 +172,7 @@ const FeaturedPandits: React.FC = () => {
                       ))}
                     </div>
                     <p className="text-xs text-gray-500">
-                      {pandit.rating.toFixed(1)} • {pandit.reviewCount} reviews
+                      {pandit.rating.toFixed(1)} • {pandit.reviewCount} {t('featured_pandits.reviews')}
                     </p>
                   </div>
                 </CardContent>
@@ -180,7 +182,7 @@ const FeaturedPandits: React.FC = () => {
                     <Button
                       className="w-full bg-orange-600 hover:bg-orange-700 text-white"
                     >
-                      View Profile
+                      {t('featured_pandits.view_profile')}
                     </Button>
                   </Link>
                 </div>
@@ -196,7 +198,7 @@ const FeaturedPandits: React.FC = () => {
               size="lg"
               className="bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 transition-all duration-300 hover:scale-105"
             >
-              View All Pandits
+              {t('featured_pandits.view_all')}
               <FaChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </Link>

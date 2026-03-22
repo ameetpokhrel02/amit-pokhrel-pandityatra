@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ import {
 import { fetchKundaliPublicStats } from '@/lib/api';
 
 const KundaliHighlight: React.FC = () => {
+  const { t } = useTranslation();
   const [activeFeature, setActiveFeature] = useState(0);
   const [liveStats, setLiveStats] = useState({
     totalKundalis: 0,
@@ -78,48 +80,41 @@ const KundaliHighlight: React.FC = () => {
   const features = [
     {
       icon: <FaWifi className="h-6 w-6" />,
-      title: "100% Offline",
-      description: "Works without internet connection",
+      title: t('kundali_highlight.features.offline'),
+      description: t('kundali_highlight.features.offline_desc'),
       color: "text-[#FF6F00]",
       bgColor: "bg-[#FFF3E0]"
     },
     {
       icon: <FaRocket className="h-6 w-6" />,
-      title: "WebAssembly Powered",
-      description: "Lightning-fast calculations",
+      title: t('kundali_highlight.features.wasm'),
+      description: t('kundali_highlight.features.wasm_desc'),
       color: "text-[#FF6F00]",
       bgColor: "bg-[#FFF3E0]"
     },
     {
       icon: <FaDownload className="h-6 w-6" />,
-      title: "Install as App",
-      description: "PWA support for all devices",
+      title: t('kundali_highlight.features.install'),
+      description: t('kundali_highlight.features.install_desc'),
       color: "text-[#3E2723]",
       bgColor: "bg-[#EFEBE9]"
     },
     {
       icon: <FaShieldAlt className="h-6 w-6" />,
-      title: "100% Private",
-      description: "Data stays on your device",
+      title: t('kundali_highlight.features.private'),
+      description: t('kundali_highlight.features.private_desc'),
       color: "text-[#3E2723]",
       bgColor: "bg-[#EFEBE9]"
     }
   ];
 
-  const benefits = [
-    "Detailed birth chart analysis",
-    "Planetary positions & aspects",
-    "Dasha & transit predictions",
-    "Remedial suggestions",
-    "Marriage compatibility",
-    "Career & health insights"
-  ];
+  const benefits = t('kundali_highlight.benefits', { returnObjects: true }) as string[];
 
   const stats = [
-    { number: formatKundaliCount(liveStats.totalKundalis), label: "Kundalis Generated" },
-    { number: `${liveStats.averageRating.toFixed(1)}/5`, label: `Average Rating (${liveStats.totalReviews})` },
-    { number: `${liveStats.apiTimeMs} ms`, label: "Live API Time" },
-    { number: `${liveStats.languages}`, label: "Languages" }
+    { number: formatKundaliCount(liveStats.totalKundalis), label: t('kundali_highlight.stats.generated') },
+    { number: `${liveStats.averageRating.toFixed(1)}/5`, label: `${t('kundali_highlight.stats.avg_rating')} (${liveStats.totalReviews})` },
+    { number: `${liveStats.apiTimeMs} ms`, label: t('kundali_highlight.stats.api_time') },
+    { number: `${liveStats.languages}`, label: t('kundali_highlight.stats.languages') }
   ];
 
   return (
@@ -160,16 +155,16 @@ const KundaliHighlight: React.FC = () => {
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4 border border-white/20">
             <GiScrollUnfurled className="h-4 w-4 text-yellow-300" />
             <FaStar className="h-4 w-4 text-[#FF6F00] animate-spin-slow" />
-            <span className="text-[#E65100] text-sm font-medium">Revolutionary Technology</span>
+            <span className="text-[#E65100] text-sm font-medium">{t('kundali_highlight.revolutionary_technology')}</span>
           </div>
           <h2 className="text-4xl md:text-6xl font-bold mb-6 text-[#3E2723] leading-tight">
-            World's First
+            {t('kundali_highlight.world_first')}
             <span className="block text-[#FF6F00] animate-pulse">
-              Offline Kundali Generator
+              {t('kundali_highlight.offline_generator')}
             </span>
           </h2>
           <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Experience the future of astrology with our groundbreaking WebAssembly-powered Kundali generator that works completely offline
+            {t('kundali_highlight.description')}
           </p>
         </div>
 
@@ -185,8 +180,8 @@ const KundaliHighlight: React.FC = () => {
                     <FaRocket className="h-8 w-8 text-[#FF6F00]" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold mb-2 text-[#3E2723]">Revolutionary Technology</h3>
-                    <p className="text-gray-600">Powered by cutting-edge WebAssembly for unmatched performance</p>
+                    <h3 className="text-2xl font-bold mb-2 text-[#3E2723]">{t('kundali_highlight.revolutionary_technology')}</h3>
+                    <p className="text-gray-600">{t('kundali_highlight.description')}</p>
                   </div>
                 </div>
                 
@@ -219,7 +214,7 @@ const KundaliHighlight: React.FC = () => {
               <CardContent className="p-8">
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-[#3E2723]">
                   <GiCrystalBall className="h-6 w-6 text-[#FF6F00]" />
-                  What You Get
+                  {t('kundali_highlight.what_you_get')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {benefits.map((benefit, index) => (
@@ -244,10 +239,10 @@ const KundaliHighlight: React.FC = () => {
                 {/* Mock Kundali Interface */}
                 <div className="p-8 bg-[#FFF8E1]">
                   <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-[#3E2723]">Kundali Generator</h3>
+                    <h3 className="text-xl font-bold text-[#3E2723]">{t('kundali_highlight.offline_generator')}</h3>
                     <Badge className="bg-[#FF6F00] hover:bg-[#E65100] animate-pulse text-white">
                       <FaWifi className="h-3 w-3 mr-1" />
-                      Offline Ready
+                      {t('offline_ready', 'Offline Ready')}
                     </Badge>
                   </div>
 
@@ -305,7 +300,7 @@ const KundaliHighlight: React.FC = () => {
                 <div className="bg-[#F5F5F5] p-4 border-t border-[#FF6F00]/10">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium text-gray-600">Generated in 0.3 seconds • 100% Offline</span>
+                    <span className="text-sm font-medium text-gray-600">Generated in 0.3 seconds • 100% {t('offline', 'Offline')}</span>
                   </div>
                 </div>
               </CardContent>
@@ -346,19 +341,19 @@ const KundaliHighlight: React.FC = () => {
               <div className="flex items-center justify-center gap-4 mb-6">
                 <Badge className="bg-[#FFE0B2] text-[#E65100] hover:bg-[#FFCC80] animate-pulse">
                   <FaStar className="h-3 w-3 mr-1" />
-                  World's First Offline Kundali
+                  {t('kundali_highlight.world_first')} {t('kundali_highlight.offline_generator')}
                 </Badge>
                 <Badge className="bg-[#00C853] hover:bg-[#00E676] text-white">
                   <FaGlobe className="h-3 w-3 mr-1" />
-                  Works Everywhere
+                  {t('works_everywhere', 'Works Everywhere')}
                 </Badge>
               </div>
               
               <h3 className="text-3xl md:text-4xl font-bold mb-4 text-[#3E2723]">
-                Experience the Future of Astrology
+                {t('kundali_highlight.cta_title')}
               </h3>
               <p className="text-gray-600 mb-8 text-lg leading-relaxed max-w-2xl mx-auto">
-                No internet? No problem! Generate detailed Kundali reports instantly, even in remote areas with poor connectivity. Perfect for pandits and astrology enthusiasts.
+                {t('kundali_highlight.cta_desc')}
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -368,7 +363,7 @@ const KundaliHighlight: React.FC = () => {
                     className="bg-[#FF6F00] hover:bg-[#E65100] text-white transition-all duration-300 hover:scale-110 hover:shadow-xl"
                   >
                     <GiScrollUnfurled className="h-5 w-5 mr-2" />
-                    Try Kundali Generator
+                    {t('kundali_highlight.try_now')}
                   </Button>
                 </Link>
                 <Button 
@@ -377,7 +372,7 @@ const KundaliHighlight: React.FC = () => {
                   className="bg-[#ECEFF1] border-none text-[#546E7A] hover:bg-[#CFD8DC] transition-all duration-300 hover:scale-110"
                 >
                   <FaMobile className="h-5 w-5 mr-2" />
-                  Download App
+                  {t('kundali_highlight.download_app')}
                 </Button>
               </div>
 

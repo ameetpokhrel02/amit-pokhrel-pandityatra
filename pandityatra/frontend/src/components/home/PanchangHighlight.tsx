@@ -1,12 +1,14 @@
 import React, { useRef } from 'react';
 import { motion, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PanchangWidget from '../panchang/PanchangWidget';
 import calendarImg from '@/assets/images/calander view .webp';
 
 const PanchangHighlight: React.FC = () => {
+    const { t } = useTranslation();
     const ref = useRef<HTMLDivElement>(null);
 
     // Mouse position state for parallax
@@ -52,21 +54,24 @@ const PanchangHighlight: React.FC = () => {
                         >
                             <div className="inline-flex items-center gap-2 bg-orange-100/80 text-orange-700 px-4 py-1.5 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-widest mb-4 md:mb-6">
                                 <Sparkles className="w-3.5 h-3.5" />
-                                <span>Spiritual Alignment</span>
+                                <span>{t('panchang.spiritual_alignment')}</span>
                             </div>
 
                             <h2 className="text-3xl md:text-5xl lg:text-6xl font-black text-[#3E2723] mb-4 md:mb-6 leading-[1.1] tracking-tight">
-                                Align Your Actions with <br />
-                                <span className="text-orange-600">Cosmic Rhythms</span>
+                                {t('panchang.align_actions')} <br />
+                                <span className="text-orange-600">{t('panchang.cosmic_rhythms')}</span>
                             </h2>
 
-                            <p className="text-base md:text-lg lg:text-xl text-[#3E2723]/70 font-medium max-w-xl mb-8 md:mb-10 leading-relaxed text-balance">
-                                Stay connected with the ancient wisdom of the Nepali Panchang.
-                                From tithi to auspicious muhurats, our calendar guides you through
-                                your daily spiritual journey with precision.
+                            <p className="text-lg md:text-xl text-gray-600 max-w-lg mb-8 md:mb-10 leading-relaxed font-medium">
+                                {t('panchang.daily_guidance')}
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                                <Link to="/kundali">
+                                    <Button className="bg-[#3E2723] hover:bg-[#2D1B18] text-white px-8 h-14 rounded-2xl text-lg font-bold shadow-xl shadow-brown-200 transition-all hover:scale-[1.02] active:scale-[0.98] w-full sm:w-auto">
+                                        {t('panchang.explore_calendar')}
+                                    </Button>
+                                </Link>
                                 <Button
                                     className="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-500/20 px-8 rounded-full font-bold h-auto py-3 text-base md:text-lg transition-all duration-300 transform hover:-translate-y-1"
                                 >
@@ -85,13 +90,63 @@ const PanchangHighlight: React.FC = () => {
                     </div>
 
                     {/* Right Side: Animated Image & Widget Overlay */}
-                    <div className="relative flex justify-center lg:justify-end items-center perspective-1000 order-first md:order-last mb-16 md:mb-0 md:pr-4 lg:pr-12">
+                    <div className="relative flex justify-center lg:justify-end items-center order-first md:order-last mb-8 md:mb-0 md:pr-4 lg:pr-12">
                         {/* Decorative Background Blob - Static */}
-                        <div className="absolute w-[280px] md:w-[450px] h-[280px] md:h-[450px] bg-orange-50 rounded-full blur-3xl -z-10 animate-pulse"></div>
+                        <div className="absolute w-[250px] md:w-[450px] h-[250px] md:h-[450px] bg-orange-50 rounded-full blur-3xl -z-10 animate-pulse"></div>
 
-                        <div className="relative z-10 flex flex-col items-center">
+                        {/* ── Mobile stacked layout ── */}
+                        <div className="flex flex-col items-center gap-4 md:hidden w-full px-2">
+                            {/* Panchang Widget on mobile — full width card */}
+                            <motion.div
+                                className="w-full max-w-[280px]"
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2, duration: 0.5 }}
+                                viewport={{ once: true }}
+                            >
+                                <div className="shadow-xl rounded-2xl overflow-hidden bg-white border border-orange-50/50">
+                                    <PanchangWidget />
+                                </div>
+                            </motion.div>
 
-                            {/* Main Calendar Image - ONLY this element has the 3D Motion Effect */}
+                            {/* Calendar Image on mobile */}
+                            <motion.div
+                                className="relative"
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                whileInView={{ scale: 1, opacity: 1 }}
+                                transition={{ duration: 0.6, type: "spring", stiffness: 100 }}
+                                viewport={{ once: true }}
+                            >
+                                <img
+                                    src={calendarImg}
+                                    alt="Advanced Calendar View"
+                                    className="w-full max-w-[200px] h-auto object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]"
+                                />
+                            </motion.div>
+
+                            {/* Sparkle badge on mobile */}
+                            <motion.div
+                                className="bg-white p-2.5 rounded-xl shadow-lg border border-orange-50"
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                whileInView={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.4, duration: 0.4 }}
+                                viewport={{ once: true }}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-4 h-4 text-orange-600" />
+                                    </div>
+                                    <div className="pr-1">
+                                        <p className="font-bold text-[10px] text-[#3E2723]">Daily Guidance</p>
+                                        <p className="text-[8px] text-gray-500 whitespace-nowrap">Trusted by 10k+</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* ── Desktop parallax layout (md+) ── */}
+                        <div className="relative z-10 hidden md:flex flex-col items-center perspective-1000">
+                            {/* Main Calendar Image with 3D Motion Effect */}
                             <motion.div
                                 className="relative group md:ml-auto"
                                 initial={{ scale: 0.9, opacity: 0 }}
@@ -108,40 +163,39 @@ const PanchangHighlight: React.FC = () => {
                                 <img
                                     src={calendarImg}
                                     alt="Advanced Calendar View"
-                                    className="w-full max-w-[240px] sm:max-w-[280px] md:max-w-[400px] lg:max-w-[420px] h-auto object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-transform duration-700"
+                                    className="w-full max-w-[400px] lg:max-w-[420px] h-auto object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-transform duration-700"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-orange-400/5 to-transparent pointer-events-none rounded-3xl" />
                             </motion.div>
 
-                            {/* Floating Panchang Widget - Static/Stable Position (No Sway) */}
-                            {/* Adjusted position: Farther left/top to avoid touching the hand image */}
+                            {/* Floating Panchang Widget */}
                             <motion.div
-                                className="absolute -top-6 -left-4 sm:-left-12 md:-top-16 md:-left-32 lg:-left-48 w-[150px] sm:w-[180px] md:w-[240px] lg:w-[260px] z-20"
+                                className="absolute -top-16 -left-32 lg:-left-48 w-[240px] lg:w-[260px] z-20"
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4, duration: 0.5 }}
                                 viewport={{ once: true }}
                             >
-                                <div className="transition-all duration-513 shadow-2xl rounded-2xl md:rounded-3xl overflow-hidden bg-white border border-orange-50/50 hover:shadow-orange-200/40">
+                                <div className="transition-all duration-500 shadow-2xl rounded-3xl overflow-hidden bg-white border border-orange-50/50 hover:shadow-orange-200/40">
                                     <PanchangWidget />
                                 </div>
                             </motion.div>
 
-                            {/* Decorative Sparkle Badge - Static Position */}
+                            {/* Decorative Sparkle Badge */}
                             <motion.div
-                                className="absolute -bottom-4 -right-2 md:-bottom-6 md:-right-4 bg-white p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl border border-orange-50 z-30"
+                                className="absolute -bottom-6 -right-4 bg-white p-4 rounded-2xl shadow-xl border border-orange-50 z-30"
                                 initial={{ opacity: 0, scale: 0.5 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: 0.6, duration: 0.4 }}
                                 viewport={{ once: true }}
                             >
-                                <div className="flex items-center gap-2 md:gap-3">
-                                    <div className="w-8 md:w-10 h-8 md:h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                                        <Sparkles className="w-4 md:w-5 h-4 md:h-5 text-orange-600" />
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <Sparkles className="w-5 h-5 text-orange-600" />
                                     </div>
                                     <div className="pr-1">
-                                        <p className="font-bold text-[9px] md:text-xs text-[#3E2723]">Daily Guidance</p>
-                                        <p className="text-[7px] md:text-[10px] text-gray-500 whitespace-nowrap">Trusted by 10k+</p>
+                                        <p className="font-bold text-xs text-[#3E2723]">Daily Guidance</p>
+                                        <p className="text-[10px] text-gray-500 whitespace-nowrap">Trusted by 10k+</p>
                                     </div>
                                 </div>
                             </motion.div>

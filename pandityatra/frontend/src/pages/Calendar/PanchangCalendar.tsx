@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/layout/Navbar';
+import { useTranslation } from 'react-i18next';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +37,7 @@ import {
 const NepaliMonthNames = ["Baishakh", "Jestha", "Ashadh", "Shrawan", "Bhadra", "Ashwin", "Kartik", "Mangsir", "Poush", "Magh", "Falgun", "Chaitra"];
 
 const PanchangCalendar: React.FC = () => {
+    const { t } = useTranslation();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [panchangData, setPanchangData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -91,28 +93,36 @@ const PanchangCalendar: React.FC = () => {
 
     const renderHeader = () => {
         const years = Array.from({ length: 10 }, (_, i) => 2024 + i);
-        const months = [
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-        ];
+        const months = t('panchang.months', { returnObjects: true }) as string[];
 
         return (
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-orange-600 p-2 rounded-xl text-white">
-                            <CalendarDays className="w-6 h-6" />
+            <div className="flex flex-col gap-4 mb-6 md:mb-10">
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2 md:gap-3">
+                            <div className="bg-orange-600 p-1.5 md:p-2 rounded-lg md:rounded-xl text-white">
+                                <CalendarDays className="w-5 h-5 md:w-6 md:h-6" />
+                            </div>
+                            <h1 className="text-2xl md:text-4xl font-black text-[#3E2723] tracking-tight">{t('panchang.nepali_patro')}</h1>
                         </div>
-                        <h1 className="text-4xl font-black text-[#3E2723] tracking-tight">Nepali Patro</h1>
+                        <p className="text-orange-600 font-bold uppercase tracking-[0.2em] text-[8px] md:text-[10px] ml-9 md:ml-11">
+                            {t('panchang.spiritual_calendar_guidance')}
+                        </p>
                     </div>
-                    <p className="text-orange-600 font-bold uppercase tracking-[0.2em] text-[10px] ml-11">
-                        Spiritual Calendar & Guidance
-                    </p>
+                    {/* Mobile prev/next arrows */}
+                    <div className="flex gap-1 md:hidden">
+                        <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-lg hover:bg-orange-100 text-orange-600 w-8 h-8">
+                            <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={nextMonth} className="rounded-lg hover:bg-orange-100 text-orange-600 w-8 h-8">
+                            <ChevronRight className="w-4 h-4" />
+                        </Button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-orange-100 shadow-sm">
+                <div className="flex items-center gap-2 md:gap-3 bg-white p-1.5 md:p-2 rounded-xl md:rounded-2xl border border-orange-100 shadow-sm w-fit">
                     <Select value={currentMonth.getMonth().toString()} onValueChange={setMonth}>
-                        <SelectTrigger className="w-[140px] border-none bg-orange-50/50 hover:bg-orange-50 font-bold text-orange-800 rounded-xl focus:ring-0">
+                        <SelectTrigger className="w-[100px] md:w-[140px] border-none bg-orange-50/50 hover:bg-orange-50 font-bold text-orange-800 rounded-lg md:rounded-xl focus:ring-0 text-xs md:text-sm h-8 md:h-10">
                             <SelectValue placeholder="Month" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-orange-100 shadow-xl">
@@ -125,7 +135,7 @@ const PanchangCalendar: React.FC = () => {
                     </Select>
 
                     <Select value={currentMonth.getFullYear().toString()} onValueChange={setYear}>
-                        <SelectTrigger className="w-[100px] border-none bg-orange-50/50 hover:bg-orange-50 font-bold text-orange-800 rounded-xl focus:ring-0">
+                        <SelectTrigger className="w-[80px] md:w-[100px] border-none bg-orange-50/50 hover:bg-orange-50 font-bold text-orange-800 rounded-lg md:rounded-xl focus:ring-0 text-xs md:text-sm h-8 md:h-10">
                             <SelectValue placeholder="Year" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-orange-100 shadow-xl">
@@ -137,9 +147,9 @@ const PanchangCalendar: React.FC = () => {
                         </SelectContent>
                     </Select>
 
-                    <div className="h-8 w-px bg-orange-100 mx-1" />
+                    <div className="hidden md:block h-8 w-px bg-orange-100 mx-1" />
 
-                    <div className="flex gap-1">
+                    <div className="hidden md:flex gap-1">
                         <Button variant="ghost" size="icon" onClick={prevMonth} className="rounded-xl hover:bg-orange-100 text-orange-600">
                             <ChevronLeft className="w-5 h-5" />
                         </Button>
@@ -154,12 +164,14 @@ const PanchangCalendar: React.FC = () => {
 
     const renderDays = () => {
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const shortDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
         return (
-            <div className="grid grid-cols-7 mb-6 gap-2">
-                {days.map(day => (
+            <div className="grid grid-cols-7 mb-3 md:mb-6 gap-1 md:gap-2">
+                {days.map((day, i) => (
                     <div key={day} className="text-center">
-                        <div className="bg-orange-600 text-white rounded-xl py-2 px-1 text-[10px] font-black uppercase tracking-wider shadow-sm shadow-orange-200">
-                            {day}
+                        <div className="bg-orange-600 text-white rounded-lg md:rounded-xl py-1.5 md:py-2 px-0.5 md:px-1 text-[8px] md:text-[10px] font-black uppercase tracking-wider shadow-sm shadow-orange-200">
+                            <span className="hidden sm:inline">{day}</span>
+                            <span className="sm:hidden">{shortDays[i]}</span>
                         </div>
                     </div>
                 ))}
@@ -184,38 +196,38 @@ const PanchangCalendar: React.FC = () => {
                     key={day.toString()}
                     onClick={() => setSelectedDate(data)}
                     className={`
-                        relative aspect-square border-t border-l border-orange-100 cursor-pointer transition-all duration-300
-                        hover:bg-orange-50/80 flex flex-col p-2 group rounded-xl
+                        relative aspect-[1/1.1] md:aspect-square border-t border-l border-orange-100 cursor-pointer transition-all duration-300
+                        hover:bg-orange-50/80 flex flex-col p-1 md:p-2 group rounded-lg md:rounded-xl
                         ${isTodayDate ? 'bg-orange-50 ring-2 ring-inset ring-orange-200 z-10' : 'bg-white'}
-                        ${isSelected ? 'bg-[#FF6F00] border-none shadow-2xl scale-105 z-20' : ''}
+                        ${isSelected ? 'bg-[#FF6F00] border-none shadow-2xl md:scale-105 z-20' : ''}
                         ${hasFestival ? 'bg-red-50/40' : ''}
                     `}
                 >
                     <div className="flex justify-between items-start">
                         <div className="flex flex-col">
-                            <span className={`text-xl font-black leading-none ${isSelected ? 'text-white' : 'text-[#3E2723]'}`}>
+                            <span className={`text-sm md:text-xl font-black leading-none ${isSelected ? 'text-white' : 'text-[#3E2723]'}`}>
                                 {data ? toNepaliNumeral(data.bs_day) : ''}
                             </span>
-                            <span className={`text-[9px] font-bold mt-1 ${isSelected ? 'text-orange-100' : 'text-orange-600/60'}`}>
+                            <span className={`text-[7px] md:text-[9px] font-bold mt-0.5 md:mt-1 ${isSelected ? 'text-orange-100' : 'text-orange-600/60'}`}>
                                 {data ? data.bs_day : ''}
                             </span>
                         </div>
-                        <div className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                        <div className={`text-[7px] md:text-[10px] font-bold px-1 md:px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
                             {format(day, 'd')}
                         </div>
                     </div>
 
                     {data && (
-                        <div className="mt-auto space-y-1">
+                        <div className="mt-auto space-y-0.5 md:space-y-1 overflow-hidden">
                             {hasFestival && (
-                                <div className="flex items-center gap-1">
-                                    <Sparkles className={`w-2.5 h-2.5 ${isSelected ? 'text-yellow-300' : 'text-red-500'}`} />
-                                    <div className={`text-[7px] font-bold truncate ${isSelected ? 'text-white' : 'text-red-600'}`}>
+                                <div className="flex items-center gap-0.5 md:gap-1">
+                                    <Sparkles className={`w-2 h-2 md:w-2.5 md:h-2.5 flex-shrink-0 ${isSelected ? 'text-yellow-300' : 'text-red-500'}`} />
+                                    <div className={`text-[5px] md:text-[7px] font-bold truncate ${isSelected ? 'text-white' : 'text-red-600'}`}>
                                         {data.festivals[0]}
                                     </div>
                                 </div>
                             )}
-                            <div className={`text-[8px] font-bold px-1 py-0.5 rounded bg-black/5 inline-block ${isSelected ? 'text-white bg-white/10' : 'text-[#3E2723]/60'}`}>
+                            <div className={`text-[6px] md:text-[8px] font-bold px-0.5 md:px-1 py-0.5 rounded bg-black/5 inline-block truncate max-w-full ${isSelected ? 'text-white bg-white/10' : 'text-[#3E2723]/60'}`}>
                                 {data.tithi}
                             </div>
                         </div>
@@ -236,24 +248,24 @@ const PanchangCalendar: React.FC = () => {
         <div className="min-h-screen bg-[#FDFBF9] flex flex-col">
             <Navbar />
 
-            <main className="flex-grow container mx-auto px-4 py-20 lg:py-24 max-w-6xl">
-                <div className="grid lg:grid-cols-3 gap-12">
+            <main className="flex-grow container mx-auto px-2 sm:px-4 py-16 md:py-20 lg:py-24 max-w-6xl">
+                <div className="grid lg:grid-cols-3 gap-6 md:gap-12">
                     <div className="lg:col-span-2 order-2 lg:order-1">
                         {renderHeader()}
                         {renderDays()}
-                        <div className="gap-2 grid grid-cols-7 bg-white/50 p-2 rounded-3xl border border-orange-100 shadow-inner">
+                        <div className="gap-1 md:gap-2 grid grid-cols-7 bg-white/50 p-1 md:p-2 rounded-2xl md:rounded-3xl border border-orange-100 shadow-inner overflow-hidden">
                             {renderCells()}
                         </div>
 
-                        <div className="mt-8 flex items-center gap-6 justify-center text-xs font-bold text-orange-800/60 uppercase tracking-widest">
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-[#FF6F00]" /> Selected Date
+                        <div className="mt-4 md:mt-8 flex flex-wrap items-center gap-3 md:gap-6 justify-center text-[9px] md:text-xs font-bold text-orange-800/60 uppercase tracking-widest">
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                                <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-[#FF6F00]" /> Date
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="w-3 h-3 rounded-full bg-orange-50 ring-1 ring-orange-200" /> Today
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                                <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-orange-50 ring-1 ring-orange-200" /> Today
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Sparkles className="w-3 h-3 text-red-400" /> Festival / Event
+                            <div className="flex items-center gap-1.5 md:gap-2">
+                                <Sparkles className="w-2.5 h-2.5 md:w-3 md:h-3 text-red-400" /> Festival
                             </div>
                         </div>
                     </div>

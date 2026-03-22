@@ -12,6 +12,7 @@
   "about": "About Us",
   "contact": "Contact",
   "shop": "Shop",
+  "offline_kundali": "Offline Kundali",
   "welcome_title": "Illuminate Your Spiritual Path",
   "welcome_subtitle": "Connect with authentic Pandits for personalized pujas, astrology readings, and spiritual guidance. Live & interactive.",
   "find_match": "Find Pandits",
@@ -45,5 +46,185 @@
     "verified_pandits": "Verified Pandits",
     "secure_payments": "Secure Payments",
     "live_streaming": "Live Streaming"
+  },
+  "categories": {
+    "agarbatti": {
+      "name": "Incense Sticks",
+      "desc": "Premium incense and dhoop for sacred atmosphere."
+    },
+    "attar": {
+      "name": "Attar",
+      "desc": "Traditional fragrances perfect for rituals."
+    },
+    "books": {
+      "name": "Books",
+      "desc": "Vedic scriptures, puja guides, and spiritual literature."
+    },
+    "brass-murti": {
+      "name": "Brass Murti",
+      "desc": "Beautifully crafted deity idols in brass and copper."
+    }
+  },
+  "rituals": {
+    "Ganesh Puja": "Ganesh Puja",
+    "Lakshmi Puja": "Lakshmi Puja",
+    "Saraswati Puja": "Saraswati Puja",
+    "Durga Puja": "Durga Puja",
+    "Griha Pravesh": "Griha Pravesh",
+    "Marriage Ceremony": "Marriage Ceremony",
+    "Naming Ceremony": "Naming Ceremony",
+    "Thread Ceremony": "Thread Ceremony"
+  },
+  "shop_by_category": "Shop By Category",
+  "explore_all": "Explore All Items",
+  "featured": "Featured",
+  "next_day_delivery": "Next Day Delivery",
+  "spiritual_purity": "100% Spiritual Purity",
+  "panchang": {
+    "align_actions": "Align Your Actions with",
+    "cosmic_rhythms": "Cosmic Rhythms",
+    "daily_guidance": "Your Daily Spiritual Guidance",
+    "explore_calendar": "Explore Calendar",
+    "spiritual_alignment": "Spiritual Alignment",
+    "nepali_patro": "Nepali Patro",
+    "spiritual_calendar_guidance": "Spiritual Calendar & Guidance",
+    "months": [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ]
+  },
+  "kundali_highlight": {
+    "revolutionary_technology": "Revolutionary Technology",
+    "world_first": "World's First",
+    "offline_generator": "Offline Kundali Generator",
+    "description": "Experience the future of astrology with our groundbreaking WebAssembly-powered Kundali generator that works completely offline.",
+    "features": {
+      "offline": "100% Offline",
+      "offline_desc": "Works without internet connection",
+      "wasm": "WebAssembly Powered",
+      "wasm_desc": "Lightning-fast calculations",
+      "install": "Install as App",
+      "install_desc": "PWA support for all devices",
+      "private": "100% Private",
+      "private_desc": "Data stays on your device"
+    },
+    "what_you_get": "What You Get",
+    "benefits": [
+      "Detailed birth chart analysis",
+      "Planetary positions & aspects",
+      "Dasha & transit predictions",
+      "Remedial suggestions",
+      "Marriage compatibility",
+      "Career & health insights"
+    ],
+    "stats": {
+      "generated": "Kundalis Generated",
+      "avg_rating": "Average Rating",
+      "api_time": "Live API Time",
+      "languages": "Languages"
+    },
+    "cta_title": "Experience the Future of Astrology",
+    "cta_desc": "No internet? No problem! Generate detailed Kundali reports instantly, even in remote areas with poor connectivity.",
+    "try_now": "Try Kundali Generator",
+    "download_app": "Download App"
+  },
+  "footer": {
+    "offline_kundali": "Offline Kundali",
+    "privacy_policy": "Privacy Policy",
+    "terms_of_service": "Terms of Service",
+    "services": "Services",
+    "company": "Company",
+    "newsletter": "Newsletter",
+    "newsletter_placeholder": "Enter your email",
+    "newsletter_desc": "Subscribe to get updates on new services and offers.",
+    "subscribe_success": "Subscribed successfully!",
+    "encrypted_secured": "All transactions encrypted & secured",
+    "all_rights_reserved": "All rights reserved.",
+    "kathmandu_nepal": "Kathmandu, Nepal",
+    "brand_desc": "Your trusted platform for authentic puja services and spiritual guidance.",
+    "works_everywhere": "Works Everywhere",
+    "offline_ready": "Offline Ready",
+    "offline": "Offline"
+  },
+  "mins": "mins",
+  "category": "Category",
+  "shop_by": "Shop by",
+  "process_subtitle": "Simple 4-Step Process",
+  "how_it_works": "How It Works",
+  "how_it_works_desc": "Experience authentic puja ceremonies from comfort of your home",
+  "how_it_works_steps": {
+    "step1_title": "Choose Pandit & Puja",
+    "step1_desc": "Select your preferred pandit and ceremony type from our verified experts",
+    "step1_detail1": "Browse 500+ verified pandits",
+    "step1_detail2": "Filter by location, language & expertise",
+    "step2_title": "Select Date & Samagri",
+    "step2_desc": "Pick your preferred date and samagri package",
+    "step2_detail1": "Choose convenient date & time",
+    "step2_detail2": "Select samagri package or customize",
+    "step3_title": "Join Live Video Puja",
+    "step3_desc": "Participate in your ceremony via high-quality video call",
+    "step3_detail1": "HD video call with your pandit",
+    "step3_detail2": "Real-time interaction and guidance",
+    "step4_title": "Receive Recording",
+    "step4_desc": "Get your puja recording and Kundali report",
+    "step4_detail1": "Download HD puja recording",
+    "step4_detail2": "Receive detailed Kundali report"
+  },
+  "live_interaction": "Live Interaction",
+  "live_interaction_desc": "Connect face-to-face with Pandits",
+  "digital_kundali": "Digital Kundali",
+  "digital_kundali_desc": "Get detailed reports instantly",
+  "start_journey": "Start Your Spiritual Journey",
+  "app_download": {
+    "title": "Carry Your Spiritual Journey",
+    "saffron_title": "In Your Pocket",
+    "desc": "Download the PanditYatra app for instant access to verified pandits, puja bookings, and offline Kundali generation. Experience spirituality anytime, anywhere.",
+    "get_it_on": "Get it on",
+    "google_play": "Google Play",
+    "download_on": "Download on the",
+    "app_store": "App Store",
+    "install_as": "Install as",
+    "launch_as": "Launch as",
+    "web_app": "Web App",
+    "downloads": "Downloads",
+    "booking_confirmed": "Booking Confirmed",
+    "satyanarayan_puja": "Satyanarayan Puja",
+    "rating": "Rating",
+    "reviews_count": "from 10k+ reviews"
+  },
+  "reviews": {
+    "title_main": "Reviews & Ratings",
+    "title_whats_people": "What People Are",
+    "title_saying": "Saying",
+    "subtitle": "Real feedback from our community of devotees and pandits",
+    "tab_pandit": "Pandit Reviews",
+    "tab_app": "App Reviews",
+    "avg_rating": "Average Rating",
+    "total_reviews": "reviews",
+    "star": "Star",
+    "write_review": "Write your review",
+    "write_review_desc": "Your feedback helps us improve — share your experience with PanditYatra.",
+    "write_a_review": "Write a review",
+    "click_star": "Click on a star to rate",
+    "placeholder_comment": "Type your message...",
+    "btn_submit": "Submit your review",
+    "btn_submitting": "Submitting...",
+    "btn_cancel": "Cancel",
+    "no_reviews": "No reviews yet",
+    "be_the_first": "Be the first to share your experience!",
+    "for_pandit": "for {{panditName}}",
+    "pandit_badge": "🙏 Pandit"
+  },
+  "featured_pandits": {
+    "title": "Featured Pandits",
+    "subtitle": "Connect with our most experienced and highly-rated spiritual guides",
+    "top_rated": "Top Rated",
+    "top_by_rating": "Top by Rating",
+    "top_by_reviews": "Top by Reviews",
+    "no_pandits": "No verified top pandits available right now.",
+    "top_specialist": "Top Specialist",
+    "reviews": "reviews",
+    "view_profile": "View Profile",
+    "view_all": "View All Pandits"
   }
 }

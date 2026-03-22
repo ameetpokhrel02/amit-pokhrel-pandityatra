@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Quote, Send, ChevronLeft, ChevronRight, User2, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,7 +119,7 @@ const ReviewCard: React.FC<{
                     </div>
                     <div className="flex flex-col items-end gap-1">
                         <span className="text-xs text-slate-400">
-                            {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {new Date(date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                         </span>
                         {badge && (
                             <Badge variant="secondary" className={`text-[10px] px-2 py-0 ${badgeColor || 'bg-orange-50 text-orange-600'}`}>
@@ -144,6 +145,7 @@ const ReviewCard: React.FC<{
 // Main ReviewsSection Component
 // ════════════════════════════════
 const ReviewsSection: React.FC = () => {
+    const { t } = useTranslation();
     const { token } = useAuth();
     const { toast } = useToast();
 
@@ -196,11 +198,11 @@ const ReviewsSection: React.FC = () => {
 
     const handleSubmitReview = async () => {
         if (formRating === 0) {
-            toast({ title: 'Please select a rating', className: 'bg-red-600 text-white border-none shadow-2xl' });
+            toast({ title: t('reviews.click_star'), className: 'bg-red-600 text-white border-none shadow-2xl' });
             return;
         }
         if (!formComment.trim()) {
-            toast({ title: 'Please write a comment', className: 'bg-red-600 text-white border-none shadow-2xl' });
+            toast({ title: t('reviews.placeholder_comment'), className: 'bg-red-600 text-white border-none shadow-2xl' });
             return;
         }
         setSubmitting(true);
@@ -210,10 +212,10 @@ const ReviewsSection: React.FC = () => {
             setShowForm(false);
             setFormRating(0);
             setFormComment('');
-            toast({ title: '✅ Review submitted!', description: 'Thank you for your feedback.', className: 'bg-green-600 text-white border-none shadow-2xl' });
+            toast({ title: `✅ ${t('reviews.btn_submit')}`, description: t('reviews.write_review_desc'), className: 'bg-green-600 text-white border-none shadow-2xl' });
             loadReviews();
         } catch (err: any) {
-            toast({ title: 'Error', description: err?.response?.data?.detail || 'Failed to submit review.', className: 'bg-red-600 text-white border-none shadow-2xl' });
+            toast({ title: 'Error', description: err?.response?.data?.detail || t('reviews.no_reviews'), className: 'bg-red-600 text-white border-none shadow-2xl' });
         } finally {
             setSubmitting(false);
         }
@@ -232,7 +234,7 @@ const ReviewsSection: React.FC = () => {
                         className="inline-flex items-center gap-2 bg-orange-100 rounded-full px-4 py-2 mb-4"
                     >
                         <Star className="w-4 h-4 text-orange-600 fill-orange-600" />
-                        <span className="text-sm font-semibold text-orange-700">Reviews & Ratings</span>
+                        <span className="text-sm font-semibold text-orange-700">{t('reviews.title_main')}</span>
                     </motion.div>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
@@ -240,7 +242,7 @@ const ReviewsSection: React.FC = () => {
                         transition={{ delay: 0.1 }}
                         className="text-3xl md:text-4xl font-bold text-slate-900 mb-3"
                     >
-                        What People Are <span className="text-orange-600">Saying</span>
+                        {t('reviews.title_whats_people')} <span className="text-orange-600">{t('reviews.title_saying')}</span>
                     </motion.h2>
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -248,7 +250,7 @@ const ReviewsSection: React.FC = () => {
                         transition={{ delay: 0.15 }}
                         className="text-slate-600 max-w-2xl mx-auto"
                     >
-                        Real feedback from our community of devotees and pandits
+                        {t('reviews.subtitle')}
                     </motion.p>
                 </div>
 
@@ -262,7 +264,7 @@ const ReviewsSection: React.FC = () => {
                                 : 'text-slate-600 hover:text-orange-600'
                                 }`}
                         >
-                            Pandit Reviews
+                            {t('reviews.tab_pandit')}
                         </button>
                         <button
                             onClick={() => { setActiveTab('site'); setPage(0); }}
@@ -271,7 +273,7 @@ const ReviewsSection: React.FC = () => {
                                 : 'text-slate-600 hover:text-orange-600'
                                 }`}
                         >
-                            App Reviews
+                            {t('reviews.tab_app')}
                         </button>
                     </div>
                 </div>
@@ -292,12 +294,12 @@ const ReviewsSection: React.FC = () => {
                                 <CardContent className="p-6 space-y-6">
                                     {/* Average Rating */}
                                     <div>
-                                        <h3 className="font-bold text-slate-800 mb-3">Average Rating</h3>
+                                        <h3 className="font-bold text-slate-800 mb-3">{t('reviews.avg_rating')}</h3>
                                         <div className="flex items-end gap-3 mb-2">
                                             <span className="text-5xl font-black text-slate-900">{currentStats.avg}</span>
                                             <div className="pb-1">
                                                 <StarRating rating={Math.round(currentStats.avg)} size={18} />
-                                                <p className="text-xs text-slate-500 mt-1">({currentStats.total} reviews)</p>
+                                                <p className="text-xs text-slate-500 mt-1">({currentStats.total} {t('reviews.total_reviews')})</p>
                                             </div>
                                         </div>
                                     </div>
@@ -308,7 +310,7 @@ const ReviewsSection: React.FC = () => {
                                             {['5', '4', '3', '2', '1'].map((star) => (
                                                 <RatingBar
                                                     key={star}
-                                                    label={`${star} Star`}
+                                                    label={`${star} ${t('reviews.star')}`}
                                                     count={siteStats.breakdown[star] || 0}
                                                     total={siteStats.total}
                                                 />
@@ -319,15 +321,15 @@ const ReviewsSection: React.FC = () => {
                                     {/* Write Review CTA */}
                                     {token && !submitted && (
                                         <div className="pt-2">
-                                            <h4 className="font-bold text-slate-800 mb-2">Write your review</h4>
+                                            <h4 className="font-bold text-slate-800 mb-2">{t('reviews.write_review')}</h4>
                                             <p className="text-xs text-slate-500 mb-3">
-                                                Your feedback helps us improve — share your experience with PanditYatra.
+                                                {t('reviews.write_review_desc')}
                                             </p>
                                             <Button
                                                 onClick={() => setShowForm(!showForm)}
                                                 className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-full font-semibold"
                                             >
-                                                Write your review
+                                                {t('reviews.write_review')}
                                             </Button>
                                         </div>
                                     )}
@@ -348,15 +350,15 @@ const ReviewsSection: React.FC = () => {
                                     >
                                         <Card className="border-orange-200 bg-orange-50/30">
                                             <CardContent className="p-6 space-y-4">
-                                                <h4 className="font-bold text-slate-800">Write a review</h4>
+                                                <h4 className="font-bold text-slate-800">{t('reviews.write_a_review')}</h4>
                                                 <div>
-                                                    <p className="text-sm text-slate-600 mb-2">Click on a star to rate</p>
+                                                    <p className="text-sm text-slate-600 mb-2">{t('reviews.click_star')}</p>
                                                     <StarSelector value={formRating} onChange={setFormRating} />
                                                 </div>
                                                 <div>
-                                                    <label className="text-sm font-medium text-slate-700 block mb-1.5">Review</label>
+                                                    <label className="text-sm font-medium text-slate-700 block mb-1.5">{t('reviews.write_a_review')}</label>
                                                     <Textarea
-                                                        placeholder="Type your message..."
+                                                        placeholder={t('reviews.placeholder_comment')}
                                                         value={formComment}
                                                         onChange={(e) => setFormComment(e.target.value)}
                                                         className="min-h-[100px] bg-white border-slate-200 focus:border-orange-400"
@@ -374,14 +376,14 @@ const ReviewsSection: React.FC = () => {
                                                         ) : (
                                                             <Send className="h-4 w-4 mr-2" />
                                                         )}
-                                                        Submit your review
+                                                        {submitting ? t('reviews.btn_submitting') : t('reviews.btn_submit')}
                                                     </Button>
                                                     <Button
                                                         variant="ghost"
                                                         onClick={() => setShowForm(false)}
                                                         className="text-slate-500"
                                                     >
-                                                        Cancel
+                                                        {t('reviews.btn_cancel')}
                                                     </Button>
                                                 </div>
                                             </CardContent>
@@ -394,8 +396,8 @@ const ReviewsSection: React.FC = () => {
                             {currentReviews.length === 0 ? (
                                 <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
                                     <User2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold text-slate-700">No reviews yet</h3>
-                                    <p className="text-slate-500 text-sm">Be the first to share your experience!</p>
+                                    <h3 className="text-lg font-semibold text-slate-700">{t('reviews.no_reviews')}</h3>
+                                    <p className="text-slate-500 text-sm">{t('reviews.be_the_first')}</p>
                                 </div>
                             ) : (
                                 <>
@@ -418,8 +420,8 @@ const ReviewsSection: React.FC = () => {
                                                     date={review.created_at}
                                                     badge={
                                                         activeTab === 'pandit'
-                                                            ? `for ${(review as PanditReviewData).pandit_name}`
-                                                            : (review as SiteReviewData).role === 'pandit' ? '🙏 Pandit' : undefined
+                                                            ? t('reviews.for_pandit', { panditName: (review as PanditReviewData).pandit_name })
+                                                            : (review as SiteReviewData).role === 'pandit' ? t('reviews.pandit_badge') : undefined
                                                     }
                                                     badgeColor={
                                                         activeTab === 'pandit'

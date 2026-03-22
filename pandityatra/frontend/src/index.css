@@ -147,6 +147,43 @@
   background-color: hsl(var(--card)) !important;
 }
 
+/* Custom hex backgrounds used across pages */
+.dark .bg-\[\#FDFBF9\] {
+  background-color: hsl(var(--background)) !important;
+}
+.dark .bg-\[\#FFF8E1\] {
+  background-color: hsl(var(--muted)) !important;
+}
+.dark .bg-\[\#FFF3E0\] {
+  background-color: hsl(var(--muted)) !important;
+}
+
+/* Orange background variants */
+.dark .bg-orange-50\/50,
+.dark .bg-orange-50\/80,
+.dark .bg-orange-50\/20,
+.dark .bg-orange-50\/30,
+.dark .bg-orange-100,
+.dark .bg-orange-100\/80,
+.dark .bg-orange-100\/50 {
+  background-color: hsl(var(--accent)) !important;
+}
+
+/* Red/festival backgrounds */
+.dark .bg-red-50,
+.dark .bg-red-50\/40,
+.dark .bg-red-50\/30 {
+  background-color: hsl(8 20% 15%) !important;
+}
+
+/* White backgrounds with opacity */
+.dark .bg-white\/50,
+.dark .bg-white\/80,
+.dark .bg-white\/90 {
+  background-color: hsl(var(--card) / 0.7) !important;
+}
+
+/* Text colors */
 .dark .text-gray-900,
 .dark .text-gray-800,
 .dark .text-gray-700,
@@ -154,14 +191,50 @@
 .dark .text-\[\#3E2723\] {
   color: hsl(var(--foreground)) !important;
 }
+.dark .text-\[\#3E2723\]\/70,
+.dark .text-\[\#3E2723\]\/60,
+.dark .text-\[\#3E2723\]\/50 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-gray-500,
+.dark .text-gray-400 {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.dark .text-orange-600\/60 {
+  color: hsl(36 80% 55%) !important;
+}
 
+/* Border colors */
 .dark .border-gray-100,
 .dark .border-gray-200,
 .dark .border-orange-100,
-.dark .border-orange-200 {
+.dark .border-orange-200,
+.dark .border-orange-50,
+.dark .border-orange-50\/50 {
   border-color: hsl(var(--border)) !important;
 }
 
+/* Ring colors */
+.dark .ring-orange-200,
+.dark .ring-orange-100 {
+  --tw-ring-color: hsl(var(--border)) !important;
+}
+
+/* Shadow fixes */
+.dark .shadow-inner {
+  --tw-shadow-color: rgba(0, 0, 0, 0.15) !important;
+}
+.dark .shadow-orange-200\/40,
+.dark .shadow-orange-500\/20 {
+  --tw-shadow-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Divider */
+.dark .divide-orange-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: hsl(var(--border)) !important;
+}
+
+/* Scrollbar */
 .dark ::-webkit-scrollbar-track {
   background: #14100f;
 }
