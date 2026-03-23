@@ -97,6 +97,7 @@ import FavoritesDrawer from './components/shop/FavoritesDrawer'
 import UnifiedChatWidget from './components/UnifiedChatWidget'
 import BackToTop from './components/common/BackToTop'
 import { PWAInstallPrompt } from './components/PWAInstallPrompt'
+import BottomNavigation from './components/layout/BottomNavigation'
 
 // Error Handling
 import { ThemeProvider } from './components/theme/ThemeProvider'
@@ -386,12 +387,14 @@ function App() {
                     <Route path="/403" element={<Unauthorized />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  <div className="h-20 md:hidden" /> {/* Spacer for BottomNavigation */}
 
                   <CartDrawer />
                   <FavoritesDrawer />
                   <BackToTop />
                   <UnifiedChatWidget />
                   <PWAInstallPrompt />
+                  <BottomNavigation />
                   <Toaster />
                 </BrowserRouter>
               </ErrorBoundary>

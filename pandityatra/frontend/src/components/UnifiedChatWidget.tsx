@@ -154,7 +154,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   return (
     <>
       {/* Floating Trigger */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+      <div className="fixed bottom-24 md:bottom-6 right-6 z-40 flex flex-col items-end gap-3">
         <AnimatePresence>
           {showPopup && (
             <motion.div

@@ -164,7 +164,7 @@ const Contact: React.FC = () => {
                                                         <Input
                                                             required
                                                             placeholder="Pandit Yatra"
-                                                            className="h-12 rounded-xl bg-slate-50 border-transparent focus:border-orange-200 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
+                                                            className="h-12 rounded-xl bg-orange-50/30 border-orange-200 focus:border-orange-500 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
                                                             value={formData.name}
                                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                         />
@@ -175,7 +175,7 @@ const Contact: React.FC = () => {
                                                             required
                                                             type="email"
                                                             placeholder="pandityatra9@gmail.com"
-                                                            className="h-12 rounded-xl bg-slate-50 border-transparent focus:border-orange-200 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
+                                                            className="h-12 rounded-xl bg-orange-50/30 border-orange-200 focus:border-orange-500 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
                                                             value={formData.email}
                                                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                         />
@@ -187,7 +187,7 @@ const Contact: React.FC = () => {
                                                     <Input
                                                         required
                                                         placeholder="How can we help you?"
-                                                        className="h-12 rounded-xl bg-slate-50 border-transparent focus:border-orange-200 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
+                                                        className="h-12 rounded-xl bg-orange-50/30 border-orange-200 focus:border-orange-500 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500"
                                                         value={formData.subject}
                                                         onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                                                     />
@@ -198,7 +198,7 @@ const Contact: React.FC = () => {
                                                     <Textarea
                                                         required
                                                         placeholder="Describe your inquiry in detail..."
-                                                        className="min-h-[150px] rounded-2xl bg-slate-50 border-transparent focus:border-orange-200 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500 p-4"
+                                                        className="min-h-[150px] rounded-2xl bg-orange-50/30 border-orange-200 focus:border-orange-500 focus:bg-white transition-all shadow-none focus-visible:ring-orange-500 p-4"
                                                         value={formData.message}
                                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                                     />

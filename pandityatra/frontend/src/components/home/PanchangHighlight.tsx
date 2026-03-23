@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import PanchangWidget from '../panchang/PanchangWidget';
 import calendarImg from '@/assets/images/calander view .webp';
 
 const PanchangHighlight: React.FC = () => {
@@ -91,17 +90,6 @@ const PanchangHighlight: React.FC = () => {
                         {/* ── Mobile stacked layout ── */}
                         <div className="flex flex-col items-center gap-4 md:hidden w-full px-2">
                             {/* Panchang Widget on mobile — full width card */}
-                            <motion.div
-                                className="w-full max-w-[280px]"
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2, duration: 0.5 }}
-                                viewport={{ once: true }}
-                            >
-                                <div className="shadow-xl rounded-2xl overflow-hidden bg-white border border-orange-50/50">
-                                    <PanchangWidget />
-                                </div>
-                            </motion.div>
 
                             {/* Calendar Image on mobile */}
                             <motion.div
@@ -157,23 +145,11 @@ const PanchangHighlight: React.FC = () => {
                                 <img
                                     src={calendarImg}
                                     alt="Advanced Calendar View"
-                                    className="w-full max-w-[400px] lg:max-w-[420px] h-auto object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)] transition-transform duration-700"
+                                    className="w-full max-w-[480px] lg:max-w-[520px] h-auto object-contain drop-shadow-[0_0_20px_rgba(249,115,22,0.4)] transition-transform duration-700"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-orange-400/5 to-transparent pointer-events-none rounded-3xl" />
                             </motion.div>
 
-                            {/* Floating Panchang Widget */}
-                            <motion.div
-                                className="absolute -top-16 -left-32 lg:-left-48 w-[240px] lg:w-[260px] z-20"
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.4, duration: 0.5 }}
-                                viewport={{ once: true }}
-                            >
-                                <div className="transition-all duration-500 shadow-2xl rounded-3xl overflow-hidden bg-white border border-orange-50/50 hover:shadow-orange-200/40">
-                                    <PanchangWidget />
-                                </div>
-                            </motion.div>
 
                             {/* Decorative Sparkle Badge */}
                             <motion.div
