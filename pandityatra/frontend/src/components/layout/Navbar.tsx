@@ -568,6 +568,8 @@ const Navbar: React.FC = () => {
           </div>
         </div>
       </header>
+      {/* Spacer to account for fixed header depth */}
+      {!isActive('/admin/dashboard') && !isActive('/pandit/dashboard') && <div className="h-20" />}
     </>
   );
 };

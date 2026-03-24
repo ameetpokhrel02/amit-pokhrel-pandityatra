@@ -23,13 +23,14 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-3 overflow-hidden rounded-xl border-none p-4 pr-8 shadow-2xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-full",
+  "group pointer-events-auto relative flex w-full flex-col items-stretch overflow-hidden rounded-2xl border-none p-4 shadow-xl transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-full",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground shadow-2xl",
+        default: "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border border-gray-100 dark:border-gray-800",
         destructive:
-          "destructive group bg-destructive text-destructive-foreground shadow-2xl",
+          "destructive group bg-red-600 text-white shadow-2xl",
+        success: "bg-green-600 text-white shadow-2xl",
       },
     },
     defaultVariants: {
@@ -48,7 +49,17 @@ const Toast = React.forwardRef<
       ref={ref}
       className={cn(toastVariants({ variant }), className)}
       {...props}
-    />
+    >
+      <div className="flex items-center justify-between w-full">
+        {props.children}
+      </div>
+      {/* Progress Bar (Loading type) */}
+      <div className="absolute bottom-0 left-0 h-1 bg-current opacity-20 w-full" />
+      <div className={cn(
+        "absolute bottom-0 left-0 h-1 bg-current transition-all duration-2000 linear w-full origin-left animate-toast-progress",
+        variant === 'destructive' ? 'bg-white' : variant === 'success' ? 'bg-white' : 'bg-orange-500'
+      )} />
+    </ToastPrimitives.Root>
   )
 })
 Toast.displayName = ToastPrimitives.Root.displayName

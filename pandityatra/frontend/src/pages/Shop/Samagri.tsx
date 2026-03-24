@@ -1,21 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingBag,
     Search,
     Filter,
     ShoppingCart,
-    Plus,
     Loader2,
-    ArrowUp,
     Eye,
-    ArrowUpDown,
     ChevronLeft,
     ChevronRight,
-    Star,
     X,
     Heart
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -23,11 +23,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -39,6 +34,9 @@ import {
 } from '@/lib/api';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import ShopFilterSidebar from '@/components/shop/ShopFilterSidebar';
+import { BannerCarousel } from '@/components/shop/BannerCarousel';
+import { fetchActiveBanners } from '@/lib/api';
 import heroBg from '@/assets/images/agarbati_brands.webp';
 
 const Samagri = () => {
@@ -48,12 +46,14 @@ const Samagri = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [sortBy, setSortBy] = useState<string>('featured');
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 99999]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedItem, setSelectedItem] = useState<SamagriItem | null>(null);
+    const [hasBanners, setHasBanners] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -62,12 +62,14 @@ const Samagri = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [itemsData, categoriesData] = await Promise.all([
+            const [itemsData, categoriesData, bannersData] = await Promise.all([
                 fetchSamagriItems(),
-                fetchSamagriCategories()
+                fetchSamagriCategories(),
+                fetchActiveBanners()
             ]);
             setItems(itemsData);
             setCategories(categoriesData);
+            setHasBanners(bannersData.length > 0);
         } catch (error) {
             console.error('Failed to load shop data:', error);
             toast({
@@ -80,12 +82,26 @@ const Samagri = () => {
         }
     };
 
+    // Computed max price
+    const maxPrice = useMemo(() => {
+        if (items.length === 0) return 99999;
+        return Math.ceil(Math.max(...items.map(i => Number(i.price))));
+    }, [items]);
+
+    // Initialize price range once data loads
+    useEffect(() => {
+        if (items.length > 0) {
+            setPriceRange([0, maxPrice]);
+        }
+    }, [maxPrice, items.length]);
+
     // Filtering
     const filteredItems = items.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.description.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesCategory = selectedCategory === 'all' || item.category?.toString() === selectedCategory;
-        return matchesSearch && matchesCategory;
+        const matchesPrice = Number(item.price) >= priceRange[0] && Number(item.price) <= priceRange[1];
+        return matchesSearch && matchesCategory && matchesPrice;
     });
 
     // Sorting
@@ -105,10 +121,18 @@ const Samagri = () => {
         currentPage * itemsPerPage
     );
 
+    // Reset filters helper
+    const handleResetFilters = () => {
+        setSelectedCategory('all');
+        setSortBy('featured');
+        setPriceRange([0, maxPrice]);
+        setSearchQuery('');
+    };
+
     // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, selectedCategory, sortBy]);
+    }, [searchQuery, selectedCategory, sortBy, priceRange]);
 
     const handleAddToCart = (item: SamagriItem) => {
         addItem({
@@ -118,9 +142,8 @@ const Samagri = () => {
             image: item.image || '/images/bhasma.png', // Fallback image if null
         });
         toast({
-            title: "✅ Added to Cart",
+            title: "Added to Cart",
             description: `${item.name} has been added to your cart.`,
-            className: "bg-green-600 text-white border-none shadow-2xl"
         });
         openDrawer();
     };
@@ -151,92 +174,80 @@ const Samagri = () => {
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
 
-            {/* Hero Section */}
-            <section className="relative text-white py-24 px-4 overflow-hidden">
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src={heroBg}
-                        alt="Sacred Samagri"
-                        className="w-full h-full object-cover"
+            {/* Hero Section / Banner Carousel */}
+            {hasBanners ? (
+                <div className="container mx-auto px-4 mt-8">
+                    <BannerCarousel />
+                </div>
+            ) : (
+                <section className="relative text-white py-24 px-4 overflow-hidden">
+                    {/* Background Image */}
+                    <div className="absolute inset-0 z-0">
+                        <img
+                            src={heroBg}
+                            alt="Sacred Samagri"
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-amber-900/70 backdrop-blur-[2px]" />
+                    </div>
+
+                    <div className="container mx-auto text-center max-w-3xl relative z-10">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4">
+                                <ShoppingBag className="w-4 h-4 mr-2" />
+                                Official Samagri Store
+                            </Badge>
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
+                                Sacred Puja Materials
+                            </h1>
+                            <p className="text-orange-100 text-lg mb-8 leading-relaxed">
+                                Authentic, pure, and curated samagri kits delivered to your doorstep.
+                                Everything you need for a divine ceremony.
+                            </p>
+                        </motion.div>
+                    </div>
+                </section>
+            )}
+
+            {/* Global Search Bar (moved below hero) */}
+            <div className="container mx-auto px-4 mt-8">
+                <div className="relative max-w-2xl mx-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                        type="text"
+                        placeholder="Search for diyas, incense, complete kits..."
+                        className="pl-12 h-14 bg-white text-gray-900 border border-orange-100 shadow-lg hover:shadow-orange-200/50 transition-shadow rounded-2xl focus-visible:ring-orange-500"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-amber-900/70 backdrop-blur-[2px]" />
                 </div>
-
-                <div className="container mx-auto text-center max-w-3xl relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4">
-                            <ShoppingBag className="w-4 h-4 mr-2" />
-                            Official Samagri Store
-                        </Badge>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
-                            Sacred Puja Materials
-                        </h1>
-                        <p className="text-orange-100 text-lg mb-8 leading-relaxed">
-                            Authentic, pure, and curated samagri kits delivered to your doorstep.
-                            Everything you need for a divine ceremony.
-                        </p>
-
-                        <div className="relative max-w-lg mx-auto">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input
-                                type="text"
-                                placeholder="Search for diyas, incense, complete kits..."
-                                className="pl-10 h-12 bg-white text-gray-900 border-none shadow-xl rounded-full"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    </motion.div>
-                </div>
-            </section>
+            </div>
 
             <main className="flex-1 container mx-auto py-12 px-4">
-                {/* Category Filters */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                    <Tabs defaultValue="all" className="w-full md:w-auto" onValueChange={setSelectedCategory}>
-                        <TabsList className="bg-white p-1 shadow-sm border h-auto flex-wrap justify-start">
-                            <TabsTrigger value="all" className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-900">
-                                All Items
-                            </TabsTrigger>
-                            {categories.map(cat => (
-                                <TabsTrigger
-                                    key={cat.id}
-                                    value={cat.id.toString()}
-                                    className="data-[state=active]:bg-orange-100 data-[state=active]:text-orange-900"
-                                >
-                                    {cat.name}
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
-                    </Tabs>
 
-                    <div className="flex items-center gap-4">
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="w-[180px] bg-white">
-                                <ArrowUpDown className="w-4 h-4 mr-2" />
-                                <SelectValue placeholder="Sort by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="featured">Featured</SelectItem>
-                                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                                <SelectItem value="name-asc">Name: A to Z</SelectItem>
-                            </SelectContent>
-                        </Select>
+                {/* Desktop: Sidebar + Grid */}
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
 
-                        <div className="flex items-center gap-2 text-sm text-gray-500 whitespace-nowrap">
-                            <Filter className="w-4 h-4" />
-                            <span>{sortedItems.length} items</span>
-                        </div>
-                    </div>
-                </div>
+                {/* Desktop Sidebar */}
+                <ShopFilterSidebar
+                    categories={categories}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    priceRange={priceRange}
+                    onPriceRangeChange={setPriceRange}
+                    maxPrice={maxPrice}
+                    totalItems={sortedItems.length}
+                    onReset={handleResetFilters}
+                />
 
                 {/* Product Grid */}
+                <div className="flex-1 min-w-0">
                 {loading ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
@@ -244,7 +255,7 @@ const Samagri = () => {
                 ) : paginatedItems.length > 0 ? (
                     <motion.div
                         layout
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
                     >
                         <AnimatePresence>
                             {paginatedItems.map((item) => (
@@ -402,6 +413,8 @@ const Samagri = () => {
                         </Button>
                     </div>
                 )}
+                </div>{/* end flex-1 min-w-0 */}
+                </div>{/* end flex gap-8 */}
             </main>
 
             <Footer />

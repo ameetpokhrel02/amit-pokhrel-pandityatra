@@ -736,6 +736,61 @@ export async function downloadBookingInvoice(bookingId: number): Promise<void> {
     window.URL.revokeObjectURL(url);
 }
 
+// ----------------------
+// Banners APIs
+// ----------------------
+export interface Banner {
+    id: number;
+    title: string;
+    description: string | null;
+    image_url: string;
+    mobile_image_url: string | null;
+    link_url: string | null;
+    link_text: string | null;
+    banner_type: 'MAIN_BANNER' | 'SALE_BANNER' | 'FESTIVAL_BANNER' | 'OFFER_BANNER' | 'DISCOUNT_BANNER';
+    status: 'ACTIVE' | 'INACTIVE' | 'SCHEDULED';
+    priority_order: number;
+    background_color: string | null;
+    text_color: string | null;
+    start_date: string | null;
+    end_date: string | null;
+    view_count: number;
+    click_count: number;
+    created_at: string;
+    updated_at: string;
+    created_by?: {
+        id: number;
+        full_name: string;
+        email: string;
+        role: string;
+    };
+}
+
+export async function fetchBanners(): Promise<Banner[]> {
+    const response = await apiClient.get('/banners/');
+    return response.data;
+}
+
+export async function fetchActiveBanners(): Promise<Banner[]> {
+    const response = await apiClient.get('/banners/active_banners/');
+    return response.data;
+}
+
+export async function createBanner(data: Partial<Banner>) {
+    const response = await apiClient.post('/banners/', data);
+    return response.data;
+}
+
+export async function updateBanner(id: number, data: Partial<Banner>) {
+    const response = await apiClient.patch(`/banners/${id}/`, data);
+    return response.data;
+}
+
+export async function deleteBanner(id: number) {
+    const response = await apiClient.delete(`/banners/${id}/`);
+    return response.data;
+}
+
 // Helper to standardize error messages
 function handleApiError(error: any) {
     if (error.response) {

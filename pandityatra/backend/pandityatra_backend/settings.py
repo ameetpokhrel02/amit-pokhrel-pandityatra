@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     'ai',  # AI Pandit module
     'panchang', # Nepali Panchang & Calendar
     'drf_spectacular',  # API documentation with OpenAPI/Swagger
+    'banners',  # New Dynamic Banner Module
 ]
 
 # Django Channels Configuration

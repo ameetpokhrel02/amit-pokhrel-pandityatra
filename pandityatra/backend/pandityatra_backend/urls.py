@@ -49,6 +49,7 @@ urlpatterns = [
     path('api/ai/', include('ai.urls')),  # AI Gateway endpoints
     path('api/payments/', include('payments.urls')),  # Payment endpoints
     path('api/reviews/', include('reviews.urls')), # Review endpoints
+    path('api/banners/', include('banners.urls')), # Banner endpoints
 
     # Video call endpoints
     path('api/video/', include('video.urls')),

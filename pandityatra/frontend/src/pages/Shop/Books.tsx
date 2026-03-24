@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Book,
@@ -6,11 +6,9 @@ import {
     Filter,
     ShoppingCart,
     Loader2,
-    ArrowUpDown,
     ChevronLeft,
     ChevronRight,
     Eye,
-    Star,
     X,
     ShoppingBag,
     Heart
@@ -37,6 +35,9 @@ import {
 } from '@/lib/api';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import ShopFilterSidebar from '@/components/shop/ShopFilterSidebar';
+import { BannerCarousel } from '@/components/shop/BannerCarousel';
+import { fetchActiveBanners } from '@/lib/api';
 
 const Books = () => {
     const [books, setBooks] = useState<SamagriItem[]>([]);
@@ -44,12 +45,14 @@ const Books = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState<string>('featured');
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 99999]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedBook, setSelectedBook] = useState<SamagriItem | null>(null);
+    const [hasBanners, setHasBanners] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -58,10 +61,13 @@ const Books = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [itemsData, categoriesData] = await Promise.all([
+            const [itemsData, categoriesData, bannersData] = await Promise.all([
                 fetchSamagriItems(),
-                fetchSamagriCategories()
+                fetchSamagriCategories(),
+                fetchActiveBanners()
             ]);
+
+            setHasBanners(bannersData.length > 0);
 
             // Find the "Book" or "Books" category
             const bookCategory = categoriesData.find(c => 
@@ -89,10 +95,25 @@ const Books = () => {
         }
     };
 
+    // Computed max price
+    const maxPrice = useMemo(() => {
+        if (books.length === 0) return 99999;
+        return Math.ceil(Math.max(...books.map(i => Number(i.price))));
+    }, [books]);
+
+    // Initialize price range once data loads
+    useEffect(() => {
+        if (books.length > 0) {
+            setPriceRange([0, maxPrice]);
+        }
+    }, [maxPrice, books.length]);
+
     // Processing Data
     const filteredItems = books.filter(item => {
         const term = searchQuery.toLowerCase();
-        return item.name.toLowerCase().includes(term) || (item.description && item.description.toLowerCase().includes(term));
+        const matchesSearch = item.name.toLowerCase().includes(term) || (item.description && item.description.toLowerCase().includes(term));
+        const matchesPrice = Number(item.price) >= priceRange[0] && Number(item.price) <= priceRange[1];
+        return matchesSearch && matchesPrice;
     });
 
     const sortedItems = [...filteredItems].sort((a, b) => {
@@ -110,7 +131,14 @@ const Books = () => {
         currentPage * itemsPerPage
     );
 
-    useEffect(() => { setCurrentPage(1); }, [searchQuery, sortBy]);
+    // Reset filters helper
+    const handleResetFilters = () => {
+        setSortBy('featured');
+        setPriceRange([0, maxPrice]);
+        setSearchQuery('');
+    };
+
+    useEffect(() => { setCurrentPage(1); }, [searchQuery, sortBy, priceRange]);
 
     const handleAddToCart = (book: SamagriItem) => {
         addItem({
@@ -120,9 +148,8 @@ const Books = () => {
             image: book.image || '/images/bhasma.png',
         });
         toast({
-            title: "✅ Added to Cart",
+            title: "Added to Cart",
             description: `${book.name} has been added to your cart.`,
-            className: "bg-green-600 text-white border-none shadow-2xl"
         });
         openDrawer();
     };
@@ -153,69 +180,76 @@ const Books = () => {
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
 
-            {/* Hero Section */}
-            <section className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-20 px-4">
-                <div className="container mx-auto text-center max-w-3xl">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4 uppercase tracking-wider">
-                            <Book className="w-4 h-4 mr-2" />
-                            Sacred Library
-                        </Badge>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
-                            Spiritual Wisdom
-                        </h1>
-                        <p className="text-orange-100 text-lg mb-8 leading-relaxed">
-                            Explore timeless scriptures, epics, and spiritual guides.
-                            Nourish your soul with divine knowledge.
-                        </p>
-
-                        <div className="relative max-w-lg mx-auto">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input
-                                type="text"
-                                placeholder="Search for Gita, Ramayana, etc..."
-                                className="pl-10 h-12 bg-white text-gray-900 border-none shadow-xl rounded-full focus-visible:ring-2 focus-visible:ring-orange-300"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    </motion.div>
+            {/* Hero Section / Banner Carousel */}
+            {hasBanners ? (
+                <div className="container mx-auto px-4 mt-8">
+                    <BannerCarousel />
                 </div>
-            </section>
+            ) : (
+                <section className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-20 px-4">
+                    <div className="container mx-auto text-center max-w-3xl">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4 uppercase tracking-wider">
+                                <Book className="w-4 h-4 mr-2" />
+                                Sacred Library
+                            </Badge>
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
+                                Spiritual Wisdom
+                            </h1>
+                            <p className="text-orange-100 text-lg mb-8 leading-relaxed">
+                                Explore timeless scriptures, epics, and spiritual guides.
+                                Nourish your soul with divine knowledge.
+                            </p>
+                        </motion.div>
+                    </div>
+                </section>
+            )}
+
+            {/* Global Search Bar (moved below hero) */}
+            <div className="container mx-auto px-4 mt-8">
+                <div className="relative max-w-2xl mx-auto">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <Input
+                        type="text"
+                        placeholder="Search for Gita, Ramayana, etc..."
+                        className="pl-12 h-14 bg-white text-gray-900 border border-orange-100 shadow-lg hover:shadow-orange-200/50 transition-shadow rounded-2xl focus-visible:ring-orange-500"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
 
             <main className="flex-1 container mx-auto py-12 px-4">
-                {/* Controls */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-                    <div className="text-sm font-medium text-gray-700">
-                        Browse Collection
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                            <SelectTrigger className="w-[180px] bg-white">
-                                <ArrowUpDown className="w-4 h-4 mr-2" />
-                                <SelectValue placeholder="Sort by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="featured">Featured</SelectItem>
-                                <SelectItem value="price-asc">Price: Low to High</SelectItem>
-                                <SelectItem value="price-desc">Price: High to Low</SelectItem>
-                                <SelectItem value="name-asc">Title: A to Z</SelectItem>
-                            </SelectContent>
-                        </Select>
+                {/* Desktop: Sidebar + Grid */}
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
 
-                        <div className="flex items-center gap-2 text-sm text-gray-500 whitespace-nowrap">
-                            <Filter className="w-4 h-4" />
-                            <span>{sortedItems.length} items</span>
-                        </div>
-                    </div>
-                </div>
+                {/* Desktop Sidebar */}
+                <ShopFilterSidebar
+                    categories={[]}
+                    selectedCategory="all"
+                    onCategoryChange={() => {}}
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    priceRange={priceRange}
+                    onPriceRangeChange={setPriceRange}
+                    maxPrice={maxPrice}
+                    totalItems={sortedItems.length}
+                    onReset={handleResetFilters}
+                    sortOptions={[
+                        { value: 'featured', label: 'Featured' },
+                        { value: 'price-asc', label: 'Price: Low → High' },
+                        { value: 'price-desc', label: 'Price: High → Low' },
+                        { value: 'name-asc', label: 'Title: A → Z' },
+                    ]}
+                />
 
                 {/* Grid */}
+                <div className="flex-1 min-w-0">
                 {loading ? (
                     <div className="flex justify-center py-20">
                         <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
@@ -223,7 +257,7 @@ const Books = () => {
                 ) : paginatedItems.length > 0 ? (
                     <motion.div
                         layout
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                     >
                         <AnimatePresence mode='popLayout'>
                             {paginatedItems.map((book) => (
@@ -349,6 +383,8 @@ const Books = () => {
                         </Button>
                     </div>
                 )}
+                </div>{/* end flex-1 min-w-0 */}
+                </div>{/* end flex gap-8 */}
             </main>
 
             <Footer />

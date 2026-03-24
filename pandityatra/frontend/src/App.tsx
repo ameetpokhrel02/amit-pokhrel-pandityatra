@@ -69,6 +69,7 @@ import AdminReviews from './pages/admin/AdminReviews'
 import AdminPanditsList from './pages/admin/AdminPanditsList'
 import AdminProfile from './pages/admin/AdminProfile'
 import AdminSiteContent from './pages/admin/AdminSiteContent'
+import AdminBanners from '@/pages/admin/AdminBanners'
 import AdminSupport from './pages/admin/AdminSupport'
 import AdminErrorLogs from './pages/admin/AdminErrorLogs'
 import ManageAdmins from './pages/admin/ManageAdmins'
@@ -336,6 +337,7 @@ function App() {
                     } />
 
                     <Route path="/admin/site-content" element={<ProtectedRoute allowedRoles={['admin']}><AdminSiteContent /></ProtectedRoute>} />
+                    <Route path="/admin/banners" element={<ProtectedRoute allowedRoles={['admin']}><AdminBanners /></ProtectedRoute>} />
                     <Route path="/admin/support" element={<ProtectedRoute allowedRoles={['admin']}><AdminSupport /></ProtectedRoute>} />
                     <Route path="/admin/manage-admins" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><ManageAdmins /></ProtectedRoute>} />
 
