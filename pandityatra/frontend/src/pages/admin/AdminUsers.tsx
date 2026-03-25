@@ -8,6 +8,14 @@ import axiosInstance from '@/lib/api-client';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { DataTablePagination } from "@/components/common/DataTablePagination";
+import { Pencil, Trash2, UserX, UserCheck, Check, X } from 'lucide-react';
+import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface User {
     id: number;
@@ -28,6 +36,12 @@ const AdminUsers = () => {
     const itemsPerPage = 10;
     const [editId, setEditId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<{ full_name: string; email: string; role: string }>({ full_name: "", email: "", role: "user" });
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
+        title: "",
+        description: "",
+        onConfirm: () => { }
+    });
 
     useEffect(() => {
         fetchUsers();
@@ -46,13 +60,21 @@ const AdminUsers = () => {
     };
 
     const toggleStatus = async (userId: number, currentStatus: boolean) => {
-        try {
-            const res = await axiosInstance.post(`/users/admin/users/${userId}/toggle-status/`);
-            toast({ title: "Success", description: res.data.message });
-            setUsers(users.map(u => u.id === userId ? { ...u, is_active: !currentStatus } : u));
-        } catch (error) {
-            toast({ title: "Error", description: "Failed to update user status", variant: "destructive" });
-        }
+        setConfirmConfig({
+            title: currentStatus ? "Block User?" : "Unblock User?",
+            description: `Are you sure you want to ${currentStatus ? 'block' : 'unblock'} this user? ${currentStatus ? 'They will not be able to log in until unblocked.' : 'They will regain access to the platform.'}`,
+            onConfirm: async () => {
+                try {
+                    const res = await axiosInstance.post(`/users/admin/users/${userId}/toggle-status/`);
+                    toast({ title: "Success", description: res.data.message });
+                    setUsers(users.map(u => u.id === userId ? { ...u, is_active: !currentStatus } : u));
+                    setConfirmOpen(false);
+                } catch (error) {
+                    toast({ title: "Error", description: "Failed to update user status", variant: "destructive" });
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,15 +113,21 @@ const AdminUsers = () => {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm("Delete this user?")) {
-            try {
-                await axiosInstance.delete(`/users/admin/users/${id}/`);
-                toast({ title: "Deleted", description: "User deleted" });
-                fetchUsers();
-            } catch {
-                toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+        setConfirmConfig({
+            title: "Delete User?",
+            description: "Are you sure you want to delete this user? This action cannot be undone and will remove all their data from our system.",
+            onConfirm: async () => {
+                try {
+                    await axiosInstance.delete(`/users/admin/users/${id}/`);
+                    toast({ title: "Deleted", description: "User deleted" });
+                    fetchUsers();
+                    setConfirmOpen(false);
+                } catch {
+                    toast({ title: "Error", description: "Failed to delete user", variant: "destructive" });
+                }
             }
-        }
+        });
+        setConfirmOpen(true);
     };
 
     return (
@@ -109,7 +137,8 @@ const AdminUsers = () => {
                     <h1 className="text-3xl font-bold">User Management</h1>
                     <span className="text-muted-foreground">Total: {users.length}</span>
                 </div>
-                <Card className="mb-6">
+                <TooltipProvider>
+                    <Card className="mb-6">
                     <CardHeader>
                         <CardTitle>Search & Manage Users</CardTitle>
                     </CardHeader>
@@ -160,20 +189,60 @@ const AdminUsers = () => {
                                             </TableCell>
                                             <TableCell>{format(new Date(user.date_joined), 'MMM dd, yyyy')}</TableCell>
                                             <TableCell>
-                                                {editId === user.id ? (
-                                                    <>
-                                                        <Button size="sm" onClick={handleEditSubmit}>Save</Button>
-                                                        <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Button size="sm" variant="outline" onClick={() => handleEdit(user)}>Edit</Button>
-                                                        <Button size="sm" variant="destructive" onClick={() => handleDelete(user.id)}>Delete</Button>
-                                                        <Button size="sm" variant={user.is_active ? "destructive" : "outline"} onClick={() => toggleStatus(user.id, user.is_active)}>
-                                                            {user.is_active ? 'Block' : 'Unblock'}
-                                                        </Button>
-                                                    </>
-                                                )}
+                                                <div className="flex items-center gap-2">
+                                                    {editId === user.id ? (
+                                                        <>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={handleEditSubmit}>
+                                                                        <Check className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Save</TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEditId(null)}>
+                                                                        <X className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Cancel</TooltipContent>
+                                                            </Tooltip>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => handleEdit(user)}>
+                                                                        <Pencil className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Edit User</TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(user.id)}>
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Delete User</TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button 
+                                                                        size="sm" 
+                                                                        variant="ghost" 
+                                                                        className={`h-8 w-8 p-0 ${user.is_active ? "text-orange-600 hover:text-orange-700 hover:bg-orange-50" : "text-green-600 hover:text-green-700 hover:bg-green-50"}`} 
+                                                                        onClick={() => toggleStatus(user.id, user.is_active)}
+                                                                    >
+                                                                        {user.is_active ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>{user.is_active ? 'Block User' : 'Unblock User'}</TooltipContent>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -187,6 +256,14 @@ const AdminUsers = () => {
                         />
                     </CardContent>
                 </Card>
+                </TooltipProvider>
+                <ActionConfirmationDialog
+                    open={confirmOpen}
+                    onOpenChange={setConfirmOpen}
+                    title={confirmConfig.title}
+                    description={confirmConfig.description}
+                    onConfirm={confirmConfig.onConfirm}
+                />
             </div>
         </DashboardLayout>
     );

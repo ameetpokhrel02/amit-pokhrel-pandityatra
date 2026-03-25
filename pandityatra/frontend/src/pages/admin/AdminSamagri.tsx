@@ -17,7 +17,15 @@ import {
     type SamagriItem,
     type SamagriCategory
 } from "@/lib/api";
-import { Pencil, Trash, Plus, PackageOpen } from "lucide-react"; // PackageOpen icon
+import { Pencil, Trash, Plus, PackageOpen, Trash2 } from "lucide-react"; // Added Trash2
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { DataTablePagination } from "@/components/common/DataTablePagination";
+import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
 
 export default function AdminSamagri() {
   const [items, setItems] = useState<SamagriItem[]>([]);
@@ -26,6 +34,14 @@ export default function AdminSamagri() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false); // New state
   const [editingItem, setEditingItem] = useState<SamagriItem | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
+      title: "",
+      description: "",
+      onConfirm: () => { }
+  });
   
   const [form, setForm] = useState<{
       name: string;
@@ -98,16 +114,23 @@ export default function AdminSamagri() {
   };
   
   const handleDelete = async (id: number) => {
-      if(!confirm("Are you sure you want to delete this item?")) return;
-      try {
-          await deleteSamagriItem(id);
-          toast({ title: "Success", description: "Item deleted." });
-          loadData();
-      } catch (err: any) {
-          console.error(err);
-          const errorMsg = err.response?.data?.detail || err.message || "Failed to delete item.";
-          toast({ title: "Error", description: errorMsg });
-      }
+      setConfirmConfig({
+          title: "Delete Inventory Item?",
+          description: "Are you sure you want to delete this item? This action will permanently remove it from the inventory.",
+          onConfirm: async () => {
+              try {
+                  await deleteSamagriItem(id);
+                  toast({ title: "Success", description: "Item deleted." });
+                  loadData();
+                  setConfirmOpen(false);
+              } catch (err: any) {
+                  console.error(err);
+                  const errorMsg = err.response?.data?.detail || err.message || "Failed to delete item.";
+                  toast({ title: "Error", description: errorMsg });
+              }
+          }
+      });
+      setConfirmOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -162,14 +185,21 @@ export default function AdminSamagri() {
   };
 
   const handleDeleteCategory = async (id: number) => {
-      if (!confirm("Delete category? This will fail if items are assigned to it.")) return;
-      try {
-          await deleteSamagriCategory(id);
-          toast({ title: "Success", description: "Category deleted." });
-          loadData();
-      } catch (err) {
-          toast({ title: "Error", description: "Failed to delete category (Ensure it is empty)." });
-      }
+      setConfirmConfig({
+          title: "Delete Category?",
+          description: "Are you sure you want to delete this category? This will only work if no items are currently assigned to it.",
+          onConfirm: async () => {
+              try {
+                  await deleteSamagriCategory(id);
+                  toast({ title: "Success", description: "Category deleted." });
+                  loadData();
+                  setConfirmOpen(false);
+              } catch (err) {
+                  toast({ title: "Error", description: "Failed to delete category (Ensure it is empty)." });
+              }
+          }
+      });
+      setConfirmOpen(true);
   };
 
 
@@ -276,6 +306,7 @@ export default function AdminSamagri() {
           {loading ? (
             <div className="p-4">Loading...</div>
           ) : (
+            <TooltipProvider>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -284,7 +315,7 @@ export default function AdminSamagri() {
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stock</TableHead>
-                  <TableHead>Action</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -293,7 +324,7 @@ export default function AdminSamagri() {
                         <TableCell colSpan={6} className="text-center p-4">No items found</TableCell>
                     </TableRow>
                 ) : (
-                    items.map((item) => (
+                    items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((item) => (
                     <TableRow key={item.id}>
                         <TableCell>
                             {item.image ? (
@@ -310,22 +341,59 @@ export default function AdminSamagri() {
                                 {item.stock_quantity} {item.stock_quantity < 10 && "(Low)"}
                             </span>
                         </TableCell>
-                        <TableCell className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleEdit(item)}>
-                                <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
-                                <Trash className="h-4 w-4" />
-                            </Button>
+                        <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                            onClick={() => handleEdit(item)}
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Edit Item</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                            onClick={() => handleDelete(item.id)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Delete Item</TooltipContent>
+                                </Tooltip>
+                            </div>
                         </TableCell>
                     </TableRow>
                     ))
                 )}
               </TableBody>
             </Table>
+            <div className="p-4 border-t">
+                <DataTablePagination 
+                    currentPage={currentPage}
+                    totalPages={Math.ceil(items.length / itemsPerPage)}
+                    onPageChange={setCurrentPage}
+                />
+            </div>
+            </TooltipProvider>
           )}
         </CardContent>
       </Card>
+      <ActionConfirmationDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          onConfirm={confirmConfig.onConfirm}
+      />
     </DashboardLayout>
   );
 }

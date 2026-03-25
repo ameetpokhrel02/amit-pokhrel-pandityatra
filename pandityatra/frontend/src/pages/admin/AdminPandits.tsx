@@ -22,8 +22,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, CheckCircle, XCircle, FileText, Loader2, RefreshCcw } from "lucide-react";
+import { Eye, CheckCircle, XCircle, FileText, Loader2, RefreshCcw, Pencil, Trash2, Check, X } from "lucide-react";
+import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fetchPendingPandits, verifyPandit, rejectPandit, type Pandit } from "@/lib/api";
+import axiosInstance from "@/lib/api-client";
 
 export default function AdminPandits() {
     const [pandits, setPandits] = useState<Pandit[]>([]);
@@ -31,6 +39,12 @@ export default function AdminPandits() {
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
     const [selectedPandit, setSelectedPandit] = useState<Pandit | null>(null);
     const [rejectReason, setRejectReason] = useState("");
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
+        title: "",
+        description: "",
+        onConfirm: () => { }
+    });
     const [search, setSearch] = useState("");
     const [editId, setEditId] = useState<number | null>(null);
     const [editForm, setEditForm] = useState<{ full_name: string; experience_years: string; language: string }>({ full_name: "", experience_years: "", language: "" });
@@ -93,34 +107,39 @@ export default function AdminPandits() {
     };
 
     const handleDelete = async (id: number) => {
-        if (window.confirm("Delete this pandit?")) {
-            try {
-                // await axios.delete(`/api/pandits/${id}/`);
-                toast({ title: "Deleted", description: "Pandit deleted (API call needed)" });
-                loadPandits();
-            } catch {
-                toast({ title: "Error", description: "Failed to delete pandit", variant: "destructive" });
+        setConfirmConfig({
+            title: "Delete Pandit?",
+            description: "Are you sure you want to delete this pandit? This action cannot be undone.",
+            onConfirm: async () => {
+                try {
+                    // await axios.delete(`/api/pandits/${id}/`); // Replace with actual API call
+                    toast({ title: "Deleted", description: "Pandit deleted (API call needed)" });
+                    loadPandits();
+                    setConfirmOpen(false);
+                } catch {
+                    toast({ title: "Error", description: "Failed to delete pandit", variant: "destructive" });
+                }
             }
-        }
+        });
+        setConfirmOpen(true);
     };
 
     const handleApprove = async (pandit: Pandit) => {
-        if (!confirm(`Are you sure you want to approve ${pandit.user_details?.full_name || "this pandit"}?`)) return;
-
-        try {
-            await verifyPandit(pandit.id);
-            toast({
-                title: "Pandit Approved",
-                description: `${pandit.user_details.full_name} has been verified successfully.`,
-            });
-            loadPandits();
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to approve pandit",
-                variant: "destructive",
-            });
-        }
+        setConfirmConfig({
+            title: "Approve Pandit?",
+            description: `Are you sure you want to approve ${pandit.user_details?.full_name || "this pandit"}? This will allow them to start accepting bookings.`,
+            onConfirm: async () => {
+                try {
+                    await verifyPandit(pandit.id); // Using the existing verifyPandit function
+                    toast({ title: "Approved", description: "Pandit verification successful" });
+                    loadPandits();
+                    setConfirmOpen(false);
+                } catch (error) {
+                    toast({ title: "Error", description: "Failed to approve pandit", variant: "destructive" });
+                }
+            }
+        });
+        setConfirmOpen(true);
     };
 
     const openRejectDialog = (pandit: Pandit) => {
@@ -140,21 +159,30 @@ export default function AdminPandits() {
             return;
         }
 
-        try {
-            await rejectPandit(selectedPandit.id, rejectReason);
-            toast({
-                title: "Pandit Rejected",
-                description: `${selectedPandit.user_details?.full_name || "Pandit"} has been rejected.`,
-            });
-            setRejectDialogOpen(false);
-            loadPandits();
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to reject pandit",
-                variant: "destructive",
-            });
-        }
+        setConfirmConfig({
+            title: "Reject Pandit?",
+            description: `Are you sure you want to reject ${selectedPandit.user_details?.full_name || "this pandit"}? The reason provided is: "${rejectReason}"`,
+            onConfirm: async () => {
+                try {
+                    await rejectPandit(selectedPandit.id, rejectReason);
+                    toast({
+                        title: "Pandit Rejected",
+                        description: `${selectedPandit.user_details?.full_name || "Pandit"} has been rejected.`,
+                    });
+                    setRejectDialogOpen(false);
+                    loadPandits();
+                    setConfirmOpen(false);
+                } catch (error) {
+                    toast({
+                        title: "Error",
+                        description: "Failed to reject pandit",
+                        variant: "destructive",
+                    });
+                }
+            }
+        });
+        setRejectDialogOpen(false); // Close the reject reason dialog
+        setConfirmOpen(true); // Open the confirmation dialog
     };
 
     return (
@@ -166,7 +194,15 @@ export default function AdminPandits() {
                         <RefreshCcw className="mr-2 h-4 w-4" /> Refresh
                     </Button>
                 </div>
-                <Card className="mb-6">
+                <TooltipProvider>
+                <ActionConfirmationDialog
+                    open={confirmOpen}
+                    onOpenChange={setConfirmOpen}
+                    title={confirmConfig.title}
+                    description={confirmConfig.description}
+                    onConfirm={confirmConfig.onConfirm}
+                />
+                    <Card className="mb-6">
                     <CardHeader>
                         <CardTitle>Search & Manage Pandits</CardTitle>
                     </CardHeader>
@@ -225,51 +261,106 @@ export default function AdminPandits() {
                                                 </TableCell>
                                                 <TableCell>
                                                     {pandit.certification_file ? (
-                                                        <a
-                                                            href={pandit.certification_file}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            className="flex items-center text-blue-600 hover:underline"
-                                                        >
-                                                            <FileText className="h-4 w-4 mr-1" />
-                                                            View
-                                                        </a>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <a
+                                                                    href={pandit.certification_file}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="group flex items-center w-fit"
+                                                                >
+                                                                    <div className="relative flex items-center justify-center w-10 h-10 bg-red-50 rounded-lg border border-red-100 group-hover:bg-red-100 transition-colors">
+                                                                        <FileText className="h-6 w-6 text-red-500" />
+                                                                        <span className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[8px] font-black px-1 rounded shadow-sm">PDF</span>
+                                                                    </div>
+                                                                </a>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>View Certification PDF</TooltipContent>
+                                                        </Tooltip>
                                                     ) : (
-                                                        <span className="text-muted-foreground text-xs">Not uploaded</span>
+                                                        <span className="text-muted-foreground text-xs italic">No document</span>
                                                     )}
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                                                        {pandit.verification_status}
-                                                    </Badge>
+                                                    {pandit.verification_status === 'APPROVED' ? (
+                                                        <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-green-200">
+                                                            Accepted
+                                                        </Badge>
+                                                    ) : pandit.verification_status === 'REJECTED' ? (
+                                                        <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200">
+                                                            Rejected
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-200">
+                                                            Pending
+                                                        </Badge>
+                                                    )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                     <div className="flex justify-end gap-2">
                                                         {editId === pandit.id ? (
                                                             <>
-                                                                <Button size="sm" onClick={() => handleEditSubmit(pandit.id)}>Save</Button>
-                                                                <Button size="sm" variant="outline" onClick={() => setEditId(null)}>Cancel</Button>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50" onClick={() => handleEditSubmit(pandit.id)}>
+                                                                            <Check className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Save Changes</TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => setEditId(null)}>
+                                                                            <X className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Cancel Edit</TooltipContent>
+                                                                </Tooltip>
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <Button size="sm" variant="outline" onClick={() => handleEdit(pandit)}>Edit</Button>
-                                                                <Button size="sm" variant="destructive" onClick={() => handleDelete(pandit.id)}>Delete</Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    className="bg-green-600 hover:bg-green-700"
-                                                                    onClick={() => handleApprove(pandit)}
-                                                                >
-                                                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                                                    Approve
-                                                                </Button>
-                                                                <Button
-                                                                    size="sm"
-                                                                    variant="destructive"
-                                                                    onClick={() => openRejectDialog(pandit)}
-                                                                >
-                                                                    <XCircle className="h-4 w-4 mr-1" />
-                                                                    Reject
-                                                                </Button>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => handleEdit(pandit)}>
+                                                                            <Pencil className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Edit Pandit</TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleDelete(pandit.id)}>
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Delete Pandit</TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                                            onClick={() => handleApprove(pandit)}
+                                                                        >
+                                                                            <CheckCircle className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Approve Application</TooltipContent>
+                                                                </Tooltip>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="ghost"
+                                                                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                                            onClick={() => openRejectDialog(pandit)}
+                                                                        >
+                                                                            <XCircle className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Reject Application</TooltipContent>
+                                                                </Tooltip>
                                                             </>
                                                         )}
                                                     </div>
@@ -282,6 +373,7 @@ export default function AdminPandits() {
                         </div>
                     </CardContent>
                 </Card>
+            </TooltipProvider>
 
                 {/* Reject Dialog */}
                 <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>

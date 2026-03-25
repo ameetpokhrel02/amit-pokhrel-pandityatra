@@ -8,6 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchAllPujas, type Puja } from "@/lib/api";
 import apiClient from "@/lib/api-client";
 import { DataTablePagination } from "@/components/common/DataTablePagination";
+import { Pencil, Trash2 } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
 
 interface AdminPuja extends Puja {
   is_available: boolean;
@@ -20,6 +28,12 @@ export default function AdminServices() {
   const itemsPerPage = 5;
 
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
+      title: "",
+      description: "",
+      onConfirm: () => { }
+  });
 
   const [form, setForm] = useState<{
     name: string;
@@ -87,15 +101,22 @@ export default function AdminServices() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this puja service?")) return;
-    try {
-      await apiClient.delete(`/services/${id}/`);
-      toast({ title: "Success", description: "Puja deleted successfully." });
-      loadPujas();
-    } catch (err: any) {
-      console.error(err);
-      toast({ title: "Error", description: "Failed to delete puja." });
-    }
+    setConfirmConfig({
+        title: "Delete Service?",
+        description: "Are you sure you want to delete this puja service? This action is permanent.",
+        onConfirm: async () => {
+            try {
+                await apiClient.delete(`/services/${id}/`);
+                toast({ title: "Success", description: "Puja deleted successfully." });
+                loadPujas();
+                setConfirmOpen(false);
+            } catch (err: any) {
+                console.error(err);
+                toast({ title: "Error", description: "Failed to delete puja." });
+            }
+        }
+    });
+    setConfirmOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -174,6 +195,7 @@ export default function AdminServices() {
             <div>Loading...</div>
           ) : (
             <>
+            <TooltipProvider>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -182,7 +204,7 @@ export default function AdminServices() {
                   <TableHead>Price (₹)</TableHead>
                   <TableHead>Duration (min)</TableHead>
                   <TableHead>Available</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -193,21 +215,53 @@ export default function AdminServices() {
                     <TableCell>{puja.base_price}</TableCell>
                     <TableCell>{puja.base_duration_minutes}</TableCell>
                     <TableCell>{puja.is_available ? "Yes" : "No"}</TableCell>
-                    <TableCell>
-                        <div className="flex gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handleEdit(puja)}>Edit</Button>
-                            <Button size="sm" variant="destructive" onClick={() => handleDelete(puja.id)}>Delete</Button>
+                    <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        onClick={() => handleEdit(puja)}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Edit Service</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => handleDelete(puja.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete Service</TooltipContent>
+                            </Tooltip>
                         </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
+            </TooltipProvider>
             <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
           </>
           )}
         </CardContent>
       </Card>
+      <ActionConfirmationDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title={confirmConfig.title}
+          description={confirmConfig.description}
+          onConfirm={confirmConfig.onConfirm}
+      />
     </DashboardLayout>
   );
 }
