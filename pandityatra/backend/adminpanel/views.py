@@ -8,6 +8,7 @@ from pandits.models import Pandit
 from .models import PaymentErrorLog
 from rest_framework import status
 from django.utils import timezone
+from vendors.models import VendorProfile
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def admin_error_logs(request):
@@ -67,12 +68,16 @@ def admin_dashboard(request):
     total_pandits = Pandit.objects.count()
     pending_pandits = Pandit.objects.filter(verification_status="PENDING").count()
     total_bookings = Booking.objects.count()
+    total_vendors = VendorProfile.objects.count()
+    pending_vendors = VendorProfile.objects.filter(is_verified=False).count()
 
     return Response({
         "total_users": total_users,
         "total_pandits": total_pandits,
         "pending_pandits": pending_pandits,
         "total_bookings": total_bookings,
+        "total_vendors": total_vendors,
+        "pending_vendors": pending_vendors,
         "system_status": "OK"
     })
 

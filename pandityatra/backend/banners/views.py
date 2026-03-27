@@ -2,6 +2,7 @@ from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
+from django.db.models import Q
 from .models import Banner
 from .serializers import BannerSerializer
 
@@ -28,10 +29,10 @@ class BannerViewSet(viewsets.ModelViewSet):
         ).order_by("priority_order", "-created_at")
         
         # Filter by date if set
-        # banners = banners.filter(
-        #     (models.Q(start_date__isnull=True) | models.Q(start_date__lte=now)) &
-        #     (models.Q(end_date__isnull=True) | models.Q(end_date__gte=now))
-        # )
+        banners = banners.filter(
+            (Q(start_date__isnull=True) | Q(start_date__lte=now)) &
+            (Q(end_date__isnull=True) | Q(end_date__gte=now))
+        )
         
         serializer = self.get_serializer(banners, many=True)
         return Response(serializer.data)
