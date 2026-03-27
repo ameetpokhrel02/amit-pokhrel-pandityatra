@@ -28,6 +28,7 @@ class Puja(models.Model):
     # Base duration and price (recommended / default)
     base_duration_minutes = models.IntegerField(default=60)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=500.00)
+    base_price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True, blank=True)
     is_available = models.BooleanField(default=True)
     
     # Optional image for the service
