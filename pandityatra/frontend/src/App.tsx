@@ -28,6 +28,7 @@ import ShopEsewaVerify from './pages/Shop/ShopEsewaVerify'
 import LoginPage from './pages/auth/Login'
 import RegisterPage from './pages/auth/Register'
 import PanditRegister from './pages/auth/PanditRegister'
+import VendorRegister from './pages/auth/VendorRegister'
 import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerification'
 import ForgotPassword from './pages/auth/forgot-password/ForgotPassword'
 import OTPVerification from './pages/auth/otp-verification/OTPVerification'
@@ -55,6 +56,12 @@ import PanditCalendarPage from './pages/pandit/PanditCalendarPage'
 import PanditReviews from './pages/pandit/PanditReviews'
 import PanditAppFeedback from './pages/pandit/PanditAppFeedback'
 
+// Vendor
+import VendorDashboard from './pages/vendor/VendorDashboard'
+import VendorProducts from './pages/vendor/VendorProducts'
+import VendorOrders from './pages/vendor/VendorOrders'
+import VendorPayouts from './pages/vendor/VendorPayouts'
+
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPandits from './pages/admin/AdminPandits'
 import AdminBookings from './pages/admin/AdminBookings'
@@ -67,6 +74,8 @@ import AdminServices from './pages/admin/AdminServices'
 import AdminActivityLogs from './pages/admin/AdminActivityLogs'
 import AdminReviews from './pages/admin/AdminReviews'
 import AdminPanditsList from './pages/admin/AdminPanditsList'
+import AdminVendorsList from './pages/admin/AdminVendorsList'
+import VendorVerification from './pages/admin/VendorVerification'
 import AdminProfile from './pages/admin/AdminProfile'
 import AdminSiteContent from './pages/admin/AdminSiteContent'
 import AdminBanners from '@/pages/admin/AdminBanners'
@@ -147,6 +156,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/pandit/register" element={<PanditRegister />} />
+                    <Route path="/vendor/register" element={<VendorRegister />} />
                     <Route path="/otp-verification" element={<LoginOTPVerification />} />
                     <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                     <Route path="/auth/otp-verification" element={<OTPVerification />} />
@@ -256,6 +266,31 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    {/* 📦 Vendor */}
+                    <Route path="/vendor/dashboard" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorDashboard />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/products" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorProducts />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/orders" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorOrders />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/payouts" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorPayouts />
+                      </ProtectedRoute>
+                    } />
+
 
                     {/* 👑 Admin */}
                     <Route path="/admin/dashboard" element={
@@ -274,6 +309,18 @@ function App() {
                       <ProtectedRoute allowedRoles={['admin']}>
                         <AdminPanditsList />
                       </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/vendors-list" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <AdminVendorsList />
+                        </ProtectedRoute>
+                    } />
+
+                    <Route path="/admin/vendors-verification" element={
+                        <ProtectedRoute allowedRoles={['admin']}>
+                          <VendorVerification />
+                        </ProtectedRoute>
                     } />
 
                     <Route path="/admin/bookings" element={

@@ -38,7 +38,7 @@ import { NotificationDropdown } from '@/components/notifications/NotificationDro
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
-    userRole?: 'user' | 'pandit' | 'admin';
+    userRole?: 'user' | 'pandit' | 'admin' | 'vendor';
 }
 
 interface NavItem {
@@ -61,6 +61,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         if (location.search.includes('tab=purchases')) expanded.push('My Purchases');
         // Auto-expand admin sidebar items based on path
         if (location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) expanded.push('Pandits');
+        if (location.pathname.includes('/admin/vendors') || location.pathname.includes('/admin/vendors-list')) expanded.push('Vendors');
         if (location.pathname.includes('/admin/inventory') || location.pathname.includes('/admin/services')) expanded.push('Inventory');
         return expanded;
     });
@@ -81,6 +82,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         }
         if ((location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) && !expandedItems.includes('Pandits')) {
             setExpandedItems(prev => [...prev, 'Pandits']);
+        }
+        if ((location.pathname.includes('/admin/vendors') || location.pathname.includes('/admin/vendors-list')) && !expandedItems.includes('Vendors')) {
+            setExpandedItems(prev => [...prev, 'Vendors']);
         }
         if ((location.pathname.includes('/admin/inventory') || location.pathname.includes('/admin/services')) && !expandedItems.includes('Inventory')) {
             setExpandedItems(prev => [...prev, 'Inventory']);
@@ -123,6 +127,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 { icon: Users, label: 'All Pandits', path: '/admin/pandits-list' },
                 { icon: AlertTriangle, label: 'Verification', path: '/admin/pandits' },
             ]},
+            { icon: Store, label: 'Vendors', path: '/admin/vendors-list', children: [
+                { icon: Users, label: 'All Vendors', path: '/admin/vendors-list' },
+                { icon: Shield, label: 'Verification', path: '/admin/vendors-verification' },
+            ]},
             { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
             { icon: Package, label: 'Inventory', path: '/admin/inventory', children: [
                 { icon: Package, label: 'Samagri', path: '/admin/inventory' },
@@ -139,6 +147,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             // Manage Admins — only visible if superadmin (injected below)
             { icon: Settings, label: 'Settings', path: '/admin/settings' },
             { icon: User, label: 'My Profile', path: '/admin/profile' },
+        ],
+        vendor: [
+            { icon: LayoutDashboard, label: 'Dashboard', path: '/vendor/dashboard' },
+            { icon: Package, label: 'My Products', path: '/vendor/products' },
+            { icon: ClipboardList, label: 'Shop Orders', path: '/vendor/orders' },
+            { icon: Wallet, label: 'Earnings', path: '/vendor/earnings' },
+            { icon: User, label: 'Shop Profile', path: '/vendor/profile' },
+            { icon: MessageCircle, label: 'Messages', path: '/vendor/messages' },
+            { icon: Settings, label: 'Settings', path: '/vendor/settings' },
         ]
     };
 

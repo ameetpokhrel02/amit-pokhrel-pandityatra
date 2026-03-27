@@ -307,6 +307,8 @@ export interface AdminStats {
     low_stock_count: number;
     todays_pujas_count: number;
     error_logs_count: number;
+    total_vendors: number;
+    pending_vendors: number;
     system_status: string;
 }
 
@@ -663,6 +665,16 @@ export async function deleteSamagriItem(id: number) {
     return response.data;
 }
 
+export async function approveSamagriItem(id: number) {
+    const response = await apiClient.post(`/samagri/items/${id}/approve/`);
+    return response.data;
+}
+
+export async function rejectSamagriItem(id: number) {
+    const response = await apiClient.post(`/samagri/items/${id}/reject/`);
+    return response.data;
+}
+
 export async function createSamagriCategory(data: any) {
     const response = await apiClient.post('/samagri/categories/', data);
     return response.data;
@@ -670,6 +682,11 @@ export async function createSamagriCategory(data: any) {
 
 export async function deleteSamagriCategory(id: number) {
     const response = await apiClient.delete(`/samagri/categories/${id}/`);
+    return response.data;
+}
+
+export async function updateSamagriCategory(id: number, data: any) {
+    const response = await apiClient.patch(`/samagri/categories/${id}/`, data);
     return response.data;
 }
 
@@ -791,13 +808,121 @@ export async function deleteBanner(id: number) {
     return response.data;
 }
 
+// ----------------------
+// Vendor APIs
+// ----------------------
+
+export interface VendorStats {
+    total_revenue: number;
+    total_orders: number;
+    total_products: number;
+    low_stock_count: number;
+    current_balance: number;
+    total_withdrawn: number;
+}
+
+export interface VendorPayout {
+    id: number;
+    amount: number;
+    status: 'PENDING' | 'PAID' | 'REJECTED';
+    transaction_id: string | null;
+    requested_at: string;
+    paid_at: string | null;
+}
+
+export async function fetchVendorStats(): Promise<VendorStats> {
+    const response = await apiClient.get('/vendors/profile/stats/');
+    return response.data;
+}
+
+export async function fetchVendorProducts(): Promise<SamagriItem[]> {
+    const response = await apiClient.get('/vendors/products/');
+    return response.data.results || response.data;
+}
+
+export async function fetchVendorOrders(): Promise<ShopOrder[]> {
+    const response = await apiClient.get('/vendors/orders/');
+    return response.data;
+}
+
+export async function updateVendorOrderStatus(orderId: number, status: string) {
+    const response = await apiClient.post(`/vendors/orders/${orderId}/update_status/`, { status });
+    return response.data;
+}
+
+export async function fetchVendorPayouts(): Promise<VendorPayout[]> {
+    const response = await apiClient.get('/vendors/payouts/');
+    return response.data;
+}
+
+export async function requestVendorPayout(amount: number) {
+    const response = await apiClient.post('/vendors/payouts/', { amount });
+    return response.data;
+}
+
+// ----------------------
+// Admin Vendors APIs
+// ----------------------
+
+export interface Vendor {
+    id: number;
+    user: number;
+    user_details: {
+        id: number;
+        full_name: string;
+        phone_number: string;
+        email: string;
+        profile_pic?: string;
+    };
+    shop_name: string;
+    business_type: string;
+    address: string;
+    city: string;
+    is_verified: boolean;
+    balance: string;
+    commission_rate: string;
+    id_proof?: string;
+    created_at: string;
+}
+
+export async function fetchAdminAllVendors() {
+    const response = await apiClient.get('/v-admin/all/');
+    return response.data;
+}
+
+export async function fetchPendingVendors(): Promise<Vendor[]> {
+    const response = await apiClient.get('/v-admin/pending/');
+    return response.data;
+}
+
+export async function verifyVendor(id: number) {
+    const response = await apiClient.post(`/v-admin/verify/${id}/`);
+    return response.data;
+}
+
+export async function rejectVendor(id: number, reason?: string) {
+    const response = await apiClient.post(`/v-admin/reject/${id}/`, { reason });
+    return response.data;
+}
+
+export async function updateVendorProfile(id: number, data: any) {
+    const response = await apiClient.patch(`/vendors/profile/${id}/`, data);
+    return response.data;
+}
+
+export async function deleteVendorProfile(id: number) {
+    const response = await apiClient.delete(`/vendors/profile/${id}/`);
+    return response.data;
+}
+
 // Helper to standardize error messages
 function handleApiError(error: any) {
+    console.error('API Error:', error);
     if (error.response) {
         const data = error.response.data;
-        if (data.detail) return new Error(data.detail);
-        if (data.message) return new Error(data.message);
-        // Flatten object errors
+        if (data?.detail) return new Error(data.detail);
+        if (typeof data === 'string') return new Error(data);
+        // If data is an object with field errors
         if (typeof data === 'object') {
             const fieldErrors = Object.entries(data)
                 .map(([field, errors]: [string, any]) => {
@@ -805,7 +930,7 @@ function handleApiError(error: any) {
                     return `${field}: ${errorList.join(', ')}`;
                 })
                 .join('; ');
-            return new Error(fieldErrors);
+            if (fieldErrors) return new Error(fieldErrors);
         }
     }
     return error;

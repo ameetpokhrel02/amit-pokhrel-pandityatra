@@ -278,6 +278,15 @@
     box-shadow: 0 0 20px rgba(34, 34, 34, 0.3);
     animation: pulseGlow 2s ease-in-out infinite;
   }
+
+  /* No scrollbar utility */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @keyframes float {
