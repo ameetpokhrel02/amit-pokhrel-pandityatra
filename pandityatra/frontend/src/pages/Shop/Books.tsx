@@ -270,8 +270,8 @@ const Books = () => {
                                     whileHover={{ y: -5 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col">
-                                        <div className="aspect-[3/4] bg-stone-100 relative overflow-hidden p-8 flex items-center justify-center">
+                                    <Card className="h-full border border-stone-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col rounded-xl">
+                                        <div className="aspect-square bg-stone-50 relative overflow-hidden">
                                             {/* Favorite Button */}
                                             <button
                                                 onClick={(e) => {
@@ -292,7 +292,7 @@ const Books = () => {
                                                 <img
                                                     src={book.image}
                                                     alt={book.name}
-                                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                 />
                                             ) : (
                                                 <div className="w-3/4 h-full bg-orange-800 rounded-r-md shadow-lg border-l-4 border-orange-900 flex flex-col items-center justify-center p-2 text-center">
@@ -322,12 +322,17 @@ const Books = () => {
                                             </h3>
 
                                             <div className="mt-auto pt-4 border-t border-gray-50 flex flex-col gap-3">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-lg font-bold text-orange-700">
-                                                        NPR {book.price}
-                                                    </span>
+                                                <div className="flex flex-col mb-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-lg font-bold text-orange-700">
+                                                            Rs. {book.price}
+                                                        </span>
+                                                        <span className="text-sm font-medium text-gray-400 border-l border-gray-200 pl-2">
+                                                            ${(book as any).price_usd}
+                                                        </span>
+                                                    </div>
                                                     {book.stock_quantity < 5 && book.stock_quantity > 0 && (
-                                                        <span className="text-[10px] text-red-500 font-bold animate-pulse uppercase">
+                                                        <span className="text-[10px] text-red-500 font-bold animate-pulse uppercase mt-1">
                                                             Only {book.stock_quantity} Left!
                                                         </span>
                                                     )}
@@ -373,12 +378,42 @@ const Books = () => {
 
                 {/* Pagination Controls */}
                 {sortedItems.length > itemsPerPage && (
-                    <div className="flex justify-center mt-12 gap-2">
-                        <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                    <div className="flex justify-center items-center mt-12 gap-2">
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
+                            disabled={currentPage === 1}
+                            className="rounded-xl border-gray-200 text-gray-400 hover:text-orange-600 hover:border-orange-200 transition-all"
+                        >
                             <ChevronLeft className="w-4 h-4" />
                         </Button>
-                        <div className="flex items-center px-4 font-medium text-sm">Page {currentPage} of {totalPages}</div>
-                        <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                        
+                        <div className="flex items-center gap-2">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                <Button
+                                    key={page}
+                                    variant={currentPage === page ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${
+                                        currentPage === page 
+                                            ? "bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20" 
+                                            : "border-gray-200 text-gray-500 hover:border-orange-200 hover:text-orange-600"
+                                    }`}
+                                >
+                                    {page}
+                                </Button>
+                            ))}
+                        </div>
+
+                        <Button 
+                            variant="outline" 
+                            size="icon" 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
+                            disabled={currentPage === totalPages}
+                            className="rounded-xl border-gray-200 text-gray-400 hover:text-orange-600 hover:border-orange-200 transition-all"
+                        >
                             <ChevronRight className="w-4 h-4" />
                         </Button>
                     </div>
@@ -407,26 +442,28 @@ const Books = () => {
                             className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row"
                         >
                             {/* Product Image */}
-                            <div className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative">
+                            <div className="md:w-1/2 bg-gray-50 relative overflow-hidden min-h-[300px] md:min-h-full">
                                 <button
                                     onClick={() => setSelectedBook(null)}
-                                    className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors md:hidden"
+                                    className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg hover:bg-white transition-all z-10 md:hidden"
                                 >
-                                    <X className="w-5 h-5 text-gray-500" />
+                                    <X className="w-5 h-5 text-gray-600" />
                                 </button>
 
                                 {selectedBook.image ? (
                                     <img
                                         src={selectedBook.image}
                                         alt={selectedBook.name}
-                                        className="w-full h-auto object-contain max-h-[300px] drop-shadow-2xl"
+                                        className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <div className="w-3/4 h-[300px] bg-orange-800 rounded-r-md shadow-lg border-l-4 border-orange-900 flex flex-col items-center justify-center p-6 text-center">
-                                        <Book className="text-orange-200 w-16 h-16 mb-4" />
-                                        <h3 className="text-orange-50 font-serif text-xl">{selectedBook.name}</h3>
+                                    <div className="w-full h-full bg-gradient-to-br from-orange-800 to-orange-950 flex flex-col items-center justify-center p-8 text-center text-white">
+                                        <Book className="w-20 h-20 mb-4 text-orange-200/50" />
+                                        <h3 className="font-serif text-2xl mb-2">{selectedBook.name}</h3>
+                                        <p className="text-orange-200/70 text-sm font-medium">Sacred Collection</p>
                                     </div>
                                 )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
 
                             {/* Product Details */}
@@ -447,7 +484,14 @@ const Books = () => {
                                 </div>
 
                                 <div className="flex items-center gap-3 mb-6">
-                                    <span className="text-3xl font-bold text-orange-600 font-sans">NPR {selectedBook.price}</span>
+                                            <div className="flex items-center gap-3 mb-6 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                                <span className="text-3xl font-bold text-orange-600">
+                                                    Rs. {selectedBook.price}
+                                                </span>
+                                                <span className="text-xl font-medium text-gray-400 border-l border-orange-200 pl-3">
+                                                    ${(selectedBook as any).price_usd}
+                                                </span>
+                                            </div>
                                     {selectedBook.stock_quantity > 0 ? (
                                         <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                                             In Stock ({selectedBook.stock_quantity})

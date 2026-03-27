@@ -10,7 +10,8 @@ import {
     ChevronLeft,
     ChevronRight,
     X,
-    Heart
+    Heart,
+    Image as ImageIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,73 @@ import ShopFilterSidebar from '@/components/shop/ShopFilterSidebar';
 import { BannerCarousel } from '@/components/shop/BannerCarousel';
 import { fetchActiveBanners } from '@/lib/api';
 import heroBg from '@/assets/images/agarbati_brands.webp';
+
+const CategoryScroll = ({ 
+    categories, 
+    selectedCategory, 
+    onCategoryChange 
+}: { 
+    categories: SamagriCategory[], 
+    selectedCategory: string | number, 
+    onCategoryChange: (id: string) => void 
+}) => {
+    return (
+        <div className="relative w-full">
+            <div className="flex overflow-x-auto overflow-y-visible no-scrollbar gap-4 md:gap-6 pt-12 pb-6 px-4 -mx-4 overscroll-x-contain touch-pan-x snap-x">
+            <button
+                onClick={() => onCategoryChange('all')}
+                className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all snap-start ${
+                    selectedCategory === 'all' ? 'scale-105' : 'opacity-80 hover:opacity-100'
+                }`}
+            >
+                <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] flex items-center justify-center border-2 transition-all shadow-lg ${
+                    selectedCategory === 'all' 
+                        ? 'border-orange-500 bg-orange-50 shadow-orange-200 rotate-3' 
+                        : 'border-white bg-white group-hover:border-orange-100 group-hover:-rotate-3'
+                }`}>
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-inner">
+                        <ShoppingBag className="w-5 h-5 md:w-6 md:h-6" />
+                    </div>
+                </div>
+                <span className={`text-xs md:text-sm font-bold whitespace-nowrap tracking-wide ${
+                    selectedCategory === 'all' ? 'text-orange-600' : 'text-gray-500'
+                }`}>
+                    All Items
+                </span>
+            </button>
+
+            {categories.map((cat) => (
+                <button
+                    key={cat.id}
+                    onClick={() => onCategoryChange(cat.id.toString())}
+                    className={`flex-shrink-0 flex flex-col items-center gap-2 group transition-all snap-start ${
+                        selectedCategory === cat.id.toString() ? 'scale-105' : 'opacity-80 hover:opacity-100'
+                    }`}
+                >
+                    <div className={`w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] relative transition-all overflow-hidden shadow-lg border-2 ${
+                        selectedCategory === cat.id.toString()
+                            ? 'border-orange-500 bg-orange-50/50 shadow-orange-200 rotate-3' 
+                            : 'border-white bg-white group-hover:border-orange-100 group-hover:-rotate-3'
+                    }`}>
+                        {cat.image ? (
+                            <img src={cat.image} alt={cat.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                        ) : (
+                            <div className="w-full h-full bg-orange-50 flex items-center justify-center text-orange-300">
+                                <ImageIcon className="w-6 h-6 md:w-8 md:h-8" />
+                            </div>
+                        )}
+                    </div>
+                    <span className={`text-xs md:text-sm font-bold whitespace-nowrap tracking-wide ${
+                        selectedCategory === cat.id.toString() ? 'text-orange-600' : 'text-gray-500'
+                    }`}>
+                        {cat.name}
+                    </span>
+                </button>
+            ))}
+            </div>
+        </div>
+    );
+};
 
 const Samagri = () => {
     const [items, setItems] = useState<SamagriItem[]>([]);
@@ -227,7 +295,18 @@ const Samagri = () => {
                 </div>
             </div>
 
-            <main className="flex-1 container mx-auto py-12 px-4">
+            {/* Mobile/Tablet Category Scroller */}
+            <div className="bg-orange-50/30 border-y border-orange-100 mt-8 mb-4 overflow-visible">
+                <div className="container mx-auto px-4 overflow-visible">
+                    <CategoryScroll 
+                        categories={categories} 
+                        selectedCategory={selectedCategory} 
+                        onCategoryChange={setSelectedCategory} 
+                    />
+                </div>
+            </div>
+
+            <main className="flex-1 container mx-auto py-8 lg:py-12 px-4">
 
                 {/* Desktop: Sidebar + Grid */}
                 <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
@@ -268,8 +347,8 @@ const Samagri = () => {
                                     whileHover={{ y: -5 }}
                                     transition={{ duration: 0.2 }}
                                 >
-                                    <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col">
-                                        <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden p-6 flex items-center justify-center">
+                                    <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col rounded-xl">
+                                        <div className="aspect-square bg-stone-50 relative overflow-hidden">
                                             {/* Discount/Hot Badge */}
                                             <Badge className="absolute top-3 left-3 bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 rounded-full z-10">
                                                 Hot
@@ -295,10 +374,12 @@ const Samagri = () => {
                                                 <img
                                                     src={item.image}
                                                     alt={item.name}
-                                                    className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                 />
                                             ) : (
-                                                <ShoppingBag className="w-16 h-16 text-orange-200" />
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <ShoppingBag className="w-16 h-16 text-orange-200" />
+                                                </div>
                                             )}
                                         </div>
 
@@ -313,13 +394,18 @@ const Samagri = () => {
                                                 {item.name}
                                             </h3>
 
-                                            <div className="flex items-center gap-2 mb-4">
-                                                <span className="text-gray-500 font-medium">
-                                                    ₹{item.price}
-                                                </span>
+                                            <div className="flex flex-col mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-gray-900 font-bold text-lg">
+                                                        Rs. {item.price}
+                                                    </span>
+                                                    <span className="text-gray-400 font-medium text-sm border-l pl-2">
+                                                        ${(item as any).price_usd}
+                                                    </span>
+                                                </div>
                                                 {item.stock_quantity < 5 && item.stock_quantity > 0 && (
-                                                    <span className="text-xs text-red-500 font-medium">
-                                                        Only {item.stock_quantity} left!
+                                                    <span className="text-[10px] text-red-500 font-medium mt-1">
+                                                        Only {item.stock_quantity} units left!
                                                     </span>
                                                 )}
                                             </div>
@@ -391,25 +477,73 @@ const Samagri = () => {
 
                 {/* Pagination */}
                 {sortedItems.length > itemsPerPage && (
-                    <div className="flex justify-center mt-12 gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    <div className="flex justify-center items-center mt-12 gap-1 md:gap-4">
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
                             disabled={currentPage === 1}
+                            className="bg-white/50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-all duration-300 rounded-xl px-2 md:px-4"
                         >
-                            <ChevronLeft className="w-4 h-4" />
+                            <ChevronLeft className="w-4 h-4 mr-1 md:mr-2" />
+                            <span className="hidden sm:inline">Previous</span>
                         </Button>
-                        <div className="flex items-center px-4 font-medium text-sm">
-                            Page {currentPage} of {totalPages}
+                        
+                        <div className="flex items-center gap-1 md:gap-2">
+                            {totalPages <= 5 ? (
+                                Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? "default" : "ghost"}
+                                        size="sm"
+                                        onClick={() => setCurrentPage(page)}
+                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
+                                            currentPage === page 
+                                                ? "bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 scale-105" 
+                                                : "text-gray-500 hover:bg-orange-50 hover:text-orange-600"
+                                        }`}
+                                    >
+                                        {page}
+                                    </Button>
+                                ))
+                            ) : (
+                                // Logic for many pages (Basic)
+                                <>
+                                    {[1, 2, 3].map(page => (
+                                        <Button
+                                            key={page}
+                                            variant={currentPage === page ? "default" : "ghost"}
+                                            size="sm"
+                                            onClick={() => setCurrentPage(page)}
+                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
+                                                currentPage === page ? "bg-orange-600 text-white" : "text-gray-500 hover:bg-orange-50 hover:text-orange-600"
+                                            }`}
+                                        >
+                                            {page}
+                                        </Button>
+                                    ))}
+                                    <span className="text-gray-400 px-1 pt-2">...</span>
+                                    <Button
+                                        variant={currentPage === totalPages ? "default" : "ghost"}
+                                        size="sm"
+                                        onClick={() => setCurrentPage(totalPages)}
+                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
+                                            currentPage === totalPages ? "bg-orange-600 text-white" : "text-gray-500"
+                                        }`}
+                                    >
+                                        {totalPages}
+                                    </Button>
+                                </>
+                            )}
                         </div>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+
+                        <Button 
+                            variant="ghost" 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
                             disabled={currentPage === totalPages}
+                            className="bg-white/50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-all duration-300 rounded-xl px-2 md:px-4"
                         >
-                            <ChevronRight className="w-4 h-4" />
+                            <span className="hidden sm:inline">Next</span>
+                            <ChevronRight className="w-4 h-4 ml-1 md:ml-2" />
                         </Button>
                     </div>
                 )}
@@ -437,23 +571,27 @@ const Samagri = () => {
                             className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row"
                         >
                             {/* Product Image */}
-                            <div className="md:w-1/2 bg-gray-50 p-8 flex items-center justify-center relative">
+                            <div className="md:w-1/2 bg-gray-50 relative overflow-hidden min-h-[300px] md:min-h-full">
                                 <button
                                     onClick={() => setSelectedItem(null)}
-                                    className="absolute top-4 left-4 p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors md:hidden"
+                                    className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg hover:bg-white transition-all z-10 md:hidden"
                                 >
-                                    <X className="w-5 h-5 text-gray-500" />
+                                    <X className="w-5 h-5 text-gray-600" />
                                 </button>
 
                                 {selectedItem.image ? (
                                     <img
                                         src={selectedItem.image}
                                         alt={selectedItem.name}
-                                        className="w-full h-auto object-contain max-h-[300px] drop-shadow-2xl"
+                                        className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <ShoppingBag className="w-32 h-32 text-orange-200" />
+                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 bg-gradient-to-br from-orange-50 to-orange-100">
+                                        <ShoppingBag className="w-24 h-24 text-orange-200 mb-4" />
+                                        <p className="text-orange-400 font-medium">No Image Available</p>
+                                    </div>
                                 )}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
                             </div>
 
                             {/* Product Details */}
@@ -474,7 +612,14 @@ const Samagri = () => {
                                 </div>
 
                                 <div className="flex items-center gap-3 mb-6">
-                                    <span className="text-3xl font-bold text-orange-600">₹{selectedItem.price}</span>
+                                            <div className="flex items-center gap-3 mb-6 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
+                                                <span className="text-3xl font-bold text-orange-600">
+                                                    Rs. {selectedItem.price}
+                                                </span>
+                                                <span className="text-xl font-medium text-gray-400 border-l border-orange-200 pl-3">
+                                                    ${(selectedItem as any).price_usd}
+                                                </span>
+                                            </div>
                                     {selectedItem.stock_quantity > 0 ? (
                                         <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                                             In Stock ({selectedItem.stock_quantity})
