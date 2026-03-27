@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     'panchang', # Nepali Panchang & Calendar
     'drf_spectacular',  # API documentation with OpenAPI/Swagger
     'banners',  # New Dynamic Banner Module
+    'vendors',  # Multi-vendor E-commerce
 ]
 
 # Django Channels Configuration
@@ -270,6 +271,18 @@ REST_FRAMEWORK = {
 
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '10/minute',
+        'user': '1000/day',
+        'otp_request': '3/minute',
+        'login_attempt': '5/minute',
+        'register': '2/minute',
+    }
 }
 
 

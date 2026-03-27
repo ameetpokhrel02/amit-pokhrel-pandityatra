@@ -29,6 +29,7 @@ from rest_framework_simplejwt.views import (
 )
 
 urlpatterns = [
+    path('api/reviews/', include('reviews.urls')), # Reviews and ratings
     path('admin/', admin.site.urls),
     path("api/admin/", include("adminpanel.urls")),
 
@@ -37,34 +38,29 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    # CRITICAL: Include statements for each app
+    path('api/v-admin/', include('vendors.urls')), # Vendor endpoints
     path('api/users/', include('users.urls')), 
     path('api/pandits/', include('pandits.urls')),
     path('api/services/', include('services.urls')),
     path('api/recommender/', include('recommender.urls')),
-    path('api/', include('bookings.urls')),
     path('api/samagri/', include('samagri.urls')),
     path('api/kundali/', include('kundali.urls')),
     path('api/chat/', include('chat.urls')),  # Chat endpoints
     path('api/ai/', include('ai.urls')),  # AI Gateway endpoints
     path('api/payments/', include('payments.urls')),  # Payment endpoints
-    path('api/reviews/', include('reviews.urls')), # Review endpoints
     path('api/banners/', include('banners.urls')), # Banner endpoints
 
     # Video call endpoints
     path('api/video/', include('video.urls')),
-
-    # Puja endpoints
-   #  # Include the new app's URLs
-
-    # Kundali endpoints
-    path('api/kundali/', include('kundali.urls')),
 
     # Panchang endpoints
     path('api/panchang/', include('panchang.urls')),
 
     # Notifications endpoints
     path('api/notifications/', include('notifications.urls')),
+
+    # Bookings (Generic api/ must be last)
+    path('api/', include('bookings.urls')),
 
     # API Documentation (admin-only)
     path(
