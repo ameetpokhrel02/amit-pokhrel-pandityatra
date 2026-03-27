@@ -30,6 +30,7 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         ('user', 'User'),
         ('pandit', 'Pandit'),
+        ('vendor', 'Vendor'),
         ('admin', 'Admin'),
         ('superadmin', 'Super Admin'),
     )

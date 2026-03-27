@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from .models import User 
 from pandits.models import Pandit # 🚨 Enable Link
@@ -5,6 +6,22 @@ from django.utils.crypto import get_random_string
 
 # Define the length of the random password (e.g., 20 characters)
 RANDOM_PASSWORD_LENGTH = 20
+
+def validate_password_strength(value):
+    """
+    Enforces strong password: min 8 chars, 1 upper, 1 lower, 1 digit, 1 special.
+    """
+    if len(value) < 8:
+        raise serializers.ValidationError("Password must be at least 8 characters long.")
+    if not re.search(r'[A-Z]', value):
+        raise serializers.ValidationError("Password must contain at least one uppercase letter.")
+    if not re.search(r'[a-z]', value):
+        raise serializers.ValidationError("Password must contain at least one lowercase letter.")
+    if not re.search(r'[0-9]', value):
+        raise serializers.ValidationError("Password must contain at least one digit.")
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', value):
+        raise serializers.ValidationError("Password must contain at least one special character.")
+    return value
 
 # 🚨 NEW: Serializer for requesting OTP (Only needs phone number)
 class RequestOTPSerializer(serializers.Serializer):
@@ -16,7 +33,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     # Phone is now optional
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
     # Make password optional - if not provided, will generate random one
-    password = serializers.CharField(write_only=True, required=False, min_length=6, allow_blank=True, allow_null=True)
+    password = serializers.CharField(write_only=True, required=False, validators=[validate_password_strength], allow_blank=True, allow_null=True)
     # Add role field - default to 'user' if not provided
     role = serializers.ChoiceField(choices=[('user', 'User'), ('pandit', 'Pandit'), ('admin', 'Admin')], default='user', required=False)
     
@@ -129,7 +146,7 @@ class ResetPasswordSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=50, required=False, allow_blank=True) # Relaxed Constraint
     email = serializers.EmailField(required=False, allow_blank=True)
     otp_code = serializers.CharField(max_length=6)
-    new_password = serializers.CharField(write_only=True, min_length=6)
+    new_password = serializers.CharField(write_only=True, validators=[validate_password_strength])
     
     def validate(self, data):
         """Ensure either phone_number or email is provided."""

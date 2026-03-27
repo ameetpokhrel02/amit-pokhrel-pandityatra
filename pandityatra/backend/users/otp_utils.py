@@ -7,12 +7,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# In-memory store for OTPs: {phone_number: {"code": "123456", "expires_at": timestamp}}
+# In-memory store for OTPs: {phone_number: {"code": "123456", "expires_at": timestamp, "attempts": 0, "locked_until": timestamp}}
 # NOTE: In a production app, this would be stored in a Redis cache or a database table.
 OTP_STORE = {}
 
 # Set the expiration time for the OTP (e.g., 5 minutes)
 OTP_EXPIRATION_MINUTES = 5
+MAX_OTP_ATTEMPTS = 3
+LOCKOUT_DURATION_SECONDS = 3600 # 1 hour
 
 def generate_otp():
     """Generates a random 6-digit numerical OTP."""
@@ -26,21 +28,34 @@ def send_local_otp(phone_number=None, email=None):
     If 'email' is provided, sends via Email (SMTP).
     If 'phone_number' is provided (and no email), simulates SMS (prints to console).
     
-    Returns the generated OTP.
+    Returns (otp_code, error_message).
     """
+    # Calculate key
+    key = phone_number if phone_number else email
+    if not key:
+        return None, "No identifier provided."
+
+    # Check for lockout
+    current_time = time.time()
+    if key in OTP_STORE:
+        locked_until = OTP_STORE[key].get('locked_until', 0)
+        if current_time < locked_until:
+            wait_mins = int((locked_until - current_time) / 60)
+            return None, f"Too many failed attempts. Account is locked. Please try again in {wait_mins} minutes."
+
     otp_code = generate_otp()
     
     # Calculate expiration time
     expiration_time = datetime.now() + timedelta(minutes=OTP_EXPIRATION_MINUTES)
     
-    # Store OTP using phone number as key if available, else email
-    key = phone_number if phone_number else email
-    if not key:
-        return None
-
+    # Store OTP
+    # Keep attempts and lockout status if user exists
+    existing_data = OTP_STORE.get(key, {})
     OTP_STORE[key] = {
         "code": otp_code,
-        "expires_at": expiration_time.timestamp()
+        "expires_at": expiration_time.timestamp(),
+        "attempts": existing_data.get('attempts', 0),
+        "locked_until": existing_data.get('locked_until', 0)
     }
     
     if email:
@@ -99,7 +114,7 @@ def send_local_otp(phone_number=None, email=None):
         print(f"Code expires in {OTP_EXPIRATION_MINUTES} minutes.")
         print(f"-----------------------\n")
     
-    return otp_code
+    return otp_code, None
 
 def verify_local_otp(phone_number, otp_code, remove_after_verify=True):
     """
@@ -110,25 +125,43 @@ def verify_local_otp(phone_number, otp_code, remove_after_verify=True):
         otp_code: The OTP code to verify
         remove_after_verify: If True, removes OTP after successful verification (default: True)
     """
-    # 1. Check if the key (phone/email) has a stored OTP
     key = phone_number
+    current_time = time.time()
+
+    # 1. Check if the key (phone/email) has a stored OTP
     if key not in OTP_STORE:
         return False, "OTP not requested or has expired."
 
     stored_data = OTP_STORE[key]
-    
-    # 2. Check if the code matches
-    if stored_data['code'] != otp_code:
-        return False, "Invalid OTP code."
+
+    # 2. Check for lockout
+    if current_time < stored_data.get('locked_until', 0):
+        wait_mins = int((stored_data['locked_until'] - current_time) / 60)
+        return False, f"Account is temporarily locked due to too many failed attempts. Try again in {wait_mins} minutes."
 
     # 3. Check for expiration
-    current_timestamp = datetime.now().timestamp()
-    if current_timestamp > stored_data['expires_at']:
-        # Remove the expired OTP
-        del OTP_STORE[key]
+    if current_time > stored_data['expires_at']:
+        # Don't delete yet, might need attempt count
         return False, "OTP has expired. Please request a new one."
     
-    # 4. Success: Remove the OTP (one-time use) if requested and return True
+    # 4. Check if the code matches
+    if stored_data['code'] != otp_code:
+        # Increment attempts
+        stored_data['attempts'] = stored_data.get('attempts', 0) + 1
+        
+        if stored_data['attempts'] >= MAX_OTP_ATTEMPTS:
+            stored_data['locked_until'] = current_time + LOCKOUT_DURATION_SECONDS
+            stored_data['attempts'] = 0 # Reset attempts for next lockout cycle
+            return False, "Too many failed attempts. Account locked for 1 hour."
+            
+        remaining = MAX_OTP_ATTEMPTS - stored_data['attempts']
+        return False, f"Invalid OTP code. {remaining} attempts remaining."
+
+    # 5. Success: Remove the OTP (one-time use) if requested and return True
     if remove_after_verify:
         del OTP_STORE[key]
+    else:
+        # If not removing, at least reset attempts
+        stored_data['attempts'] = 0
+        
     return True, "OTP verified successfully."

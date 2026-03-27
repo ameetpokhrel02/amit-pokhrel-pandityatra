@@ -23,6 +23,7 @@ from pandits.models import Pandit # 🚨 Import for Admin Stats
 class RegisterUserView(APIView):
     """Handles User Registration (creates the user account) and sends OTP."""
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'register'
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -33,7 +34,10 @@ class RegisterUserView(APIView):
             
             # 🚨 FIX: Only send OTP if NO password provided (Passwordless)
             if not password_provided:
-                send_local_otp(email=email) 
+                otp_code, error = send_local_otp(email=email) 
+                if error:
+                    # User is created but OTP failed (e.g. lockout - though unlikely on fresh reg)
+                    return Response({"detail": f"User registered but: {error}"}, status=status.HTTP_201_CREATED)
                 message = "User registered. OTP sent to your email for verification."
             else:
                 message = "User registered successfully. You can now login."
@@ -48,6 +52,7 @@ class RegisterUserView(APIView):
 class RequestOTPView(APIView):
     """Handles OTP request for login (for existing users via Phone or Email)."""
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'otp_request'
     def post(self, request):
         phone_number = request.data.get('phone_number')
         email = request.data.get('email')
@@ -61,7 +66,7 @@ class RequestOTPView(APIView):
         try:
             if phone_number:
                 user = User.objects.get(phone_number=phone_number)
-                send_local_otp(phone_number=phone_number)
+                otp_code, error = send_local_otp(phone_number=phone_number)
                 msg = "OTP sent to your phone number."
             else:
                 # Handle potential duplicate emails (since email logic is new and not unique in DB)
@@ -73,8 +78,11 @@ class RequestOTPView(APIView):
                     raise User.DoesNotExist
                 
                 # For email login, we send OTP to email
-                send_local_otp(email=email)
+                otp_code, error = send_local_otp(email=email)
                 msg = "OTP sent to your email address."
+
+            if error:
+                return Response({"detail": error}, status=status.HTTP_403_FORBIDDEN)
 
             return Response(
                 {"detail": msg},
@@ -90,6 +98,7 @@ class RequestOTPView(APIView):
 class OTPVerifyAndTokenView(APIView):
     """Verifies the OTP (Phone or Email) and returns JWT Access and Refresh Tokens."""
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'login_attempt'
     serializer_class = PhoneTokenSerializer
     
     def post(self, request):
@@ -150,6 +159,7 @@ class OTPVerifyAndTokenView(APIView):
 class PasswordLoginView(APIView):
     """Handles password-based login and returns JWT tokens."""
     permission_classes = [permissions.AllowAny]
+    throttle_scope = 'login_attempt'
     serializer_class = PasswordLoginSerializer
     
     def post(self, request):
@@ -237,7 +247,9 @@ class ForgotPasswordRequestView(APIView):
                     phone_number = None
                 else:
                     user = User.objects.get(phone_number=phone_number)
-                    send_local_otp(phone_number)
+                    otp_code, error = send_local_otp(phone_number)
+                    if error:
+                        return Response({"detail": error}, status=status.HTTP_403_FORBIDDEN)
                     return Response(
                         {"detail": "OTP sent to your phone number."},
                         status=status.HTTP_200_OK
@@ -254,7 +266,9 @@ class ForgotPasswordRequestView(APIView):
                     raise User.DoesNotExist
                 
                 # Send OTP to email directly, regardless of phone number existence
-                send_local_otp(email=email)
+                otp_code, error = send_local_otp(email=email)
+                if error:
+                    return Response({"detail": error}, status=status.HTTP_403_FORBIDDEN)
                 return Response(
                     {"detail": "OTP sent to your email address."},
                     status=status.HTTP_200_OK
