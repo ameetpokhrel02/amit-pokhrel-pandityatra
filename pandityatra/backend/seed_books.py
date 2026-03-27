@@ -2,7 +2,7 @@ from samagri.models import SamagriItem, SamagriCategory
 
 cat, created = SamagriCategory.objects.get_or_create(
     name='Book', 
-    defaults={'description': 'Sacred books and scriptures'}
+    defaults={'description': 'Sacred books and scripture'}
 )
 print(f'Category Book: id={cat.id}')
 

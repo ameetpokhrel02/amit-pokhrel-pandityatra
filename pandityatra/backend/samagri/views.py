@@ -270,9 +270,12 @@ class SamagriItemViewSet(viewsets.ModelViewSet):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         
-        # If not an admin, only show approved items (for the shop)
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            queryset = queryset.filter(is_approved=True)
+        # If not an admin, only show approved and active items (for the shop)
+        user = self.request.user
+        is_admin = user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ['admin', 'superadmin'])
+        
+        if not is_admin:
+            queryset = queryset.filter(is_approved=True, is_active=True)
             
         return queryset
 

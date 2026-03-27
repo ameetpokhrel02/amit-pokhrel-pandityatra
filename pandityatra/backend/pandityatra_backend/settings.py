@@ -277,11 +277,11 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/minute',
-        'user': '1000/day',
-        'otp_request': '3/minute',
-        'login_attempt': '5/minute',
-        'register': '2/minute',
+        'anon': '100/minute',
+        'user': '10000/day',
+        'otp_request': '10/minute',
+        'login_attempt': '20/minute',
+        'register': '5/minute',
     }
 }
 
