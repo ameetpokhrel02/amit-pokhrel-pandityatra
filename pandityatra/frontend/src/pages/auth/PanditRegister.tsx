@@ -18,6 +18,7 @@ import { FaUser, FaPhone, FaEnvelope, FaLanguage, FaBriefcase } from 'react-icon
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/hooks/useAuth';
+import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '@/lib/api-client';
 
 const PanditRegisterPage: React.FC = () => {
@@ -81,9 +82,24 @@ const PanditRegisterPage: React.FC = () => {
         ...prev,
         certification_file: e.target.files![0]
       }));
-      setFileSelected(true);
+    setFileSelected(true);
     }
   };
+
+  const validatePassword = (pass: string) => {
+    if (!pass) return { score: 0, met: [] };
+    const requirements = [
+      { id: 'length', text: 'Min 8 characters', test: (p: string) => p.length >= 8 },
+      { id: 'upper', text: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+      { id: 'lower', text: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+      { id: 'number', text: 'One number', test: (p: string) => /[0-9]/.test(p) },
+      { id: 'special', text: 'One special character', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+    ];
+    const met = requirements.filter(r => r.test(pass)).map(r => r.id);
+    return { score: met.length, met };
+  };
+
+  const passwordInfo = validatePassword(formData.password);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,7 +282,6 @@ const PanditRegisterPage: React.FC = () => {
               placeholder={user ? "Set a password for future use (optional)" : "Create a strong password"}
               className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
               required={!user}
-              minLength={6}
             />
             <button
               type="button"
@@ -280,7 +295,59 @@ const PanditRegisterPage: React.FC = () => {
               )}
             </button>
           </div>
-          <p className="text-xs text-gray-500 px-1">Minimum 6 characters</p>
+          
+          {formData.password && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Strength</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  passwordInfo.score <= 2 ? 'bg-red-100 text-red-600' : 
+                  passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
+                  'bg-green-100 text-green-600'
+                }`}>
+                  {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-5 gap-1.5">
+                {[1, 2, 3, 4, 5].map((lvl) => (
+                  <div key={lvl} className={`h-1.5 rounded-full transition-all duration-500 ${
+                    lvl <= passwordInfo.score ? (
+                      passwordInfo.score <= 2 ? 'bg-red-500' : 
+                      passwordInfo.score <= 4 ? 'bg-orange-500' : 
+                      'bg-green-500'
+                    ) : 'bg-gray-200'
+                  }`} />
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                {[
+                  { id: 'length', text: '8+ Characters' },
+                  { id: 'upper', text: 'Uppercase' },
+                  { id: 'lower', text: 'Lowercase' },
+                  { id: 'number', text: 'Number' },
+                  { id: 'special', text: 'Special Char' },
+                ].map((req) => (
+                  <div key={req.id} className="flex items-center gap-2">
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors ${
+                      passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
+                    }`}>
+                      {passwordInfo.met.includes(req.id) && <span className="text-[10px] text-white">✓</span>}
+                    </div>
+                    <span className={`text-[11px] font-medium ${
+                      passwordInfo.met.includes(req.id) ? 'text-gray-700' : 'text-gray-400'
+                    }`}>{req.text}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+          <p className="text-xs text-gray-500 px-1 pt-1 font-medium">Use a strong password for account security.</p>
         </div>
 
         {/* Expertise */}

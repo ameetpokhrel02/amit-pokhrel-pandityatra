@@ -82,6 +82,8 @@ const LoginPage: React.FC = () => {
           navigate('/admin/dashboard', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
+        } else if (role === 'vendor') {
+          navigate('/vendor/dashboard', { replace: true });
         } else {
           navigate('/dashboard', { replace: true });
         }
@@ -92,6 +94,8 @@ const LoginPage: React.FC = () => {
           navigate('/admin/dashboard', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
+        } else if (role === 'vendor') {
+          navigate('/vendor/dashboard', { replace: true });
         } else {
           navigate('/dashboard', { replace: true });
         }
@@ -447,14 +451,22 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Register as Pandit Button */}
-          <div className="pt-4">
+          {/* Register as Pandit or Vendor Buttons */}
+          <div className="pt-4 grid grid-cols-2 gap-4">
             <Link to="/pandit/register">
               <Button
                 variant="outline"
-                className="w-full h-12 text-base rounded-xl border-orange-200 hover:bg-orange-50"
+                className="w-full h-12 text-sm rounded-xl border-orange-200 hover:bg-orange-50"
               >
                 Register as Pandit
+              </Button>
+            </Link>
+            <Link to="/vendor/register">
+              <Button
+                variant="outline"
+                className="w-full h-12 text-sm rounded-xl border-green-200 hover:bg-green-50"
+              >
+                Register as Vendor
               </Button>
             </Link>
           </div>

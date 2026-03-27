@@ -30,6 +30,21 @@ const ChangePasswordPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const validatePassword = (pass: string) => {
+    if (!pass) return { score: 0, met: [] };
+    const requirements = [
+      { id: 'length', text: 'Min 8 characters', test: (p: string) => p.length >= 8 },
+      { id: 'upper', text: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+      { id: 'lower', text: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+      { id: 'number', text: 'One number', test: (p: string) => /[0-9]/.test(p) },
+      { id: 'special', text: 'One special character', test: (p: string) => /[!@#$%^&*(),.?":{}|<>]/.test(p) },
+    ];
+    const met = requirements.filter(r => r.test(pass)).map(r => r.id);
+    return { score: met.length, met };
+  };
+
+  const passwordInfo = validatePassword(newPassword);
+
   const { phone_number, email, otp } = location.state || {};
   const identifier = phone_number || email;
 
@@ -105,6 +120,58 @@ const ChangePasswordPage: React.FC = () => {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          
+          {newPassword && (
+            <motion.div 
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3"
+            >
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Strength</span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  passwordInfo.score <= 2 ? 'bg-red-100 text-red-600' : 
+                  passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
+                  'bg-green-100 text-green-600'
+                }`}>
+                  {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-5 gap-1.5">
+                {[1, 2, 3, 4, 5].map((lvl) => (
+                  <div key={lvl} className={`h-1.5 rounded-full transition-all duration-500 ${
+                    lvl <= passwordInfo.score ? (
+                      passwordInfo.score <= 2 ? 'bg-red-500' : 
+                      passwordInfo.score <= 4 ? 'bg-orange-500' : 
+                      'bg-green-500'
+                    ) : 'bg-gray-200'
+                  }`} />
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                {[
+                  { id: 'length', text: '8+ Characters' },
+                  { id: 'upper', text: 'Uppercase' },
+                  { id: 'lower', text: 'Lowercase' },
+                  { id: 'number', text: 'Number' },
+                  { id: 'special', text: 'Special Char' },
+                ].map((req) => (
+                  <div key={req.id} className="flex items-center gap-2">
+                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors ${
+                      passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
+                    }`}>
+                      {passwordInfo.met.includes(req.id) && <span className="text-[10px] text-white">✓</span>}
+                    </div>
+                    <span className={`text-[11px] font-medium ${
+                      passwordInfo.met.includes(req.id) ? 'text-gray-700' : 'text-gray-400'
+                    }`}>{req.text}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
         </div>
 
         <div className="space-y-2">
