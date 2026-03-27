@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, User, BookOpen, DollarSign, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Bell, XCircle, Calendar, Package, FileWarning, Activity, ArrowUpRight, ArrowDownRight, Search, Filter, RefreshCw, Clock, MoreVertical, CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, User, BookOpen, DollarSign, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Bell, XCircle, Calendar, Package, FileWarning, Activity, ArrowUpRight, ArrowDownRight, Search, Filter, RefreshCw, Clock, MoreVertical, CreditCard, ChevronLeft, ChevronRight, Store } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { fetchAdminStats, fetchBookings, fetchSamagriItems, fetchAdminPayments } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -91,7 +91,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Metric Cards Row 1 - Modern Look */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <MetricCard 
                         title="Total Users" 
                         value={stats?.total_users || 0} 
@@ -106,6 +106,14 @@ const AdminDashboard: React.FC = () => {
                         icon={<User className="w-6 h-6" />}
                         onClick={() => navigate('/admin/pandits-list')}
                         subtitle={`${stats?.pending_verifications || 0} pending verification`}
+                    />
+                    <MetricCard 
+                        title="Total Vendors" 
+                        value={stats?.total_vendors || 0} 
+                        change={0} 
+                        icon={<Store className="w-6 h-6" />}
+                        onClick={() => navigate('/admin/vendors-list')}
+                        subtitle={`${stats?.pending_vendors || 0} pending verification`}
                     />
                     <MetricCard 
                         title="Total Bookings" 
@@ -124,30 +132,37 @@ const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Second Row: Insightful Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                     <InsightCard 
-                        title="Pending Verifications" 
+                        title="Pending Pandits" 
                         value={stats?.pending_verifications || 0} 
                         icon={<CheckCircle className="w-5 h-5" />} 
                         color="red" 
-                        onClick={() => navigate('/admin/pandits')}
+                        onClick={() => navigate('/admin/pandits-list')}
                     />
                     <InsightCard 
-                        title="Low Stock Items" 
+                        title="Pending Vendors" 
+                        value={stats?.pending_vendors || 0} 
+                        icon={<Store className="w-5 h-5" />} 
+                        color="orange" 
+                        onClick={() => navigate('/admin/vendors-verification')}
+                    />
+                    <InsightCard 
+                        title="Low Stock" 
                         value={stats?.low_stock_count || 0} 
                         icon={<Package className="w-5 h-5" />} 
                         color="orange" 
                         onClick={() => navigate('/admin/inventory')}
                     />
                     <InsightCard 
-                        title="Today's Pujas" 
+                        title="Today's Bookings" 
                         value={stats?.todays_pujas_count || 0} 
                         icon={<Calendar className="w-5 h-5" />} 
                         color="green" 
                         onClick={() => navigate('/admin/bookings')}
                     />
                     <InsightCard 
-                        title="Error Logs" 
+                        title="Errors" 
                         value={stats?.error_logs_count || 0} 
                         icon={<AlertTriangle className="w-5 h-5" />} 
                         color="red" 

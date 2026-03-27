@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { 
     fetchSamagriItems, 
@@ -12,12 +12,29 @@ import {
     createSamagriItem, 
     updateSamagriItem, 
     deleteSamagriItem,
-    createSamagriCategory, // Added
-    deleteSamagriCategory, // Added
+    createSamagriCategory,
+    updateSamagriCategory, // Added
+    deleteSamagriCategory,
+    approveSamagriItem,
+    rejectSamagriItem,
     type SamagriItem,
     type SamagriCategory
 } from "@/lib/api";
-import { Pencil, Trash, Plus, PackageOpen, Trash2 } from "lucide-react"; // Added Trash2
+import { 
+    Pencil, 
+    Trash, 
+    Plus, 
+    PackageOpen, 
+    Trash2, 
+    Upload, 
+    Image as ImageIcon, 
+    X,
+    Loader2,
+    CheckCircle,
+    XCircle,
+    ShieldCheck,
+    Clock
+} from "lucide-react"; // Added Icons
 import {
     Tooltip,
     TooltipContent,
@@ -26,6 +43,10 @@ import {
 } from "@/components/ui/tooltip";
 import { DataTablePagination } from "@/components/common/DataTablePagination";
 import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
+
+// Cloudinary constants
+const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || "dm0vvpzs9";
+const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || "products";
 
 export default function AdminSamagri() {
   const [items, setItems] = useState<SamagriItem[]>([]);
@@ -47,6 +68,7 @@ export default function AdminSamagri() {
       name: string;
       description: string;
       price: string;
+      price_usd: string;
       stock_quantity: string;
       category: string;
       unit: string;
@@ -55,13 +77,16 @@ export default function AdminSamagri() {
     name: "",
     description: "",
     price: "",
+    price_usd: "",
     stock_quantity: "",
     category: "",
     unit: "pcs",
     image: null,
   });
 
-  const [categoryForm, setCategoryForm] = useState({ name: "", description: "" }); // New state
+  const [categoryForm, setCategoryForm] = useState({ name: "", description: "", image: "" }); // Updated state
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null); // New state for editing
+  const [uploadingCategory, setUploadingCategory] = useState(false); // New state
   
   const { toast } = useToast();
 
@@ -105,6 +130,7 @@ export default function AdminSamagri() {
           name: item.name,
           description: item.description || "",
           price: item.price.toString(),
+          price_usd: (item as any).price_usd?.toString() || "",
           stock_quantity: item.stock_quantity.toString(),
           category: item.category ? item.category.toString() : "",
           unit: item.unit || "pcs",
@@ -141,6 +167,9 @@ export default function AdminSamagri() {
     formData.append("name", form.name);
     formData.append("description", form.description);
     formData.append("price", form.price);
+    if (form.price_usd) {
+        formData.append("price_usd", form.price_usd);
+    }
     formData.append("stock_quantity", form.stock_quantity);
     formData.append("category", form.category);
     formData.append("unit", form.unit);
@@ -162,7 +191,7 @@ export default function AdminSamagri() {
       }
       setIsDialogOpen(false);
       setEditingItem(null);
-      setForm({ name: "", description: "", price: "", stock_quantity: "", category: "", unit: "pcs", image: null });
+      setForm({ name: "", description: "", price: "", price_usd: "", stock_quantity: "", category: "", unit: "pcs", image: null });
       loadData();
     } catch (err: any) {
       console.error(err);
@@ -171,16 +200,75 @@ export default function AdminSamagri() {
   };
 
   // --- Category Handlers ---
+  const handleUploadCategoryImage = async (file: File) => {
+      toast({
+          title: "Uploading Category Image",
+          description: "Please wait while image is uploading to Cloudinary...",
+      });
+
+      setUploadingCategory(true);
+      const formData = new FormData();
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('file', file);
+
+      try {
+          const response = await fetch(
+              `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`,
+              { method: 'POST', body: formData }
+          );
+          
+          const data = await response.json();
+
+          if (!response.ok) {
+              const errorMsg = data.error?.message || "Upload failed";
+              throw new Error(errorMsg);
+          }
+
+          if (data.secure_url) {
+              setCategoryForm(prev => ({ ...prev, image: data.secure_url }));
+              toast({
+                  title: "Upload Success",
+                  description: "Category image uploaded successfully!",
+              });
+          } else {
+              throw new Error("Upload failed: No secure URL returned");
+          }
+      } catch (err: any) {
+          console.error("Upload Error Details:", err);
+          toast({
+              title: "Upload Error",
+              description: err.message || "Failed to upload category image.",
+              variant: "destructive"
+          });
+      } finally {
+          setUploadingCategory(false);
+      }
+  };
+
+  const handleEditCategory = (cat: SamagriCategory) => {
+      setCategoryForm({
+          name: cat.name,
+          description: cat.description || "",
+          image: cat.image || ""
+      });
+      setEditingCategoryId(cat.id);
+  };
+
   const handleCategorySubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       try {
-          await createSamagriCategory(categoryForm);
-          toast({ title: "Success", description: "Category created." });
-          setCategoryForm({ name: "", description: "" });
-          setIsCategoryDialogOpen(false);
+          if (editingCategoryId) {
+              await updateSamagriCategory(editingCategoryId, categoryForm);
+              toast({ title: "Success", description: "Category updated." });
+          } else {
+              await createSamagriCategory(categoryForm);
+              toast({ title: "Success", description: "Category created." });
+          }
+          setCategoryForm({ name: "", description: "", image: "" });
+          setEditingCategoryId(null);
           loadData(); // Reload to update dropdowns
       } catch (err) {
-          toast({ title: "Error", description: "Failed to create category." });
+          toast({ title: "Error", description: `Failed to ${editingCategoryId ? 'update' : 'create'} category.` });
       }
   };
 
@@ -219,32 +307,106 @@ export default function AdminSamagri() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Manage Categories</DialogTitle>
+                        <DialogDescription>Add, edit, or remove item categories and upload Cloudinary images.</DialogDescription>
                     </DialogHeader>
                     
                     {/* Add Category Form */}
-                    <form onSubmit={handleCategorySubmit} className="flex gap-2 mb-4">
-                        <Input 
-                            placeholder="New Category Name" 
-                            value={categoryForm.name}
-                            onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
-                            required
-                        />
-                         <Input 
-                            placeholder="Description (Optional)" 
-                            value={categoryForm.description}
-                            onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})}
-                        />
-                        <Button type="submit">Add</Button>
+                    <form onSubmit={handleCategorySubmit} className="space-y-4 mb-6">
+                        <div className="flex gap-2">
+                            <Input 
+                                placeholder="New Category Name" 
+                                value={categoryForm.name}
+                                onChange={(e) => setCategoryForm({...categoryForm, name: e.target.value})}
+                                required
+                            />
+                            <Input 
+                                placeholder="Description (Optional)" 
+                                value={categoryForm.description}
+                                onChange={(e) => setCategoryForm({...categoryForm, description: e.target.value})}
+                            />
+                        </div>
+                        
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium">Category Image (Cloudinary)</label>
+                            <div className="flex items-center gap-4">
+                                {categoryForm.image ? (
+                                    <div className="relative group w-16 h-16 rounded-lg overflow-hidden border">
+                                        <img src={categoryForm.image} alt="Category" className="w-full h-full object-cover" />
+                                        <button 
+                                            type="button"
+                                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                            onClick={() => setCategoryForm(prev => ({ ...prev, image: "" }))}
+                                        >
+                                            <X className="h-4 w-4 text-white" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="w-16 h-16 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-gray-400">
+                                        <ImageIcon className="h-5 w-5" />
+                                        <span className="text-[10px]">No image</span>
+                                    </div>
+                                )}
+                                <div className="flex-1">
+                                    <Input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={(e) => e.target.files?.[0] && handleUploadCategoryImage(e.target.files[0])}
+                                        disabled={uploadingCategory}
+                                    />
+                                    {uploadingCategory && (
+                                        <div className="flex items-center gap-2 mt-1 text-xs text-orange-600">
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            <span>Uploading...</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                             <Button type="submit" className="flex-1" disabled={uploadingCategory}>
+                                {editingCategoryId ? "Update Category" : "Add Category"}
+                             </Button>
+                             {editingCategoryId && (
+                                 <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    onClick={() => {
+                                        setEditingCategoryId(null);
+                                        setCategoryForm({ name: "", description: "", image: "" });
+                                    }}
+                                 >
+                                    Cancel
+                                 </Button>
+                             )}
+                        </div>
                     </form>
 
                     {/* List Categories */}
                     <div className="max-h-[300px] overflow-y-auto border rounded-md p-2">
                         {categories.map(cat => (
                             <div key={cat.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                                <span>{cat.name} <span className="text-xs text-gray-500">({cat.description})</span></span>
-                                <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(cat.id)}>
-                                    <Trash className="h-4 w-4 text-red-500" />
-                                </Button>
+                                <div className="flex items-center gap-3">
+                                    {cat.image ? (
+                                        <img src={cat.image} alt={cat.name} className="h-8 w-8 object-cover rounded" />
+                                    ) : (
+                                        <div className="h-8 w-8 bg-gray-100 rounded flex items-center justify-center">
+                                            <ImageIcon className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col">
+                                        <span className="font-medium text-sm">{cat.name}</span>
+                                        {cat.description && <span className="text-xs text-gray-500">{cat.description}</span>}
+                                    </div>
+                                </div>
+                                <div className="flex gap-1">
+                                    <Button variant="ghost" size="sm" onClick={() => handleEditCategory(cat)}>
+                                        <Pencil className="h-4 w-4 text-blue-500" />
+                                    </Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleDeleteCategory(cat.id)}>
+                                        <Trash className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -253,19 +415,21 @@ export default function AdminSamagri() {
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingItem(null); setForm({ name: "", description: "", price: "", stock_quantity: "", category: "", unit: "pcs", image: null }); }}>
+                    <Button onClick={() => { setEditingItem(null); setForm({ name: "", description: "", price: "", price_usd: "", stock_quantity: "", category: "", unit: "pcs", image: null }); }}>
                         <Plus className="mr-2 h-4 w-4" /> Add New Item
                     </Button>
                 </DialogTrigger>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingItem ? "Edit Item" : "Add New Item"}</DialogTitle>
+                        <DialogDescription>Fill in the details for the samagri item below.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input name="name" value={form.name} onChange={handleChange} placeholder="Item Name" required />
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <Input name="price" value={form.price} onChange={handleChange} placeholder="Price (NPR)" required type="number" min="0" />
+                            <Input name="price_usd" value={form.price_usd} onChange={handleChange} placeholder="Price (USD)" type="number" min="0" step="0.01" />
                             <Input name="stock_quantity" value={form.stock_quantity} onChange={handleChange} placeholder="Stock Qty" required type="number" min="0" />
                         </div>
 
@@ -315,6 +479,7 @@ export default function AdminSamagri() {
                   <TableHead>Category</TableHead>
                   <TableHead>Price</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
@@ -341,8 +506,42 @@ export default function AdminSamagri() {
                                 {item.stock_quantity} {item.stock_quantity < 10 && "(Low)"}
                             </span>
                         </TableCell>
+                        <TableCell>
+                            {(item as any).is_approved ? (
+                                <div className="flex items-center gap-1 text-green-600 font-medium text-xs">
+                                    <ShieldCheck className="h-3.5 w-3.5" /> Approved
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-1 text-orange-600 font-medium text-xs">
+                                    <Clock className="h-3.5 w-3.5" /> Pending
+                                </div>
+                            )}
+                        </TableCell>
                         <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-1">
+                                {!(item as any).is_approved && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                onClick={async () => {
+                                                    try {
+                                                        await approveSamagriItem(item.id);
+                                                        toast({ title: "Approved", description: "Product is now live." });
+                                                        loadData();
+                                                    } catch (e) {
+                                                        toast({ title: "Error", description: "Approval failed.", variant: "destructive" });
+                                                    }
+                                                }}
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Approve Product</TooltipContent>
+                                    </Tooltip>
+                                )}
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button 

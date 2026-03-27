@@ -10,10 +10,10 @@ import apiClient from "@/lib/api-client";
 import { DataTablePagination } from "@/components/common/DataTablePagination";
 import { Pencil, Trash2 } from "lucide-react";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
 
@@ -30,9 +30,9 @@ export default function AdminServices() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
-      title: "",
-      description: "",
-      onConfirm: () => { }
+    title: "",
+    description: "",
+    onConfirm: () => { }
   });
 
   const [form, setForm] = useState<{
@@ -102,19 +102,19 @@ export default function AdminServices() {
 
   const handleDelete = async (id: number) => {
     setConfirmConfig({
-        title: "Delete Service?",
-        description: "Are you sure you want to delete this puja service? This action is permanent.",
-        onConfirm: async () => {
-            try {
-                await apiClient.delete(`/services/${id}/`);
-                toast({ title: "Success", description: "Puja deleted successfully." });
-                loadPujas();
-                setConfirmOpen(false);
-            } catch (err: any) {
-                console.error(err);
-                toast({ title: "Error", description: "Failed to delete puja." });
-            }
+      title: "Delete Service?",
+      description: "Are you sure you want to delete this puja service? This action is permanent.",
+      onConfirm: async () => {
+        try {
+          await apiClient.delete(`/services/${id}/`);
+          toast({ title: "Success", description: "Puja deleted successfully." });
+          loadPujas();
+          setConfirmOpen(false);
+        } catch (err: any) {
+          console.error(err);
+          toast({ title: "Error", description: "Failed to delete puja." });
         }
+      }
     });
     setConfirmOpen(true);
   };
@@ -140,12 +140,12 @@ export default function AdminServices() {
     try {
       if (editingId) {
         await apiClient.patch(`/services/${editingId}/`, formData, {
-            headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" },
         });
         toast({ title: "Success", description: "Puja updated successfully." });
       } else {
         await apiClient.post("/services/", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
+          headers: { "Content-Type": "multipart/form-data" },
         });
         toast({ title: "Success", description: "Puja added successfully." });
       }
@@ -172,16 +172,16 @@ export default function AdminServices() {
             <Input name="base_price" value={form.base_price} onChange={handleChange} placeholder="Base Price (₹)" required type="number" min="0" />
             <Input name="base_duration_minutes" value={form.base_duration_minutes} onChange={handleChange} placeholder="Duration (min)" required type="number" min="1" />
             <div className="flex flex-col gap-2">
-                <Input name="image" type="file" accept="image/*" onChange={handleChange} />
-                {editingId && <span className="text-xs text-gray-500">Leave empty to keep existing image</span>}
+              <Input name="image" type="file" accept="image/*" onChange={handleChange} />
+              {editingId && <span className="text-xs text-gray-500">Leave empty to keep existing image</span>}
             </div>
             <Input name="description" value={form.description} onChange={handleChange} placeholder="Description" required />
             <label className="flex items-center gap-2">
               <input type="checkbox" name="is_available" checked={form.is_available} onChange={handleChange} /> Available
             </label>
             <div className="md:col-span-2 flex gap-2">
-                <Button type="submit">{editingId ? "Update Puja" : "Add Puja"}</Button>
-                {editingId && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
+              <Button type="submit">{editingId ? "Update Puja" : "Add Puja"}</Button>
+              {editingId && <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>}
             </div>
           </form>
         </CardContent>
@@ -195,72 +195,72 @@ export default function AdminServices() {
             <div>Loading...</div>
           ) : (
             <>
-            <TooltipProvider>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Price (₹)</TableHead>
-                  <TableHead>Duration (min)</TableHead>
-                  <TableHead>Available</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentPujas.map((puja) => (
-                  <TableRow key={puja.id}>
-                    <TableCell>{puja.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">{puja.description}</TableCell>
-                    <TableCell>{puja.base_price}</TableCell>
-                    <TableCell>{puja.base_duration_minutes}</TableCell>
-                    <TableCell>{puja.is_available ? "Yes" : "No"}</TableCell>
-                    <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+              <TooltipProvider>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Price (₹)</TableHead>
+                      <TableHead>Duration (min)</TableHead>
+                      <TableHead>Available</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentPujas.map((puja) => (
+                      <TableRow key={puja.id}>
+                        <TableCell>{puja.name}</TableCell>
+                        <TableCell className="max-w-xs truncate">{puja.description}</TableCell>
+                        <TableCell>{puja.base_price}</TableCell>
+                        <TableCell>{puja.base_duration_minutes}</TableCell>
+                        <TableCell>{puja.is_available ? "Yes" : "No"}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                        onClick={() => handleEdit(puja)}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Edit Service</TooltipContent>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  onClick={() => handleEdit(puja)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit Service</TooltipContent>
                             </Tooltip>
                             <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                        onClick={() => handleDelete(puja.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Delete Service</TooltipContent>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => handleDelete(puja.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Delete Service</TooltipContent>
                             </Tooltip>
-                        </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </TooltipProvider>
-            <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
-          </>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TooltipProvider>
+              <DataTablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            </>
           )}
         </CardContent>
       </Card>
       <ActionConfirmationDialog
-          open={confirmOpen}
-          onOpenChange={setConfirmOpen}
-          title={confirmConfig.title}
-          description={confirmConfig.description}
-          onConfirm={confirmConfig.onConfirm}
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={confirmConfig.title}
+        description={confirmConfig.description}
+        onConfirm={confirmConfig.onConfirm}
       />
     </DashboardLayout>
   );
