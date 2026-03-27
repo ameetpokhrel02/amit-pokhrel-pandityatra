@@ -269,7 +269,28 @@ class SamagriItemViewSet(viewsets.ModelViewSet):
         category_id = self.request.query_params.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
+        
+        # If not an admin, only show approved items (for the shop)
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(is_approved=True)
+            
         return queryset
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def approve(self, request, pk=None):
+        item = self.get_object()
+        item.is_approved = True
+        item.save()
+        log_activity(user=request.user, action_type="SAMAGRI_APPROVE", details=f"Approved item {item.name}", request=request)
+        return Response({"status": "approved"})
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def reject(self, request, pk=None):
+        item = self.get_object()
+        item.is_approved = False
+        item.save()
+        log_activity(user=request.user, action_type="SAMAGRI_REJECT", details=f"Rejected/Disabled item {item.name}", request=request)
+        return Response({"status": "rejected"})
 
 class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
     queryset = PujaSamagriRequirement.objects.all()

@@ -8,7 +8,7 @@ class SamagriCategory(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=120, unique=True, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to='category_images/', blank=True, null=True)
+    image = models.URLField(max_length=500, blank=True, null=True)
     icon = models.CharField(max_length=50, blank=True, null=True, help_text="Lucide icon name")
     order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
@@ -27,14 +27,17 @@ class SamagriCategory(models.Model):
 
 class SamagriItem(models.Model):
     category = models.ForeignKey(SamagriCategory, on_delete=models.CASCADE, related_name='items')
+    vendor = models.ForeignKey('vendors.VendorProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    price_usd = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, null=True, blank=True)
     stock_quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=50, default="pcs")
     # Image for the item
     image = models.ImageField(upload_to='samagri_images/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -81,6 +84,7 @@ class ShopOrder(models.Model):
 class ShopOrderItem(models.Model):
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name='items')
     samagri_item = models.ForeignKey(SamagriItem, on_delete=models.SET_NULL, null=True, blank=True)
+    vendor = models.ForeignKey('vendors.VendorProfile', on_delete=models.SET_NULL, null=True, blank=True)
     item_name = models.CharField(max_length=150, blank=True, null=True) # Snapshot in case item is deleted
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)

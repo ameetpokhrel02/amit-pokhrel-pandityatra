@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem, Wishlist
 from services.serializers import PujaSerializer
+from payments.utils import convert_npr_to_usd
 
 # --- 1. Category Serializer ---
 class SamagriCategorySerializer(serializers.ModelSerializer):
@@ -15,8 +16,15 @@ class SamagriItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SamagriItem
-        fields = ['id', 'name', 'category', 'category_name', 'price', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'created_at']
+        fields = ['id', 'name', 'category', 'category_name', 'price', 'price_usd', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'created_at']
         read_only_fields = ['id', 'category_name', 'created_at']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # If price_usd is not set or 0.00, calculate it on the fly
+        if not data.get('price_usd') or float(data.get('price_usd')) == 0:
+            data['price_usd'] = convert_npr_to_usd(instance.price)
+        return data
 
 # --- 3. Shop Order Serializers ---
 
