@@ -34,7 +34,7 @@ services:
     build:
       context: .                 # ← Important: Now points to root
       dockerfile: Dockerfile     # ← Uses the new root Dockerfile
-    command: daphne -b 0.0.0.0 -p 8000 pandityatra_backend.asgi:application
+    command: python manage.py runserver 0.0.0.0:8000
     env_file:
       - .env
     volumes:
@@ -44,7 +44,7 @@ services:
     environment:
       - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
       - REDIS_URL=redis://redis:6379/0
-      - DEBUG=0
+      - DEBUG=1
       - SERVE_MEDIA_FILES=1
       - ALLOWED_HOSTS="*"
       - CORS_ALLOW_ALL_ORIGINS=False
