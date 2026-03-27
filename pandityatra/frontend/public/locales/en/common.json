@@ -1,6 +1,8 @@
 {
   "welcome": "Welcome to PanditYatra",
   "find_pandit": "Find Pandit",
+  "find_my_pandit": "Find My Pandit",
+  "account_portal": "Account Portal",
   "login": "Login",
   "signup": "Sign Up",
   "dashboard": "Dashboard",
@@ -48,6 +50,10 @@
     "live_streaming": "Live Streaming"
   },
   "categories": {
+    "null": {
+      "name": "Other",
+      "desc": "Miscellaneous sacred items."
+    },
     "agarbatti": {
       "name": "Incense Sticks",
       "desc": "Premium incense and dhoop for sacred atmosphere."

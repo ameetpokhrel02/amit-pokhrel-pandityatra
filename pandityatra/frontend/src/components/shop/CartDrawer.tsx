@@ -56,11 +56,11 @@ const CartDrawer: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((it) => {
+              {items.map((it, index) => {
                 const itemTotal = Number(it.price || 0) * it.quantity;
 
                 return (
-                  <div key={it.id} className="group relative flex gap-4 p-3 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl hover:border-orange-200 transition-all">
+                  <div key={`${it.id}-${index}`} className="group relative flex gap-4 p-3 bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 rounded-2xl hover:border-orange-200 transition-all">
                     {/* Item Image */}
                     <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-xl overflow-hidden shrink-0 border border-gray-100/50">
                       {it.image ? (

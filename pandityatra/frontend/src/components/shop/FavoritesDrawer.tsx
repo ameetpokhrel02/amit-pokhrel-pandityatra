@@ -47,7 +47,7 @@ const FavoritesDrawer: React.FC = () => {
                             <h3 className="font-semibold text-lg text-gray-900 dark:text-white">No favorites yet</h3>
                             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Save items you love to find them later.</p>
                         </div>
-                        <Button variant="outline" onClick={() => { closeDrawer(); navigate('/shop'); }} className="mt-4">
+                        <Button variant="outline" onClick={() => { closeDrawer(); navigate('/shop/samagri'); }} className="mt-4">
                             Browse Shop
                         </Button>
                     </div>
