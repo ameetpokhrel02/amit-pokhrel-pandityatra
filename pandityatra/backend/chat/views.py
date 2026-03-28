@@ -23,9 +23,9 @@ class ChatRoomListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         # For customers, show rooms they are part of
-        # For pandits (via user link), show rooms they are part of
+        # For pandits/vendors (via user link), show rooms they are part of
         return ChatRoom.objects.filter(
-            Q(customer=user) | Q(pandit__user=user)
+            Q(customer=user) | Q(pandit__user=user) | Q(vendor__user=user)
         ).distinct().order_by('-created_at')
 
 
@@ -39,7 +39,7 @@ class ChatRoomDetailView(generics.RetrieveUpdateAPIView):
         user = self.request.user
         return ChatRoom.objects.filter(
             customer=user
-        ) | ChatRoom.objects.filter(pandit__user=user)
+        ) | ChatRoom.objects.filter(pandit__user=user) | ChatRoom.objects.filter(vendor__user=user)
 
 
 class MessageListView(generics.ListCreateAPIView):
@@ -76,9 +76,10 @@ class MessageListView(generics.ListCreateAPIView):
             
             # Verify user has access to this room
             is_customer = chat_room.customer_id == user.id
-            is_pandit = chat_room.pandit.user_id == user.id
+            is_pandit = chat_room.pandit and chat_room.pandit.user_id == user.id
+            is_vendor = chat_room.vendor and chat_room.vendor.user_id == user.id
             
-            if not (is_customer or is_pandit):
+            if not (is_customer or is_pandit or is_vendor):
                 return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
             
             # Create the message
@@ -479,5 +480,45 @@ class ChatRoomInitiateView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
         except Pandit.DoesNotExist:
             return Response({'error': 'Pandit not found'}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class VendorChatRoomInitiateView(APIView):
+    """
+    Initiate or get a chat room with a vendor regarding an order.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        vendor_id = request.data.get('vendor_id')
+        order_id = request.data.get('order_id')
+        
+        if not vendor_id:
+            return Response({'error': 'vendor_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            from vendors.models import VendorProfile
+            from samagri.models import ShopOrder
+            
+            vendor = VendorProfile.objects.get(id=vendor_id)
+            order = None
+            if order_id:
+                order = ShopOrder.objects.get(id=order_id)
+            
+            # Use order as a distinguishing factor for vendor chats
+            room, created = ChatRoom.objects.get_or_create(
+                customer=request.user,
+                vendor=vendor,
+                order=order,
+                is_pre_booking=False, # Vendor chats are usually order related, not booking related
+                defaults={'is_active': True}
+            )
+            
+            serializer = ChatRoomSerializer(room, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
+        except VendorProfile.DoesNotExist:
+            return Response({'error': 'Vendor not found'}, status=status.HTTP_404_NOT_FOUND)
+        except ShopOrder.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)

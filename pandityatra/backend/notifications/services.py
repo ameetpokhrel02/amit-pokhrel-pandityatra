@@ -242,10 +242,13 @@ def notify_new_message(message):
     message_preview = message.content
     
     # Determine recipient
-    if chat_room.pandit.user == sender:
+    if chat_room.pandit and chat_room.pandit.user == sender:
+        recipient = chat_room.customer
+    elif chat_room.vendor and chat_room.vendor.user == sender:
         recipient = chat_room.customer
     else:
-        recipient = chat_room.pandit.user
+        # Sender is customer, recipient is either pandit or vendor
+        recipient = chat_room.pandit.user if chat_room.pandit else chat_room.vendor.user
     
     sender_name = sender.full_name or sender.username
     

@@ -21,7 +21,23 @@ class ChatRoom(models.Model):
     pandit = models.ForeignKey(
         'pandits.Pandit',
         on_delete=models.CASCADE,
-        related_name='pandit_chats'
+        related_name='pandit_chats',
+        null=True,
+        blank=True
+    )
+    vendor = models.ForeignKey(
+        'vendors.VendorProfile',
+        on_delete=models.CASCADE,
+        related_name='vendor_chats',
+        null=True,
+        blank=True
+    )
+    order = models.ForeignKey(
+        'samagri.ShopOrder',
+        on_delete=models.SET_NULL,
+        related_name='order_chats',
+        null=True,
+        blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
@@ -34,7 +50,7 @@ class ChatRoom(models.Model):
             models.Index(fields=['booking']),
         ]
         # Only one pre-booking room per customer-pandit pair
-        unique_together = ['customer', 'pandit', 'is_pre_booking']
+        unique_together = ['customer', 'pandit', 'vendor', 'is_pre_booking']
     
     def __str__(self):
         return f"Chat: {self.customer.username} <-> {self.pandit.user.username}"

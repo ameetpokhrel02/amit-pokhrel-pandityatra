@@ -17,4 +17,5 @@ urlpatterns = [
     path('', views.QuickChatView.as_view(), name='quick-chat'),
     path('history/', views.GuideHistoryView.as_view(), name='guide-history'),
     path('rooms/initiate/', views.ChatRoomInitiateView.as_view(), name='chatroom-initiate'),
+    path('rooms/initiate-vendor/', views.VendorChatRoomInitiateView.as_view(), name='vendor-chatroom-initiate'),
 ]
