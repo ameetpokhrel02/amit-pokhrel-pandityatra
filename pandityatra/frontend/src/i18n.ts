@@ -12,8 +12,9 @@ i18n
     debug: true,
     
     // Namespaces
-    ns: ['common', 'auth', 'dashboard', 'about'],
+    ns: ['common', 'auth', 'dashboard', 'about', 'home', 'shop'],
     defaultNS: 'common',
+    keySeparator: '.', 
 
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
