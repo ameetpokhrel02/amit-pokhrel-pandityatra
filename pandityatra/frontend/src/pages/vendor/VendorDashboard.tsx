@@ -20,15 +20,17 @@ import {
     FileText
 } from "lucide-react";
 import { Link, useNavigate } from 'react-router-dom';
-import { fetchVendorStats, fetchVendorOrders, type VendorStats, type ShopOrder } from '@/lib/api';
+import { fetchVendorStats, fetchVendorOrders, type ShopOrder } from '@/lib/api';
 import { useToast } from "@/hooks/use-toast";
+import { VerificationWall } from '@/components/dashboard/VerificationWall';
 
 const VendorDashboard = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState<VendorStats | null>(null);
+    const [stats, setStats] = useState<any>(null);
     const [recentOrders, setRecentOrders] = useState<ShopOrder[]>([]);
+    const [errorStatus, setErrorStatus] = useState<'PENDING' | 'REJECTED' | 'INCOMPLETE' | null>(null);
 
     useEffect(() => {
         fetchDashboardData();
@@ -41,10 +43,18 @@ const VendorDashboard = () => {
                 fetchVendorOrders()
             ]);
             setStats(statsData);
-            setRecentOrders(ordersData.slice(0, 5)); // Get last 5 orders
-        } catch (error) {
+            setRecentOrders(ordersData.slice(0, 5));
+            
+            if (statsData.verification_status !== 'APPROVED') {
+                setErrorStatus(statsData.verification_status as any);
+            }
+        } catch (error: any) {
             console.error("Error fetching dashboard data", error);
-            toast({ title: "Error", description: "Could not load dashboard stats", variant: "destructive" });
+            if (error.response?.status === 404) {
+                setErrorStatus('INCOMPLETE');
+            } else {
+                toast({ title: "Error", description: "Could not load dashboard stats", variant: "destructive" });
+            }
         } finally {
             setLoading(false);
         }
@@ -59,6 +69,14 @@ const VendorDashboard = () => {
                 </div>
             </DashboardLayout>
         )
+    }
+
+    if (errorStatus) {
+        return (
+            <DashboardLayout userRole="vendor">
+                <VerificationWall role="vendor" status={errorStatus} />
+            </DashboardLayout>
+        );
     }
 
     const statCards = [
