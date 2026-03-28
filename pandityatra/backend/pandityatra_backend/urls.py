@@ -38,7 +38,7 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     
-    path('api/v-admin/', include('vendors.urls')), # Vendor endpoints
+    path('api/vendors/', include('vendors.urls')), # Vendor endpoints
     path('api/users/', include('users.urls')), 
     path('api/pandits/', include('pandits.urls')),
     path('api/services/', include('services.urls')),

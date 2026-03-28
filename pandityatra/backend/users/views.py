@@ -733,15 +733,26 @@ class GoogleLoginView(APIView):
 
             # Get or create user
             # We map Google emails to our local User model
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'username': email.split('@')[0] + "_" + google_id[-4:],
-                    'full_name': full_name,
-                    'is_active': True,
-                    'role': 'user' # Default role for new signups via Google
-                }
-            )
+            requested_role = request.data.get('role', 'user')
+            if requested_role not in ['user', 'vendor', 'pandit']:
+                requested_role = 'user'
+
+            user = User.objects.filter(email=email).first()
+            created = False
+            if not user:
+                user = User.objects.create(
+                    email=email,
+                    username=email.split('@')[0] + "_" + google_id[-4:],
+                    full_name=full_name,
+                    is_active=True,
+                    role=requested_role
+                )
+                created = True
+            else:
+                # If user exists but has 'user' role and requested 'vendor' or 'pandit'
+                if user.role == 'user' and requested_role in ['vendor', 'pandit']:
+                    user.role = requested_role
+                    user.save()
 
             # Generate JWT tokens (SimpleJWT integration)
             refresh = RefreshToken.for_user(user)
@@ -760,7 +771,8 @@ class GoogleLoginView(APIView):
                     'full_name': user.full_name,
                     'role': user.role,
                     'is_staff': user.is_staff,
-                    'is_superuser': user.is_superuser
+                    'is_superuser': user.is_superuser,
+                    'profile_exists': hasattr(user, 'vendor_profile') if user.role == 'vendor' else hasattr(user, 'pandit_profile')
                 }
             }, status=status.HTTP_200_OK)
 
