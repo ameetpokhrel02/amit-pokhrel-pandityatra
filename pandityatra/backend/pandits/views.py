@@ -19,36 +19,13 @@ from services.serializers import PujaSerializer
 # Pandit Registration
 # ---------------------------
 class RegisterPanditView(generics.CreateAPIView):
-    # We keep the serializer for structural validation, but we customize creation logic
+    # We keep the serializer for structural validation, and we've moved 
+    # the creation logic into the serializer itself.
     serializer_class = PanditRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
     def perform_create(self, serializer):
-        # Case 1: User is already authenticated (e.g. via Google or existing session)
-        if self.request.user.is_authenticated:
-            user = self.request.user
-            # Ensure the user gets the pandit role
-            if user.role != 'pandit':
-                user.role = 'pandit'
-                user.save()
-            
-            # Extract Pandit specific fields from the serializer data
-            # Note: The serializer create() normally handles User creation, 
-            # so we bypass it and create the Pandit profile directly here.
-            data = serializer.validated_data
-            Pandit.objects.create(
-                user=user,
-                expertise=data['expertise'],
-                language=data['language'],
-                experience_years=data['experience_years'],
-                bio=data.get('bio', ''),
-                certification_file=data['certification_file'],
-                verification_status='PENDING',
-                is_verified=False
-            )
-        else:
-            # Case 2: Standard guest registration (creates both User and Pandit)
-            serializer.save()
+        serializer.save()
 
 
 # ---------------------------
@@ -436,7 +413,9 @@ def pandit_dashboard_stats(request):
         "week_earnings": week_earnings,
         "month_earnings": month_earnings,
         "unread_messages": unread_messages_count,
-        "is_online": getattr(pandit, 'is_available', False)
+        "is_online": getattr(pandit, 'is_available', False),
+        "is_verified": getattr(pandit, 'is_verified', False),
+        "verification_status": getattr(pandit, 'verification_status', 'PENDING')
     }
 
     return Response({

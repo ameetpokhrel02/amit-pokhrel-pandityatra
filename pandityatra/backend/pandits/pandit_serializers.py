@@ -7,7 +7,7 @@ from users.models import User
 class PanditRegistrationSerializer(serializers.Serializer):
     """Separate serializer for Pandit registration with document upload"""
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True)
-    full_name = serializers.CharField(max_length=150)
+    full_name = serializers.CharField(max_length=150, required=False)
     password = serializers.CharField(write_only=True, min_length=6, required=False, allow_blank=True)
     expertise = serializers.CharField(max_length=255)
     language = serializers.CharField(max_length=50)
@@ -17,25 +17,44 @@ class PanditRegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField(required=False, allow_blank=True)
     
     def validate_phone_number(self, value):
-        """Check if phone number already registered"""
-        if User.objects.filter(phone_number=value).exists():
-            raise serializers.ValidationError("Phone number already registered")
+        """Check if phone number already registered if user is anonymous"""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            if User.objects.filter(phone_number=value).exists():
+                raise serializers.ValidationError("Phone number already registered")
         return value
     
     def create(self, validated_data):
         """Create user and pandit profile with PENDING verification status"""
-        # Extract password
-        password = validated_data.pop('password')
-        
-        # Create User with password
-        user = User.objects.create_user(
-            username=validated_data['phone_number'],
-            phone_number=validated_data['phone_number'],
-            full_name=validated_data['full_name'],
-            email=validated_data.get('email', ''),
-            password=password,  # Set the password
-            role='pandit'  # Set role to pandit
-        )
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        if not user or user.is_anonymous:
+            # Extract password
+            password = validated_data.pop('password', None)
+            if not password:
+                raise serializers.ValidationError({"password": "Password is required for manual registration."})
+            
+            # Create User with password
+            user = User.objects.create_user(
+                username=validated_data.get('phone_number') or validated_data.get('email', '').split('@')[0],
+                phone_number=validated_data.get('phone_number'),
+                full_name=validated_data.get('full_name', ''),
+                email=validated_data.get('email', ''),
+                password=password,
+                role='pandit'
+            )
+        else:
+            # Update existing user role
+            if user.role != 'pandit':
+                user.role = 'pandit'
+                user.save()
+            
+            # Pop unused fields
+            validated_data.pop('password', None)
+            validated_data.pop('email', None)
+            validated_data.pop('phone_number', None)
+            validated_data.pop('full_name', None)
         
         # Create Pandit profile
         pandit = Pandit.objects.create(
@@ -45,7 +64,7 @@ class PanditRegistrationSerializer(serializers.Serializer):
             experience_years=validated_data['experience_years'],
             bio=validated_data.get('bio', ''),
             certification_file=validated_data['certification_file'],
-            verification_status='PENDING',  # Set to PENDING for admin review
+            verification_status='PENDING',
             is_verified=False
         )
         

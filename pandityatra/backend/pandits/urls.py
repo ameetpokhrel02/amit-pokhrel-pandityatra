@@ -14,9 +14,6 @@ router.register(r'my-services', PanditServiceViewSet, basename='pandit-services'
 router.register(r'', PanditViewSet, basename='pandits')
 
 urlpatterns = [
-    # Router for services management
-    path('', include(router.urls)),
-
     # Dashboard Stats
     path('dashboard/stats/', pandit_dashboard_stats),
     path('dashboard/toggle-availability/', toggle_availability),
@@ -43,4 +40,7 @@ urlpatterns = [
     path("admin/withdrawals/", list_withdrawals),
     path("admin/withdrawals/<int:withdrawal_id>/approve/", approve_withdrawal),
     path("admin/earnings/<int:pandit_id>/", admin_pandit_earnings),
+
+    # Router for services management (Must be last to avoid greedy matching)
+    path('', include(router.urls)),
 ]
