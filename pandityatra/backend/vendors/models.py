@@ -14,14 +14,31 @@ class VendorProfile(models.Model):
     account_holder_name = models.CharField(max_length=150)
     
     # Verification
+    VERIFICATION_STATUS_CHOICES = (
+        ('PENDING', 'Pending Review'),
+        ('APPROVED', 'Approved'),
+        ('REJECTED', 'Rejected'),
+    )
     id_proof = models.FileField(upload_to="vendor_ids/", blank=True, null=True)
     is_verified = models.BooleanField(default=False)
+    verification_status = models.CharField(
+        max_length=10,
+        choices=VERIFICATION_STATUS_CHOICES,
+        default='PENDING'
+    )
     
     # Stats
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     commission_rate = models.DecimalField(max_digits=5, decimal_places=2, default=10.00, help_text="Percentage taken by platform")
     
     bio = models.TextField(blank=True, null=True)
+    
+    # Shop Settings
+    is_accepting_orders = models.BooleanField(default=True)
+    auto_approve_orders = models.BooleanField(default=False)
+    notification_email = models.EmailField(blank=True, null=True)
+    is_low_stock_alert_enabled = models.BooleanField(default=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

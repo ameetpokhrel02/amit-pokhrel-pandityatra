@@ -120,7 +120,10 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
         if request.user.role != 'vendor':
             return Response({"error": "Unauthorized"}, status=status.HTTP_403_FORBIDDEN)
         
-        vendor = request.user.vendor_profile
+        try:
+            vendor = request.user.vendor_profile
+        except (AttributeError, VendorProfile.DoesNotExist):
+            return Response({"detail": "Profile incomplete. Please complete your registration."}, status=status.HTTP_404_NOT_FOUND)
         
         # Sales Stats
         total_sales = ShopOrderItem.objects.filter(vendor=vendor, order__status='PAID').aggregate(Sum('price_at_purchase'))['price_at_purchase__sum'] or 0
@@ -139,7 +142,9 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
             "total_products": total_products,
             "low_stock_count": low_stock_products,
             "current_balance": vendor.balance,
-            "total_withdrawn": total_withdrawn
+            "total_withdrawn": total_withdrawn,
+            "is_verified": vendor.is_verified,
+            "verification_status": vendor.verification_status
         })
 
 class VendorProductViewSet(viewsets.ModelViewSet):
@@ -147,8 +152,12 @@ class VendorProductViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.role == 'vendor':
-            return SamagriItem.objects.filter(vendor=self.request.user.vendor_profile)
+        user = self.request.user
+        if user.role == 'vendor':
+            try:
+                return SamagriItem.objects.filter(vendor=user.vendor_profile)
+            except (AttributeError, VendorProfile.DoesNotExist):
+                return SamagriItem.objects.none()
         return SamagriItem.objects.all()
 
     def perform_create(self, serializer):
@@ -161,10 +170,14 @@ class VendorOrderViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.role == 'vendor':
-            vendor = self.request.user.vendor_profile
-            # Only orders that contain at least one item from this vendor
-            return ShopOrder.objects.filter(items__vendor=vendor).distinct()
+        user = self.request.user
+        if user.role == 'vendor':
+            try:
+                vendor = user.vendor_profile
+                # Only orders that contain at least one item from this vendor
+                return ShopOrder.objects.filter(items__vendor=vendor).distinct()
+            except (AttributeError, VendorProfile.DoesNotExist):
+                return ShopOrder.objects.none()
         return ShopOrder.objects.all()
 
     @action(detail=True, methods=['POST'])
@@ -184,8 +197,12 @@ class VendorPayoutViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.role == 'vendor':
-            return VendorPayout.objects.filter(vendor=self.request.user.vendor_profile)
+        user = self.request.user
+        if user.role == 'vendor':
+            try:
+                return VendorPayout.objects.filter(vendor=user.vendor_profile)
+            except (AttributeError, VendorProfile.DoesNotExist):
+                return VendorPayout.objects.none()
         return VendorPayout.objects.all()
 
     def perform_create(self, serializer):
