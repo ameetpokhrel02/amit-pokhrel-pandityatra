@@ -157,54 +157,59 @@ const PanditRegisterPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="Register as Pandit" subtitle="Share your expertise with seekers">
-      <div className="mb-8 space-y-4">
-        <p className="text-xs text-gray-400 uppercase tracking-widest font-bold text-center">Faster Application</p>
-        <div className="flex justify-center">
-          <GoogleLogin
-            onSuccess={async (credentialResponse) => {
-              if (credentialResponse.credential) {
-                setLoading(true);
-                try {
-                  const resp = await googleLogin(credentialResponse.credential);
-                  // Pre-fill form from Google identity
-                  if (resp && resp.user) {
-                    setFormData(prev => ({
-                      ...prev,
-                      full_name: resp.user.full_name || prev.full_name,
-                      email: resp.user.email || prev.email,
-                    }));
-                    toast({
-                      title: "Identity Verified!",
-                      description: "We've pre-filled your name and email. Please complete the rest of the form.",
-                    });
+    <AuthLayout 
+        title={user ? "Complete Your Professional Profile" : "Register as Pandit"} 
+        subtitle={user ? "Finalize your expertise details for admin review" : "Share your expertise with seekers"}
+    >
+      {!user && (
+        <div className="mb-8 space-y-4">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-bold text-center">Faster Application</p>
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  setLoading(true);
+                  try {
+                    const resp = await googleLogin(credentialResponse.credential);
+                    // Pre-fill form from Google identity
+                    if (resp && resp.user) {
+                      setFormData(prev => ({
+                        ...prev,
+                        full_name: resp.user.full_name || prev.full_name,
+                        email: resp.user.email || prev.email,
+                      }));
+                      toast({
+                        title: "Identity Verified!",
+                        description: "We've pre-filled your name and email. Please complete the rest of the form.",
+                      });
+                    }
+                  } catch (err: any) {
+                    setError(err.message || "Google authentication failed");
+                  } finally {
+                    setLoading(false);
                   }
-                } catch (err: any) {
-                  setError(err.message || "Google authentication failed");
-                } finally {
-                  setLoading(false);
                 }
-              }
-            }}
-            onError={() => {
-              setError("Google authentication failed. Please try again.");
-            }}
-            theme="outline"
-            shape="pill"
-            size="large"
-            width="100%"
-            text="continue_with"
-          />
-        </div>
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-100"></div>
+              }}
+              onError={() => {
+                setError("Google authentication failed. Please try again.");
+              }}
+              theme="outline"
+              shape="pill"
+              size="large"
+              width="100%"
+              text="continue_with"
+            />
           </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="px-2 bg-white text-gray-400">Or fill manually</span>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-100"></div>
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 bg-white text-gray-400">Or fill manually</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <form onSubmit={handleRegister} className="space-y-4">
         {/* Full Name */}
@@ -220,8 +225,9 @@ const PanditRegisterPage: React.FC = () => {
               value={formData.full_name}
               onChange={handleInputChange}
               placeholder="Your full name"
-              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+              className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${user ? 'opacity-80 cursor-not-allowed' : ''}`}
               required
+              disabled={!!user}
             />
           </div>
         </div>
@@ -240,8 +246,9 @@ const PanditRegisterPage: React.FC = () => {
               value={formData.email}
               onChange={handleInputChange}
               placeholder="your@email.com"
-              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
+              className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${user ? 'opacity-80 cursor-not-allowed' : ''}`}
               required
+              disabled={!!user}
             />
           </div>
         </div>
@@ -264,91 +271,92 @@ const PanditRegisterPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Password */}
-        <div className="space-y-2">
-          <Label htmlFor="password" {...(!user && { className: "text-gray-600 font-semibold px-1" })}>
-            Password {user ? '(Optional - you logged in already)' : '*'}
-          </Label>
-          <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-            </span>
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder={user ? "Set a password for future use (optional)" : "Create a strong password"}
-              className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
-              required={!user}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" x2="23" y1="1" y2="23" /></svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-              )}
-            </button>
-          </div>
-          
-          {formData.password && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Strength</span>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  passwordInfo.score <= 2 ? 'bg-red-100 text-red-600' : 
-                  passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
-                  'bg-green-100 text-green-600'
-                }`}>
-                  {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-5 gap-1.5">
-                {[1, 2, 3, 4, 5].map((lvl) => (
-                  <div key={lvl} className={`h-1.5 rounded-full transition-all duration-500 ${
-                    lvl <= passwordInfo.score ? (
-                      passwordInfo.score <= 2 ? 'bg-red-500' : 
-                      passwordInfo.score <= 4 ? 'bg-orange-500' : 
-                      'bg-green-500'
-                    ) : 'bg-gray-200'
-                  }`} />
-                ))}
-              </div>
+        {!user && (
+          <div className="space-y-2">
+            <Label htmlFor="password" {...(!user && { className: "text-gray-600 font-semibold px-1" })}>
+              Password *
+            </Label>
+            <div className="relative group">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+              </span>
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Create a strong password"
+                className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
+                required={!user}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" x2="23" y1="1" y2="23" /></svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                )}
+              </button>
+            </div>
+            
+            {formData.password && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Strength</span>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                    passwordInfo.score <= 2 ? 'bg-red-100 text-red-600' : 
+                    passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-5 gap-1.5">
+                  {[1, 2, 3, 4, 5].map((lvl) => (
+                    <div key={lvl} className={`h-1.5 rounded-full transition-all duration-500 ${
+                      lvl <= passwordInfo.score ? (
+                        passwordInfo.score <= 2 ? 'bg-red-500' : 
+                        passwordInfo.score <= 4 ? 'bg-orange-500' : 
+                        'bg-green-500'
+                      ) : 'bg-gray-200'
+                    }`} />
+                  ))}
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 pt-1">
-                {[
-                  { id: 'length', text: '8+ Characters' },
-                  { id: 'upper', text: 'Uppercase' },
-                  { id: 'lower', text: 'Lowercase' },
-                  { id: 'number', text: 'Number' },
-                  { id: 'special', text: 'Special Char' },
-                ].map((req) => (
-                  <div key={req.id} className="flex items-center gap-2">
-                    <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors ${
-                      passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
-                    }`}>
-                      {passwordInfo.met.includes(req.id) && <span className="text-[10px] text-white">✓</span>}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 pt-1">
+                  {[
+                    { id: 'length', text: '8+ Characters' },
+                    { id: 'upper', text: 'Uppercase' },
+                    { id: 'lower', text: 'Lowercase' },
+                    { id: 'number', text: 'Number' },
+                    { id: 'special', text: 'Special Char' },
+                  ].map((req) => (
+                    <div key={req.id} className="flex items-center gap-2">
+                      <div className={`w-3.5 h-3.5 rounded-full flex items-center justify-center transition-colors ${
+                        passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
+                      }`}>
+                        {passwordInfo.met.includes(req.id) && <span className="text-[10px] text-white">✓</span>}
+                      </div>
+                      <span className={`text-[11px] font-medium ${
+                        passwordInfo.met.includes(req.id) ? 'text-gray-700' : 'text-gray-400'
+                      }`}>{req.text}</span>
                     </div>
-                    <span className={`text-[11px] font-medium ${
-                      passwordInfo.met.includes(req.id) ? 'text-gray-700' : 'text-gray-400'
-                    }`}>{req.text}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-          <p className="text-xs text-gray-500 px-1 pt-1 font-medium">Use a strong password for account security.</p>
-        </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            <p className="text-xs text-gray-500 px-1 pt-1 font-medium">Use a strong password for account security.</p>
+          </div>
+        )}
 
         {/* Expertise */}
         <div className="space-y-2">

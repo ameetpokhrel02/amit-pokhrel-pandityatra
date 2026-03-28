@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,16 +18,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '@/lib/api-client';
+import { GoogleLogin } from '@react-oauth/google';
 
 const VendorRegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, token, googleLogin, refreshUser } = useAuth();
 
   const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    phone_number: '',
+    full_name: user?.full_name || '',
+    email: user?.email || '',
+    phone_number: user?.phone_number || '',
     password: '',
     shop_name: '',
     business_type: '',
@@ -44,6 +45,20 @@ const VendorRegisterPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [fileSelected, setFileSelected] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleAuth, setIsGoogleAuth] = useState(!!user?.email);
+
+  // Update form if user logs in via Google during the process
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        full_name: user.full_name || prev.full_name,
+        email: user.email || prev.email,
+        phone_number: user.phone_number || prev.phone_number
+      }));
+      setIsGoogleAuth(true);
+    }
+  }, [user]);
 
   const businessTypes = [
     'Samagri Store',
@@ -90,6 +105,8 @@ const VendorRegisterPage: React.FC = () => {
       const submitData = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null) {
+          // Skip password if registering via Google
+          if (isGoogleAuth && key === 'password') return;
           submitData.append(key, value);
         }
       });
@@ -103,7 +120,10 @@ const VendorRegisterPage: React.FC = () => {
         description: "Your vendor account is under review. We'll contact you soon.",
       });
 
-      setTimeout(() => navigate('/login'), 3000);
+      // If they were in onboarding mode, refresh user profile to show they have a profile now
+      if (token) await refreshUser();
+
+      setTimeout(() => navigate(token ? '/vendor/dashboard' : '/login'), 3000);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Registration failed. Please try again.');
     } finally {
@@ -112,7 +132,67 @@ const VendorRegisterPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="Register as Vendor" subtitle="Start selling your spiritual products">
+    <AuthLayout 
+        title={token ? "Complete Your Vendor Profile" : "Register as Vendor"} 
+        subtitle={token ? "Update your details and submit for verification" : "Start selling your spiritual products"}
+    >
+      <div className="mb-8 space-y-4">
+        {!isGoogleAuth && (
+            <div className="flex flex-col items-center gap-4 p-6 bg-gradient-to-br from-orange-50 to-white rounded-2xl border border-orange-100 shadow-sm transition-all hover:shadow-md">
+                <p className="text-xs text-orange-600 uppercase tracking-widest font-bold">Register Fast With</p>
+                <div className="w-full flex justify-center scale-110">
+                    <GoogleLogin
+                        onSuccess={async (credentialResponse) => {
+                            if (credentialResponse.credential) {
+                                setLoading(true);
+                                try {
+                                    await googleLogin(credentialResponse.credential, 'vendor');
+                                    toast({
+                                        title: "Google Auth Successful!",
+                                        description: "Please complete your business details below.",
+                                    });
+                                } catch (err: any) {
+                                    setError(err.message || "Google registration failed");
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }
+                        }}
+                        onError={() => setError("Google registration failed. Please try again.")}
+                        useOneTap
+                        theme="outline"
+                        shape="pill"
+                        size="large"
+                        text="signup_with"
+                    />
+                </div>
+            </div>
+        )}
+
+        {isGoogleAuth && (
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-green-50 border border-green-100 rounded-xl flex items-center justify-between"
+            >
+                <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                        ✓
+                    </div>
+                    <div>
+                        <p className="text-sm font-bold text-green-800">Connected with Google</p>
+                        <p className="text-xs text-green-600">{formData.email}</p>
+                    </div>
+                </div>
+                {!token && (
+                     <Button variant="ghost" size="sm" onClick={() => setIsGoogleAuth(false)} className="text-xs text-gray-500 hover:text-red-500">
+                        Disconnect
+                    </Button>
+                )}
+            </motion.div>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Basic Info */}
@@ -120,94 +200,121 @@ const VendorRegisterPage: React.FC = () => {
             <Label>Full Name *</Label>
             <div className="relative">
               <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input name="full_name" value={formData.full_name} onChange={handleInputChange} className="pl-10 h-11" placeholder="Amit Pokhrel" required />
+              <Input 
+                name="full_name" 
+                value={formData.full_name} 
+                onChange={handleInputChange} 
+                className={`pl-10 h-11 ${isGoogleAuth ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`} 
+                placeholder="Amit Pokhrel" 
+                required 
+                disabled={isGoogleAuth}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Email *</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input name="email" type="email" value={formData.email} onChange={handleInputChange} className="pl-10 h-11" placeholder="riya@example.com" required />
+              <Input 
+                name="email" 
+                type="email" 
+                value={formData.email} 
+                onChange={handleInputChange} 
+                className={`pl-10 h-11 ${isGoogleAuth ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`} 
+                placeholder="riya@example.com" 
+                required 
+                disabled={isGoogleAuth}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label>Phone Number *</Label>
             <div className="relative">
               <Smartphone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input name="phone_number" value={formData.phone_number} onChange={handleInputChange} className="pl-10 h-11" placeholder="98XXXXXXXX" required />
+              <Input 
+                name="phone_number" 
+                value={formData.phone_number} 
+                onChange={handleInputChange} 
+                className={`pl-10 h-11 ${isGoogleAuth && user?.phone_number ? 'bg-gray-50 cursor-not-allowed opacity-80' : ''}`} 
+                placeholder="98XXXXXXXX" 
+                required 
+                disabled={!!(isGoogleAuth && user?.phone_number)}
+              />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Password *</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleInputChange} className="pl-10 h-11" required />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-orange-500 transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" x2="23" y1="1" y2="23" /></svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
-                )}
-              </button>
-            </div>
-            
-            {formData.password && (
-              <motion.div 
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-2 p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-2"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Security</span>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                    passwordInfo.score <= 2 ? 'bg-red-50 text-red-600' : 
-                    passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
-                    'bg-green-100 text-green-600'
-                  }`}>
-                    {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-5 gap-1">
-                  {[1, 2, 3, 4, 5].map((lvl) => (
-                    <div key={lvl} className={`h-1 rounded-full transition-all duration-500 ${
-                      lvl <= passwordInfo.score ? (
-                        passwordInfo.score <= 2 ? 'bg-red-500' : 
-                        passwordInfo.score <= 4 ? 'bg-orange-500' : 
-                        'bg-green-500'
-                      ) : 'bg-gray-200'
-                    }`} />
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap gap-x-3 gap-y-1">
-                  {[
-                    { id: 'length', text: '8+ chars' },
-                    { id: 'upper', text: 'ABC' },
-                    { id: 'lower', text: 'abc' },
-                    { id: 'number', text: '123' },
-                    { id: 'special', text: '#@!' },
-                  ].map((req) => (
-                    <div key={req.id} className="flex items-center gap-1.5">
-                      <div className={`w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors ${
-                        passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
-                      }`}>
-                        {passwordInfo.met.includes(req.id) && <span className="text-[7px] text-white">✓</span>}
+          {!isGoogleAuth && (
+            <div className="space-y-2">
+              <Label>Password *</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input name="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={handleInputChange} className="pl-10 h-11" required />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-orange-500 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" /><line x1="1" x2="23" y1="1" y2="23" /></svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
+                  )}
+                </button>
+              </div>
+              
+              {formData.password && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-2 p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-2"
+                >
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Security</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      passwordInfo.score <= 2 ? 'bg-red-50 text-red-600' : 
+                      passwordInfo.score <= 4 ? 'bg-orange-100 text-orange-600' : 
+                      'bg-green-100 text-green-600'
+                    }`}>
+                      {passwordInfo.score <= 2 ? 'Weak' : passwordInfo.score <= 4 ? 'Medium' : 'Strong'}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-5 gap-1">
+                    {[1, 2, 3, 4, 5].map((lvl) => (
+                      <div key={lvl} className={`h-1 rounded-full transition-all duration-500 ${
+                        lvl <= passwordInfo.score ? (
+                          passwordInfo.score <= 2 ? 'bg-red-500' : 
+                          passwordInfo.score <= 4 ? 'bg-orange-500' : 
+                          'bg-green-500'
+                        ) : 'bg-gray-200'
+                      }`} />
+                    ))}
+                  </div>
+  
+                  <div className="flex flex-wrap gap-x-3 gap-y-1">
+                    {[
+                      { id: 'length', text: '8+ chars' },
+                      { id: 'upper', text: 'ABC' },
+                      { id: 'lower', text: 'abc' },
+                      { id: 'number', text: '123' },
+                      { id: 'special', text: '#@!' },
+                    ].map((req) => (
+                      <div key={req.id} className="flex items-center gap-1.5">
+                        <div className={`w-2.5 h-2.5 rounded-full flex items-center justify-center transition-colors ${
+                          passwordInfo.met.includes(req.id) ? 'bg-green-500' : 'bg-gray-200'
+                        }`}>
+                          {passwordInfo.met.includes(req.id) && <span className="text-[7px] text-white">✓</span>}
+                        </div>
+                        <span className={`text-[9px] font-semibold ${
+                          passwordInfo.met.includes(req.id) ? 'text-gray-600' : 'text-gray-400'
+                        }`}>{req.text}</span>
                       </div>
-                      <span className={`text-[9px] font-semibold ${
-                        passwordInfo.met.includes(req.id) ? 'text-gray-600' : 'text-gray-400'
-                      }`}>{req.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4 border-t pt-4">
