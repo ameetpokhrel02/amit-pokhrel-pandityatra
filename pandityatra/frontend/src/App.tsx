@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { AuthProvider } from './hooks/useAuth'
+import { AuthProvider } from '@/hooks/useAuth'
 import { CartProvider } from './hooks/useCart'
 import { FavoritesProvider } from './hooks/useFavorites'
 import { ChatProvider } from './contexts/ChatContext'
@@ -61,6 +61,9 @@ import VendorDashboard from './pages/vendor/VendorDashboard'
 import VendorProducts from './pages/vendor/VendorProducts'
 import VendorOrders from './pages/vendor/VendorOrders'
 import VendorPayouts from './pages/vendor/VendorPayouts'
+import VendorProfilePage from './pages/vendor/VendorProfile'
+import VendorMessages from './pages/vendor/VendorMessages'
+import VendorSettings from './pages/vendor/VendorSettings'
 
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminPandits from './pages/admin/AdminPandits'
@@ -288,6 +291,24 @@ function App() {
                     <Route path="/vendor/payouts" element={
                       <ProtectedRoute allowedRoles={['vendor']}>
                         <VendorPayouts />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/profile" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorProfilePage />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/messages" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorMessages />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/settings" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <VendorSettings />
                       </ProtectedRoute>
                     } />
 

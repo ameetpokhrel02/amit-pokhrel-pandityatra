@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { VerificationWall } from '@/components/dashboard/VerificationWall';
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
@@ -47,6 +48,7 @@ const PanditDashboard = () => {
     const [queue, setQueue] = useState<any[]>([])
     const [todaySchedule, setTodaySchedule] = useState<any[]>([])
     const [isOnline, setIsOnline] = useState(false)
+    const [errorStatus, setErrorStatus] = useState<'PENDING' | 'REJECTED' | 'INCOMPLETE' | null>(null);
 
     // App Feedback state
     const [feedbackRating, setFeedbackRating] = useState(0)
@@ -67,7 +69,7 @@ const PanditDashboard = () => {
         fetchSiteReviews().then(data => {
             setAppAvgRating(data.average_rating)
             setAppTotalReviews(data.total_reviews)
-        }).catch(() => {})
+        }).catch(() => { })
     }, [])
 
     const fetchDashboardData = async () => {
@@ -79,9 +81,17 @@ const PanditDashboard = () => {
             setNextPuja(data.next_puja)
             setQueue(data.queue)
             setTodaySchedule(data.schedule || [])
-        } catch (error) {
+
+            if (data.stats.verification_status !== 'APPROVED') {
+                setErrorStatus(data.stats.verification_status);
+            }
+        } catch (error: any) {
             console.error("Error fetching dashboard data", error)
-            toast({ title: "Error", description: "Could not load dashboard data", variant: "destructive" })
+            if (error.response?.status === 404) {
+                setErrorStatus('INCOMPLETE');
+            } else {
+                toast({ title: "Error", description: "Could not load dashboard data", variant: "destructive" })
+            }
         } finally {
             setLoading(false)
         }
@@ -143,6 +153,14 @@ const PanditDashboard = () => {
                 </div>
             </DashboardLayout>
         )
+    }
+
+    if (errorStatus) {
+        return (
+            <DashboardLayout userRole="pandit">
+                <VerificationWall role="pandit" status={errorStatus} />
+            </DashboardLayout>
+        );
     }
 
     const statsCards = [

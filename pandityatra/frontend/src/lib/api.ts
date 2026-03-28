@@ -276,9 +276,9 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
 // ----------------------
 // Google Login APIs
 // ----------------------
-export async function googleLogin(idToken: string) {
+export async function googleLogin(idToken: string, role?: string) {
     try {
-        const response = await apiClient.post('/users/google-login/', { id_token: idToken });
+        const response = await apiClient.post('/users/google-login/', { id_token: idToken, role });
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);
@@ -819,6 +819,12 @@ export interface VendorStats {
     low_stock_count: number;
     current_balance: number;
     total_withdrawn: number;
+    is_verified: boolean;
+    verification_status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    is_accepting_orders?: boolean;
+    auto_approve_orders?: boolean;
+    notification_email?: string;
+    is_low_stock_alert_enabled?: boolean;
 }
 
 export interface VendorPayout {
@@ -860,6 +866,39 @@ export async function requestVendorPayout(amount: number) {
     return response.data;
 }
 
+export interface ChatRoom {
+    id: number;
+    customer: {
+        id: number;
+        full_name: string;
+        username: string;
+        profile_pic?: string;
+    };
+    vendor?: {
+        id: number;
+        shop_name: string;
+    };
+    last_message: string;
+    last_message_time: string;
+    unread_count: number;
+    is_active: boolean;
+}
+
+export async function fetchVendorChats(): Promise<ChatRoom[]> {
+    const response = await apiClient.get('/chat/rooms/');
+    return response.data;
+}
+
+export async function fetchChatMessages(roomId: number) {
+    const response = await apiClient.get(`/chat/rooms/${roomId}/messages/`);
+    return response.data;
+}
+
+export async function sendChatMessage(roomId: number, content: string) {
+    const response = await apiClient.post(`/chat/rooms/${roomId}/messages/`, { content });
+    return response.data;
+}
+
 // ----------------------
 // Admin Vendors APIs
 // ----------------------
@@ -882,26 +921,30 @@ export interface Vendor {
     balance: string;
     commission_rate: string;
     id_proof?: string;
+    is_accepting_orders: boolean;
+    auto_approve_orders: boolean;
+    notification_email?: string;
+    is_low_stock_alert_enabled: boolean;
     created_at: string;
 }
 
 export async function fetchAdminAllVendors() {
-    const response = await apiClient.get('/v-admin/all/');
+    const response = await apiClient.get('/vendors/all/');
     return response.data;
 }
 
 export async function fetchPendingVendors(): Promise<Vendor[]> {
-    const response = await apiClient.get('/v-admin/pending/');
+    const response = await apiClient.get('/vendors/pending/');
     return response.data;
 }
 
 export async function verifyVendor(id: number) {
-    const response = await apiClient.post(`/v-admin/verify/${id}/`);
+    const response = await apiClient.post(`/vendors/verify/${id}/`);
     return response.data;
 }
 
 export async function rejectVendor(id: number, reason?: string) {
-    const response = await apiClient.post(`/v-admin/reject/${id}/`, { reason });
+    const response = await apiClient.post(`/vendors/reject/${id}/`, { reason });
     return response.data;
 }
 

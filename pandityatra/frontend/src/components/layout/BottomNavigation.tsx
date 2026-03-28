@@ -65,7 +65,7 @@ const BottomNavigation: React.FC = () => {
 
           return (
             <Link
-              key={item.path}
+              key={`${item.path}-${item.title}`}
               to={item.path}
               className={cn(
                 "relative z-10 flex items-center rounded-full transition-all duration-300 focus:outline-none",

@@ -152,7 +152,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: LayoutDashboard, label: 'Dashboard', path: '/vendor/dashboard' },
             { icon: Package, label: 'My Products', path: '/vendor/products' },
             { icon: ClipboardList, label: 'Shop Orders', path: '/vendor/orders' },
-            { icon: Wallet, label: 'Earnings', path: '/vendor/earnings' },
+            { icon: Wallet, label: 'Earnings', path: '/vendor/payouts' },
             { icon: User, label: 'Shop Profile', path: '/vendor/profile' },
             { icon: MessageCircle, label: 'Messages', path: '/vendor/messages' },
             { icon: Settings, label: 'Settings', path: '/vendor/settings' },

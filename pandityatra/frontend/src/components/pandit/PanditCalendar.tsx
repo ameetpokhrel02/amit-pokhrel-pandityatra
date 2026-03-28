@@ -22,6 +22,7 @@ import {
 } from 'react-icons/fa';
 import { GiPrayerBeads } from 'react-icons/gi';
 import { format } from 'date-fns';
+import apiClient from '@/lib/api-client';
 
 interface CalendarEvent {
     id: string;
@@ -78,60 +79,8 @@ export const PanditCalendar: React.FC<PanditCalendarProps> = ({ festivalDateKeys
     const loadCalendarEvents = async () => {
         try {
             setLoading(true);
-            // Replace with actual API call
-            // const response = await apiClient.get('/pandits/calendar/events/');
-            // setEvents(response.data.events);
-
-            // Mock events for now
-            const mockEvents: CalendarEvent[] = [
-                {
-                    id: '1',
-                    title: 'Ganesh Puja - Raj Sharma',
-                    start: '2024-01-28T10:00:00',
-                    end: '2024-01-28T11:30:00',
-                    type: 'booking',
-                    backgroundColor: 'hsl(222.2 47.4% 11.2%)',
-                    borderColor: 'hsl(222.2 47.4% 11.2%)',
-                    textColor: 'white',
-                    extendedProps: {
-                        customerName: 'Raj Sharma',
-                        pujaType: 'Ganesh Puja',
-                        status: 'confirmed',
-                        price: 2500
-                    }
-                },
-                {
-                    id: '2',
-                    title: 'Lakshmi Puja - Priya Patel',
-                    start: '2024-01-29T14:00:00',
-                    end: '2024-01-29T15:30:00',
-                    type: 'booking',
-                    backgroundColor: 'hsl(222.2 47.4% 11.2%)',
-                    borderColor: 'hsl(222.2 47.4% 11.2%)',
-                    textColor: 'white',
-                    extendedProps: {
-                        customerName: 'Priya Patel',
-                        pujaType: 'Lakshmi Puja',
-                        status: 'confirmed',
-                        price: 3000
-                    }
-                },
-                {
-                    id: '3',
-                    title: 'Unavailable - Personal Work',
-                    start: '2024-01-30T09:00:00',
-                    end: '2024-01-30T17:00:00',
-                    type: 'blocked',
-                    backgroundColor: '#ef4444',
-                    borderColor: '#dc2626',
-                    textColor: 'white',
-                    extendedProps: {
-                        description: 'Personal work - Not available for bookings'
-                    }
-                }
-            ];
-
-            setEvents(mockEvents);
+            const response = await apiClient.get('/pandits/me/calendar/');
+            setEvents(response.data);
         } catch (error) {
             toast({
                 title: "Error",
@@ -180,30 +129,17 @@ export const PanditCalendar: React.FC<PanditCalendarProps> = ({ festivalDateKeys
                 return;
             }
 
-            // Replace with actual API call
-            // const response = await apiClient.post('/pandits/calendar/block-time/', {
-            //   date: blockTimeData.date,
-            //   start_time: blockTimeData.startTime,
-            //   end_time: blockTimeData.endTime,
-            //   reason: blockTimeData.reason
-            // });
-            // const newEvent = response.data.event;
-
-            const newEvent: CalendarEvent = {
-                id: `block-${Date.now()}`,
-                title: `Unavailable - ${blockTimeData.reason || 'Blocked'}`,
-                start: `${blockTimeData.date}T${blockTimeData.startTime}:00`,
-                end: `${blockTimeData.date}T${blockTimeData.endTime}:00`,
-                type: 'blocked',
-                backgroundColor: '#ef4444',
-                borderColor: '#dc2626',
-                textColor: 'white',
-                extendedProps: {
-                    description: blockTimeData.reason
-                }
+            const payload = {
+                title: blockTimeData.reason || 'Unavailable',
+                start_time: `${blockTimeData.date}T${blockTimeData.startTime}:00`,
+                end_time: `${blockTimeData.date}T${blockTimeData.endTime}:00`,
             };
 
-            setEvents([...events, newEvent]);
+            const response = await apiClient.post('/pandits/me/calendar/', payload);
+
+            // Reload to get properly formatted event from backend
+            await loadCalendarEvents();
+
             setIsBlockDialogOpen(false);
             setBlockTimeData({ date: '', startTime: '', endTime: '', reason: '' });
 

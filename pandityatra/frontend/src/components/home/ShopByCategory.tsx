@@ -53,8 +53,8 @@ const ShopByCategory: React.FC = () => {
                         transition={{ delay: 0.1 }}
                         className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 font-playfair leading-tight mb-6"
                     >
-                        {t('home:shop_by', 'Shop by')} <span className="text-orange-600 relative inline-block">
-                            {t('home:category', 'Category')}
+                        {t('shop_by', 'Shop by')} <span className="text-orange-600 relative inline-block">
+                            {t('category', 'Category')}
                             <span className="absolute -bottom-2 left-0 w-full h-1 bg-orange-200 rounded-full" />
                         </span>
                     </motion.h2>

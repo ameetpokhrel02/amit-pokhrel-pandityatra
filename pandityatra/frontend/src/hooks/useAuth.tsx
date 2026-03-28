@@ -17,7 +17,7 @@ type AuthContextValue = {
   loginWithOtp: (phone: string, otp: string) => Promise<any>;
   verifyResetOtp: (phone: string, otp: string) => Promise<any>;
   passwordLogin: (phone: string, password: string) => Promise<any>;
-  googleLogin: (idToken: string) => Promise<any>;
+  googleLogin: (idToken: string, role?: string) => Promise<any>;
   register: (payload: api.RegisterPayload) => Promise<any>;
   resetPassword: (phone: string, otp: string, newPw: string) => Promise<any>;
   logout: () => void;
@@ -137,8 +137,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return resp;
   };
 
-  const googleLogin = async (idToken: string) => {
-    const resp = await api.googleLogin(idToken);
+  const googleLogin = async (idToken: string, role?: string) => {
+    const resp = await api.googleLogin(idToken, role);
     handleLoginSuccess(resp);
     return resp;
   };
@@ -208,7 +208,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   if (!ctx) throw new Error('useAuth must be used inside AuthProvider');
   return ctx;
 };
