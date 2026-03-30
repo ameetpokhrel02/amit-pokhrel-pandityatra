@@ -102,22 +102,25 @@ const FloatingChatWidget: React.FC = () => {
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
-      console.log('Chat connected');
       setIsTyping(false);
     };
 
     wsRef.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'message_history') {
-        setMessages(data.messages);
-      } else {
-        setMessages((prev) => [...prev, data]);
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'message_history') {
+          setMessages(data.messages);
+        } else {
+          setMessages((prev) => [...prev, data]);
+        }
+      } catch {
+        // ignore malformed messages
       }
       setIsTyping(false);
     };
 
-    wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    wsRef.current.onerror = () => {
+      // silent — connection will be retried by onclose
     };
 
     return () => {

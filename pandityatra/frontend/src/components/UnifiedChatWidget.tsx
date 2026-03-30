@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageSquare, Shield, X, Send, Loader, Sparkles, User, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { useChatTrigger } from '@/contexts/ChatContext';
 import { cn } from '@/lib/utils';
 import panditLogo from '@/assets/images/PanditYatralogo.png';
 import { ChatProductCard } from './ChatProductCard';
+import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UnifiedChatWidgetProps {
@@ -23,6 +25,8 @@ interface UnifiedChatWidgetProps {
 
 const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, panditName: initialPanditName, panditId: initialPanditId }) => {
   const { token, role, user } = useAuth();
+  const location = useLocation();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -62,14 +66,17 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
       setIsOpen(true);
       setHasInteracted(true);
       setShowPopup(false);
-      // Initiate chat room with pandit
       initiateChat(pendingPanditChat.panditId, pendingPanditChat.panditName, pendingPanditChat.panditProfilePic);
       clearPendingChat();
     } else if (pendingPanditChat && !token) {
-      alert('Please login to message the pandit');
+      toast({
+        title: "Login Required",
+        description: "Please login to starts a conversation with the pandit.",
+        variant: "destructive",
+      });
       clearPendingChat();
     }
-  }, [pendingPanditChat, token, initiateChat, clearPendingChat]);
+  }, [pendingPanditChat, token, initiateChat, clearPendingChat, toast]);
 
   // Listen for AI guide trigger
   useEffect(() => {
@@ -94,21 +101,38 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
     };
   }, [isOpen, activeBookingId, token, mode, connectWebSocket, disconnectWebSocket]);
 
+  // Auto-scroll removed as per user request for manual control
+  /*
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+  */
 
   useEffect(() => {
+    const mainContent = document.getElementById('dashboard-main-content');
+    
     const handleScroll = () => {
-      if (!hasInteracted && !isOpen && window.scrollY > 300) {
+      const scrollY = mainContent ? mainContent.scrollTop : window.scrollY;
+      if (!hasInteracted && !isOpen && scrollY > 300) {
         setShowPopup(true);
       } else {
         setShowPopup(false);
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    if (mainContent) {
+      mainContent.addEventListener('scroll', handleScroll);
+    } else {
+      window.addEventListener('scroll', handleScroll);
+    }
+
+    return () => {
+      if (mainContent) {
+        mainContent.removeEventListener('scroll', handleScroll);
+      } else {
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
   }, [hasInteracted, isOpen]);
 
   const handleOpen = () => {
@@ -147,7 +171,11 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
   };
 
   // 🛡️ Guard: Only show for customers (users) or guests. Hide for Pandits and Admins.
-  if (role === 'pandit' || role === 'admin') {
+  // Also hide on pages where chat is already the main interface to avoid redundancy.
+  const hiddenPaths = ['/messages', '/chat', '/pandit/messages', '/vendor/messages', '/admin/support', '/puja-room', '/video'];
+  const isHiddenPath = hiddenPaths.some(path => location.pathname.startsWith(path));
+
+  if (role === 'pandit' || role === 'admin' || isHiddenPath) {
     return null;
   }
 
@@ -260,7 +288,10 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 bg-orange-50/10 custom-scrollbar">
+              <div 
+                className="flex-1 overflow-y-auto px-4 py-6 space-y-6 bg-orange-50/10 custom-scrollbar"
+                style={{ overflowAnchor: 'none' }}
+              >
                 {messages.length === 0 && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-6 animate-in fade-in zoom-in duration-500">
                     <div className="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center shadow-inner">
@@ -398,7 +429,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
                     {error}
                   </div>
                 )}
-                <div ref={messagesEndRef} />
+                {/* messagesEndRef removed for manual scroll */}
               </div>
 
               {/* Input Area */}

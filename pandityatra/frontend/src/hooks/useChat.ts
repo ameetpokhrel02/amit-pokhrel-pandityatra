@@ -90,6 +90,7 @@ export function useChat(initialBookingId?: string): UseChat {
   
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttemptsRef = useRef(0);
   const { addItem } = useCart();
 
   // Auto-detect mode based on bookingId
@@ -135,15 +136,13 @@ export function useChat(initialBookingId?: string): UseChat {
     // Pass JWT token as query parameter for authentication
     const wsUrl = `${wsBaseUrl}/ws/chat/${bkId}/?token=${encodeURIComponent(token)}`;
 
-    console.log('Connecting to WebSocket:', wsUrl.replace(/token=.*/, 'token=***'));
-
     try {
       wsRef.current = new WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {
-        console.log('Puja chat connected');
         setIsConnected(true);
         setError(null);
+        reconnectAttemptsRef.current = 0;
       };
 
       wsRef.current.onmessage = (event) => {
@@ -165,33 +164,32 @@ export function useChat(initialBookingId?: string): UseChat {
               },
             ]);
           } else if (data.type === 'user_joined') {
-            console.log(`${data.username} joined the puja`);
+            // Passive notice
           } else if (data.type === 'user_left') {
-            console.log(`${data.username} left the puja`);
+            // Passive notice
           }
-        } catch (parseError) {
-          console.error('Error parsing WebSocket message:', parseError);
+        } catch {
+          // Silent catch for malformed events
         }
       };
 
-      wsRef.current.onerror = (err) => {
-        console.error('WebSocket error:', err);
-        setError('Connection error');
+      wsRef.current.onerror = () => {
+        setError('Connection interrupted');
         setIsConnected(false);
       };
 
       wsRef.current.onclose = () => {
-        console.log('Puja chat disconnected');
         setIsConnected(false);
-        // Try to reconnect after 3 seconds
+        if (wsRef.current === null) return; // Cleanup happened
+        
+        // Exponential backoff reconnect
+        const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000);
+        reconnectAttemptsRef.current += 1;
         reconnectTimeoutRef.current = setTimeout(() => {
-          if (wsRef.current === null) {
-            connectWebSocket(bkId, token);
-          }
-        }, 3000);
+          connectWebSocket(bkId, token);
+        }, delay);
       };
     } catch (err) {
-      console.error('Error creating WebSocket:', err);
       setError('Failed to connect');
     }
   }, []);
