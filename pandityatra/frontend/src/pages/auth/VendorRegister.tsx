@@ -19,6 +19,25 @@ import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '@/lib/api-client';
 import { GoogleLogin } from '@react-oauth/google';
+import { z } from 'zod';
+
+const vendorRegisterSchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  phone_number: z.string().min(7, 'Phone number is required').refine(val => /^\+?\d{7,15}$/.test(val.replace(/\s/g, '')), 'Invalid phone number format'),
+  password: z.string().optional().refine(val => {
+    if (!val) return true; // Google auth users skip password
+    return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val) && /[!@#$%^&*(),.?":{}|<>]/.test(val);
+  }, 'Password must be at least 8 chars with uppercase, lowercase, number and special character'),
+  shop_name: z.string().min(2, 'Shop/Business name is required').max(100),
+  business_type: z.string().min(1, 'Please select a business type'),
+  address: z.string().min(5, 'Please enter a complete address'),
+  city: z.string().min(2, 'City is required'),
+  bank_name: z.string().min(2, 'Bank name is required'),
+  account_holder_name: z.string().min(2, 'Account holder name is required'),
+  bank_account_number: z.string().min(5, 'Bank account number is required').max(30),
+  has_id_proof: z.boolean().refine(val => val === true, 'Government ID proof document is required'),
+});
 
 const VendorRegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -99,6 +118,41 @@ const VendorRegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Run Zod validation
+    const validation = vendorRegisterSchema.safeParse({
+      full_name: formData.full_name,
+      email: formData.email,
+      phone_number: formData.phone_number,
+      password: isGoogleAuth ? undefined : formData.password,
+      shop_name: formData.shop_name,
+      business_type: formData.business_type,
+      address: formData.address,
+      city: formData.city,
+      bank_name: formData.bank_name,
+      account_holder_name: formData.account_holder_name,
+      bank_account_number: formData.bank_account_number,
+      has_id_proof: !!formData.id_proof,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Please fill all required fields';
+      setError(firstError);
+      return;
+    }
+
+    // Extra: password strength check for non-Google registrations
+    if (!isGoogleAuth && formData.password && passwordInfo.score < 5) {
+      setError('Password does not meet strength requirements. Please add uppercase, number and special character.');
+      return;
+    }
+
+    const uploadToastId = toast({
+      title: "Uploading verification documents to Cloudinary...",
+      description: "Please wait while we securely store your business ID.",
+      duration: Infinity,
+    }).id;
+
     setLoading(true);
 
     try {
@@ -117,7 +171,7 @@ const VendorRegisterPage: React.FC = () => {
 
       toast({
         title: "Application Submitted!",
-        description: "Your vendor account is under review. We'll contact you soon.",
+        description: "Your vendor account details and ID have been saved to Cloudinary and are under review. We'll contact you soon.",
       });
 
       // If they were in onboarding mode, refresh user profile to show they have a profile now

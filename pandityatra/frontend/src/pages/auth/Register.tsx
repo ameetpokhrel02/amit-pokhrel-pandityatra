@@ -20,6 +20,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
 import { COUNTRY_OPTIONS, detectUserCountryCode, formatInternationalPhone, getCountryOption } from './country-phone';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+
+const registerSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().optional().refine(val => !val || /^\d{7,15}$/.test(val.replace(/\D/g, '')), "Invalid phone number length"),
+  countryCode: z.string(),
+  password: z.string().optional().refine(val => {
+     if (!val) return true;
+     return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val) && /[!@#$%^&*(),.?":{}|<>]/.test(val);
+  }, "Password must be min 8 chars with 1 uppercase, 1 lowercase, 1 number, and 1 special char."),
+});
+
+type RegisterValues = z.infer<typeof registerSchema>;
 
 const RegisterPage: React.FC = () => {
   const { register, googleLogin, token } = useAuth();
@@ -27,20 +44,24 @@ const RegisterPage: React.FC = () => {
   const { toast } = useToast();
 
   const [role, setRole] = useState<'user' | 'pandit' | 'vendor' | ''>('');
-
-  // Form fields
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('NP');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDetectingCountry, setIsDetectingCountry] = useState(false);
 
-  const selectedCountry = getCountryOption(countryCode);
+  const form = useForm<RegisterValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      phone: '',
+      countryCode: 'NP',
+      password: '',
+    },
+    mode: "onChange",
+  });
+
+  const selectedCountry = getCountryOption(form.watch('countryCode'));
 
   // Redirect if already logged in
   useEffect(() => {
@@ -67,7 +88,7 @@ const RegisterPage: React.FC = () => {
         const detected = await detectUserCountryCode();
         if (!active || !detected) return;
         const exists = COUNTRY_OPTIONS.some((country) => country.code === detected);
-        if (exists) setCountryCode(detected);
+        if (exists) form.setValue('countryCode', detected);
       } finally {
         if (active) setIsDetectingCountry(false);
       }
@@ -92,25 +113,25 @@ const RegisterPage: React.FC = () => {
     return { score: met.length, met };
   };
 
-  const passwordInfo = validatePassword(password);
+  const passwordInfo = validatePassword(form.watch('password') || '');
 
-  const handleRegister = async () => {
+  const onSubmit = async (data: RegisterValues) => {
     setError(null);
     setLoading(true);
     try {
       const payload: any = {
-        full_name: fullName.trim(),
-        email: email.trim(),
+        full_name: data.fullName.trim(),
+        email: data.email.trim(),
         role: 'user',
       };
-      if (phone.trim()) payload.phone_number = formatInternationalPhone(phone, selectedCountry.dialCode);
-      if (password.trim()) payload.password = password.trim();
+      if (data.phone?.trim()) payload.phone_number = formatInternationalPhone(data.phone, selectedCountry.dialCode);
+      if (data.password?.trim()) payload.password = data.password.trim();
 
       await register(payload);
 
       toast({
         title: "Account Created!",
-        description: password ? "You can now login with your password." : "OTP sent to your email.",
+        description: data.password ? "You can now login with your password." : "OTP sent to your email.",
         variant: "default",
       });
 
@@ -176,112 +197,138 @@ const RegisterPage: React.FC = () => {
               exit={{ opacity: 0, height: 0 }}
               className="space-y-4 overflow-hidden"
             >
+              <Form {...form}>
               <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  handleRegister();
-                }}
+                onSubmit={form.handleSubmit(onSubmit)}
                 className="space-y-4"
               >
                 {/* Full Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-gray-600 font-semibold px-1">Full Name *</Label>
-                  <div className="relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                      <FaUser className="w-4 h-4" />
-                    </span>
-                    <Input
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your full name"
-                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                      required
-                    />
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <Label htmlFor="fullName" className="text-gray-600 font-semibold px-1">Full Name *</Label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaUser className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="fullName"
+                            placeholder="Your full name"
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${form.formState.errors.fullName ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Email */}
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
-                  <div className="relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                      <FaEnvelope className="w-4 h-4" />
-                    </span>
-                    <Input
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="you@example.com"
-                      type="email"
-                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                      required
-                    />
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <Label htmlFor="email" className="text-gray-600 font-semibold px-1">Email Address *</Label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaEnvelope className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="email"
+                            placeholder="you@example.com"
+                            type="email"
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${form.formState.errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            {...field}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Phone */}
-                <div className="space-y-2">
-                  <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
-                  <div className="space-y-1">
-                    <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
-                      <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
-                        <select
-                          value={countryCode}
-                          onChange={(e) => setCountryCode(e.target.value)}
-                          className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
-                          aria-label="Select country"
-                        >
-                          {COUNTRY_OPTIONS.map((country) => (
-                            <option key={country.code} value={country.code}>
-                              {country.flag} {country.name}
-                            </option>
-                          ))}
-                        </select>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <Label htmlFor="phone" className="text-gray-600 font-semibold px-1">Phone Number (Optional)</Label>
+                      <div className="space-y-1">
+                        <div className={`h-14 rounded-2xl bg-gray-100/50 border focus-within:bg-white focus-within:ring-2 transition-all flex items-center overflow-hidden ${form.formState.errors.phone ? 'border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500' : 'border-transparent focus-within:ring-orange-500/20 focus-within:border-orange-200'}`}>
+                          <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
+                            <select
+                              value={form.watch('countryCode')}
+                              onChange={(e) => form.setValue('countryCode', e.target.value)}
+                              className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
+                              aria-label="Select country"
+                            >
+                              {COUNTRY_OPTIONS.map((country) => (
+                                <option key={country.code} value={country.code}>
+                                  {country.flag} {country.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+                          <FormControl>
+                            <Input
+                              id="phone"
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                              placeholder="98XXXXXXXX"
+                              inputMode="numeric"
+                              type="tel"
+                              className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                            />
+                          </FormControl>
+                        </div>
+                        <p className="text-xs text-gray-500 px-1">
+                          {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
+                        </p>
+                        <FormMessage className="px-1" />
                       </div>
-                      <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
-                      <Input
-                        id="phone"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                        placeholder="98XXXXXXXX"
-                        inputMode="numeric"
-                        type="tel"
-                        className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
-                      />
-                    </div>
-
-                    <p className="text-xs text-gray-500 px-1">
-                      {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
-                    </p>
-                  </div>
-                </div>
+                    </FormItem>
+                  )}
+                />
 
                 {/* Password */}
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password (Optional)</Label>
-                  <div className="relative group">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                      <FaLock className="w-4 h-4" />
-                    </span>
-                    <Input
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Create a password"
-                      type={showPassword ? 'text' : 'password'}
-                      className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  
-                  {password && (
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2">
+                      <Label htmlFor="password" className="text-gray-600 font-semibold px-1">Password (Optional)</Label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaLock className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="password"
+                            placeholder="Create a password"
+                            type={showPassword ? 'text' : 'password'}
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all ${form.formState.errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                            {...field}
+                          />
+                        </FormControl>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <FormMessage className="px-1" />
+                      
+                      {field.value && (
                     <motion.div 
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -333,12 +380,14 @@ const RegisterPage: React.FC = () => {
                     </motion.div>
                   )}
                   <p className="text-xs text-gray-500 px-1 pt-1 font-medium">Leave blank to use OTP login only.</p>
-                </div>
+                    </FormItem>
+                  )}
+                />
 
                 {/* Submit Button */}
                 <Button
                   type="submit"
-                  disabled={loading || !email || !fullName}
+                  disabled={loading}
                   className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none mt-4"
                 >
                   {loading ? <LoadingSpinner size={24} className="text-white" /> : (
@@ -348,6 +397,7 @@ const RegisterPage: React.FC = () => {
                   )}
                 </Button>
               </form>
+              </Form>
 
               {error && (
                 <Alert variant="destructive" className="rounded-xl">

@@ -15,6 +15,35 @@ import { FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
 import { COUNTRY_OPTIONS, detectUserCountryCode, formatInternationalPhone, getCountryOption } from './country-phone';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, Controller } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+
+const loginSchema = z.object({
+  inputType: z.enum(['phone', 'email', 'username']),
+  loginMethod: z.enum(['otp', 'password']),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  countryCode: z.string(),
+  username: z.string().optional(),
+  password: z.string().optional(),
+  rememberMe: z.boolean(),
+}).superRefine((data, ctx) => {
+  if (data.inputType === 'email' && (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid email is required", path: ['email'] });
+  }
+  if (data.inputType === 'phone' && (!data.phone || !/^\d{7,15}$/.test(data.phone.replace(/\D/g, '')))) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Valid phone number is required", path: ['phone'] });
+  }
+  if (data.inputType === 'username' && (!data.username || data.username.length < 3)) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Username is required (min 3 chars)", path: ['username'] });
+  }
+  if (data.loginMethod === 'password' && !data.password) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Password is required", path: ['password'] });
+  }
+});
+type LoginValues = z.infer<typeof loginSchema>;
 
 const itemVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -29,22 +58,31 @@ const LoginPage: React.FC = () => {
   const { requestOtp, passwordLogin, googleLogin, token, role } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [loginMethod, setLoginMethod] = useState<'otp' | 'password'>('password');
-  // New state for input type toggle (Phone / Email / Username)
-  const [inputType, setInputType] = useState<'phone' | 'email' | 'username'>('email');
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      inputType: 'email',
+      loginMethod: 'password',
+      email: '',
+      phone: '',
+      countryCode: 'NP',
+      username: '',
+      password: '',
+      rememberMe: false,
+    },
+    mode: 'onChange',
+  });
 
-  const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('NP');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const inputType = form.watch('inputType');
+  const loginMethod = form.watch('loginMethod');
+  const showPasswordState = false; // Add state var down after
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
   const [isDetectingCountry, setIsDetectingCountry] = useState(false);
-  const selectedCountry = getCountryOption(countryCode);
+  const selectedCountry = getCountryOption(form.watch('countryCode'));
 
   useEffect(() => {
     let active = true;
@@ -53,7 +91,7 @@ const LoginPage: React.FC = () => {
       if (!nextCountryCode || !active) return;
       const upper = nextCountryCode.toUpperCase();
       const exists = COUNTRY_OPTIONS.some((country) => country.code === upper);
-      if (exists) setCountryCode(upper);
+      if (exists) form.setValue('countryCode', upper);
     };
 
     const detectCountry = async () => {
@@ -103,48 +141,47 @@ const LoginPage: React.FC = () => {
     }
   }, [token, role, navigate, hasJustLoggedIn, loading]);
 
-  const handleRequestOtp = async () => {
+  const handleRequestOtp = async (data: LoginValues) => {
     setError(null);
     setLoading(true);
     try {
-      const normalizedPhone = inputType === 'phone' ? formatInternationalPhone(phone, selectedCountry.dialCode) : phone;
+      const normalizedPhone = data.inputType === 'phone' ? formatInternationalPhone(data.phone || '', selectedCountry.dialCode) : (data.phone || '');
 
       // Determine payload based on input type
-      if (inputType === 'phone') {
+      if (data.inputType === 'phone') {
         await requestOtp(normalizedPhone);
       } else {
-        await requestOtp(inputType === 'email' ? email : username);
+        await requestOtp(data.inputType === 'email' ? (data.email || '') : (data.username || ''));
       }
 
       toast({
         title: "OTP Sent!",
-        description: `Verification code sent to your ${inputType}. Please check and enter it.`,
+        description: `Verification code sent to your ${data.inputType}. Please check and enter it.`,
         variant: "default",
       });
       navigate('/otp-verification', {
         state: {
-          phone_number: inputType === 'phone' ? normalizedPhone : undefined,
-          email: inputType === 'email' ? email : undefined,
+          phone_number: data.inputType === 'phone' ? normalizedPhone : undefined,
+          email: data.inputType === 'email' ? data.email : undefined,
           flow: 'login'
         }
       });
     } catch (err: any) {
-      // ... err handling
       setError(err?.message || 'Failed to request OTP');
       setLoading(false);
     }
   };
 
-  const handlePasswordLogin = async () => {
+  const handlePasswordLogin = async (data: LoginValues) => {
     setError(null);
     setLoading(true);
     try {
-      const identifier = inputType === 'email'
-        ? email
-        : inputType === 'username'
-          ? username
-          : formatInternationalPhone(phone, selectedCountry.dialCode);
-      await passwordLogin(identifier, password);
+      const identifier = data.inputType === 'email'
+        ? (data.email || '')
+        : data.inputType === 'username'
+          ? (data.username || '')
+          : formatInternationalPhone(data.phone || '', selectedCountry.dialCode);
+      await passwordLogin(identifier, data.password || '');
       // Show success toast
       toast({
         title: "Login Successful!",
@@ -159,6 +196,14 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const onSubmit = (data: LoginValues) => {
+    if (data.loginMethod === 'password') {
+      handlePasswordLogin(data);
+    } else {
+      handleRequestOtp(data);
+    }
+  };
+
   return (
     <AuthLayout title="Welcome" subtitle="Please login here">
       <motion.div className="space-y-6" variants={itemVariants}>
@@ -167,7 +212,8 @@ const LoginPage: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setLoginMethod('password');
+              form.setValue('loginMethod', 'password');
+              form.clearErrors();
               setError(null);
             }}
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${loginMethod === 'password'
@@ -180,9 +226,10 @@ const LoginPage: React.FC = () => {
           <button
             type="button"
             onClick={() => {
-              setLoginMethod('otp');
+              form.setValue('loginMethod', 'otp');
+              form.clearErrors();
               setError(null);
-              setPassword('');
+              form.setValue('password', '');
             }}
             className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${loginMethod === 'otp'
               ? 'bg-white text-primary shadow-sm'
@@ -194,15 +241,9 @@ const LoginPage: React.FC = () => {
         </motion.div>
 
         {/* Inputs */}
+        <Form {...form}>
         <form 
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (loginMethod === 'password') {
-              handlePasswordLogin();
-            } else {
-              handleRequestOtp();
-            }
-          }}
+          onSubmit={form.handleSubmit(onSubmit)}
           className="space-y-6"
         >
           {/* Inputs Section */}
@@ -214,8 +255,8 @@ const LoginPage: React.FC = () => {
                   <input
                     type="radio"
                     checked={inputType === 'phone'}
-                    onChange={() => setInputType('phone')}
-                    className="text-primary"
+                    onChange={() => form.setValue('inputType', 'phone')}
+                    className="text-primary cursor-pointer"
                   />
                   <span>Phone</span>
                 </label>
@@ -223,8 +264,8 @@ const LoginPage: React.FC = () => {
                   <input
                     type="radio"
                     checked={inputType === 'email'}
-                    onChange={() => setInputType('email')}
-                    className="text-primary"
+                    onChange={() => form.setValue('inputType', 'email')}
+                    className="text-primary cursor-pointer"
                   />
                   <span>Email</span>
                 </label>
@@ -232,8 +273,8 @@ const LoginPage: React.FC = () => {
                   <input
                     type="radio"
                     checked={inputType === 'username'}
-                    onChange={() => setInputType('username')}
-                    className="text-primary"
+                    onChange={() => form.setValue('inputType', 'username')}
+                    className="text-primary cursor-pointer"
                   />
                   <span>Username</span>
                 </label>
@@ -244,93 +285,134 @@ const LoginPage: React.FC = () => {
               </Label>
 
               {inputType === 'phone' ? (
-                <div className="space-y-1">
-                  <div className="h-14 rounded-2xl bg-gray-100/50 border border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-200 transition-all flex items-center overflow-hidden">
-                    <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(e.target.value)}
-                        className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
-                        aria-label="Select country"
-                      >
-                        {COUNTRY_OPTIONS.map((country) => (
-                          <option key={country.code} value={country.code}>
-                            {country.flag} {country.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                      placeholder="98XXXXXXXX"
-                      inputMode="numeric"
-                      type="tel"
-                      className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
-                    />
-                  </div>
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="space-y-1 mt-1">
+                      <div className={`h-14 rounded-2xl bg-gray-100/50 border focus-within:bg-white focus-within:ring-2 transition-all flex items-center overflow-hidden ${form.formState.errors.phone ? 'border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500' : 'border-transparent focus-within:ring-orange-500/20 focus-within:border-orange-200'}`}>
+                        <div className="h-full flex items-center pl-3 pr-2 border-r border-gray-200/80">
+                          <select
+                            value={form.watch('countryCode')}
+                            onChange={(e) => form.setValue('countryCode', e.target.value)}
+                            className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none max-w-[165px]"
+                            aria-label="Select country"
+                          >
+                            {COUNTRY_OPTIONS.map((country) => (
+                              <option key={country.code} value={country.code}>
+                                {country.flag} {country.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <span className="px-3 text-sm font-semibold text-gray-500">{selectedCountry.dialCode}</span>
+                        <FormControl>
+                          <Input
+                            id="phone"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ''))}
+                            placeholder="98XXXXXXXX"
+                            inputMode="numeric"
+                            type="tel"
+                            className="h-full border-0 rounded-none bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 px-0 text-base"
+                          />
+                        </FormControl>
+                      </div>
 
-                  <p className="text-xs text-gray-500 px-1">
-                    {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
-                  </p>
-                </div>
+                      <p className="text-xs text-gray-500 px-1">
+                        {isDetectingCountry ? 'Detecting country…' : `Using ${selectedCountry.flag} ${selectedCountry.name}`}
+                      </p>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
               ) : inputType === 'email' ? (
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaEnvelope className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter email address"
-                    type="email"
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem className="mt-1">
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaEnvelope className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="email"
+                            {...field}
+                            value={field.value || ''}
+                            placeholder="Enter email address"
+                            type="email"
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${form.formState.errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
               ) : (
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaUser className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter username"
-                    type="text"
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all"
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem className="mt-1">
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaUser className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="username"
+                            {...field}
+                            value={field.value || ''}
+                            placeholder="Enter username"
+                            type="text"
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 text-base transition-all ${form.formState.errors.username ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                          />
+                        </FormControl>
+                      </div>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
               )}
             </div>
 
             {loginMethod === 'password' && (
-              <div className="space-y-2">
-                <Label htmlFor="password-login" className="text-gray-600 font-semibold px-1">Password</Label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
-                    <FaLock className="w-4 h-4" />
-                  </span>
-                  <Input
-                    id="password-login"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem className="space-y-2 mt-2">
+                      <Label htmlFor="password-login" className="text-gray-600 font-semibold px-1">Password</Label>
+                      <div className="relative group">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                          <FaLock className="w-4 h-4" />
+                        </span>
+                        <FormControl>
+                          <Input
+                            id="password-login"
+                            {...field}
+                            value={field.value || ''}
+                            placeholder="Enter password"
+                            type={showPassword ? 'text' : 'password'}
+                            className={`h-14 rounded-2xl bg-gray-100/50 border-transparent focus:bg-white focus:ring-orange-500/20 focus:border-orange-200 pl-12 pr-12 text-base transition-all ${form.formState.errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''}`}
+                          />
+                        </FormControl>
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      <FormMessage className="px-1" />
+                    </FormItem>
+                  )}
+                />
             )}
           </motion.div>
 
@@ -339,17 +421,27 @@ const LoginPage: React.FC = () => {
             {loginMethod === 'password' && (
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="remember-me"
-                    checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                  <FormField
+                    control={form.control}
+                    name="rememberMe"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            id="remember-me"
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <label
+                          htmlFor="remember-me"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-600"
+                        >
+                          Remember me
+                        </label>
+                      </FormItem>
+                    )}
                   />
-                  <label
-                    htmlFor="remember-me"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-600"
-                  >
-                    Remember me
-                  </label>
                 </div>
                 <Link
                   to="/auth/forgot-password"
@@ -364,13 +456,7 @@ const LoginPage: React.FC = () => {
             {loginMethod === 'password' ? (
               <Button
                 type="submit"
-                disabled={
-                  loading ||
-                  (inputType === 'phone' && !phone) ||
-                  (inputType === 'email' && !email) ||
-                  (inputType === 'username' && !username) ||
-                  !password
-                }
+                disabled={loading}
                 className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
               >
                 {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Sign In'}
@@ -378,12 +464,7 @@ const LoginPage: React.FC = () => {
             ) : (
               <Button
                 type="submit"
-                disabled={
-                  loading ||
-                  (inputType === 'phone' && !phone) ||
-                  (inputType === 'email' && !email) ||
-                  (inputType === 'username' && !username)
-                }
+                disabled={loading}
                 className="w-full h-14 text-lg font-bold rounded-full bg-[#F97316] hover:bg-[#EA580C] text-white shadow-xl shadow-orange-200/50 transition-all active:scale-[0.98] border-none"
               >
                 {loading ? <LoadingSpinner size={24} className="text-white" /> : 'Receive OTP'}
@@ -397,6 +478,7 @@ const LoginPage: React.FC = () => {
             )}
           </motion.div>
         </form>
+        </Form>
 
         <motion.div className="space-y-3 text-center" variants={itemVariants}>
           <div className="text-sm text-gray-500">

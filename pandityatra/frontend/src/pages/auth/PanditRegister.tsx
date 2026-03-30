@@ -20,6 +20,24 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/hooks/useAuth';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '@/lib/api-client';
+import { z } from 'zod';
+
+const panditRegisterSchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  email: z.string().email('Please enter a valid email address'),
+  phone_number: z.string().optional().refine(val => !val || /^\+?\d{7,15}$/.test(val.replace(/\s/g, '')), 'Invalid phone number'),
+  password: z.string().optional().refine(val => {
+    if (!val) return true;
+    return val.length >= 8 && /[A-Z]/.test(val) && /[a-z]/.test(val) && /[0-9]/.test(val) && /[!@#$%^&*(),.?":{}|<>]/.test(val);
+  }, 'Password must be at least 8 chars with uppercase, lowercase, number and special character'),
+  expertise: z.array(z.string()).min(1, 'Please select at least one area of expertise'),
+  language: z.string().min(1, 'Please select a primary language'),
+  experience_years: z.string().min(1, 'Years of experience is required').refine(val => {
+    const num = parseInt(val, 10);
+    return !isNaN(num) && num >= 0 && num <= 80;
+  }, 'Experience must be a number between 0 and 80'),
+  has_certification_file: z.boolean().refine(val => val === true, 'Certification/license file is required for verification'),
+});
 
 const PanditRegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -105,6 +123,37 @@ const PanditRegisterPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    // Run Zod validation
+    const validation = panditRegisterSchema.safeParse({
+      full_name: formData.full_name,
+      email: formData.email,
+      phone_number: formData.phone_number || undefined,
+      password: formData.password || undefined,
+      expertise: formData.expertise,
+      language: formData.language,
+      experience_years: formData.experience_years,
+      has_certification_file: !!formData.certification_file,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Please fill all required fields';
+      setError(firstError);
+      return;
+    }
+
+    // Extra: password strength enforced if not Google user
+    if (!user && formData.password && passwordInfo.score < 5) {
+      setError('Password does not meet strength requirements. Please add uppercase, number and special character.');
+      return;
+    }
+
+    const uploadToastId = toast({
+      title: "Uploading documents to Cloudinary...",
+      description: "Please wait while we securely store your certifications.",
+      duration: Infinity,
+    }).id;
+
     setLoading(true);
 
     try {
@@ -138,7 +187,7 @@ const PanditRegisterPage: React.FC = () => {
 
       toast({
         title: "Registration Submitted!",
-        description: "Your documents are under review. We will contact you shortly.",
+        description: "Your documents have been saved to Cloudinary and are under review. We will contact you shortly.",
         variant: "default",
       });
 
