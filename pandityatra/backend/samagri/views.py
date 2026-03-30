@@ -3,7 +3,7 @@ import io
 import stripe
 from groq import Groq
 
-from django.db import transaction
+from django.db import models, transaction
 from django.conf import settings
 from django.http import HttpResponse
 from rest_framework import viewsets, status, permissions
@@ -259,6 +259,12 @@ class SamagriCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = SamagriCategorySerializer
     permission_classes = [IsAdminOrReadOnly]
 
+    def get_queryset(self):
+        # Prefetch only approved and active items for optimized performance
+        return SamagriCategory.objects.filter(is_active=True).prefetch_related(
+            models.Prefetch('items', queryset=SamagriItem.objects.filter(is_approved=True, is_active=True))
+        ).order_by('order', 'name')
+
 class SamagriItemViewSet(viewsets.ModelViewSet):
     queryset = SamagriItem.objects.all()
     serializer_class = SamagriItemSerializer
@@ -278,6 +284,16 @@ class SamagriItemViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(is_approved=True, is_active=True)
             
         return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        is_admin = user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ['admin', 'superadmin'])
+        
+        # If admin creates it, auto-approve
+        if is_admin:
+            serializer.save(is_approved=True)
+        else:
+            serializer.save()
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def approve(self, request, pk=None):

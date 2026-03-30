@@ -133,6 +133,7 @@ CHANNEL_LAYERS = {
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -229,13 +230,13 @@ STORAGES = {
         "BACKEND": "pandityatra_backend.hybrid_storage.HybridMediaStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "pandityatra_backend.hybrid_storage.SafeWhiteNoiseStorage",
     },
 }
 
 # Backward compatibility for django-cloudinary-storage (v0.3.0 and below)
 # which still tries to read settings.STATICFILES_STORAGE during initialization
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STATICFILES_STORAGE = "pandityatra_backend.hybrid_storage.SafeWhiteNoiseStorage"
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),

@@ -5,10 +5,17 @@ from payments.utils import convert_npr_to_usd
 
 # --- 1. Category Serializer ---
 class SamagriCategorySerializer(serializers.ModelSerializer):
+    items = serializers.SerializerMethodField()
+
     class Meta:
         model = SamagriCategory
-        fields = ['id', 'name', 'slug', 'description', 'image', 'icon', 'order', 'is_active']
+        fields = ['id', 'name', 'slug', 'description', 'image', 'icon', 'order', 'is_active', 'items']
         read_only_fields = ['id', 'slug']
+
+    def get_items(self, obj):
+        # Only show approved and active items in the category view
+        approved_items = obj.items.filter(is_approved=True, is_active=True)
+        return SamagriItemSerializer(approved_items, many=True).data
 
 # --- 2. Item Serializer ---
 class SamagriItemSerializer(serializers.ModelSerializer):
@@ -16,7 +23,7 @@ class SamagriItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SamagriItem
-        fields = ['id', 'name', 'category', 'category_name', 'price', 'price_usd', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'created_at']
+        fields = ['id', 'name', 'category', 'category_name', 'price', 'price_usd', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'is_approved', 'created_at']
         read_only_fields = ['id', 'category_name', 'created_at']
 
     def to_representation(self, instance):

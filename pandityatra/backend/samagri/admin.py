@@ -25,10 +25,16 @@ class LowStockFilter(admin.SimpleListFilter):
 
 @admin.register(SamagriItem)
 class SamagriItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'category', 'price', 'stock_quantity', 'stock_status')
-    list_filter = (LowStockFilter, 'category')
+    list_display = ('name', 'category', 'price', 'stock_quantity', 'is_approved', 'stock_status')
+    list_filter = (LowStockFilter, 'category', 'is_approved')
     search_fields = ('name',)
-    list_editable = ('price', 'stock_quantity')
+    list_editable = ('price', 'stock_quantity', 'is_approved')
+
+    def save_model(self, request, obj, form, change):
+        # Auto-approve if added by a superuser
+        if not change and request.user.is_superuser:
+            obj.is_approved = True
+        super().save_model(request, obj, form, change)
 
     def stock_status(self, obj):
         if obj.stock_quantity == 0:

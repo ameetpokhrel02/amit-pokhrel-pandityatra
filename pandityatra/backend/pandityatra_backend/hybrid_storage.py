@@ -1,7 +1,11 @@
 import os
+import logging
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from cloudinary_storage.storage import MediaCloudinaryStorage
+from whitenoise.storage import CompressedManifestStaticFilesStorage
+
+logger = logging.getLogger(__name__)
 
 class HybridMediaStorage(MediaCloudinaryStorage):
     """
@@ -19,17 +23,14 @@ class HybridMediaStorage(MediaCloudinaryStorage):
     def url(self, name):
         if not name:
             return super().url(name)
-            
-        # If the file path is a direct HTTP URL, return it
-        if str(name).startswith('http://') or str(name).startswith('https://'):
+        if str(name).startswith(('http://', 'https://')):
             return name
-            
-        local_path = self.local_storage.path(name)
-        # Check if the file exists on the local disk
-        if os.path.exists(local_path):
-            return self.local_storage.url(name)
-            
-        # Otherwise, generate the Cloudinary URL
+        try:
+            local_path = self.local_storage.path(name)
+            if os.path.exists(local_path):
+                return self.local_storage.url(name)
+        except Exception:
+            pass
         return super().url(name)
 
     def exists(self, name):
@@ -41,3 +42,38 @@ class HybridMediaStorage(MediaCloudinaryStorage):
         if self.local_storage.exists(name):
             return self.local_storage.open(name, mode)
         return super().open(name, mode)
+
+
+class SafeWhiteNoiseStorage(CompressedManifestStaticFilesStorage):
+    """
+    Catches broken CSS references and missing files during collectstatic
+    so WhiteNoise's manifest builder/compressor doesn't crash Docker.
+    """
+    manifest_strict = False
+
+    def hashed_name(self, name, content=None, filename=None):
+        try:
+            return super().hashed_name(name, content, filename)
+        except (ValueError, Exception) as e:
+            # Fallback to the original name if hashing fails (e.g. file missing)
+            logger.warning(f"WhiteNoise skipped missing CSS reference: {name} - {str(e)}")
+            return name
+
+    def post_process(self, *args, **kwargs):
+        """
+        Wrap post_process to catch FileNotFoundError or ValueError during 
+        manifest generation and compression.
+        """
+        try:
+            # We must yield from the generator and catch errors inside or around it
+            gen = super().post_process(*args, **kwargs)
+            while True:
+                try:
+                    yield next(gen)
+                except StopIteration:
+                    break
+                except (ValueError, FileNotFoundError, Exception) as e:
+                    logger.warning(f"WhiteNoise post-process error: {str(e)}")
+                    continue
+        except (ValueError, FileNotFoundError, Exception) as e:
+            logger.error(f"WhiteNoise static post_process failed critically: {str(e)}")

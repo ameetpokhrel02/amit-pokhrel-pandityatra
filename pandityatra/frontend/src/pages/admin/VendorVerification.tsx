@@ -140,9 +140,9 @@ const VendorVerification: React.FC = () => {
                                                             <div className="space-y-2">
                                                                 <div className="flex items-center gap-3 text-sm text-slate-700 font-medium">
                                                                     <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                                                                        {vendor.user_details.full_name[0]}
+                                                                        {vendor.user_details.full_name?.[0] || 'V'}
                                                                     </div>
-                                                                    {vendor.user_details.full_name}
+                                                                    {vendor.user_details.full_name || 'Anonymous Vendor'}
                                                                 </div>
                                                                 <div className="flex items-center gap-3 text-sm text-slate-600 pl-1">
                                                                     <Phone size={14} className="text-slate-400" /> {vendor.user_details.phone_number}

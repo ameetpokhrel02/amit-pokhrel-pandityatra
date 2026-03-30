@@ -1,10 +1,19 @@
+import os
+import django
+
+# Set settings module
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pandityatra_backend.settings')
+django.setup()
+
 from samagri.models import SamagriItem, SamagriCategory
 
+print("Seeding Sacred Books...")
+
+# Ensure category exists
 cat, created = SamagriCategory.objects.get_or_create(
     name='Book', 
-    defaults={'description': 'Sacred books and scripture'}
+    defaults={'description': 'Sacred books and scriptures', 'slug': 'books-sacred'}
 )
-print(f'Category Book: id={cat.id}')
 
 books_data = [
     {'name': 'The Bhagavad Gita', 'description': 'The timeless wisdom of Lord Krishna.', 'price': 450, 'stock_quantity': 50},
@@ -20,7 +29,9 @@ for b in books_data:
             'description': b['description'], 
             'price': b['price'], 
             'stock_quantity': b['stock_quantity'],
-            'unit': 'pcs'
+            'is_approved': True
         }
     )
-    print(f'Book {b["name"]} created status: {created}')
+    print(f'Book {b["name"]} created: {created}')
+
+print("Sacred Books seeding complete.")

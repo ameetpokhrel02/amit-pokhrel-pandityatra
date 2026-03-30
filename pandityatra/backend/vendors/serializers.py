@@ -36,8 +36,8 @@ class VendorProfileSerializer(serializers.ModelSerializer):
                 
         return {
             'id': user.id,
-            'full_name': user.full_name,
-            'phone_number': user.phone_number,
+            'full_name': user.full_name or "Vendor",
+            'phone_number': user.phone_number or "N/A",
             'email': user.email,
             'profile_pic': profile_pic_url
         }

@@ -40,6 +40,12 @@ class SamagriItem(models.Model):
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        # Auto-approve if the vendor is already verified
+        if not self.pk and self.vendor and self.vendor.verification_status == 'APPROVED':
+            self.is_approved = True
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
 
