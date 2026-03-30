@@ -20,6 +20,7 @@ interface ActionConfirmationDialogProps {
   confirmLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
+  isDestructive?: boolean;
 }
 
 export const ActionConfirmationDialog: React.FC<ActionConfirmationDialogProps> = ({
@@ -31,6 +32,7 @@ export const ActionConfirmationDialog: React.FC<ActionConfirmationDialogProps> =
   confirmLabel = 'Yes, Continue',
   cancelLabel = 'Cancel',
   isLoading = false,
+  isDestructive = false,
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -73,7 +75,11 @@ export const ActionConfirmationDialog: React.FC<ActionConfirmationDialogProps> =
               onConfirm();
             }}
             disabled={isLoading}
-            className="flex-1 h-12 text-base font-semibold bg-orange-500 hover:bg-orange-600 text-white"
+            className={`flex-1 h-12 text-base font-semibold text-white ${
+              isDestructive 
+                ? 'bg-red-600 hover:bg-red-700 shadow-lg shadow-red-200' 
+                : 'bg-orange-500 hover:bg-orange-600'
+            }`}
           >
             {isLoading ? 'Please wait...' : confirmLabel}
           </Button>

@@ -55,7 +55,12 @@ export const EditProfile = () => {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+        const uploadToastId = toast({
+            title: selectedFile ? "Uploading to Cloudinary..." : "Updating Profile...",
+            description: "Please wait while we synchronize your data.",
+            duration: Infinity,
+        }).id;
+
         setLoading(true);
         try {
             const data = new FormData();
@@ -73,7 +78,10 @@ export const EditProfile = () => {
                 },
             });
 
-            toast({ title: 'Success', description: 'Profile updated successfully' });
+            toast({ 
+                title: 'Success', 
+                description: 'Profile updated successfully and synced with Cloudinary' 
+            });
             refreshUser();
             setSelectedFile(null); // Clear selected file after success
         } catch (error: any) {

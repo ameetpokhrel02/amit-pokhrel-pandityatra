@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Camera, Store, Building2, MapPin, Landmark, User as UserIcon, FileText } from "lucide-react"
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { updateVendorProfile } from '@/lib/api';
+import { updateVendorProfile, registerVendor } from '@/lib/api';
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -118,24 +118,19 @@ const VendorProfile = () => {
     };
 
     async function onSubmit(data: VendorProfileValues) {
-        if (!user?.vendor_profile?.id) {
-            toast({
-                title: "Error",
-                description: "Vendor profile not found.",
-                variant: "destructive",
-            });
-            return;
-        }
+        // Note: New vendors might not have a vendor_profile.id yet.
+        // We will 'Register' them if missing, and 'Update' if present.
+        const isNewVendor = !user?.vendor_profile?.id;
 
         setIsSaving(true);
         try {
             const formData = new FormData();
             
             // User fields
-            formData.append('user_data.full_name', data.full_name);
-            formData.append('user_data.phone_number', data.phone_number);
+            formData.append('full_name', data.full_name);
+            formData.append('phone_number', data.phone_number);
             if (data.profile_pic instanceof File) {
-                formData.append('user_data.profile_pic', data.profile_pic);
+                formData.append('profile_pic', data.profile_pic);
             }
 
             // Vendor fields
@@ -152,13 +147,25 @@ const VendorProfile = () => {
                 formData.append('id_proof', data.id_proof);
             }
 
-            await updateVendorProfile(user.vendor_profile.id, formData);
+            const uploadToastId = toast({
+                title: "Synchronizing with Cloudinary...",
+                description: "Updating your shop profile and securely storing media.",
+                duration: Infinity,
+            }).id;
+
+            if (isNewVendor) {
+                await registerVendor(formData);
+            } else {
+                await updateVendorProfile(user.vendor_profile.id, formData);
+            }
             
             if (refreshUser) await refreshUser();
 
             toast({
-                title: "Profile Updated",
-                description: "Your shop profile has been saved successfully.",
+                title: isNewVendor ? "Profile Created" : "Profile Updated",
+                description: isNewVendor 
+                    ? "Your shop profile has been uploaded to Cloudinary and is now under review." 
+                    : "Your shop profile has been synced with Cloudinary successfully.",
             });
         } catch (error) {
             toast({

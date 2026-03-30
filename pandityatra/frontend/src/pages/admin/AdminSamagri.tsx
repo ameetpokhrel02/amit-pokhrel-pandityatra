@@ -181,13 +181,18 @@ export default function AdminSamagri() {
     // Log form data for debugging
     // form.image && console.log("Uploading file:", form.image.name);
 
+    const uploadToastId = toast({
+      title: "Saving to Cloudinary...",
+      description: "Please wait while we process the item image and data.",
+    }).id;
+
     try {
       if (editingItem) {
           await updateSamagriItem(editingItem.id, formData);
-          toast({ title: "Success", description: "Item updated." });
+          toast({ title: "Updated Successfully", description: "Cloudinary image and item data have been synchronized." });
       } else {
           await createSamagriItem(formData);
-          toast({ title: "Success", description: "Item created." });
+          toast({ title: "Upload Success", description: "New item has been added to the Cloudinary store." });
       }
       setIsDialogOpen(false);
       setEditingItem(null);

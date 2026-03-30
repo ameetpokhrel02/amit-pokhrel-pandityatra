@@ -42,12 +42,14 @@ import { usePWA } from '@/hooks/usePWA';
 import MegaMenu from './MegaMenu';
 import { fetchSamagriCategories, type SamagriCategory as CategoryType } from '@/lib/api';
 import { ThemeToggle } from './ThemeToggle';
+import { useToast } from '@/hooks/use-toast';
 
 const Navbar: React.FC = () => {
   const { t } = useTranslation();
   const { token, user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const [scrolled, setScrolled] = useState(false);
   const { items: cartItems, openDrawer: openCartDrawer } = useCart();
   const { items: favoriteItems, openDrawer: openFavoritesDrawer } = useFavorites();
@@ -91,8 +93,16 @@ const Navbar: React.FC = () => {
   }, []);
 
   const handleLogout = () => {
+    const userName = user?.full_name?.split(' ')[0] || 'there';
+    const roleMap: Record<string, string> = { pandit: 'Pandit', vendor: 'Vendor', admin: 'Admin', superadmin: 'Admin' };
+    const roleLabel = roleMap[user?.role] || 'Account';
     logout();
     setLogoutDialogOpen(false);
+    toast({
+      title: `Goodbye, ${userName}! 🙏`,
+      description: `You've been signed out of your ${roleLabel}. May your journey be blessed.`,
+      variant: 'default',
+    });
     navigate('/');
   };
 

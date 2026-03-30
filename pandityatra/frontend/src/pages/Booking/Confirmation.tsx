@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
+import { recommenderApi } from '@/api/recommender';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
@@ -27,6 +28,7 @@ interface ConfirmationDetails {
     displayDetails: {
         panitName: string;
         serviceName: string;
+        serviceImage?: string | null;
         servicePrice: number;
         samagriFee: number;
         totalFee: number;
@@ -59,6 +61,23 @@ const Confirmation = () => {
         try {
             const response = await apiClient.post('/bookings/', bookingData);
             const bookingId = response.data.id;
+
+            // Log interaction for rule-based recommender analytics
+            try {
+                const shownRecommendationIds = displayDetails.samagriItems
+                    .filter((item: any) => item.recommendation_id)
+                    .map((item: any) => item.recommendation_id);
+                
+                if (shownRecommendationIds.length > 0) {
+                    await recommenderApi.logInteraction(bookingId, shownRecommendationIds, 'shown');
+                    
+                    if (bookingData.samagri_required) {
+                        await recommenderApi.logInteraction(bookingId, shownRecommendationIds, 'purchased');
+                    }
+                }
+            } catch (logErr) {
+                console.warn("Could not log recommender stats", logErr);
+            }
 
             toast({
                 title: "Booking Created!",
@@ -125,12 +144,22 @@ const Confirmation = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <div className="flex items-start gap-4">
-                                        <div className="p-3 bg-orange-100 rounded-xl text-orange-600">
-                                            <FileText className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Puja Service</p>
-                                            <p className="text-xl font-bold text-gray-900">{displayDetails.serviceName}</p>
+                                        {displayDetails.serviceImage ? (
+                                            <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm shrink-0 border border-orange-100 bg-orange-50">
+                                                <img
+                                                    src={displayDetails.serviceImage}
+                                                    alt={displayDetails.serviceName}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="p-3 bg-orange-100 rounded-xl text-orange-600 shrink-0">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                        )}
+                                        <div className="py-1">
+                                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-tight">Puja Service</p>
+                                            <p className="text-xl font-bold text-gray-900 leading-tight mt-1">{displayDetails.serviceName}</p>
                                         </div>
                                     </div>
 
@@ -205,19 +234,19 @@ const Confirmation = () => {
                             <div className="space-y-4 pt-6">
                                 <div className="flex justify-between items-center text-gray-600">
                                     <span className="font-medium">Ritual Service Fee</span>
-                                    <span className="font-mono font-bold">NPR {displayDetails.servicePrice}</span>
+                                    <span className="font-mono font-bold">NPR {Number(displayDetails.servicePrice).toFixed(2)}</span>
                                 </div>
                                 {bookingData.samagri_required && (
                                     <div className="flex justify-between items-center text-gray-600">
                                         <span className="font-medium">Sacred Samagri Items</span>
-                                        <span className="font-mono font-bold">NPR {displayDetails.samagriFee}</span>
+                                        <span className="font-mono font-bold">NPR {Number(displayDetails.samagriFee).toFixed(2)}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center pt-6 border-t border-orange-100">
                                     <span className="text-2xl font-bold text-gray-900">Total Investment</span>
                                     <div className="text-right">
-                                        <p className="text-4xl font-playfair font-black text-orange-600">NPR {displayDetails.totalFee}</p>
-                                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-1">Approx. USD {(displayDetails.totalFee * 0.0075).toFixed(2)}</p>
+                                        <p className="text-4xl font-playfair font-black text-orange-600">NPR {Number(displayDetails.totalFee).toFixed(2)}</p>
+                                        <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest mt-1">Approx. USD {(Number(displayDetails.totalFee) * 0.0075).toFixed(2)}</p>
                                     </div>
                                 </div>
                             </div>

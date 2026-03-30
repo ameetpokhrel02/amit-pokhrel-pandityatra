@@ -29,12 +29,15 @@ import {
     Crown,
     FileText,
     Shield,
+    Bot
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/images/PanditYatralogo.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
+import { useToast } from '@/hooks/use-toast';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -52,6 +55,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const { logout, user } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
+    const { toast } = useToast();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
     const [expandedItems, setExpandedItems] = useState<string[]>(() => {
@@ -107,6 +111,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             ]},
             { icon: MessageCircle, label: 'Messages', path: '/messages' },
             { icon: User, label: 'Profile', path: '/profile' },
+            { icon: Bot, label: 'AI Preferences', path: '/profile?tab=ai-preferences' },
             { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
         ],
         pandit: [
@@ -179,7 +184,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     };
 
     const handleLogoutConfirm = () => {
+        const userName = user?.full_name?.split(' ')[0] || 'there';
+        const roleLabel = userRole === 'pandit' ? 'Pandit' : userRole === 'vendor' ? 'Vendor' : userRole === 'admin' ? 'Admin' : 'User';
         logout();
+        toast({
+            title: `Goodbye, ${userName}! 🙏`,
+            description: `You've been logged out of your ${roleLabel} account. See you soon!`,
+            variant: 'default',
+        });
         navigate('/login');
     };
 
@@ -368,7 +380,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="flex-1 min-w-0 overflow-auto pt-16 md:pt-0 bg-[#FDFCFB]">
+            <main 
+                id="dashboard-main-content" 
+                className={cn(
+                    "flex-1 min-w-0 pt-16 md:pt-0 bg-[#FDFCFB]",
+                    location.pathname.includes('/messages') ? "overflow-hidden h-screen" : "overflow-auto"
+                )}
+            >
                 {/* Desktop Top Header (Hidden on sidebars/mobile) */}
                 <div className="hidden md:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b px-8 py-3 items-center justify-end gap-4 h-16">
                     <NotificationDropdown />

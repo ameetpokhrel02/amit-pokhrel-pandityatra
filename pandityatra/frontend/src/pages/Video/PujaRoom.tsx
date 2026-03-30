@@ -62,12 +62,24 @@ function getErrorMessage(err: unknown, fallback: string) {
   return fallback
 }
 
+function isSessionExpired(bookingDate: string, bookingTime: string): boolean {
+  try {
+    const pujaDateTime = new Date(`${bookingDate}T${bookingTime}`)
+    const joinEnd = addMinutes(pujaDateTime, 120)
+    return isAfter(new Date(), joinEnd)
+  } catch {
+    return false
+  }
+}
+
 function isPaymentValidationError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null) return false
   const maybeResponse = err as { response?: { data?: { error?: string; reason?: string } } }
   const reason = (maybeResponse.response?.data?.reason || maybeResponse.response?.data?.error || '').toLowerCase()
   return reason.includes('payment') && reason.includes('not completed')
 }
+
+import { addMinutes, isAfter, isBefore } from "date-fns"
 
 export default function PujaRoom() {
   const { id } = useParams()
@@ -855,6 +867,12 @@ export default function PujaRoom() {
 
     const response = await apiClient.get(`/video/rooms/${id}/`)
     const data = response.data
+    
+    // Safety check for production: If session has expired, don't allow joining
+    if (data.booking_date && data.booking_time && isSessionExpired(data.booking_date, data.booking_time)) {
+       throw new Error('This video session has expired. The 2-hour window for this puja has passed.')
+    }
+
     return {
       resolvedRoomId: String(data.room_id || id),
       resolvedBookingId: String(data.booking_id),
@@ -954,8 +972,8 @@ export default function PujaRoom() {
         try {
           const data: SignalPayload = JSON.parse(event.data)
           await handleSignalMessage(data)
-        } catch (e) {
-          console.error('Failed to handle signaling message', e)
+        } catch {
+          // Silent catch
         }
       }
 
@@ -977,12 +995,6 @@ export default function PujaRoom() {
   const connectSignaling = useCallback((resolvedRoomId: string, currentToken: string) => {
     const activeToken = localStorage.getItem('token') || currentToken
     const wsUrl = `${wsBaseUrl}/ws/video/${encodeURIComponent(resolvedRoomId)}/?token=${encodeURIComponent(activeToken)}`
-    console.info('[PujaRoom] Connecting websocket', {
-      wsUrl,
-      roomId: resolvedRoomId,
-      hasToken: Boolean(activeToken),
-      tokenLength: activeToken?.length || 0,
-    })
     const socket = new WebSocket(wsUrl)
     wsRef.current = socket
 
@@ -1015,23 +1027,17 @@ export default function PujaRoom() {
       try {
         const data: SignalPayload = JSON.parse(event.data)
         await handleSignalMessage(data)
-      } catch (e) {
-        console.error('Failed to handle signaling message', e)
+      } catch {
+        // Silent catch
       }
     }
 
     socket.onerror = () => {
-      console.error('[PujaRoom] WebSocket error', { wsUrl, roomId: resolvedRoomId })
-      setError('WebSocket signaling connection failed')
+      setError('Connection interrupted. Please check your internet.')
       setIsConnected(false)
     }
 
     socket.onclose = () => {
-      console.warn('[PujaRoom] WebSocket closed', {
-        wsUrl,
-        roomId: resolvedRoomId,
-        shouldReconnect: shouldReconnectRef.current,
-      })
       if (wsRef.current === socket) {
         wsRef.current = null
       }
@@ -1103,12 +1109,6 @@ export default function PujaRoom() {
       try {
         await fetchIceServers()
         const { resolvedRoomId, resolvedBookingId } = await resolveRoomContext()
-        console.info('[PujaRoom] Resolved room context', {
-          routeParamId: id,
-          resolvedRoomId,
-          resolvedBookingId,
-          hasToken: Boolean(token),
-        })
         await validateRoomAccess(resolvedRoomId, resolvedBookingId)
         setResolvedContext({ roomId: resolvedRoomId, bookingId: resolvedBookingId })
 

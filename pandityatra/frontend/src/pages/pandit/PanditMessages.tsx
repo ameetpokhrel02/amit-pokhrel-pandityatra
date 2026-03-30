@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Send, User, Clock, Search } from 'lucide-react';
+import { MessageCircle, Send, User, Clock, Search, Loader } from 'lucide-react';
 import api from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
+import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { WS_BASE_URL } from '@/lib/helper';
 
@@ -47,22 +48,24 @@ const PanditMessages: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isInitialLoadRef = useRef(true);
+  const previousMessageCountRef = useRef(0);
   const wsRef = useRef<WebSocket | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Fetch chat rooms
   useEffect(() => {
     fetchChatRooms();
   }, []);
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   // Connect WebSocket when room is selected
   useEffect(() => {
     if (selectedRoom && token) {
+      isInitialLoadRef.current = true;
       connectWebSocket(selectedRoom.id);
       fetchMessages(selectedRoom.id);
     }
@@ -105,7 +108,8 @@ const PanditMessages: React.FC = () => {
     wsRef.current = new WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
-      console.log('WebSocket connected');
+      setIsConnected(true);
+      reconnectAttemptsRef.current = 0;
     };
 
     wsRef.current.onmessage = (event) => {
@@ -113,17 +117,22 @@ const PanditMessages: React.FC = () => {
         const data = JSON.parse(event.data);
         if (data.type === 'message') {
           const messageData = data.data;
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: messageData.id,
-              content: messageData.content,
-              sender: messageData.sender,
-              sender_name: messageData.sender_name,
-              timestamp: messageData.timestamp,
-              is_read: true,
-            },
-          ]);
+          setMessages((prev) => {
+            // Deduplicate if the message was already added optimistically
+            const isDuplicate = prev.some(m => 
+              m.id === messageData.id || 
+              (m.id < 0 && m.content === messageData.content)
+            );
+            
+            if (isDuplicate) {
+              // Replace optimistic message with the real one from server
+              return prev.map(m => 
+                (m.id < 0 && m.content === messageData.content) ? messageData : m
+              );
+            }
+            return [...prev, messageData];
+          });
+
           // Update chat room's last message
           setChatRooms((prev) =>
             prev.map((room) =>
@@ -135,22 +144,45 @@ const PanditMessages: React.FC = () => {
         } else if (data.type === 'message_history') {
           setMessages(data.messages || []);
         }
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+      } catch {
+        // Silent catch
       }
     };
 
-    wsRef.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    wsRef.current.onerror = () => {
+      setIsConnected(false);
     };
 
     wsRef.current.onclose = () => {
-      console.log('WebSocket disconnected');
+      setIsConnected(false);
+      if (wsRef.current === null) return;
+
+      const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000);
+      reconnectAttemptsRef.current += 1;
+      reconnectTimeoutRef.current = setTimeout(() => {
+        connectWebSocket(roomId);
+      }, delay);
     };
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedRoom) return;
+
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear immediately for snappiness
+
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: -Date.now(),
+      content: messageContent,
+      sender: 'pandit',
+      sender_name: 'You',
+      timestamp: new Date().toISOString(),
+      is_read: true
+    };
+
+    // Add optimistically
+    setMessages(prev => [...prev, optimisticMessage]);
 
     setSendingMessage(true);
     try {
@@ -159,20 +191,27 @@ const PanditMessages: React.FC = () => {
         wsRef.current.send(
           JSON.stringify({
             type: 'message',
-            content: newMessage,
+            content: messageContent,
           })
         );
       } else {
         // Fallback to HTTP
-        await api.post(`/chat/rooms/${selectedRoom.id}/messages/`, {
-          content: newMessage,
+        const response = await api.post(`/chat/rooms/${selectedRoom.id}/messages/`, {
+          content: messageContent,
         });
-        // Refresh messages
-        fetchMessages(selectedRoom.id);
+
+        // Replace optimistic message with real response if available
+        if (response.data) {
+          setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? response.data : m));
+        } else {
+          fetchMessages(selectedRoom.id);
+        }
       }
-      setNewMessage('');
     } catch (error) {
       console.error('Failed to send message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      setNewMessage(messageContent); // Restore content
     } finally {
       setSendingMessage(false);
     }
@@ -205,74 +244,75 @@ const PanditMessages: React.FC = () => {
           <p className="text-muted-foreground">Chat with your customers and respond to inquiries.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100vh-220px)]">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-[calc(100vh-220px)]">
           {/* Chat List */}
-          <Card className="md:col-span-1 flex flex-col">
-            <CardHeader className="pb-3">
+          <Card className="md:col-span-1 flex flex-col border-orange-100 overflow-hidden bg-white shadow-none">
+            <CardHeader className="pb-3 bg-orange-50/30">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search conversations..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 bg-white border-orange-200 focus:ring-orange-500 h-9 text-sm"
                 />
               </div>
             </CardHeader>
             <CardContent className="flex-1 p-0 overflow-hidden">
-              <div className="h-full overflow-y-auto">
+              <div className="h-full overflow-y-auto custom-scrollbar">
                 {loading ? (
-                  <div className="p-4 text-center text-muted-foreground">Loading...</div>
+                  <div className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+                  </div>
                 ) : filteredRooms.length === 0 ? (
-                  <div className="p-4 text-center text-muted-foreground">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>No conversations yet</p>
-                    <p className="text-sm">When users message you, they'll appear here</p>
+                  <div className="p-8 text-center text-muted-foreground">
+                    <MessageCircle className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm font-medium">No results</p>
                   </div>
                 ) : (
-                  <div className="divide-y">
+                  <div className="divide-y divide-orange-50">
                     {filteredRooms.map((room) => (
                       <div
                         key={room.id}
-                        className={`p-4 cursor-pointer hover:bg-accent transition-colors ${
-                          selectedRoom?.id === room.id ? 'bg-accent' : ''
+                        className={`p-4 cursor-pointer transition-all duration-200 ${
+                          selectedRoom?.id === room.id 
+                            ? 'bg-orange-50 border-r-4 border-orange-500 shadow-inner' 
+                            : 'hover:bg-orange-50/50'
                         }`}
                         onClick={() => setSelectedRoom(room)}
                       >
                         <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src={room.user.profile_picture} />
-                            <AvatarFallback>
-                              <User className="h-5 w-5" />
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium truncate">{room.user.full_name}</p>
-                              {room.unread_count > 0 && (
-                                <Badge variant="default" className="ml-2 bg-primary">
-                                  {room.unread_count}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {room.is_pre_booking ? (
-                                <Badge variant="outline" className="text-xs">Pre-booking</Badge>
-                              ) : room.booking ? (
-                                <Badge variant="secondary" className="text-xs">
-                                  {room.booking.service_name}
-                                </Badge>
-                              ) : null}
-                            </div>
-                            {room.last_message && (
-                              <p className="text-sm text-muted-foreground truncate mt-1">
-                                {room.last_message}
-                              </p>
+                          <div className="relative">
+                            <Avatar className="h-11 w-11 border-2 border-white shadow-sm">
+                              <AvatarImage src={room.user?.profile_picture} />
+                              <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">
+                                {room.user?.full_name?.[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            {room.unread_count > 0 && (
+                              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white border-2 border-white shadow-sm">
+                                {room.unread_count}
+                              </span>
                             )}
-                            {room.last_message_time && (
-                              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                                <Clock className="h-3 w-3" />
-                                {formatTime(room.last_message_time)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-1">
+                              <p className={cn(
+                                "font-bold text-sm truncate",
+                                room.unread_count > 0 ? "text-orange-950" : "text-gray-900"
+                              )}>
+                                {room.user?.full_name}
+                              </p>
+                            </div>
+                            <p className="text-[11px] text-orange-600/70 truncate uppercase tracking-wider font-semibold mt-0.5">
+                              {room.booking?.service_name || 'Inquiry'}
+                            </p>
+                            {room.last_message && (
+                              <p className={cn(
+                                "text-xs truncate mt-1",
+                                room.unread_count > 0 ? "text-gray-900 font-semibold" : "text-gray-500"
+                              )}>
+                                {room.last_message}
                               </p>
                             )}
                           </div>
@@ -284,84 +324,114 @@ const PanditMessages: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-
+ 
           {/* Chat Window */}
-          <Card className="md:col-span-2 flex flex-col">
+          <Card className="md:col-span-3 flex flex-col border-orange-100 overflow-hidden relative bg-white shadow-none">
+            {!isConnected && selectedRoom && (
+              <div className="absolute top-0 left-0 right-0 z-10 bg-yellow-50/90 backdrop-blur-sm border-b border-yellow-100 px-4 py-1.5 flex items-center justify-center gap-2">
+                <Loader className="h-3 w-3 animate-spin text-yellow-600" />
+                <span className="text-[11px] font-medium text-yellow-700 uppercase tracking-widest">Reconnecting divine link...</span>
+              </div>
+            )}
+ 
             {selectedRoom ? (
               <>
-                <CardHeader className="border-b pb-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={selectedRoom.user.profile_picture} />
-                      <AvatarFallback>
-                        <User className="h-5 w-5" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-lg">{selectedRoom.user.full_name}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        {selectedRoom.is_pre_booking ? (
-                          <Badge variant="outline" className="text-xs">Pre-booking Inquiry</Badge>
-                        ) : selectedRoom.booking ? (
-                          <Badge variant="secondary" className="text-xs">
-                            Booking: {selectedRoom.booking.service_name}
+                <CardHeader className="border-b py-4 bg-white z-20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-orange-100">
+                        <AvatarImage src={selectedRoom.user?.profile_picture} />
+                        <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-lg">
+                          {selectedRoom.user?.full_name?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-xl font-bold text-orange-950">{selectedRoom.user?.full_name}</CardTitle>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[10px] uppercase border-orange-200 text-orange-700 bg-orange-50">
+                            {selectedRoom.is_pre_booking ? 'Consultation' : 'Active Booking'}
                           </Badge>
-                        ) : null}
+                          <span className="text-xs text-muted-foreground font-medium">
+                            • Customer
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-                  <div className="flex-1 p-4 overflow-y-auto">
-                    <div className="space-y-4">
-                      {messages.map((message) => (
+                <CardContent className="flex-1 p-0 overflow-hidden flex flex-col bg-white">
+                  <div 
+                    ref={scrollContainerRef}
+                    className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar"
+                    style={{ overflowAnchor: 'none' }}
+                  >
+                    <div className="space-y-6">
+                      {messages.map((message, idx) => (
                         <div
-                          key={message.id}
+                          key={message.id || idx}
                           className={`flex ${message.sender === 'pandit' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                            className={cn(
+                              "max-w-[75%] rounded-2xl px-5 py-3 relative group",
                               message.sender === 'pandit'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted'
-                            }`}
+                                ? 'bg-orange-600 text-white rounded-tr-none'
+                                : 'bg-white text-gray-800 border-l-4 border-orange-500 rounded-tl-none'
+                            )}
                           >
-                            <p className="text-sm">{message.content}</p>
-                            <p
-                              className={`text-xs mt-1 ${
-                                message.sender === 'pandit' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                              }`}
+                            <p className="text-[14px] leading-relaxed font-medium">{message.content}</p>
+                            <div
+                              className={cn(
+                                "text-[10px] mt-2 flex items-center gap-1 font-bold uppercase tracking-tight opacity-70",
+                                message.sender === 'pandit' ? 'text-orange-100' : 'text-gray-400'
+                              )}
                             >
+                              <Clock className="h-3 w-3" />
                               {formatTime(message.timestamp)}
-                            </p>
+                            </div>
                           </div>
                         </div>
                       ))}
-                      <div ref={messagesEndRef} />
                     </div>
                   </div>
-                  <div className="p-4 border-t">
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="Type a message..."
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        disabled={sendingMessage}
-                      />
-                      <Button onClick={sendMessage} disabled={sendingMessage || !newMessage.trim()}>
-                        <Send className="h-4 w-4" />
+                  <div className="p-4 bg-white border-t border-orange-50">
+                    <div className="flex gap-3 max-w-4xl mx-auto items-end">
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="Type your message with devotion..."
+                          value={newMessage}
+                          onChange={(e) => setNewMessage(e.target.value)}
+                          onKeyPress={handleKeyPress}
+                          disabled={sendingMessage}
+                          className="pr-12 bg-orange-50/30 border-orange-100 focus:border-orange-500 focus:ring-0 rounded-2xl py-6 text-sm transition-all"
+                        />
+                      </div>
+                      <Button 
+                        onClick={sendMessage} 
+                        disabled={sendingMessage || !newMessage.trim()}
+                        className="h-12 w-12 rounded-full bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-600/20 active:scale-95 transition-all p-0 flex items-center justify-center shrink-0"
+                      >
+                        <Send className="h-5 w-5" />
                       </Button>
                     </div>
+                    <p className="text-[9px] text-center text-gray-400 mt-2.5 font-bold uppercase tracking-widest opacity-60">
+                      Messages are encrypted and private
+                    </p>
                   </div>
                 </CardContent>
               </>
             ) : (
-              <CardContent className="flex-1 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <MessageCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium">Select a conversation</h3>
-                  <p className="text-sm">Choose a conversation from the list to start chatting</p>
+              <CardContent className="flex-1 flex items-center justify-center bg-orange-50/10">
+                <div className="text-center space-y-4 max-w-sm">
+                  <div className="h-24 w-24 bg-orange-100 rounded-full flex items-center justify-center mx-auto shadow-inner ring-4 ring-orange-50">
+                    <MessageCircle className="h-12 w-12 text-orange-500 opacity-60" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-bold text-orange-900">Your Spiritual Inbox</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed font-medium">
+                      Select a conversation on the left to provide guidance to your devotees.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             )}

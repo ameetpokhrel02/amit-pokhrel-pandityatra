@@ -91,8 +91,8 @@ export const useNotifications = () => {
         endpoint: subscription.endpoint,
         subscription: subscriptionJson,
       });
-    } catch (error) {
-      console.warn('Push subscription registration failed:', error);
+    } catch {
+      // Push registration is optional/silent
     }
   }, [token]);
 
@@ -106,15 +106,8 @@ export const useNotifications = () => {
       
       setNotifications(notificationData);
       setUnreadCount(notificationData.filter((n: Notification) => !n.is_read).length);
-    } catch (error) {
-      const status = (error as any)?.response?.status;
-      if (status === 401) {
-        setAuthFailed(true);
-        setNotifications([]);
-        setUnreadCount(0);
-        return;
-      }
-      console.error('Failed to fetch notifications:', error);
+    } catch {
+      // Silent fail
     } finally {
       setLoading(false);
     }
@@ -131,7 +124,6 @@ export const useNotifications = () => {
 
   const requestPermission = async (): Promise<boolean> => {
     if (!('Notification' in window)) {
-      console.warn('This browser does not support notifications');
       return false;
     }
 
@@ -160,8 +152,7 @@ export const useNotifications = () => {
       }
 
       return granted;
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
+    } catch {
       return false;
     }
   };
@@ -212,8 +203,8 @@ export const useNotifications = () => {
       );
       
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+    } catch {
+      // Silent fail
     }
   };
 
@@ -226,8 +217,8 @@ export const useNotifications = () => {
       );
       
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+    } catch {
+      // Silent fail
     }
   };
 
@@ -242,8 +233,8 @@ export const useNotifications = () => {
       if (deletedNotification && !deletedNotification.is_read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
+    } catch {
+      // Silent fail
     }
   };
 

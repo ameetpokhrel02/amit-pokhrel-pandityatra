@@ -1,25 +1,58 @@
 import React from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { EditProfile } from '@/components/profile/EditProfile'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AIPreferences } from '@/components/profile/AIPreferences'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const Profile = () => {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const currentTab = new URLSearchParams(location.search).get('tab') || 'personal'
+
   return (
     <DashboardLayout userRole="user">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground">Manage your personal information.</p>
+          <h1 className="text-3xl font-bold">My Settings</h1>
+          <p className="text-muted-foreground">Manage your personal information and preferences.</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Personal Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <EditProfile />
-          </CardContent>
-        </Card>
+        <Tabs 
+            value={currentTab} 
+            onValueChange={(val) => navigate(`/profile?tab=${val}`)} 
+            className="w-full"
+        >
+          <TabsList className="mb-4">
+            <TabsTrigger value="personal">Personal Details</TabsTrigger>
+            <TabsTrigger value="ai-preferences">AI Preferences</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="personal">
+            <Card>
+              <CardHeader>
+                <CardTitle>Personal Details</CardTitle>
+                <CardDescription>Update your contact and demographic information.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EditProfile />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="ai-preferences">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Samagri Preferences</CardTitle>
+                <CardDescription>Control what the recommender engine suggests for your pujas.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AIPreferences />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   )

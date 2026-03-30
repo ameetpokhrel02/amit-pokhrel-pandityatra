@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Send, Phone, Video, MoreVertical, Smile, Paperclip } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Send, Video, MoreVertical, Smile, RefreshCw, WifiOff } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -40,47 +40,61 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
   const [newMessage, setNewMessage] = useState('');
   const [language, setLanguage] = useState<'en' | 'ne'>('en');
   const [isConnected, setIsConnected] = useState(false);
+  const [wsError, setWsError] = useState<string | null>(null);
   const ws = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const connect = useCallback(() => {
+    if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
+    const socket = new WebSocket(wsUrl);
+    ws.current = socket;
+
+    socket.onopen = () => {
+      setIsConnected(true);
+      setWsError(null);
+      reconnectAttemptsRef.current = 0;
+    };
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'message_history') {
+          setMessages(data.messages);
+        } else if (data.type === 'chat_message' || !data.type) {
+          setMessages((prev) => [...prev, data]);
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    socket.onclose = () => {
+      setIsConnected(false);
+      // Exponential backoff reconnect (max 30s)
+      const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000);
+      reconnectAttemptsRef.current += 1;
+      reconnectTimeoutRef.current = setTimeout(() => connect(), delay);
+    };
+
+    socket.onerror = () => {
+      setWsError('Connection error. Retrying...');
+      socket.close();
+    };
+  }, [roomId]);
 
   // Connect to WebSocket
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws/chat/${roomId}/`;
-
-    ws.current = new WebSocket(wsUrl);
-
-    ws.current.onopen = () => {
-      console.log('Chat connected');
-      setIsConnected(true);
-    };
-
-    ws.current.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === 'message_history') {
-        setMessages(data.messages);
-      } else if (data.type === 'chat_message' || !data.type) {
-        // New message received
-        setMessages((prev) => [...prev, data]);
-      }
-    };
-
-    ws.current.onclose = () => {
-      console.log('Chat disconnected');
-      setIsConnected(false);
-    };
-
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
+    connect();
     return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      ws.current?.close();
     };
-  }, [roomId]);
+  }, [connect]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -128,13 +142,10 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
 
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            <button className="p-2 hover:bg-orange-700 rounded-full transition">
-              <Phone size={20} />
-            </button>
-            <button className="p-2 hover:bg-orange-700 rounded-full transition">
+            <button className="p-2 hover:bg-orange-700 rounded-full transition" title="Start Video Call">
               <Video size={20} />
             </button>
-            <button className="p-2 hover:bg-orange-700 rounded-full transition">
+            <button className="p-2 hover:bg-orange-700 rounded-full transition" title="More options">
               <MoreVertical size={20} />
             </button>
           </div>
@@ -147,9 +158,15 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
           </div>
         )}
         <div className="mt-2 text-xs flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-300' : 'bg-red-300'}`}></span>
-          {isConnected ? 'Connected' : 'Disconnected'}
+          <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-300 animate-pulse' : 'bg-red-300'}`} />
+          {isConnected ? 'Connected' : 'Reconnecting...'}
         </div>
+        {wsError && (
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-orange-200">
+            <WifiOff size={12} />
+            {wsError}
+          </div>
+        )}
       </div>
 
       {/* Messages Container */}
@@ -211,11 +228,8 @@ export const ChatRoom: React.FC<ChatRoomProps> = ({ roomId, pandit, booking }) =
 
         {/* Message Input */}
         <div className="flex items-center gap-2">
-          <button className="p-2 text-gray-500 hover:text-orange-500 transition">
+          <button className="p-2 text-gray-500 hover:text-orange-500 transition" title="Emoji">
             <Smile size={20} />
-          </button>
-          <button className="p-2 text-gray-500 hover:text-orange-500 transition">
-            <Paperclip size={20} />
           </button>
           <input
             type="text"

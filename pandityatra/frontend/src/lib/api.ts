@@ -297,18 +297,19 @@ export async function fetchProfile() {
 export interface AdminStats {
     total_users: number;
     total_pandits: number;
+    total_vendors: number;
     total_bookings: number;
     revenue_this_month: number;
     user_growth: number;
     pandit_growth: number;
+    vendor_growth: number;
     booking_growth: number;
     revenue_growth: number;
     pending_verifications: number;
+    pending_vendors: number;
     low_stock_count: number;
     todays_pujas_count: number;
     error_logs_count: number;
-    total_vendors: number;
-    pending_vendors: number;
     system_status: string;
 }
 
@@ -918,6 +919,7 @@ export interface Vendor {
     address: string;
     city: string;
     is_verified: boolean;
+    user_active: boolean;
     balance: string;
     commission_rate: string;
     id_proof?: string;
@@ -948,13 +950,23 @@ export async function rejectVendor(id: number, reason?: string) {
     return response.data;
 }
 
+export async function adminToggleVendorStatus(id: number) {
+    const response = await apiClient.post(`/vendors/profile/${id}/toggle_status/`);
+    return response.data;
+}
+
+export async function deleteVendor(id: number) {
+    const response = await apiClient.delete(`/vendors/profile/${id}/`);
+    return response.data;
+}
+
 export async function updateVendorProfile(id: number, data: any) {
     const response = await apiClient.patch(`/vendors/profile/${id}/`, data);
     return response.data;
 }
 
-export async function deleteVendorProfile(id: number) {
-    const response = await apiClient.delete(`/vendors/profile/${id}/`);
+export async function registerVendor(data: FormData | any) {
+    const response = await apiClient.post('/vendors/register/', data);
     return response.data;
 }
 

@@ -18,7 +18,32 @@ import {
     Building2,
     Calendar,
     ArrowUpRight,
+    Trash2,
+    Pencil,
+    Lock,
+    Unlock,
+    MoreVertical,
+    AlertCircle,
+    CheckCircle2,
+    RefreshCw,
+    ShieldAlert
 } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { ActionConfirmationDialog } from '@/components/common/ActionConfirmationDialog';
+import { adminToggleVendorStatus, deleteVendor, updateVendorProfile } from '@/lib/api';
 
 const AdminVendorsList: React.FC = () => {
     const { toast } = useToast();
@@ -27,6 +52,28 @@ const AdminVendorsList: React.FC = () => {
     const [stats, setStats] = useState({ total: 0, verified: 0, pending: 0 });
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState<'all' | 'verified' | 'pending'>('all');
+    
+    // Action States
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmConfig, setConfirmConfig] = useState<{ 
+        title: string; 
+        description: string; 
+        onConfirm: () => void;
+        isDestructive?: boolean;
+    }>({
+        title: "",
+        description: "",
+        onConfirm: () => { }
+    });
+    
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+    const [editForm, setEditForm] = useState({
+        shop_name: '',
+        business_type: '',
+        city: '',
+        address: ''
+    });
 
     useEffect(() => {
         loadData();
@@ -42,6 +89,68 @@ const AdminVendorsList: React.FC = () => {
             toast({ title: 'Failed to load vendors', variant: 'destructive' });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleToggleStatus = async (vendor: Vendor) => {
+        const action = vendor.user_active ? 'Block' : 'Unblock';
+        setConfirmConfig({
+            title: `${action} Vendor?`,
+            description: `Are you sure you want to ${action.toLowerCase()} ${vendor.shop_name}? ${vendor.user_active ? 'They will not be able to log in.' : 'They will regain access to their account.'}`,
+            isDestructive: vendor.user_active,
+            onConfirm: async () => {
+                try {
+                    await adminToggleVendorStatus(vendor.id);
+                    toast({ title: `Vendor ${action}ed`, description: `${vendor.shop_name} has been ${action.toLowerCase()}ed successfully.` });
+                    loadData();
+                    setConfirmOpen(false);
+                } catch (err) {
+                    toast({ title: `Failed to ${action.toLowerCase()} vendor`, variant: 'destructive' });
+                }
+            }
+        });
+        setConfirmOpen(true);
+    };
+
+    const handleDeleteVendor = async (vendor: Vendor) => {
+        setConfirmConfig({
+            title: "Delete Vendor Profile?",
+            description: `Are you sure you want to delete ${vendor.shop_name}? This will remove their shop profile. This action cannot be undone.`,
+            isDestructive: true,
+            onConfirm: async () => {
+                try {
+                    await deleteVendor(vendor.id);
+                    toast({ title: 'Vendor Deleted', description: `${vendor.shop_name} has been removed from the platform.` });
+                    loadData();
+                    setConfirmOpen(false);
+                } catch (err) {
+                    toast({ title: 'Failed to delete vendor', variant: 'destructive' });
+                }
+            }
+        });
+        setConfirmOpen(true);
+    };
+
+    const openEditDialog = (vendor: Vendor) => {
+        setSelectedVendor(vendor);
+        setEditForm({
+            shop_name: vendor.shop_name,
+            business_type: vendor.business_type,
+            city: vendor.city,
+            address: vendor.address
+        });
+        setEditDialogOpen(true);
+    };
+
+    const handleUpdateSubmit = async () => {
+        if (!selectedVendor) return;
+        try {
+            await updateVendorProfile(selectedVendor.id, editForm);
+            toast({ title: 'Vendor Updated', description: 'Changes saved successfully.' });
+            setEditDialogOpen(false);
+            loadData();
+        } catch (err) {
+            toast({ title: 'Failed to update vendor', variant: 'destructive' });
         }
     };
 
@@ -200,17 +309,41 @@ const AdminVendorsList: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-2 pt-4 md:pt-0 border-t md:border-none">
+                                        <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center gap-3 pt-4 md:pt-0 border-t md:border-none">
                                             <div className="text-right">
-                                                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Balance</p>
-                                                <p className="font-bold text-lg text-primary">₹{v.balance}</p>
+                                                <p className="text-[10px] text-slate-400 uppercase font-black tracking-widest mb-0.5">Balance</p>
+                                                <p className="font-extrabold text-xl text-primary">₹{v.balance}</p>
                                             </div>
-                                            <button 
-                                                className="flex items-center gap-1.5 text-sm font-bold text-primary hover:text-orange-700 transition-colors"
-                                                onClick={() => {/* View Details */}}
-                                            >
-                                                Details <ArrowUpRight size={14} />
-                                            </button>
+                                            
+                                            <div className="flex items-center gap-2">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9 bg-slate-50 border border-slate-100 hover:bg-orange-50 hover:text-orange-600">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-48 shadow-xl border-orange-100 p-1">
+                                                        <DropdownMenuItem onClick={() => openEditDialog(v)} className="gap-2 cursor-pointer focus:bg-orange-50 focus:text-orange-600">
+                                                            <Pencil className="h-4 w-4" /> Edit Shop Details
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleToggleStatus(v)} className={`gap-2 cursor-pointer focus:bg-orange-50 ${v.user_active ? 'text-red-600 focus:text-red-700' : 'text-green-600 focus:text-green-700'}`}>
+                                                            {v.user_active ? <><Lock className="h-4 w-4" /> Block Account</> : <><Unlock className="h-4 w-4" /> Unblock Account</>}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleDeleteVendor(v)} className="gap-2 cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
+                                                            <Trash2 className="h-4 w-4" /> Delete Profile
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="h-9 border-orange-200 text-orange-600 hover:bg-orange-50 font-bold px-4"
+                                                    onClick={() => {/* View Details/Dashboard */}}
+                                                >
+                                                    <ArrowUpRight size={14} className="mr-2" /> Inspect
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -219,6 +352,87 @@ const AdminVendorsList: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            <ActionConfirmationDialog
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                title={confirmConfig.title}
+                description={confirmConfig.description}
+                onConfirm={confirmConfig.onConfirm}
+                isDestructive={confirmConfig.isDestructive}
+            />
+
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+                <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-orange-100 shadow-2xl rounded-2xl">
+                    <DialogHeader className="p-6 bg-orange-50/50 border-b border-orange-100/50 pb-4">
+                        <DialogTitle className="text-xl font-extrabold text-slate-900">Edit Vendor Profile</DialogTitle>
+                        <DialogDescription className="text-slate-500 font-medium tracking-tight">
+                            Update the shop information for <span className="text-orange-600 font-bold">{selectedVendor?.shop_name}</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-6 space-y-5">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Shop Name</label>
+                            <Input 
+                                value={editForm.shop_name} 
+                                onChange={e => setEditForm(prev => ({...prev, shop_name: e.target.value}))}
+                                className="border-slate-200 focus:ring-orange-500 focus:border-orange-500 h-11"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Business Type</label>
+                            <Input 
+                                value={editForm.business_type} 
+                                onChange={e => setEditForm(prev => ({...prev, business_type: e.target.value}))}
+                                className="border-slate-200 focus:ring-orange-500 focus:border-orange-500 h-11"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400">City</label>
+                                <Input 
+                                    value={editForm.city} 
+                                    onChange={e => setEditForm(prev => ({...prev, city: e.target.value}))}
+                                    className="border-slate-200 focus:ring-orange-500 focus:border-orange-500 h-11"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Status</label>
+                                <div className="h-11 flex items-center px-4 bg-slate-50 border border-slate-200 rounded-lg">
+                                    {selectedVendor?.is_verified ? (
+                                        <div className="flex items-center gap-2 text-green-600 font-bold text-sm">
+                                            <ShieldCheck size={16} /> Verified
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-yellow-600 font-bold text-sm">
+                                            <Clock size={16} /> Pending Review
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Address</label>
+                            <textarea
+                                value={editForm.address}
+                                onChange={e => setEditForm(prev => ({...prev, address: e.target.value}))}
+                                className="w-full h-24 p-3 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all resize-none bg-white"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between sm:justify-between">
+                        <Button variant="ghost" onClick={() => setEditDialogOpen(false)} className="font-bold text-slate-500 hover:bg-slate-100">
+                            Discared Changes
+                        </Button>
+                        <Button 
+                            onClick={handleUpdateSubmit} 
+                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-orange-600/20"
+                        >
+                            <CheckCircle2 size={18} className="mr-2" /> Save Updates
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </DashboardLayout>
     );
 };

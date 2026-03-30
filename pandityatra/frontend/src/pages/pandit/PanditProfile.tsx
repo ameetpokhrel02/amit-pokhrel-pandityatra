@@ -134,6 +134,12 @@ const PanditProfile = () => {
                 formData.append('user_data.profile_pic', data.profile_pic);
             }
 
+            const uploadToastId = toast({
+                title: "Synchronizing professional profile with Cloudinary...",
+                description: "Updating your expertise and securely storing certifications.",
+                duration: Infinity,
+            }).id;
+
             if (user.pandit_profile) {
                 await updatePanditProfile(user.pandit_profile.id, formData);
             } else {
@@ -147,7 +153,7 @@ const PanditProfile = () => {
 
             toast({
                 title: "Success",
-                description: "Your profile has been updated successfully.",
+                description: "Your professional profile and certifications have been synced with Cloudinary successfully.",
             });
         } catch (error) {
             console.error("Profile update failed:", error);

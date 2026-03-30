@@ -137,17 +137,23 @@ export default function AdminServices() {
       }
     });
 
+    const uploadToastId = toast({
+      title: form.image ? "Saving service to Cloudinary..." : "Saving service details...",
+      description: "Please wait while we synchronize the service media.",
+      duration: Infinity,
+    }).id;
+
     try {
       if (editingId) {
         await apiClient.patch(`/services/${editingId}/`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast({ title: "Success", description: "Puja updated successfully." });
+        toast({ title: "Success", description: "Puja updated and synced with Cloudinary successfully." });
       } else {
         await apiClient.post("/services/", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast({ title: "Success", description: "Puja added successfully." });
+        toast({ title: "Success", description: "New puja added and uploaded to Cloudinary." });
       }
       handleCancel(); // Reset form
       loadPujas();

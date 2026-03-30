@@ -28,7 +28,8 @@ import {
   XCircle,
   Video,
   Home,
-  Building2
+  Building2,
+  CheckCircle2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import apiClient from '@/lib/api-client';
@@ -38,6 +39,27 @@ import { useCart } from '@/hooks/useCart';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { recommenderApi } from '@/api/recommender';
+import { z } from 'zod';
+
+const bookingSchema = z.object({
+  pandit: z.union([z.string(), z.number()]).refine(val => val !== '' && val !== 0 && val !== '0', {
+    message: 'Please select a pandit',
+  }),
+  service: z.union([z.string(), z.number()]).refine(val => val !== '' && val !== 0 && val !== '0', {
+    message: 'Please select a service',
+  }),
+  booking_date: z.string().min(1, 'Please select a booking date').refine(val => {
+    const today = new Date().toISOString().split('T')[0];
+    return val >= today;
+  }, 'Booking date must be today or in the future'),
+  booking_time: z.string().min(1, 'Please select a booking time slot'),
+  service_location: z.enum(['ONLINE', 'HOME', 'VENUE'], {
+    message: 'Please select a service location',
+  }),
+});
+
+type BookingValidation = z.infer<typeof bookingSchema>;
 
 interface Pandit {
   id: number;
@@ -55,6 +77,7 @@ interface Service {
   base_duration_minutes: number;
   base_price: number;
   is_available: boolean;
+  image?: string;
 }
 
 interface BookingFormProps {
@@ -75,8 +98,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [samagriRequirements, setSamagriRequirements] = useState<any[]>([]);
+  const [ruleBasedSamagri, setRuleBasedSamagri] = useState<any[]>([]);
+  const [pujaTemplates, setPujaTemplates] = useState<any[]>([]);
   const [missingSamagri, setMissingSamagri] = useState<any[]>([]);
   const [aiSamagriLoading, setAiSamagriLoading] = useState(false);
+  const [ruleBasedLoading, setRuleBasedLoading] = useState(false);
 
   // State for custom price if passed from service card
   const [customPrice, setCustomPrice] = useState<number | null>(state?.price ? parseFloat(state.price) : null);
@@ -117,6 +143,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
 
   useEffect(() => {
     if (formData.service) {
+      fetchRuleBasedRequirements(Number(formData.service));
       fetchAIRecommendations(Number(formData.service));
     }
   }, [formData.service]);
@@ -151,6 +178,36 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     } catch (err) {
       console.error('Failed to fetch services:', err);
       setError('Failed to load services');
+    }
+  };
+
+  const fetchRuleBasedRequirements = async (serviceId: number) => {
+    setRuleBasedLoading(true);
+    try {
+      const recommendations = await recommenderApi.getRecommendationsByPuja(serviceId, 20, 0.0);
+      const formatted = recommendations.map((r: any) => ({
+        id: r.samagri_item?.id,
+        recommendation_id: r.id,
+        name: r.samagri_item?.name,
+        image: r.samagri_item?.primary_image_url || null,
+        price: Number(r.samagri_item?.base_price || 0),
+        quantity: r.quantity_default || 1,
+        unit: r.unit || 'pcs',
+        is_essential: r.is_essential,
+        is_alternative: false,
+        reason: r.reason || `Standard ${r.category.toLowerCase()} item`,
+        confidence: r.confidence_score,
+        in_stock: true,
+        is_rule_based: true
+      }));
+      setRuleBasedSamagri(formatted);
+
+      const templates = await recommenderApi.getTemplates();
+      setPujaTemplates(templates); // Keep templates in memory for future hybrid mapping
+    } catch (err) {
+      console.error("Failed to load rule-based recommendations:", err);
+    } finally {
+      setRuleBasedLoading(false);
     }
   };
 
@@ -189,8 +246,24 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         price: Number(item.price || 0),
       }));
 
-      setSamagriRequirements(normalized);
-      setMissingSamagri(missing);
+      // Convert missing items into normalized items layout so they can be added to cart
+      const normalizedMissing = missing.map((item: any, idx: number) => ({
+        id: `ai-custom-${item.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase()}-${idx}`,
+        name: item.name,
+        image: null,
+        quantity: Number(item.quantity || 1),
+        unit: item.unit || 'pcs',
+        is_essential: true,
+        is_alternative: false,
+        reason: 'AI Custom Sourced item',
+        confidence: 0.85,
+        in_stock: true,
+        price: Number(item.estimated_price || 150), // Fallback reasonable price if missing from db
+        is_ai_created: true
+      }));
+
+      setSamagriRequirements([...normalized, ...normalizedMissing]);
+      setMissingSamagri([]);
 
       // Auto add from actions but only if not already in cart (missing-only behavior)
       const cartKeySet = new Set(cartItems.map(ci => String(ci.id)));
@@ -292,7 +365,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const calculateFees = () => {
     const selectedService = services.find(s => s.id === Number(formData.service));
     // Use customPrice if available (from PanditProfile), otherwise fallback to service base price
-    const serviceFee = customPrice !== null ? customPrice : (selectedService?.base_price || 0);
+    const serviceFee = customPrice !== null ? Number(customPrice) : Number(selectedService?.base_price || 0);
     const sammagriFee = formData.samagri_required ? 500 : 0;
     return { serviceFee, sammagriFee, total: serviceFee + sammagriFee };
   };
@@ -325,6 +398,22 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     e.preventDefault();
     setError(null);
     setSuccess(null);
+
+    // Run Zod validation before proceeding
+    const validation = bookingSchema.safeParse({
+      pandit: formData.pandit,
+      service: formData.service,
+      booking_date: formData.booking_date,
+      booking_time: formData.booking_time,
+      service_location: formData.service_location,
+    });
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]?.message || 'Please fill all required fields';
+      setError(firstError);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -354,10 +443,11 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
           displayDetails: {
             panitName: pandits.find(p => p.id === Number(formData.pandit))?.full_name || 'Selected Pandit',
             serviceName: selectedService?.name || 'Selected Service',
-            servicePrice: selectedService?.base_price || 0,
+            serviceImage: selectedService?.image || null,
+            servicePrice: fees.serviceFee,
             samagriFee: fees.sammagriFee,
             totalFee: fees.total,
-            samagriItems: samagriRequirements
+            samagriItems: [...ruleBasedSamagri, ...samagriRequirements].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i)
           }
         }
       });
@@ -376,7 +466,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto p-4 sm:p-6 lg:p-8"
+      className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8"
     >
       <Card className="border-orange-100 shadow-xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-100">
@@ -400,260 +490,256 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
             </Alert>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Pandit Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="pandit" className="text-orange-900 font-medium">Select Pandit *</Label>
-              <Select
-                value={String(formData.pandit)}
-                onValueChange={(value) => handleInputChange('pandit', value)}
-              >
-                <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
-                  <SelectValue placeholder="Choose a verified pandit" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pandits.map((pandit) => (
-                    <SelectItem key={pandit.id} value={String(pandit.id)} className="focus:bg-orange-50">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+
+            {/* Left Column: Form Inputs */}
+            <div className="space-y-6">
+              {/* Pandit Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="pandit" className="text-orange-900 font-medium">Select Pandit *</Label>
+                <Select
+                  value={String(formData.pandit)}
+                  onValueChange={(value) => handleInputChange('pandit', value)}
+                >
+                  <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
+                    <SelectValue placeholder="Choose a verified pandit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pandits.map((pandit) => (
+                      <SelectItem key={pandit.id} value={String(pandit.id)} className="focus:bg-orange-50">
+                        <div>
+                          <p className="font-semibold text-gray-900">{pandit.full_name}</p>
+                          <p className="text-xs text-gray-500">{pandit.expertise}</p>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Service Selection */}
+              {formData.pandit && (
+                <div className="space-y-2">
+                  <Label htmlFor="service" className="text-orange-900 font-medium">Select Service *</Label>
+                  {services.filter(s => s.is_available).length === 0 ? (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                       <div>
-                        <p className="font-semibold text-gray-900">{pandit.full_name}</p>
-                        <p className="text-xs text-gray-500">{pandit.expertise}</p>
+                        <p className="font-semibold">No services available</p>
+                        <p className="text-amber-700/70 mt-0.5">Try selecting another pandit or contact support for help.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <Select
+                      value={String(formData.service)}
+                      onValueChange={(value) => handleInputChange('service', value)}
+                    >
+                      <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
+                        <SelectValue placeholder="Choose a puja service" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {services.filter(s => s.is_available).map((service) => (
+                          <SelectItem key={service.id} value={String(service.id)} className="focus:bg-orange-50">
+                            <div>
+                              <p className="font-semibold text-gray-900">{service.name}</p>
+                              <p className="text-xs text-gray-500">
+                                NPR {service.base_price} • {service.base_duration_minutes} mins
+                              </p>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+
+              {/* Date Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="booking_date" className="text-orange-900 font-medium">Booking Date *</Label>
+                <div className="relative">
+                  <Input
+                    id="booking_date"
+                    type="date"
+                    value={formData.booking_date}
+                    onChange={(e) => handleInputChange('booking_date', e.target.value)}
+                    min={minDate}
+                    className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl pl-10"
+                    required
+                  />
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Time Selection */}
+              {formData.booking_date && formData.pandit && (
+                <div className="space-y-2">
+                  <Label htmlFor="booking_time" className="text-orange-900 font-medium">Booking Time *</Label>
+                  {slotsLoading ? (
+                    <div className="flex items-center justify-center p-6 bg-orange-50/50 rounded-xl border border-dashed border-orange-200">
+                      <Loader2 className="h-5 w-5 animate-spin mr-3 text-orange-600" />
+                      <span className="text-sm text-orange-800">Finding best auspicious moments...</span>
+                    </div>
+                  ) : availableSlots.length > 0 ? (
+                    <Select
+                      value={formData.booking_time}
+                      onValueChange={(value) => handleInputChange('booking_time', value)}
+                    >
+                      <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
+                        <SelectValue placeholder="Select time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSlots.map((slot) => (
+                          <SelectItem key={slot} value={slot} className="focus:bg-orange-50">
+                            {slot}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-700 text-sm">
+                      <XCircle className="w-5 h-5" />
+                      No available slots for this date
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Timezone Info */}
+              {formData.booking_date && formData.booking_time && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-xs bg-orange-50/50 p-4 rounded-xl text-orange-800 border border-orange-100 shadow-sm"
+                >
+                  <div className="flex items-center gap-2 font-semibold mb-1">
+                    <Clock className="w-4 h-4 text-orange-600" />
+                    Nepal Mean Time (NMT)
+                  </div>
+                  <p className="pl-6 text-orange-900/70">
+                    Scheduled for: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
+                  </p>
+                  {country && (
+                    <div className="mt-2 pl-6 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                      Booking from {country} ({currency})
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Service Location */}
+              <div className="space-y-2">
+                <Label htmlFor="service_location" className="text-orange-900 font-medium">Service Location *</Label>
+                <Select
+                  value={formData.service_location}
+                  onValueChange={(value) => handleInputChange('service_location', value)}
+                >
+                  <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ONLINE" className="focus:bg-orange-50">
+                      <div className="flex items-center gap-2">
+                        <Video className="h-4 w-4 text-orange-600" />
+                        <span>Online (Video Call)</span>
                       </div>
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Service Selection */}
-            {formData.pandit && (
-              <div className="space-y-2">
-                <Label htmlFor="service" className="text-orange-900 font-medium">Select Service *</Label>
-                {services.filter(s => s.is_available).length === 0 ? (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-800 text-sm flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold">No services available</p>
-                      <p className="text-amber-700/70 mt-0.5">Try selecting another pandit or contact support for help.</p>
-                    </div>
-                  </div>
-                ) : (
-                  <Select
-                    value={String(formData.service)}
-                    onValueChange={(value) => handleInputChange('service', value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
-                      <SelectValue placeholder="Choose a puja service" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {services.filter(s => s.is_available).map((service) => (
-                        <SelectItem key={service.id} value={String(service.id)} className="focus:bg-orange-50">
-                          <div>
-                            <p className="font-semibold text-gray-900">{service.name}</p>
-                            <p className="text-xs text-gray-500">
-                              NPR {service.base_price} • {service.base_duration_minutes} mins
-                            </p>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            )}
-
-            {/* Date Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="booking_date" className="text-orange-900 font-medium">Booking Date *</Label>
-              <div className="relative">
-                <Input
-                  id="booking_date"
-                  type="date"
-                  value={formData.booking_date}
-                  onChange={(e) => handleInputChange('booking_date', e.target.value)}
-                  min={minDate}
-                  className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl pl-10"
-                  required
-                />
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Time Selection */}
-            {formData.booking_date && formData.pandit && (
-              <div className="space-y-2">
-                <Label htmlFor="booking_time" className="text-orange-900 font-medium">Booking Time *</Label>
-                {slotsLoading ? (
-                  <div className="flex items-center justify-center p-6 bg-orange-50/50 rounded-xl border border-dashed border-orange-200">
-                    <Loader2 className="h-5 w-5 animate-spin mr-3 text-orange-600" />
-                    <span className="text-sm text-orange-800">Finding best auspicious moments...</span>
-                  </div>
-                ) : availableSlots.length > 0 ? (
-                  <Select
-                    value={formData.booking_time}
-                    onValueChange={(value) => handleInputChange('booking_time', value)}
-                  >
-                    <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
-                      <SelectValue placeholder="Select time" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableSlots.map((slot) => (
-                        <SelectItem key={slot} value={slot} className="focus:bg-orange-50">
-                          {slot}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex items-center gap-3 text-red-700 text-sm">
-                    <XCircle className="w-5 h-5" />
-                    No available slots for this date
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Timezone Info */}
-            {formData.booking_date && formData.booking_time && (
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="text-xs bg-orange-50/50 p-4 rounded-xl text-orange-800 border border-orange-100 shadow-sm"
-              >
-                <div className="flex items-center gap-2 font-semibold mb-1">
-                  <Clock className="w-4 h-4 text-orange-600" />
-                  Nepal Mean Time (NMT)
-                </div>
-                <p className="pl-6 text-orange-900/70">
-                  Scheduled for: {formatWithNepalTime(DateTime.fromISO(`${formData.booking_date}T${formData.booking_time}`).toISO()!)}
-                </p>
-                {country && (
-                  <div className="mt-2 pl-6 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                    Booking from {country} ({currency})
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {/* Service Location */}
-            <div className="space-y-2">
-              <Label htmlFor="service_location" className="text-orange-900 font-medium">Service Location *</Label>
-              <Select
-                value={formData.service_location}
-                onValueChange={(value) => handleInputChange('service_location', value)}
-              >
-                <SelectTrigger className="h-12 border-orange-100 focus:ring-orange-500 rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ONLINE" className="focus:bg-orange-50">
-                    <div className="flex items-center gap-2">
-                      <Video className="h-4 w-4 text-orange-600" />
-                      <span>Online (Video Call)</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="HOME" className="focus:bg-orange-50">
-                    <div className="flex items-center gap-2">
-                      <Home className="h-4 w-4 text-orange-600" />
-                      <span>My Home</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="TEMPLE" className="focus:bg-orange-50">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-orange-600" />
-                      <span>Temple</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="PANDIT_LOCATION" className="focus:bg-orange-50">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-orange-600" />
-                      <span>Pandit's Location</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Samagri & AI Suggestions */}
-            <div className="bg-orange-50/30 p-6 rounded-2xl border border-orange-100 space-y-4">
-              <div className="flex items-center space-x-3">
-                <Checkbox
-                  id="samagri"
-                  checked={formData.samagri_required}
-                  onCheckedChange={(checked) => handleInputChange('samagri_required', checked)}
-                  className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label htmlFor="samagri" className="text-sm font-bold text-orange-900">
-                    Include Samagri Kit (+NPR 500)
-                  </Label>
-                  <p className="text-xs text-orange-800/60 font-medium">
-                    Anita recommends including the ritual kit for a complete experience.
-                  </p>
-                </div>
-              </div>
-
-              {formData.samagri_required && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="space-y-4 pt-2"
-                >
-                  <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
-                    <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-bold text-orange-900 flex items-center gap-2">
-                        <Bot className="w-5 h-5 text-orange-600" />
-                        AI Recommended Samagri
-                      </p>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-sans tracking-wide">
-                        SMART CHOICE
-                      </Badge>
-                    </div>
-
-                    {aiSamagriLoading ? (
-                      <div className="flex flex-col items-center justify-center p-8 gap-3">
-                        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
-                        <span className="text-xs text-orange-800 font-medium animate-pulse">Consulting Vedic experts...</span>
+                    <SelectItem value="HOME" className="focus:bg-orange-50">
+                      <div className="flex items-center gap-2">
+                        <Home className="h-4 w-4 text-orange-600" />
+                        <span>My Home</span>
                       </div>
-                    ) : samagriRequirements.length > 0 ? (
-                      <div className="space-y-3">
-                        {missingSamagri.length > 0 && (
-                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                            <p className="text-xs font-bold text-amber-800 mb-2">Missing Original Items</p>
-                            <div className="space-y-1.5">
-                              {missingSamagri.map((m: any, i: number) => (
-                                <p key={`${m.name}-${i}`} className="text-xs text-amber-700">
-                                  • {m.name} ({m.quantity} {m.unit}) — {m.reason === 'out_of_stock' ? 'out of stock' : 'not available'}
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                    </SelectItem>
+                    <SelectItem value="TEMPLE" className="focus:bg-orange-50">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-orange-600" />
+                        <span>Temple</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="PANDIT_LOCATION" className="focus:bg-orange-50">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-orange-600" />
+                        <span>Pandit's Location</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                        <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                          {samagriRequirements.map((req: any, idx: number) => (
-                            <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-50 hover:border-orange-200 transition-all shadow-sm">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-inner overflow-hidden">
-                                  {req.image ? (
-                                    <img
-                                      src={req.image}
-                                      alt={req.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="text-orange-600 font-bold text-sm tracking-tighter">{req.name?.slice(0, 2).toUpperCase()}</span>
-                                  )}
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="text-orange-900 font-medium">Special Requests & Notes (Optional)</Label>
+                <textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="Share any specific family traditions or ritual requirements..."
+                  className="w-full h-32 border border-orange-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-gray-300 resize-none"
+                />
+              </div>
+
+            </div> {/* End of Left Column */}
+
+            {/* Right Column: Add-ons & Summary */}
+            <div className="space-y-6 flex flex-col h-full">
+              {/* Samagri & AI Suggestions */}
+              <div className="bg-orange-50/30 p-6 rounded-2xl border border-orange-100 space-y-4 flex-grow">
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    id="samagri"
+                    checked={formData.samagri_required}
+                    onCheckedChange={(checked) => handleInputChange('samagri_required', checked)}
+                    className="data-[state=checked]:bg-orange-600 data-[state=checked]:border-orange-600"
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <Label htmlFor="samagri" className="text-sm font-bold text-orange-900">
+                      Include Samagri Kit (+NPR 500)
+                    </Label>
+                    <p className="text-xs text-orange-800/60 font-medium">
+                      Anita recommends including the ritual kit for a complete experience.
+                    </p>
+                  </div>
+                </div>
+
+                {formData.samagri_required && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-4 pt-2"
+                  >
+                    {/* Verified Rule-Based Samagri */}
+                    {ruleBasedSamagri.length > 0 && (
+                      <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl border border-green-100 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center justify-between mb-4">
+                          <p className="text-sm font-bold text-green-900 flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            Verified Samagri Kit
+                          </p>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-sans tracking-wide">
+                            ESSENTIAL
+                          </Badge>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 gap-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                            {ruleBasedSamagri.map((req: any, idx: number) => (
+                              <div key={req.id || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-green-50 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center shadow-inner overflow-hidden">
+                                    {req.image ? (
+                                      <img src={req.image} alt={req.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <span className="text-green-600 font-bold text-sm">{req.name?.slice(0, 2).toUpperCase()}</span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">
+                                      {req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div>
-                                  <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
-                                  <p className="text-[11px] text-gray-500 font-medium">
-                                    {req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}
-                                    {req.is_alternative ? ' • Alternative' : ''}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
                                 <Button
                                   type="button"
                                   size="sm"
@@ -663,106 +749,156 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                                 >
                                   {isInCart(req) ? 'Remove' : 'Add'}
                                 </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSamagriRequirements(prev => prev.filter((r, i) => (r.id || r.name || i) !== (req.id || req.name || idx)));
-                                  }}
-                                  className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full shrink-0"
-                                  title="Remove from suggestion"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="py-8 text-center text-orange-800/40 italic text-sm">No items found in our sacred database.</div>
                     )}
 
-                    <div className="pt-4 border-t border-orange-50 mt-4 flex flex-col gap-3">
-                      <Button
-                        type="button"
-                        onClick={handleAddAllToCart}
-                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                      >
-                        <ShoppingCart className="w-4 h-4" />
-                        Add Missing to Cart
-                      </Button>
-                      <p className="text-[10px] text-center text-orange-900/40 italic font-medium">
-                        Anita's Journey: We'll add only the items you don't already have.
-                      </p>
+                    {/* AI Suggestions (Filtered to remove dupes from ruleBased) */}
+                    <div className="bg-white/80 backdrop-blur-sm p-5 rounded-xl border border-orange-100 shadow-sm relative overflow-hidden group">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-bold text-orange-900 flex items-center gap-2">
+                          <Bot className="w-5 h-5 text-orange-600" />
+                          AI Recommended Additions
+                        </p>
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200 font-sans tracking-wide">
+                          SUGGESTIONS
+                        </Badge>
+                      </div>
+
+                      {aiSamagriLoading ? (
+                        <div className="flex flex-col items-center justify-center p-8 gap-3">
+                          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                          <span className="text-xs text-orange-800 font-medium animate-pulse">Consulting Vedic experts...</span>
+                        </div>
+                      ) : samagriRequirements.filter(r => !ruleBasedSamagri.find(rb => rb.id === r.id)).length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 gap-3 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                            {samagriRequirements.filter(r => !ruleBasedSamagri.find(rb => rb.id === r.id)).map((req: any, idx: number) => (
+                              <div key={req.id || req.name || idx} className="flex items-center justify-between bg-white p-3 rounded-xl border border-orange-50 hover:border-orange-200 transition-all shadow-sm">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-orange-100 to-amber-100 rounded-xl flex items-center justify-center shadow-inner overflow-hidden">
+                                    {req.image ? (
+                                      <img
+                                        src={req.image}
+                                        alt={req.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <span className="text-orange-600 font-bold text-sm tracking-tighter">{req.name?.slice(0, 2).toUpperCase()}</span>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-bold text-gray-900 leading-none mb-1">{req.name}</p>
+                                    <p className="text-[11px] text-gray-500 font-medium">
+                                      {req.quantity} {req.unit} {req.price ? `• NPR ${req.price}` : ''}
+                                      {req.is_alternative ? ' • Alternative' : ''}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={isInCart(req) ? 'destructive' : 'outline'}
+                                    onClick={() => toggleCartItem(req)}
+                                    className="h-8 px-3 text-xs"
+                                  >
+                                    {isInCart(req) ? 'Remove' : 'Add'}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center text-orange-800/40 italic text-sm">No additional unique AI suggestions found.</div>
+                      )}
+
+                      <div className="pt-4 border-t border-orange-50 mt-4 flex flex-col gap-3">
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            const cartKeySet = new Set(cartItems.map(ci => String(ci.id)));
+                            [...ruleBasedSamagri, ...samagriRequirements].forEach((req: any) => {
+                              const cartId = getCartItemId(req);
+                              if (cartKeySet.has(String(cartId))) return;
+                              addItem({
+                                id: cartId,
+                                title: req.name,
+                                price: req.price ? Number(req.price) : 0,
+                                meta: { type: 'samagri', pujaId: formData.service }
+                              }, Number(req.quantity || 1));
+                              cartKeySet.add(String(cartId));
+                            });
+                            openDrawer();
+                          }}
+                          className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-11 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                          Add All Requirements to Cart
+                        </Button>
+                        <p className="text-[10px] text-center text-orange-900/40 italic font-medium">
+                          Anita's Journey: We'll add only the items you don't already have.
+                        </p>
+                      </div>
                     </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Fee Summary */}
+              {formData.service && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-orange-50/50 p-6 rounded-2xl border-2 border-dashed border-orange-200 space-y-3"
+                >
+                  <div className="flex justify-between text-sm font-medium text-orange-900/70">
+                    <span>Ritual Service:</span>
+                    <span>NPR {fees.serviceFee}</span>
+                  </div>
+                  {formData.samagri_required && (
+                    <div className="flex justify-between text-sm font-medium text-orange-900/70">
+                      <span>Sacred Samagri Kit:</span>
+                      <span>NPR {fees.sammagriFee}</span>
+                    </div>
+                  )}
+                  <div className="border-t border-orange-200 pt-3 flex justify-between items-center">
+                    <span className="text-lg font-bold text-orange-950">Investment Total</span>
+                    <span className="text-2xl font-playfair font-bold text-orange-600">NPR {fees.total}</span>
                   </div>
                 </motion.div>
               )}
-            </div>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-orange-900 font-medium">Special Requests & Notes (Optional)</Label>
-              <textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => handleInputChange('notes', e.target.value)}
-                placeholder="Share any specific family traditions or ritual requirements..."
-                className="w-full h-32 border border-orange-100 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all placeholder:text-gray-300 resize-none"
-              />
-            </div>
-
-            {/* Fee Summary */}
-            {formData.service && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-orange-50/50 p-6 rounded-2xl border-2 border-dashed border-orange-200 space-y-3"
-              >
-                <div className="flex justify-between text-sm font-medium text-orange-900/70">
-                  <span>Ritual Service:</span>
-                  <span>NPR {fees.serviceFee}</span>
-                </div>
-                {formData.samagri_required && (
-                  <div className="flex justify-between text-sm font-medium text-orange-900/70">
-                    <span>Sacred Samagri Kit:</span>
-                    <span>NPR {fees.sammagriFee}</span>
-                  </div>
-                )}
-                <div className="border-t border-orange-200 pt-3 flex justify-between items-center">
-                  <span className="text-lg font-bold text-orange-950">Investment Total</span>
-                  <span className="text-2xl font-playfair font-bold text-orange-600">NPR {fees.total}</span>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Submit Button - Enhanced as per "Review & Confirm" CTA */}
-            <div className="pt-4">
-              <Button
-                type="submit"
-                disabled={
-                  loading ||
-                  !formData.pandit ||
-                  !formData.service ||
-                  !formData.booking_date ||
-                  !formData.booking_time
-                }
-                className="w-full h-14 text-lg font-bold bg-[#f97316] hover:bg-[#ea580c] text-white rounded-2xl shadow-lg shadow-orange-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                {loading ? (
-                  <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                ) : (
-                  <>
-                    Review & Confirm
-                    <ChevronRight className="ml-2 w-5 h-5" />
-                  </>
-                )}
-              </Button>
-              <p className="text-center text-[10px] text-gray-400 mt-4 italic font-medium">
-                Verify choices in the next step before finalizing your sacred journey.
-              </p>
+              {/* Submit Button - Enhanced as per "Review & Confirm" CTA */}
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  disabled={
+                    loading ||
+                    !formData.pandit ||
+                    !formData.service ||
+                    !formData.booking_date ||
+                    !formData.booking_time
+                  }
+                  className="w-full h-14 text-lg font-bold bg-[#f97316] hover:bg-[#ea580c] text-white rounded-2xl shadow-lg shadow-orange-200 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                  ) : (
+                    <>
+                      Review & Confirm
+                      <ChevronRight className="ml-2 w-5 h-5" />
+                    </>
+                  )}
+                </Button>
+                <p className="text-center text-[10px] text-gray-400 mt-4 italic font-medium">
+                  Verify choices in the next step before finalizing your sacred journey.
+                </p>
+              </div>
             </div>
           </form>
         </CardContent>

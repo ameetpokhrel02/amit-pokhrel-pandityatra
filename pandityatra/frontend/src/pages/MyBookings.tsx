@@ -6,7 +6,7 @@ import Navbar from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Video, PlayCircle } from 'lucide-react';
+import { Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, Video, PlayCircle, PhoneOff, Timer, RefreshCw } from 'lucide-react';
 import { format, isAfter, isBefore, subMinutes, addMinutes } from 'date-fns';
 
 const MyBookings: React.FC = () => {
@@ -71,19 +71,45 @@ const MyBookings: React.FC = () => {
     const isJoinable = (booking: Booking) => {
         if (!booking.booking_date || !booking.booking_time) return false;
         if (booking.status !== 'ACCEPTED') return false;
-
         try {
-            // Combine date and time strings
             const pujaDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
-
-            // Allow joining 10 minutes before and up to 2 hours after
             const joinStart = subMinutes(pujaDateTime, 10);
             const joinEnd = addMinutes(pujaDateTime, 120);
-
             return isAfter(now, joinStart) && isBefore(now, joinEnd);
-        } catch (e) {
-            return false;
-        }
+        } catch { return false; }
+    };
+
+    const isMissed = (booking: Booking) => {
+        if (!booking.booking_date || !booking.booking_time) return false;
+        if (booking.status !== 'ACCEPTED') return false;
+        try {
+            const pujaDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+            const joinEnd = addMinutes(pujaDateTime, 120);
+            return isAfter(now, joinEnd);
+        } catch { return false; }
+    };
+
+    const isUpcoming = (booking: Booking) => {
+        if (!booking.booking_date || !booking.booking_time) return false;
+        if (booking.status !== 'ACCEPTED') return false;
+        try {
+            const pujaDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+            const joinStart = subMinutes(pujaDateTime, 10);
+            return isBefore(now, joinStart);
+        } catch { return false; }
+    };
+
+    const getTimeUntil = (booking: Booking) => {
+        if (!booking.booking_date || !booking.booking_time) return '';
+        try {
+            const pujaDateTime = new Date(`${booking.booking_date}T${booking.booking_time}`);
+            const diffMs = pujaDateTime.getTime() - now.getTime();
+            if (diffMs < 0) return '';
+            const hours = Math.floor(diffMs / (1000 * 60 * 60));
+            const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            if (hours > 0) return `Starts in ${hours}h ${minutes}m`;
+            return `Starts in ${minutes}m`;
+        } catch { return ''; }
     };
 
     const handleJoinPuja = (bookingId: number) => {
@@ -169,13 +195,31 @@ const MyBookings: React.FC = () => {
                                                 <span className="font-medium">
                                                     {role === 'pandit' ? 'Client' : 'Pandit'}:
                                                 </span>{' '}
-                                                {/* In a real scenario, you'd resolve the ID to a name via another fetch or serializer expansion */}
                                                 {role === 'pandit' ? `User ${booking.user}` : `Pandit ${booking.pandit}`}
                                             </div>
                                         </div>
                                         {booking.notes && (
                                             <div className="bg-muted p-3 rounded-md text-muted-foreground italic text-xs">
                                                 "{booking.notes}"
+                                            </div>
+                                        )}
+
+                                        {/* Upcoming session countdown */}
+                                        {isUpcoming(booking) && (
+                                            <div className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg px-3 py-2 text-xs font-medium">
+                                                <Timer className="h-3.5 w-3.5 shrink-0" />
+                                                <span>{getTimeUntil(booking)}</span>
+                                            </div>
+                                        )}
+
+                                        {/* Missed session notice */}
+                                        {isMissed(booking) && (
+                                            <div className="flex items-start gap-2 bg-red-50 text-red-700 border border-red-100 rounded-lg px-3 py-2 text-xs">
+                                                <PhoneOff className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="font-semibold">Session window has passed</p>
+                                                    <p className="text-red-500/80 mt-0.5">The video call join window (2 hrs) has expired. Contact support or rebook if needed.</p>
+                                                </div>
                                             </div>
                                         )}
                                     </CardContent>
@@ -203,15 +247,26 @@ const MyBookings: React.FC = () => {
 
                                     {role === 'pandit' && booking.status === 'ACCEPTED' && (
                                         <CardFooter className="flex-col gap-2 pt-2">
-                                            <Button
-                                                size="sm"
-                                                className={`w-full ${isJoinable(booking) ? 'bg-green-600 hover:bg-green-700' : 'opacity-50'}`}
-                                                disabled={!isJoinable(booking)}
-                                                onClick={() => handleJoinPuja(booking.id)}
-                                            >
-                                                <Video className="h-4 w-4 mr-2" />
-                                                Start Puja
-                                            </Button>
+                                            {isJoinable(booking) ? (
+                                                <Button
+                                                    size="sm"
+                                                    className="w-full bg-green-600 hover:bg-green-700"
+                                                    onClick={() => handleJoinPuja(booking.id)}
+                                                >
+                                                    <Video className="h-4 w-4 mr-2" />
+                                                    Start Puja
+                                                </Button>
+                                            ) : isMissed(booking) ? (
+                                                <div className="w-full flex items-center justify-center gap-2 py-2 text-xs text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                    <PhoneOff className="h-4 w-4 text-gray-400" />
+                                                    Session window expired
+                                                </div>
+                                            ) : (
+                                                <div className="w-full flex items-center justify-center gap-2 py-2 text-xs text-blue-600 bg-blue-50 rounded-lg border border-blue-100">
+                                                    <Timer className="h-4 w-4" />
+                                                    {getTimeUntil(booking) || 'Waiting for session time'}
+                                                </div>
+                                            )}
                                             <Button
                                                 size="sm"
                                                 variant="outline"
@@ -225,16 +280,38 @@ const MyBookings: React.FC = () => {
 
                                     {/* Customer Actions */}
                                     {role === 'user' && booking.status === 'ACCEPTED' && (
-                                        <CardFooter className="pt-2">
-                                            <Button
-                                                size="sm"
-                                                className={`w-full ${isJoinable(booking) ? 'bg-[#f97316] hover:bg-[#ea580c]' : 'opacity-50'}`}
-                                                disabled={!isJoinable(booking)}
-                                                onClick={() => handleJoinPuja(booking.id)}
-                                            >
-                                                <Video className="h-4 w-4 mr-2" />
-                                                Join Puja
-                                            </Button>
+                                        <CardFooter className="pt-2 flex-col gap-2">
+                                            {isJoinable(booking) ? (
+                                                <Button
+                                                    size="sm"
+                                                    className="w-full bg-[#f97316] hover:bg-[#ea580c]"
+                                                    onClick={() => handleJoinPuja(booking.id)}
+                                                >
+                                                    <Video className="h-4 w-4 mr-2" />
+                                                    Join Puja
+                                                </Button>
+                                            ) : isMissed(booking) ? (
+                                                <div className="w-full space-y-2">
+                                                    <div className="w-full flex items-center justify-center gap-2 py-2.5 text-xs text-red-600 bg-red-50 rounded-lg border border-red-100">
+                                                        <PhoneOff className="h-4 w-4" />
+                                                        <span className="font-semibold">Missed — Session Ended</span>
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        className="w-full text-xs text-orange-700 border-orange-200 hover:bg-orange-50"
+                                                        onClick={() => navigate('/booking')}
+                                                    >
+                                                        <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                                                        Rebook This Service
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="w-full flex items-center justify-center gap-2 py-2.5 text-xs text-blue-600 bg-blue-50 rounded-lg border border-blue-100">
+                                                    <Timer className="h-4 w-4" />
+                                                    <span className="font-medium">{getTimeUntil(booking) || 'Session not yet open'}</span>
+                                                </div>
+                                            )}
                                         </CardFooter>
                                     )}
 

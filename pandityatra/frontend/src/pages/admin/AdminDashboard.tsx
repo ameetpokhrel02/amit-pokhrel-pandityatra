@@ -110,7 +110,7 @@ const AdminDashboard: React.FC = () => {
                     <MetricCard 
                         title="Total Vendors" 
                         value={stats?.total_vendors || 0} 
-                        change={0} 
+                        change={stats?.vendor_growth || 0} 
                         icon={<Store className="w-6 h-6" />}
                         onClick={() => navigate('/admin/vendors-list')}
                         subtitle={`${stats?.pending_vendors || 0} pending verification`}
