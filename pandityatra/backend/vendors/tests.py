@@ -1,5 +1,8 @@
 from django.test import TestCase
 from django.urls import reverse
+import io
+from PIL import Image
+from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
@@ -39,6 +42,13 @@ class VendorFlowTestCase(APITestCase):
             verification_status='PENDING'
         )
 
+    def _generate_test_image(self):
+        file = io.BytesIO()
+        image = Image.new('RGB', (100, 100), 'white')
+        image.save(file, 'jpeg')
+        file.seek(0)
+        return SimpleUploadedFile('test.jpg', file.read(), content_type='image/jpeg')
+
     # ---------------------------
     # FEATURE: Registration & Profile
     # ---------------------------
@@ -57,9 +67,10 @@ class VendorFlowTestCase(APITestCase):
             'city': 'Pokhara',
             'bank_name': 'NIBL',
             'bank_account_number': '00112233',
-            'account_holder_name': 'New Vendor'
+            'account_holder_name': 'New Vendor',
+            'profile_pic': self._generate_test_image()
         }
-        response = self.client.post(url, data)
+        response = self.client.post(url, data, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.assertTrue(User.objects.filter(email='newvendor@test.com').exists())
 
@@ -80,9 +91,10 @@ class VendorFlowTestCase(APITestCase):
             'city': 'Lalitpur',
             'bank_name': 'Global IME',
             'bank_account_number': '99887766',
-            'account_holder_name': 'Google User'
+            'account_holder_name': 'Google User',
+            'profile_pic': self._generate_test_image()
         }
-        response = self.client.post(url, data)
+        response = self.client.post(url, data, format='multipart')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         existing_user.refresh_from_db()
         self.assertEqual(existing_user.role, 'vendor')
@@ -96,6 +108,39 @@ class VendorFlowTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.vendor_profile.refresh_from_db()
         self.assertEqual(self.vendor_profile.shop_name, 'Updated Shop Name')
+
+    def test_vendor_registration_and_login(self):
+        """Test full flow: Registration -> Login to get Token"""
+        # 1. Register
+        reg_url = reverse('vendor-register')
+        reg_data = {
+            'email': 'flowvendor@test.com',
+            'password': 'flowpassword123',
+            'full_name': 'Flow Vendor',
+            'phone_number': '9812345678',
+            'shop_name': 'Flow Shop',
+            'business_type': 'Clothing',
+            'address': 'KTM',
+            'city': 'KTM',
+            'bank_name': 'ADBL',
+            'bank_account_number': '55443322',
+            'account_holder_name': 'Flow Vendor',
+            'profile_pic': self._generate_test_image()
+        }
+        reg_response = self.client.post(reg_url, reg_data, format='multipart')
+        self.assertEqual(reg_response.status_code, status.HTTP_201_CREATED)
+        
+        # 2. Login
+        login_url = reverse('login-password')
+        login_data = {
+            'email': 'flowvendor@test.com',
+            'password': 'flowpassword123'
+        }
+        login_response = self.client.post(login_url, login_data)
+        self.assertEqual(login_response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', login_response.data)
+        self.assertIn('refresh', login_response.data)
+        self.assertEqual(login_response.data['role'], 'vendor')
 
     # ---------------------------
     # FEATURE: Product Management (Add, Edit, Delete, Stock)

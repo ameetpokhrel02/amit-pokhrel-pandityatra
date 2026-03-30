@@ -16,6 +16,11 @@ load_dotenv(dotenv_path)
 # Backwards compatibility: try default load if specific path fails or not found
 load_dotenv()
 
+# FIX: If CLOUDINARY_URL has leaked into the environment as a plain API key, 
+# remove it so the Cloudinary SDK doesn't crash on startup.
+if 'CLOUDINARY_URL' in os.environ and not os.environ['CLOUDINARY_URL'].startswith('cloudinary://'):
+    del os.environ['CLOUDINARY_URL']
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -66,7 +71,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'cloudinary_storage', # Before staticfiles
     'django.contrib.staticfiles',
+    'cloudinary',
     'corsheaders',
     'channels',  # Django Channels for WebSocket support
     
@@ -216,6 +223,20 @@ SHORT_DATE_FORMAT = 'Y-m-d'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+# Django 4.2+ STORAGES Configuration
+STORAGES = {
+    "default": {
+        "BACKEND": "pandityatra_backend.hybrid_storage.HybridMediaStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
+# Backward compatibility for django-cloudinary-storage (v0.3.0 and below)
+# which still tries to read settings.STATICFILES_STORAGE during initialization
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
@@ -224,6 +245,17 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 SERVE_MEDIA_FILES = env_bool('SERVE_MEDIA_FILES', DEBUG)
+
+# Cloudinary Storage Configuration
+# Creds from .env
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dm0vvpzs9'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '556247575364212'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECERET', 'd5I3aPfzpbxOqBw03zgf22cvfMM'),
+}
+
+# Backward compatibility for older packages
+DEFAULT_FILE_STORAGE = 'pandityatra_backend.hybrid_storage.HybridMediaStorage'
 
 # Ensure MIME types are correct for SVG
 import mimetypes

@@ -17,7 +17,9 @@ class PanditEndpointTests(APITestCase):
             verification_status="APPROVED",
             is_verified=True
         )
-        self.wallet = PanditWallet.objects.create(pandit=self.pandit, available_balance=1000)
+        self.wallet, _ = PanditWallet.objects.get_or_create(pandit=self.pandit)
+        self.wallet.available_balance = 1000
+        self.wallet.save()
         self.client.force_authenticate(user=self.user)
 
     def test_dashboard_stats(self):

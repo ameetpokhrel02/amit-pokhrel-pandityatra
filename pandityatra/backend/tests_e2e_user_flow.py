@@ -40,8 +40,8 @@ class UserE2EFlowTests(APITestCase):
             name='Test Puja',
             description='Test Description',
             base_price=500.0,
-            duration_minutes=60,
-            is_active=True
+            base_duration_minutes=60,
+            is_available=True
         )
         self.pandit_service = PanditService.objects.create(
             pandit=self.pandit_profile,
@@ -63,16 +63,19 @@ class UserE2EFlowTests(APITestCase):
             is_active=True
         )
 
-    @patch('video.views.room_creator')
+    @patch('video.views.ensure_video_room_for_booking')
     @patch('payments.utils.initiate_khalti_payment')
     def test_complete_user_flow(self, mock_khalti, mock_room_creator):
         """End-to-End Test for typical User actions"""
         
+        class DummyRoom:
+            room_name = "mock-room"
+            room_url = "http://mock-video.com"
+            status = "scheduled"
+
         # Mock external APIs
         mock_khalti.return_value = (True, "mock_pidx", "http://mock-khalti.com")
-        mock_room_creator.create_room.return_value = {
-            "name": "mock-room", "url": "http://mock-video.com"
-        }
+        mock_room_creator.return_value = DummyRoom()
 
         # 1. Login user
         login_url = '/api/users/login-password/'
@@ -88,16 +91,14 @@ class UserE2EFlowTests(APITestCase):
         booking_url = '/api/bookings/'
         future_date = (timezone.now() + datetime.timedelta(days=2)).date()
         book_response = self.client.post(booking_url, {
-            'puja': self.puja.id,
+            'service': self.pandit_service.id,
+            'service_name': self.puja.name,
             'pandit': self.pandit_profile.id,
-            'package_type': 'standard',
-            'appointment_date': future_date.isoformat(),
-            'appointment_time': '10:00:00',
-            'mode': 'online',
-            'location_address': 'Test Address',
-            'customer_name': 'Test User',
-            'customer_phone': '+9779812345678',
-            'payment_method': 'Khalti'
+            'booking_date': future_date.isoformat(),
+            'booking_time': '10:00:00',
+            'service_location': 'ONLINE',
+            'customer_location': 'Test Address',
+            'samagri_required': True
         })
         self.assertEqual(book_response.status_code, status.HTTP_201_CREATED)
         booking_id = book_response.data.get('id')
@@ -120,24 +121,30 @@ class UserE2EFlowTests(APITestCase):
         self.assertEqual(self.samagri.stock_quantity, 8)
 
         # 4. Generate Video Room (Simulating Pandit action usually, but testing endpoint)
-        video_room_url = '/api/video/rooms/'
+        # Force booking status to accepted to pass validation
+        from bookings.models import Booking
+        b = Booking.objects.get(id=booking_id)
+        b.status = 'ACCEPTED'
+        b.payment_status = True
+        b.save()
+
+        video_room_url = '/api/video/rooms/create/'
         video_response = self.client.post(video_room_url, {
-            'room_name': f'puja_{booking_id}',
-            'is_private': True
+            'booking_id': booking_id,
         })
         self.assertEqual(video_response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(video_response.data['url'], "http://mock-video.com")
+        self.assertEqual(video_response.data['room_url'], "http://mock-video.com")
 
         # 5. Connect and Chat (Testing REST fallback or models if WebSocket is used)
-        # Since Channels is async, we simulate standard model creation for a ChatMessage
-        from chat.models import ChatMessage, ChatRoom
+        # Since Channels is async, we simulate standard model creation for a Message
+        from chat.models import Message, ChatRoom
         room = ChatRoom.objects.create(
             booking_id=booking_id,
-            user=self.user,
-            pandit=self.pandit_user
+            customer=self.user,
+            pandit=self.pandit_profile
         )
-        msg = ChatMessage.objects.create(
-            room=room,
+        msg = Message.objects.create(
+            chat_room=room,
             sender=self.user,
             content="Hello Panditji, ready for the Puja!"
         )

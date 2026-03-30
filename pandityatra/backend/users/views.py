@@ -441,14 +441,16 @@ class ProfileView(APIView):
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_200_OK)
 
 
+from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Sum
-from pandits.models import Pandit
+from vendors.models import VendorProfile
+from samagri.models import SamagriItem
+from .serializers import UserSerializer
 from bookings.models import Booking
 from payments.models import Payment
-from samagri.models import SamagriItem
 from adminpanel.models import PaymentErrorLog
+from pandits.models import Pandit
 
 
 class AdminStatsView(APIView):
@@ -475,6 +477,7 @@ class AdminStatsView(APIView):
         # Basic Stats
         total_users = User.objects.count()
         total_pandits = Pandit.objects.count()
+        total_vendors = VendorProfile.objects.count()
         total_bookings = Booking.objects.count()
         
         # Revenue (Completed payments)
@@ -506,6 +509,10 @@ class AdminStatsView(APIView):
         pandits_prev_month_new = Pandit.objects.filter(user__date_joined__gte=last_month_start, user__date_joined__lte=last_month_end).count()
         pandit_growth = calc_growth(pandits_this_month_new, pandits_prev_month_new)
 
+        vendors_this_month_new = VendorProfile.objects.filter(user__date_joined__gte=start_of_month).count()
+        vendors_prev_month_new = VendorProfile.objects.filter(user__date_joined__gte=last_month_start, user__date_joined__lte=last_month_end).count()
+        vendor_growth = calc_growth(vendors_this_month_new, vendors_prev_month_new)
+
         bookings_this_month = Booking.objects.filter(created_at__gte=start_of_month).count()
         bookings_prev_month = Booking.objects.filter(created_at__gte=last_month_start, created_at__lte=last_month_end).count()
         booking_growth = calc_growth(bookings_this_month, bookings_prev_month)
@@ -514,6 +521,7 @@ class AdminStatsView(APIView):
 
         # Insightful counts
         pending_verifications = Pandit.objects.filter(is_verified=False).count()
+        pending_vendors = VendorProfile.objects.filter(is_verified=False).count()
         low_stock_count = SamagriItem.objects.filter(stock_quantity__lte=5).count()
         
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -525,13 +533,16 @@ class AdminStatsView(APIView):
         return Response({
             "total_users": total_users,
             "total_pandits": total_pandits,
+            "total_vendors": total_vendors,
             "total_bookings": total_bookings,
             "revenue_this_month": float(revenue_this_month),
             "user_growth": user_growth,
             "pandit_growth": pandit_growth,
+            "vendor_growth": vendor_growth,
             "booking_growth": booking_growth,
             "revenue_growth": revenue_growth,
             "pending_verifications": pending_verifications,
+            "pending_vendors": pending_vendors,
             "low_stock_count": low_stock_count,
             "todays_pujas_count": todays_pujas_count,
             "error_logs_count": error_logs_count,
@@ -765,6 +776,7 @@ class GoogleLoginView(APIView):
                 'refresh': str(refresh),
                 'access': str(refresh.access_token), # frontend expects 'access' or 'token'?
                 'token': str(refresh.access_token),  # Providing both for safety
+                'role': user.role, # 🚨 Consistency Fix: Top-level role for frontend useAuth
                 'user': {
                     'id': user.id,
                     'email': user.email,

@@ -111,9 +111,32 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.role == 'vendor':
-            return VendorProfile.objects.filter(user=self.request.user)
-        return VendorProfile.objects.all()
+        user = self.request.user
+        if not user.is_authenticated:
+            return VendorProfile.objects.none()
+        if user.role == 'vendor':
+            return VendorProfile.objects.filter(user=user)
+        # Admin or support staff can see all
+        if user.role in ('admin', 'superadmin') or user.is_staff:
+            return VendorProfile.objects.all()
+        return VendorProfile.objects.none()
+
+    @action(detail=True, methods=['POST'])
+    def toggle_status(self, request, pk=None):
+        """Toggle user is_active status (Block/Unblock)"""
+        if not (request.user.is_staff or getattr(request.user, 'role', '') in ('admin', 'superadmin')):
+            return Response({"detail": "Admin only"}, status=status.HTTP_403_FORBIDDEN)
+            
+        vendor = self.get_object()
+        user = vendor.user
+        user.is_active = not user.is_active
+        user.save()
+        
+        status_str = "activated" if user.is_active else "deactivated"
+        return Response({
+            "detail": f"Vendor account {status_str}",
+            "is_active": user.is_active
+        })
 
     @action(detail=False, methods=['GET'])
     def stats(self, request):

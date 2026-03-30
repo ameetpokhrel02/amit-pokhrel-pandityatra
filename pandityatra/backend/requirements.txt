@@ -32,5 +32,9 @@ nepali-datetime
 reportlab==4.1.0
 pywebpush==2.0.3
 
+# Image & File Storage (Cloudinary)
+cloudinary==1.38.0
+django-cloudinary-storage==0.3.0
+
 gunicorn==23.0.0
 whitenoise==6.7.0
