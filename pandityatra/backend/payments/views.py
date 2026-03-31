@@ -358,6 +358,18 @@ class StripeWebhookView(APIView):
     def _handle_successful_payment(self, session):
         """Process successful Stripe payment"""
         try:
+            payment_type = session['metadata'].get('type')
+            
+            if payment_type == 'shop_order':
+                order_id = session['metadata']['order_id']
+                from samagri.models import ShopOrder, ShopOrderStatus
+                order = ShopOrder.objects.get(id=order_id)
+                order.status = ShopOrderStatus.PAID
+                order.transaction_id = session['id']
+                order.save()
+                logger.info(f"Payment completed for shop order {order_id}")
+                return
+
             booking_id = session['metadata']['booking_id']
             payment_id = session['metadata']['payment_id']
             

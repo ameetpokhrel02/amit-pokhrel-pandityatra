@@ -260,9 +260,21 @@ class SamagriCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
-        # Prefetch only approved and active items for optimized performance
-        return SamagriCategory.objects.filter(is_active=True).prefetch_related(
-            models.Prefetch('items', queryset=SamagriItem.objects.filter(is_approved=True, is_active=True))
+        user = self.request.user
+        is_admin = user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ['admin', 'superadmin'])
+
+        # Categories filter
+        categories = SamagriCategory.objects.all()
+        if not is_admin:
+            categories = categories.filter(is_active=True)
+            
+        # Prefetch items with admin-aware filtering
+        item_filters = {}
+        if not is_admin:
+            item_filters = {'is_approved': True, 'is_active': True}
+            
+        return categories.prefetch_related(
+            models.Prefetch('items', queryset=SamagriItem.objects.filter(**item_filters))
         ).order_by('order', 'name')
 
 class SamagriItemViewSet(viewsets.ModelViewSet):

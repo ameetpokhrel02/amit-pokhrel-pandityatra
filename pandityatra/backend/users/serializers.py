@@ -1,7 +1,8 @@
 import re
 from rest_framework import serializers
 from .models import User 
-from pandits.models import Pandit # 🚨 Enable Link
+from pandits.models import Pandit
+from vendors.models import VendorProfile
 from django.utils.crypto import get_random_string 
 
 # Define the length of the random password (e.g., 20 characters)
@@ -34,8 +35,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
     # Make password optional - if not provided, will generate random one
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password_strength], allow_blank=True, allow_null=True)
-    # Add role field - default to 'user' if not provided
-    role = serializers.ChoiceField(choices=[('user', 'User'), ('pandit', 'Pandit'), ('admin', 'Admin')], default='user', required=False)
+    # Add role field - default to 'user' if not provided (Admins cannot be created via public registration)
+    role = serializers.ChoiceField(choices=[('user', 'User'), ('pandit', 'Pandit'), ('vendor', 'Vendor')], default='user', required=False)
     
     class Meta:
         model = User
@@ -171,7 +172,8 @@ class UserSerializer(serializers.ModelSerializer):
             'is_superuser',
             'is_staff',
             'date_joined',
-            'pandit_profile'
+            'pandit_profile',
+            'vendor_profile'
         )
         read_only_fields = ('id', 'role', 'is_active', 'is_superuser', 'is_staff', 'date_joined')
 
@@ -188,6 +190,19 @@ class UserSerializer(serializers.ModelSerializer):
                 'is_available': p.is_available,
                 'is_verified': p.is_verified,
                 'verification_status': p.verification_status
+            }
+        return None
+
+    def get_vendor_profile(self, obj):
+        if obj.role == 'vendor' and hasattr(obj, 'vendor_profile'):
+            v = obj.vendor_profile
+            return {
+                'id': v.id,
+                'shop_name': v.shop_name,
+                'business_type': v.business_type,
+                'is_verified': v.is_verified,
+                'verification_status': v.verification_status,
+                'balance': float(v.balance) if v.balance is not None else 0.0,
             }
         return None
 # 🚨 ADMIN: Platform Settings

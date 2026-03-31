@@ -295,11 +295,21 @@ def verify_esewa_payment(encoded_data):
         
         # Verify signature
         secret_key = getattr(settings, 'ESEWA_SECRET_KEY', '8gBm/:&EnhH.1/q')
-        expected_message = f"transaction_code={transaction_code},status={status},total_amount={total_amount},transaction_uuid={transaction_uuid},product_code={product_code},signed_field_names={signed_field_names}"
+        
+        # Dynamically construct signature message based on signed_field_names provided in response
+        if not signed_field_names:
+             logger.error("eSewa response missing signed_field_names")
+             return False, None, "Missing signed_field_names"
+             
+        # Extract fields in the exact order requested by eSewa
+        fields = signed_field_names.split(',')
+        message_parts = [f"{field}={payment_data.get(field, '')}" for field in fields]
+        expected_message = ",".join(message_parts)
+        
         expected_signature = generate_esewa_signature(expected_message, secret_key)
         
         if signature != expected_signature:
-            logger.error("eSewa signature mismatch")
+            logger.error(f"eSewa signature mismatch. Expected: {expected_signature}, Got: {signature}")
             return False, None, "Invalid signature"
 
         configured_product_code = getattr(settings, 'ESEWA_PRODUCT_CODE', 'EPAYTEST')
