@@ -39,7 +39,7 @@ const registerSchema = z.object({
 type RegisterValues = z.infer<typeof registerSchema>;
 
 const RegisterPage: React.FC = () => {
-  const { register, googleLogin, token } = useAuth();
+  const { register, googleLogin, token, role: authRole } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -65,10 +65,18 @@ const RegisterPage: React.FC = () => {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (token) {
-      navigate('/dashboard', { replace: true });
+    if (token && authRole) {
+      if (authRole === 'admin' || authRole === 'superadmin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (authRole === 'pandit') {
+        navigate('/pandit/dashboard', { replace: true });
+      } else if (authRole === 'vendor') {
+        navigate('/vendor/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
-  }, [token, navigate]);
+  }, [token, authRole, navigate]);
 
   // Auto-redirect for Pandit & Vendor
   useEffect(() => {
@@ -424,7 +432,7 @@ const RegisterPage: React.FC = () => {
                 if (credentialResponse.credential) {
                   setLoading(true);
                   try {
-                    await googleLogin(credentialResponse.credential);
+                    await googleLogin(credentialResponse.credential, role || 'user');
                     toast({
                       title: "Success!",
                       description: "Your account is ready. Redirecting...",

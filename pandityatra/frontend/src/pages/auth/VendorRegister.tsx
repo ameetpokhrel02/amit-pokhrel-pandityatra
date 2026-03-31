@@ -79,6 +79,17 @@ const VendorRegisterPage: React.FC = () => {
     }
   }, [user]);
 
+  // Guard: If already a verified Vendor, redirect to dashboard
+  useEffect(() => {
+    if (user?.role === 'vendor' && user?.vendor_profile?.is_verified) {
+      navigate('/vendor/dashboard', { replace: true });
+    } else if (user?.role === 'admin' || user?.role === 'superadmin') {
+      navigate('/admin/dashboard', { replace: true });
+    } else if (user?.role === 'pandit') {
+      navigate('/pandit/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   const businessTypes = [
     'Samagri Store',
     'Book Store',

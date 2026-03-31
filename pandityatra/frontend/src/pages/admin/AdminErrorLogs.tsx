@@ -15,7 +15,7 @@ const AdminErrorLogs: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get("/adminpanel/error-logs/");
+      const res = await apiClient.get("/admin/error-logs/");
       setLogs(res.data);
     } catch (err: any) {
       setError("Failed to load error logs");
@@ -31,7 +31,7 @@ const AdminErrorLogs: React.FC = () => {
   const markResolved = async (id: number) => {
     setUpdating(id);
     try {
-      await apiClient.post("/adminpanel/error-logs/", { id, resolved: true });
+      await apiClient.post("/admin/error-logs/", { id, resolved: true });
       fetchLogs();
     } catch {
       setError("Failed to update log");

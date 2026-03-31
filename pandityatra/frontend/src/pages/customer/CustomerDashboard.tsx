@@ -641,7 +641,7 @@ const CustomerDashboard: React.FC = () => {
                       spiritual items.
                     </p>
                     <Button
-                      onClick={() => navigate("/shop")}
+                      onClick={() => navigate("/shop/samagri")}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
                       <ShoppingBag className="h-4 w-4 mr-2" />
@@ -777,7 +777,7 @@ const CustomerDashboard: React.FC = () => {
                         <Button
                           variant="outline"
                           className="w-full"
-                          onClick={() => navigate("/shop")}
+                          onClick={() => navigate("/shop/samagri")}
                         >
                           Continue Shopping
                         </Button>
@@ -825,7 +825,7 @@ const CustomerDashboard: React.FC = () => {
                       here for easy access.
                     </p>
                     <Button
-                      onClick={() => navigate("/shop")}
+                      onClick={() => navigate("/shop/samagri")}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
                       <ShoppingBag className="h-4 w-4 mr-2" />
@@ -940,7 +940,7 @@ const CustomerDashboard: React.FC = () => {
                       history will appear here.
                     </p>
                     <Button
-                      onClick={() => navigate("/shop")}
+                      onClick={() => navigate("/shop/samagri")}
                       className="bg-orange-600 hover:bg-orange-700"
                     >
                       <ShoppingBag className="h-4 w-4 mr-2" />
@@ -1019,7 +1019,7 @@ const CustomerDashboard: React.FC = () => {
                             variant="outline"
                             size="sm"
                             className="text-orange-600 border-orange-200 hover:bg-orange-50"
-                            onClick={() => navigate("/shop")}
+                            onClick={() => navigate("/shop/samagri")}
                           >
                             <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                             Buy Again
@@ -1339,7 +1339,7 @@ const CustomerDashboard: React.FC = () => {
                         <p className="text-muted-foreground mb-6 max-w-sm">
                           Purchase puja samagri and spiritual items from our shop.
                         </p>
-                        <Button onClick={() => navigate("/shop")} className="bg-orange-600 hover:bg-orange-700">
+                        <Button onClick={() => navigate("/shop/samagri")} className="bg-orange-600 hover:bg-orange-700">
                           <ShoppingBag className="h-4 w-4 mr-2" />
                           Browse Shop
                         </Button>
@@ -1434,7 +1434,7 @@ const CustomerDashboard: React.FC = () => {
                                       <Button
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => navigate("/shop")}
+                                        onClick={() => navigate("/shop/samagri")}
                                       >
                                         <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                                         Buy Again

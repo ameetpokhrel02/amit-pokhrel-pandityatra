@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ const panditRegisterSchema = z.object({
 const PanditRegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { googleLogin, user } = useAuth();
+  const { googleLogin, user, refreshUser, token } = useAuth();
   const [formData, setFormData] = useState({
     full_name: '',
     phone_number: '',
@@ -60,6 +60,17 @@ const PanditRegisterPage: React.FC = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const [fileSelected, setFileSelected] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Guard: If already a verified Pandit, redirect to dashboard
+  useEffect(() => {
+    if (user?.role === 'pandit' && user?.pandit_profile?.is_verified) {
+      navigate('/pandit/dashboard', { replace: true });
+    } else if (user?.role === 'admin' || user?.role === 'superadmin') {
+      navigate('/admin/dashboard', { replace: true });
+    } else if (user?.role === 'vendor') {
+      navigate('/vendor/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const expertiseOptions = [
     'Vedic Rituals',
@@ -185,6 +196,9 @@ const PanditRegisterPage: React.FC = () => {
         }
       );
 
+      // Refresh user to update role to 'pandit' in context
+      await refreshUser();
+
       toast({
         title: "Registration Submitted!",
         description: "Your documents have been saved to Cloudinary and are under review. We will contact you shortly.",
@@ -195,8 +209,8 @@ const PanditRegisterPage: React.FC = () => {
         'Registration successful! Your documents are under review. We will contact you shortly.'
       );
 
-      // Redirect to login after 3 seconds
-      setTimeout(() => navigate('/login'), 3000);
+      // Redirect based on state
+      setTimeout(() => navigate(token ? '/pandit/dashboard' : '/login'), 3000);
     } catch (err: any) {
       const errorMsg = err.response?.data?.detail || err.response?.data?.certification_file?.[0] || err.message || 'Registration failed';
       setError(errorMsg);
@@ -219,7 +233,7 @@ const PanditRegisterPage: React.FC = () => {
                 if (credentialResponse.credential) {
                   setLoading(true);
                   try {
-                    const resp = await googleLogin(credentialResponse.credential);
+                    const resp = await googleLogin(credentialResponse.credential, 'pandit');
                     // Pre-fill form from Google identity
                     if (resp && resp.user) {
                       setFormData(prev => ({

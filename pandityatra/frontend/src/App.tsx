@@ -73,6 +73,7 @@ import AdminPayments from './pages/admin/AdminPayments'
 import AdminPayouts from './pages/admin/AdminPayouts'
 import AdminSettings from './pages/admin/AdminSettings'
 import AdminSamagri from './pages/admin/AdminSamagri'
+import AdminLogin from './pages/admin/AdminLogin'
 import AdminServices from './pages/admin/AdminServices'
 import AdminActivityLogs from './pages/admin/AdminActivityLogs'
 import AdminReviews from './pages/admin/AdminReviews'
@@ -163,6 +164,7 @@ function App() {
                     <Route path="/otp-verification" element={<LoginOTPVerification />} />
                     <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                     <Route path="/auth/otp-verification" element={<OTPVerification />} />
+                    <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/auth/change-password" element={<ChangePassword />} />
 
                     {/* 👤 Customer */}
@@ -408,6 +410,7 @@ function App() {
                     <Route path="/admin/banners" element={<ProtectedRoute allowedRoles={['admin']}><AdminBanners /></ProtectedRoute>} />
                     <Route path="/admin/support" element={<ProtectedRoute allowedRoles={['admin']}><AdminSupport /></ProtectedRoute>} />
                     <Route path="/admin/manage-admins" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><ManageAdmins /></ProtectedRoute>} />
+                    <Route path="/admin/error-logs" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminErrorLogs /></ProtectedRoute>} />
 
                     {/* 💳 Payments */}
                     <Route path="/payment/:bookingId" element={

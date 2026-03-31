@@ -55,7 +55,7 @@ const itemVariants = {
 };
 
 const LoginPage: React.FC = () => {
-  const { requestOtp, passwordLogin, googleLogin, token, role } = useAuth();
+  const { requestOtp, passwordLogin, googleLogin, token, role, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const form = useForm<LoginValues>({
@@ -117,7 +117,7 @@ const LoginPage: React.FC = () => {
       if (hasJustLoggedIn && role) {
         // Redirect based on role
         if (role === 'admin' || role === 'superadmin') {
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/admin/login', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
         } else if (role === 'vendor') {
@@ -181,7 +181,20 @@ const LoginPage: React.FC = () => {
         : data.inputType === 'username'
           ? (data.username || '')
           : formatInternationalPhone(data.phone || '', selectedCountry.dialCode);
-      await passwordLogin(identifier, data.password || '');
+      const resp = await passwordLogin(identifier, data.password || '');
+      
+      // If the user turns out to be an admin, log them out and redirect to correct portal
+      if (resp && (resp.role === 'admin' || resp.role === 'superadmin')) {
+        await logout();
+        toast({
+          title: "Admin Access Blocked",
+          description: "Administrators must login through the secure /admin/login portal.",
+          variant: "destructive",
+        });
+        navigate('/admin/login', { replace: true });
+        return;
+      }
+
       // Show success toast
       toast({
         title: "Login Successful!",
@@ -507,7 +520,20 @@ const LoginPage: React.FC = () => {
                   if (credentialResponse.credential) {
                     setLoading(true);
                     try {
-                      await googleLogin(credentialResponse.credential);
+                      const resp = await googleLogin(credentialResponse.credential);
+                      
+                      // Check for admin
+                      if (resp && (resp.role === 'admin' || resp.role === 'superadmin' || resp.user?.role === 'admin' || resp.user?.role === 'superadmin')) {
+                        await logout();
+                        toast({
+                          title: "Admin Access Blocked",
+                          description: "Administrators must login through the secure /admin/login portal.",
+                          variant: "destructive",
+                        });
+                        navigate('/admin/login', { replace: true });
+                        return;
+                      }
+
                       toast({
                         title: "Google Login Successful!",
                         description: "Welcome back! Redirecting...",

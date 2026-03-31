@@ -6,7 +6,7 @@ import { LoadingSpinner } from './LoadingSpinner';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];  // Optional: restrict to specific roles
-}
+}                   
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
   const { token, loading, role } = useAuth();
@@ -20,7 +20,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   }
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    // If trying to access admin routes, redirect to admin login
+    const isAdminRoute = allowedRoles && (allowedRoles.includes('admin') || allowedRoles.includes('superadmin'));
+    return <Navigate to={isAdminRoute ? "/admin/login" : "/login"} replace />;
   }
 
   // Check if role is allowed (if specified)
