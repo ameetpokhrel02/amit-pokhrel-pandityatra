@@ -725,7 +725,7 @@ def admin_payments(request):
     if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
     
-    payments = Payment.objects.all().select_related('booking', 'booking__pandit', 'booking__pandit__user', 'user').order_by('-created_at')
+    payments = Payment.objects.all().select_related('booking', 'booking__pandit', 'user').order_by('-created_at')
     serializer = PaymentSerializer(payments, many=True)
     return Response(serializer.data)
 
@@ -772,7 +772,7 @@ def refund_payment(request, payment_id):
 # ADMIN WALLET & PAYOUT APIS
 # ===============================
 from .models import PanditWithdrawal
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from rest_framework.permissions import IsAdminUser
 
 @api_view(["POST"])
@@ -808,22 +808,24 @@ def approve_withdrawal(request, id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_payouts(request):
+    """List of all Pandits and their wallet balances for Admin"""
     if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
         return Response({"error": "Admin only"}, status=403)
 
     data = []
-    # Get all Pandits with wallets
-    for p in Pandit.objects.select_related('wallet', 'user').all():
-        # Handle case where wallet might be missing (should exist via signal)
+    # Get all PanditUsers with wallets
+    # Note: PanditUser inherits from User, so full_name/email are on the same object
+    for p in PanditUser.objects.select_related('wallet').all():
+        # Handle case where wallet might be missing
         if hasattr(p, 'wallet'):
             wallet = p.wallet
             data.append({
                 "pandit_id": p.id,
-                "pandit_name": p.user.full_name,
-                "email": p.user.email,
-                "total_earned": wallet.total_earned,
-                "available": wallet.available_balance,
-                "withdrawn": wallet.total_withdrawn,
+                "pandit_name": p.full_name,
+                "email": p.email,
+                "total_earned": str(wallet.total_earned),
+                "available": str(wallet.available_balance),
+                "withdrawn": str(wallet.total_withdrawn),
                 "pending_withdrawals": p.withdrawals.filter(status="PENDING").count()
             })
             
@@ -836,12 +838,12 @@ def admin_withdrawal_requests(request):
     if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
         return Response({"error": "Admin only"}, status=403)
         
-    withdrawals = PanditWithdrawal.objects.select_related('pandit__user').order_by('-created_at')
+    withdrawals = PanditWithdrawal.objects.select_related('pandit').order_by('-created_at')
     data = [{
         "id": w.id,
-        "pandit_name": w.pandit.user.full_name,
-        "amount": w.amount,
+        "pandit_name": w.pandit.full_name,
+        "amount": str(w.amount),
         "status": w.status,
-        "date": w.created_at
+        "date": w.created_at.isoformat()
     } for w in withdrawals]
     return Response(data)

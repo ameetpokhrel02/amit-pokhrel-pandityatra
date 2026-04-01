@@ -20,7 +20,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             return None
         return {
             "id": obj.booking.id,
-            "pandit_name": obj.booking.pandit.user.full_name if obj.booking.pandit and obj.booking.pandit.user else "Unknown"
+            "pandit_name": obj.booking.pandit.full_name if obj.booking.pandit else "Unknown"
         }
 
     def get_user_details(self, obj):
