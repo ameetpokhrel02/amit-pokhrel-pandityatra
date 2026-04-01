@@ -20,7 +20,7 @@ class Command(BaseCommand):
         current_tz = timezone.get_current_timezone()
 
         candidates = (
-            VideoRoom.objects.select_related("booking", "booking__user", "booking__pandit", "booking__pandit__user")
+            VideoRoom.objects.select_related("booking", "booking__user", "booking__pandit")
             .filter(
                 reminder_sent_at__isnull=True,
                 status="scheduled",
