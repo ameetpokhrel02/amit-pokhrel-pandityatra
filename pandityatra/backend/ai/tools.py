@@ -1,7 +1,7 @@
 from django.db.models import Q
 from bookings.models import Booking
 from samagri.models import SamagriItem, PujaSamagriRequirement
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from chat.models import ChatRoom
 from services.models import Puja
 from .schemas import ToolExecutionResult
@@ -679,7 +679,7 @@ def recommend_puja_samagri(
 
 
 def find_pandits(language: str | None = None, expertise: str | None = None, limit: int = 5) -> ToolExecutionResult:
-    qs = Pandit.objects.filter(is_verified=True).select_related("user")
+    qs = PanditUser.objects.filter(is_verified=True)
     if language:
         qs = qs.filter(language__icontains=language)
     if expertise:
@@ -689,13 +689,13 @@ def find_pandits(language: str | None = None, expertise: str | None = None, limi
     pandits = [
         {
             "id": p.id,
-            "name": p.user.full_name or p.user.username,
+            "name": p.full_name or p.username,
             "expertise": p.expertise,
             "language": p.language,
             "rating": float(p.rating),
             "experience_years": p.experience_years,
             "is_available": p.is_available,
-            "profile_pic": _abs_image_url(None, p.user.profile_pic) if p.user.profile_pic else None,
+            "profile_pic": _abs_image_url(None, p.profile_pic) if p.profile_pic else None,
         }
         for p in qs
     ]
@@ -709,12 +709,12 @@ def find_pandits(language: str | None = None, expertise: str | None = None, limi
 
 
 def get_booking_status(user, booking_id: int) -> ToolExecutionResult:
-    qs = Booking.objects.select_related("pandit__user")
+    qs = Booking.objects.select_related("pandit")
 
     if user.is_authenticated and (user.is_superuser or user.is_staff or user.role in ("admin", "superadmin")):
         booking = qs.filter(id=booking_id).first()
     elif user.is_authenticated and user.role == "pandit":
-        booking = qs.filter(id=booking_id, pandit__user=user).first()
+        booking = qs.filter(id=booking_id, pandit_id=user.id).first()
     elif user.is_authenticated:
         booking = qs.filter(id=booking_id, user=user).first()
     else:
@@ -734,7 +734,7 @@ def get_booking_status(user, booking_id: int) -> ToolExecutionResult:
         "service_name": booking.service_name,
         "booking_date": str(booking.booking_date),
         "booking_time": str(booking.booking_time),
-        "pandit_name": booking.pandit.user.full_name or booking.pandit.user.username,
+        "pandit_name": booking.pandit.full_name or booking.pandit.username,
         "payment_status": booking.payment_status,
         "payment_method": booking.payment_method,
         "transaction_id": booking.transaction_id,
@@ -752,7 +752,7 @@ def list_my_bookings(user, status: str | None = None, limit: int = 5) -> ToolExe
     if not user.is_authenticated:
         return ToolExecutionResult(ok=False, type=RESPONSE_TYPES["TEXT"], message="Login required to view bookings.")
 
-    qs = Booking.objects.filter(user=user).select_related("pandit__user").order_by("-created_at")
+    qs = Booking.objects.filter(user=user).select_related("pandit").order_by("-created_at")
     if status:
         qs = qs.filter(status=status)
     qs = qs[: max(1, min(limit, 20))]
@@ -764,7 +764,7 @@ def list_my_bookings(user, status: str | None = None, limit: int = 5) -> ToolExe
             "service_name": b.service_name,
             "booking_date": str(b.booking_date),
             "booking_time": str(b.booking_time),
-            "pandit_name": b.pandit.user.full_name or b.pandit.user.username,
+            "pandit_name": b.pandit.full_name or b.pandit.username,
             "payment_status": b.payment_status,
         }
         for b in qs

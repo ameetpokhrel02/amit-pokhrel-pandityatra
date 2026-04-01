@@ -22,7 +22,7 @@ class AIOrchestrator:
     def _get_user_booking_context(self, user) -> str:
         if not user or not user.is_authenticated:
             return ""
-        active = Booking.objects.filter(user=user).select_related("pandit__user").order_by("-created_at")[:5]
+        active = Booking.objects.filter(user=user).select_related("pandit").order_by("-created_at")[:5]
         rows = [
             {
                 "id": b.id,
