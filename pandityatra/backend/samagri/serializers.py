@@ -20,11 +20,20 @@ class SamagriCategorySerializer(serializers.ModelSerializer):
 # --- 2. Item Serializer ---
 class SamagriItemSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source='category.name', read_only=True)
+    vendor_details = serializers.SerializerMethodField()
 
     class Meta:
         model = SamagriItem
-        fields = ['id', 'name', 'category', 'category_name', 'price', 'price_usd', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'is_approved', 'created_at']
-        read_only_fields = ['id', 'category_name', 'created_at']
+        fields = ['id', 'name', 'category', 'category_name', 'price', 'price_usd', 'stock_quantity', 'unit', 'image', 'description', 'is_active', 'is_approved', 'vendor', 'vendor_details', 'created_at']
+        read_only_fields = ['id', 'category_name', 'vendor_details', 'created_at']
+
+    def get_vendor_details(self, obj):
+        if obj.vendor:
+            return {
+                "id": obj.vendor.id,
+                "shop_name": obj.vendor.shop_name
+            }
+        return {"id": 0, "shop_name": "PanditYatra Official"}
 
     def to_representation(self, instance):
         data = super().to_representation(instance)

@@ -301,9 +301,9 @@ class SamagriItemViewSet(viewsets.ModelViewSet):
         user = self.request.user
         is_admin = user.is_authenticated and (user.is_staff or getattr(user, 'role', '') in ['admin', 'superadmin'])
         
-        # If admin creates it, auto-approve
+        # If admin creates it, auto-approve AND set active
         if is_admin:
-            serializer.save(is_approved=True)
+            serializer.save(is_approved=True, is_active=True)
         else:
             serializer.save()
 
@@ -343,6 +343,10 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         serializer = ShopCheckoutSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # ROLE RESTRICTION: Only customers and pandits can buy. Vendors are sellers only.
+        if request.user.role == 'vendor':
+            return Response({"error": "Vendors cannot place shop orders. Please use a customer account."}, status=status.HTTP_403_FORBIDDEN)
 
         data = serializer.validated_data
         cart_items = data['items']

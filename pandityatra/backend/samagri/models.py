@@ -27,7 +27,7 @@ class SamagriCategory(models.Model):
 
 class SamagriItem(models.Model):
     category = models.ForeignKey(SamagriCategory, on_delete=models.CASCADE, related_name='items')
-    vendor = models.ForeignKey('vendors.VendorProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    vendor = models.ForeignKey('vendors.Vendor', on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -41,9 +41,13 @@ class SamagriItem(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-        # Auto-approve if the vendor is already verified
-        if not self.pk and self.vendor and self.vendor.verification_status == 'APPROVED':
-            self.is_approved = True
+        if not self.pk:
+            # Auto-approve items added directly by admin (no vendor)
+            if not self.vendor:
+                self.is_approved = True
+            # Also auto-approve if the vendor is already verified
+            elif self.vendor.verification_status == 'APPROVED':
+                self.is_approved = True
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -90,7 +94,7 @@ class ShopOrder(models.Model):
 class ShopOrderItem(models.Model):
     order = models.ForeignKey(ShopOrder, on_delete=models.CASCADE, related_name='items')
     samagri_item = models.ForeignKey(SamagriItem, on_delete=models.SET_NULL, null=True, blank=True)
-    vendor = models.ForeignKey('vendors.VendorProfile', on_delete=models.SET_NULL, null=True, blank=True)
+    vendor = models.ForeignKey('vendors.Vendor', on_delete=models.SET_NULL, null=True, blank=True)
     item_name = models.CharField(max_length=150, blank=True, null=True) # Snapshot in case item is deleted
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
