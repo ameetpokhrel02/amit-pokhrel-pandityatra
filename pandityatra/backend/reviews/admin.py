@@ -6,7 +6,7 @@ from .models import Review, SiteReview
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ['id', 'customer', 'pandit', 'rating', 'created_at', 'is_verified']
     list_filter = ['rating', 'is_verified', 'created_at']
-    search_fields = ['customer__username', 'pandit__user__username', 'comment']
+    search_fields = ['customer__username', 'pandit__username', 'comment']
     readonly_fields = ['created_at', 'updated_at']
     
     fieldsets = (

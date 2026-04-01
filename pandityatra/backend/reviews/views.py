@@ -67,7 +67,7 @@ class RecentPanditReviewsView(generics.ListAPIView):
     
     def get_queryset(self):
         return Review.objects.select_related(
-            'customer', 'pandit', 'pandit__user'
+            'customer', 'pandit'
         ).order_by('-created_at')[:20]
     
     def list(self, request, *args, **kwargs):
@@ -122,7 +122,7 @@ class PanditMyReviewsView(generics.ListAPIView):
         if getattr(user, 'role', '') != 'pandit' or not hasattr(user, 'pandit_profile'):
             return Review.objects.none()
         return Review.objects.filter(pandit=user.pandit_profile).select_related(
-            'customer', 'pandit', 'pandit__user', 'booking'
+            'customer', 'pandit', 'booking'
         ).order_by('-created_at')
 
 
@@ -197,7 +197,7 @@ class AdminAllReviewsView(APIView):
         
         if review_type in ('pandit', 'all'):
             pandit_qs = Review.objects.select_related(
-                'customer', 'pandit', 'pandit__user', 'booking'
+                'customer', 'pandit', 'booking'
             ).order_by('-created_at')
             
             for r in pandit_qs:

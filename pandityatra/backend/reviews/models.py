@@ -13,7 +13,7 @@ class Review(models.Model):
         related_name='review'
     )
     pandit = models.ForeignKey(
-        'pandits.Pandit',
+        'pandits.PanditUser',
         on_delete=models.CASCADE,
         related_name='reviews'
     )
@@ -54,7 +54,7 @@ class Review(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.customer.username} -> {self.pandit.user.username} ({self.rating}⭐)"
+        return f"{self.customer.username} -> {self.pandit.username} ({self.rating}⭐)"
 
 
 class SiteReview(models.Model):
