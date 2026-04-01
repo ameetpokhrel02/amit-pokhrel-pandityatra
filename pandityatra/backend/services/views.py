@@ -5,7 +5,8 @@ from rest_framework import serializers
 from .models import Puja, PujaCategory
 from .serializers import PujaSerializer, PujaCategorySerializer
 from .permissions import IsStaffOrReadOnly
-from pandits.models import Pandit # Need Pandit model for the nested view logic
+from pandits.models import PanditUser
+from vendors.models import Vendor
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
