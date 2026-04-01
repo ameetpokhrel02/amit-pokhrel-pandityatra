@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import Pandit, PanditWallet, PanditService
+from .models import PanditUser, PanditWallet, PanditService
 
-@admin.register(Pandit)
+@admin.register(PanditUser)
 class PanditAdmin(admin.ModelAdmin):
-    list_display = ('user', 'expertise', 'verification_status', 'is_verified', 'is_available')
+    list_display = ('full_name', 'email', 'expertise', 'verification_status', 'is_verified', 'is_available')
     list_filter = ('verification_status', 'is_verified', 'is_available')
-    search_fields = ('user__email', 'user__full_name')
+    search_fields = ('email', 'full_name')
 
 @admin.register(PanditWallet)
 class PanditWalletAdmin(admin.ModelAdmin):

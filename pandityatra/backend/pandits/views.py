@@ -7,7 +7,7 @@ from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
-from .models import Pandit, PanditService, PanditAvailability
+from .models import PanditUser, PanditService, PanditAvailability
 from .serializers import PanditSerializer, PanditServiceSerializer, PanditDetailSerializer, PanditAvailabilitySerializer
 from .pandit_serializers import PanditRegistrationSerializer
 from users.serializers import UserSerializer
@@ -16,7 +16,7 @@ from services.models import Puja
 from services.serializers import PujaSerializer
 
 # ---------------------------
-# Pandit Registration
+# PanditUser Registration
 # ---------------------------
 class RegisterPanditView(generics.CreateAPIView):
     # We keep the serializer for structural validation, and we've moved 
@@ -37,7 +37,7 @@ def list_pending_pandits(request):
     if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
 
-    pandits = Pandit.objects.filter(verification_status="PENDING")
+    pandits = PanditUser.objects.filter(verification_status="PENDING")
     serializer = PanditSerializer(pandits, many=True)
     return Response(serializer.data)
 
@@ -51,7 +51,7 @@ def verify_pandit(request, pandit_id):
     if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
 
-    pandit = get_object_or_404(Pandit, id=pandit_id)
+    pandit = get_object_or_404(PanditUser, id=pandit_id)
 
     pandit.verification_status = "APPROVED"
     pandit.is_verified = True
@@ -74,7 +74,7 @@ def reject_pandit(request, pandit_id):
     if not (request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
 
-    pandit = get_object_or_404(Pandit, id=pandit_id)
+    pandit = get_object_or_404(PanditUser, id=pandit_id)
 
     pandit.verification_status = "REJECTED"
     pandit.is_verified = False
@@ -94,7 +94,7 @@ def reject_pandit(request, pandit_id):
 def request_withdrawal(request):
 
     try:
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
     except:
         return Response({"error": "User does not have a pandit profile"}, status=400)
 
@@ -126,7 +126,7 @@ def request_withdrawal(request):
 @permission_classes([permissions.IsAuthenticated])
 def get_pandit_wallet(request):
     try:
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
         wallet = pandit.wallet
         return Response({
             "total_earned": wallet.total_earned,
@@ -140,10 +140,10 @@ def get_pandit_wallet(request):
 @permission_classes([permissions.IsAuthenticated])
 def get_pandit_withdrawals(request):
     try:
-        if not hasattr(request.user, 'pandit_profile'):
-             return Response({"error": "Pandit profile not found"}, status=404)
+        if not hasattr(request.user, 'pandituser'):
+             return Response({"error": "PanditUser profile not found"}, status=404)
         
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
         withdrawals = PanditWithdrawal.objects.filter(pandit=pandit).order_by('-created_at')
         data = [{
             "id": w.id,
@@ -161,25 +161,25 @@ def get_pandit_withdrawals(request):
 # ---------------------------
 class PanditServiceViewSet(viewsets.ModelViewSet):
     """
-    CRUD for services offered by the logged-in Pandit.
+    CRUD for services offered by the logged-in PanditUser.
     """
     serializer_class = PanditServiceSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if not hasattr(self.request.user, 'pandit_profile'):
+        if not hasattr(self.request.user, 'pandituser'):
              return PanditService.objects.none()
-        return PanditService.objects.filter(pandit=self.request.user.pandit_profile)
+        return PanditService.objects.filter(pandit=self.request.user.pandituser)
 
     def perform_create(self, serializer):
-        if not hasattr(self.request.user, 'pandit_profile'):
-            raise ValidationError("User is not a Pandit")
+        if not hasattr(self.request.user, 'pandituser'):
+            raise ValidationError("User is not a PanditUser")
         
         puja = serializer.validated_data.get('puja')
-        if PanditService.objects.filter(pandit=self.request.user.pandit_profile, puja=puja).exists():
+        if PanditService.objects.filter(pandit=self.request.user.pandituser, puja=puja).exists():
              raise ValidationError("You already offer this service")
              
-        serializer.save(pandit=self.request.user.pandit_profile)
+        serializer.save(pandit=self.request.user.pandituser)
 
 class PujaCatalogView(generics.ListAPIView):
     queryset = Puja.objects.filter(is_available=True)
@@ -198,7 +198,7 @@ class PanditCalendarView(APIView):
         Return all events: Bookings and Availability Blocks
         """
         try:
-            pandit = request.user.pandit_profile
+            pandit = request.user.pandituser
         except:
              return Response({"error": "Not a pandit"}, status=403)
 
@@ -253,7 +253,7 @@ class PanditCalendarView(APIView):
         Create a new Availability Block (Mark as Unavailable)
         """
         try:
-            pandit = request.user.pandit_profile
+            pandit = request.user.pandituser
         except:
              return Response({"error": "Not a pandit"}, status=403)
              
@@ -268,7 +268,7 @@ class PanditCalendarView(APIView):
 @permission_classes([permissions.IsAuthenticated])
 def delete_availability_block(request, block_id):
     try:
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
         block = get_object_or_404(PanditAvailability, id=block_id, pandit=pandit)
         block.delete()
         return Response({"success": "Block removed"})
@@ -289,10 +289,10 @@ import datetime
 @permission_classes([permissions.IsAuthenticated])
 def pandit_dashboard_stats(request):
     try:
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
     except:
         if getattr(request.user, 'role', '') == 'pandit':
-             pandit = Pandit.objects.create(
+             pandit = PanditUser.objects.create(
                  user=request.user, 
                  expertise="General", 
                  language="Hindi",
@@ -433,10 +433,10 @@ def pandit_dashboard_stats(request):
 @permission_classes([permissions.IsAuthenticated])
 def toggle_availability(request):
     try:
-        pandit = request.user.pandit_profile
+        pandit = request.user.pandituser
     except:
          if getattr(request.user, 'role', '') == 'pandit':
-             pandit = Pandit.objects.create(
+             pandit = PanditUser.objects.create(
                  user=request.user, 
                  expertise="General", 
                  language="Hindi",
@@ -461,7 +461,7 @@ class PanditViewSet(viewsets.ModelViewSet):
     """
     Admins can update/delete any pandit. Public can read/list.
     """
-    queryset = Pandit.objects.select_related('user').prefetch_related(
+    queryset = PanditUser.objects.select_related('user').prefetch_related(
         'services', 'services__puja', 'reviews', 'reviews__customer'
     ).order_by('-rating')
 
@@ -511,17 +511,17 @@ class PanditViewSet(viewsets.ModelViewSet):
         if user.is_staff or user.is_superuser or getattr(user, 'role', '') in ('admin', 'superadmin'):
             return super().destroy(request, *args, **kwargs)
 
-        # Pandit can delete only own profile
+        # PanditUser can delete only own profile
         if getattr(user, 'role', '') == 'pandit' and instance.user == user:
             instance.delete()
             user.role = 'user'
             user.save(update_fields=['role'])
-            return Response({"detail": "Pandit profile deleted successfully."}, status=status.HTTP_200_OK)
+            return Response({"detail": "PanditUser profile deleted successfully."}, status=status.HTTP_200_OK)
 
         return Response({"detail": "You do not have permission to delete this profile."}, status=403)
 
     def get_queryset(self):
-        queryset = Pandit.objects.all()
+        queryset = PanditUser.objects.all()
         service_id = self.request.query_params.get('service_id')
         if service_id:
             queryset = queryset.filter(services__puja_id=service_id).distinct()
@@ -541,7 +541,7 @@ class PanditViewSet(viewsets.ModelViewSet):
         from django.contrib.auth import get_user_model
         User = get_user_model()
         
-        verified_count = Pandit.objects.filter(is_verified=True).count()
+        verified_count = PanditUser.objects.filter(is_verified=True).count()
         # Add some mock padding if data is low to look good
         display_pandits = verified_count if verified_count > 50 else 500 + (verified_count % 10)
         

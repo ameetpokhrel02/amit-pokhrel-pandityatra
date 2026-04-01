@@ -1,18 +1,21 @@
 from rest_framework import serializers
-from .models import Pandit, PanditService, PanditAvailability
+from .models import PanditUser, PanditService, PanditAvailability
 from users.serializers import UserSerializer
 from services.serializers import PujaSerializer
 from services.models import Puja
 from reviews.serializers import ReviewSerializer
 
 class PanditSerializer(serializers.ModelSerializer):
-    user_details = UserSerializer(source='user', read_only=True)
+    """
+    Serializer for Pandit Account management (replaces old Profile system).
+    Now inherits directly from User.
+    """
+    user_details = serializers.SerializerMethodField()
     
     class Meta:
-        model = Pandit
+        model = PanditUser
         fields = (
             'id', 
-            'user',
             'user_details',
             'expertise', 
             'experience_years',
@@ -25,14 +28,24 @@ class PanditSerializer(serializers.ModelSerializer):
             'certification_file',
             'date_joined'
         )
-        read_only_fields = ('id', 'user_details', 'date_joined', 'user') 
+        read_only_fields = ('id', 'user_details', 'date_joined') 
+
+    def get_user_details(self, obj):
+        # PanditUser IS a User, so we return the user fields
+        return {
+            'id': obj.id,
+            'full_name': obj.full_name,
+            'email': obj.email,
+            'phone_number': obj.phone_number,
+            'profile_pic': obj.profile_pic.url if obj.profile_pic else None,
+        }
 
 class PanditSimpleSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='user.full_name', read_only=True)
-    email = serializers.CharField(source='user.email', read_only=True)
+    full_name = serializers.CharField(read_only=True)
+    email = serializers.CharField(read_only=True)
     
     class Meta:
-        model = Pandit
+        model = PanditUser
         fields = ['id', 'full_name', 'email']
 
 class PanditServiceSerializer(serializers.ModelSerializer):
@@ -57,8 +70,6 @@ class PanditAvailabilitySerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 class PanditDetailSerializer(PanditSerializer):
-    # Alias fields to match requested JSON structure
-    user = UserSerializer(read_only=True) # Overrides 'user' PK field from base class
     services = PanditServiceSerializer(many=True, read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
     
@@ -69,6 +80,6 @@ class PanditDetailSerializer(PanditSerializer):
 
     class Meta(PanditSerializer.Meta):
         fields = (
-            'id', 'user', 'user_details', 'bio', 'expertise', 'language', 'experience_years', 
+            'id', 'user_details', 'bio', 'expertise', 'language', 'experience_years', 
             'is_verified', 'services', 'average_rating', 'rating', 'review_count', 'total_reviews', 'reviews'
         )

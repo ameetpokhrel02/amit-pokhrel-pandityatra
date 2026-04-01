@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response    
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from payments.models import PanditWithdrawal # Updated imports: Withdrawal moved to payments app
 from pandits.serializers import PanditSerializer
 from django.db.models import Avg, Count
@@ -18,7 +18,7 @@ def admin_all_pandits(request):
     if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
     
-    pandits = Pandit.objects.select_related('user').annotate(
+    pandits = PanditUser.objects.annotate(
         review_count=Count('reviews'),
         avg_rating=Avg('reviews__rating'),
     ).order_by('-date_joined')
@@ -27,10 +27,10 @@ def admin_all_pandits(request):
     for p in pandits:
         data.append({
             'id': p.id,
-            'name': p.user.full_name or p.user.username,
-            'email': p.user.email,
-            'phone': p.user.phone_number if hasattr(p.user, 'phone_number') else '',
-            'avatar': p.user.profile_pic.url if p.user.profile_pic else None,
+            'name': p.full_name or p.username,
+            'email': p.email,
+            'phone': p.phone_number,
+            'avatar': p.profile_pic.url if p.profile_pic else None,
             'expertise': p.expertise,
             'language': p.language,
             'experience_years': p.experience_years,
@@ -71,7 +71,7 @@ def pending_pandits(request):
     if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
         
-    qs = Pandit.objects.filter(is_verified=False)
+    qs = PanditUser.objects.filter(is_verified=False)
     return Response(PanditSerializer(qs, many=True).data)
 
 @api_view(['POST'])
@@ -82,8 +82,8 @@ def verify_pandit(request, pandit_id):
         return Response({"detail": "Admin only"}, status=403)
 
     try:
-        pandit = Pandit.objects.get(id=pandit_id)
-    except Pandit.DoesNotExist:
+        pandit = PanditUser.objects.get(id=pandit_id)
+    except PanditUser.DoesNotExist:
         return Response({"error": "Pandit not found."}, status=404)
     
 # ===========================
@@ -132,7 +132,7 @@ def list_withdrawals(request):
     for w in withdrawals:
         data.append({
             "id": w.id,
-            "pandit_name": w.pandit.user.full_name,
+            "pandit_name": w.pandit.full_name,
             "amount": w.amount,
             "status": w.status,
             "created_at": w.created_at
@@ -148,7 +148,7 @@ def admin_pandit_earnings(request):
     if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
         return Response({"detail": "Admin only"}, status=403)
         
-    pandits = Pandit.objects.all()
+    pandits = PanditUser.objects.all()
     serializer = PanditSerializer(pandits, many=True)
     return Response(serializer.data)
 
@@ -164,8 +164,8 @@ def admin_pandit_earnings(request):
 @permission_classes([IsAdminUser])
 def reject_pandit(request, pandit_id):
     try:
-        pandit = Pandit.objects.get(id=pandit_id)
-    except Pandit.DoesNotExist:
+        pandit = PanditUser.objects.get(id=pandit_id)
+    except PanditUser.DoesNotExist:
         return Response({"error": "Pandit not found."}, status=404)
     
     pandit.delete()

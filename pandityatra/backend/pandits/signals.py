@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .models import Pandit, PanditWallet
+from .models import PanditUser, PanditWallet
 
-@receiver(post_save, sender=Pandit)
+@receiver(post_save, sender=PanditUser)
 def create_wallet(sender, instance, created, **kwargs):
     if created:
         PanditWallet.objects.create(pandit=instance)

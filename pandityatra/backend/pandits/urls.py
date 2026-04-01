@@ -26,7 +26,7 @@ urlpatterns = [
     path('services/catalog/', PujaCatalogView.as_view(), name='puja-catalog'),
 
     # Pandit Public/User
-    path("register/", RegisterPanditView.as_view()),
+    path("register/", RegisterPanditView.as_view(), name='pandit-register'),
     # Pandit Financials
     path("wallet/", get_pandit_wallet),
     path("withdrawals/", get_pandit_withdrawals),
