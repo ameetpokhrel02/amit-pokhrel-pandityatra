@@ -82,7 +82,7 @@ const PanditDashboard = () => {
             setQueue(data.queue)
             setTodaySchedule(data.schedule || [])
 
-            if (data.stats.verification_status !== 'APPROVED') {
+            if (!data.stats.is_verified && data.stats.verification_status !== 'APPROVED') {
                 setErrorStatus(data.stats.verification_status);
             }
         } catch (error: any) {

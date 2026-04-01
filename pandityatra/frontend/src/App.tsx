@@ -33,6 +33,7 @@ import LoginOTPVerification from './pages/auth/otp-verification/LoginOTPVerifica
 import ForgotPassword from './pages/auth/forgot-password/ForgotPassword'
 import OTPVerification from './pages/auth/otp-verification/OTPVerification'
 import ChangePassword from './pages/auth/change-password/ChangePassword'
+import VendorTerms from './pages/auth/VendorTerms'
 
 // Booking
 // Booking
@@ -166,6 +167,7 @@ function App() {
                     <Route path="/auth/otp-verification" element={<OTPVerification />} />
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/auth/change-password" element={<ChangePassword />} />
+                    <Route path="/vendor/terms" element={<VendorTerms />} />
 
                     {/* 👤 Customer */}
                     <Route path="/dashboard" element={

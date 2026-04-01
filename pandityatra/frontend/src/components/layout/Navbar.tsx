@@ -35,7 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
 import logo from '@/assets/images/PanditYatralogo.png';
-import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown, Heart } from 'lucide-react';
+import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown, Heart, Store } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { usePWA } from '@/hooks/usePWA';
@@ -312,26 +312,30 @@ const Navbar: React.FC = () => {
             )}
 
             <ThemeToggle />
+            
+            {/* Favorites (Hidden for Vendors) */}
+            {user?.role !== 'vendor' && (
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openFavoritesDrawer}>
+                <Heart className="w-5 h-5" />
+                {favoriteItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600 hover:bg-orange-600 text-[10px]">
+                    {favoriteItemCount}
+                  </Badge>
+                )}
+              </Button>
+            )}
 
-            {/* Favorites */}
-            <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openFavoritesDrawer}>
-              <Heart className="w-5 h-5" />
-              {favoriteItemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600 hover:bg-orange-600 text-[10px]">
-                  {favoriteItemCount}
-                </Badge>
-              )}
-            </Button>
-
-            {/* Cart */}
-            <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openCartDrawer}>
-              <ShoppingCart className="w-5 h-5" />
-              {cartItemCount > 0 && (
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600 hover:bg-orange-600 text-[10px]">
-                  {cartItemCount}
-                </Badge>
-              )}
-            </Button>
+            {/* Cart (Hidden for Vendors) */}
+            {user?.role !== 'vendor' && (
+              <Button variant="ghost" size="icon" className="relative rounded-full hover:bg-orange-50 text-gray-700" onClick={openCartDrawer}>
+                <ShoppingCart className="w-5 h-5" />
+                {cartItemCount > 0 && (
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-orange-600 hover:bg-orange-600 text-[10px]">
+                    {cartItemCount}
+                  </Badge>
+                )}
+              </Button>
+            )}
 
             {/* Auth / Profile */}
             {token && user ? (
@@ -378,6 +382,27 @@ const Navbar: React.FC = () => {
                     </>
                   )}
 
+                  {user.role === 'vendor' && (
+                    <>
+                      <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
+                        <Link to="/vendor/dashboard" className="cursor-pointer gap-2">
+                          <LayoutDashboard className="w-4 h-4" /> Vendor Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
+                        <Link to="/vendor/shop" className="cursor-pointer gap-2">
+                          <Store className="w-4 h-4" /> My Shop
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
+                        <Link to="/vendor/earnings" className="cursor-pointer gap-2">
+                          <Wallet className="w-4 h-4" /> Sales & Earnings
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-orange-100" />
+                    </>
+                  )}
+
                   {(user.role === 'admin' || user.is_superuser) && (
                     <DropdownMenuItem asChild className="focus:bg-purple-50 focus:text-purple-700">
                       <Link to="/admin/dashboard" className="cursor-pointer gap-2 text-purple-600 font-medium">
@@ -386,11 +411,13 @@ const Navbar: React.FC = () => {
                     </DropdownMenuItem>
                   )}
 
-                  <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
-                    <Link to="/my-bookings" className="cursor-pointer gap-2">
-                      <BookOpen className="w-4 h-4" /> My Bookings
-                    </Link>
-                  </DropdownMenuItem>
+                  {user.role !== 'vendor' && (
+                    <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
+                      <Link to="/my-bookings" className="cursor-pointer gap-2">
+                        <BookOpen className="w-4 h-4" /> My Bookings
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
                     <Link to="/profile" className="cursor-pointer gap-2">
                       <User className="w-4 h-4" /> {t('profile')}

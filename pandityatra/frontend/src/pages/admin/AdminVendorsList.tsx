@@ -217,6 +217,15 @@ const AdminVendorsList: React.FC = () => {
                         />
                     </div>
                     <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-white border-orange-200 text-orange-600 hover:bg-orange-50 font-bold"
+                            onClick={() => window.location.href = '/admin/inventory'}
+                        >
+                            <Building2 className="h-4 w-4 mr-2" /> All Inventory
+                        </Button>
+                        <div className="h-9 w-px bg-slate-200 mx-1" />
                         {(['all', 'verified', 'pending'] as const).map(f => (
                             <button
                                 key={f}
@@ -338,10 +347,19 @@ const AdminVendorsList: React.FC = () => {
                                                 <Button 
                                                     variant="outline" 
                                                     size="sm" 
-                                                    className="h-9 border-orange-200 text-orange-600 hover:bg-orange-50 font-bold px-4"
-                                                    onClick={() => {/* View Details/Dashboard */}}
+                                                    className="h-9 bg-orange-50/50 border-orange-200 text-orange-600 hover:bg-orange-100 hover:text-orange-700 font-extrabold px-4 shadow-sm"
+                                                    onClick={() => window.location.href = `/admin/inventory?vendorId=${v.id}`}
                                                 >
-                                                    <ArrowUpRight size={14} className="mr-2" /> Inspect
+                                                    <Store size={15} className="mr-2" /> Shop Inventory
+                                                </Button>
+                                                
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    className="h-9 h-9 border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold px-4"
+                                                    onClick={() => openEditDialog(v)}
+                                                >
+                                                    <ArrowUpRight size={14} className="mr-2" /> Profile
                                                 </Button>
                                             </div>
                                         </div>

@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
 import { useToast } from '@/hooks/use-toast';
+import { fetchUnreadChatCount } from '@/lib/api';
 
 interface DashboardLayoutProps {
     children: React.ReactNode;
@@ -58,6 +59,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     const { toast } = useToast();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [expandedItems, setExpandedItems] = useState<string[]>(() => {
         const expanded: string[] = [];
         // Auto-expand Marketplace if we're on a marketplace sub-tab
@@ -75,6 +77,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
         );
     };
+
+    // Chat unread count polling
+    useEffect(() => {
+        if (!user) return;
+        
+        const loadUnreadCount = async () => {
+            try {
+                const count = await fetchUnreadChatCount();
+                setUnreadCount(count);
+            } catch (err) {
+                // Silently ignore poll errors
+            }
+        };
+
+        loadUnreadCount();
+        const intervalId = setInterval(loadUnreadCount, 30000); // 30s
+        return () => clearInterval(intervalId);
+    }, [user]);
 
     // Auto-expand when URL changes
     useEffect(() => {
@@ -300,6 +320,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                                 `}>
                                                     <Icon size={20} />
                                                     <span>{item.label}</span>
+                                                    {item.label === 'Messages' && unreadCount > 0 && (
+                                                        <span className="ml-auto bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full animate-in zoom-in">
+                                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </Link>
                                         )}

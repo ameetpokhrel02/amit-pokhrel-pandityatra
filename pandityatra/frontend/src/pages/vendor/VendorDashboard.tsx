@@ -45,7 +45,7 @@ const VendorDashboard = () => {
             setStats(statsData);
             setRecentOrders(ordersData.slice(0, 5));
             
-            if (statsData.verification_status !== 'APPROVED') {
+            if (!statsData.is_verified && statsData.verification_status !== 'APPROVED') {
                 setErrorStatus(statsData.verification_status as any);
             }
         } catch (error: any) {

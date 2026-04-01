@@ -29,6 +29,16 @@ export async function fetchAdminPayments(): Promise<AdminPayment[]> {
     return response.data;
 }
 
+export async function markMessageRead(messageId: number) {
+    const response = await apiClient.post(`/chat/messages/${messageId}/mark-read/`);
+    return response.data;
+}
+
+export async function fetchUnreadChatCount(): Promise<number> {
+    const response = await apiClient.get('/chat/unread-count/');
+    return response.data.unread_count || 0;
+}
+
 export async function refundPayment(id: number) {
     const response = await apiClient.post(`/payments/${id}/refund/`);
     return response.data;
@@ -627,6 +637,12 @@ export interface SamagriItem {
     image?: string;
     is_available: boolean;
     unit?: string;
+    vendor?: number;
+    is_approved?: boolean;
+    vendor_details?: {
+        id: number;
+        shop_name: string;
+    };
 }
 
 export interface SamagriCategory {
@@ -658,6 +674,22 @@ export async function createSamagriItem(data: FormData | any) {
 
 export async function updateSamagriItem(id: number, data: FormData | any) {
     const response = await apiClient.patch(`/samagri/items/${id}/`, data);
+    return response.data;
+}
+
+// Vendor Specific Product Mutations (Resolves 403 Forbidden)
+export async function createVendorProduct(data: FormData | any) {
+    const response = await apiClient.post('/vendors/products/', data);
+    return response.data;
+}
+
+export async function updateVendorProduct(id: number, data: FormData | any) {
+    const response = await apiClient.patch(`/vendors/products/${id}/`, data);
+    return response.data;
+}
+
+export async function deleteVendorProduct(id: number) {
+    const response = await apiClient.delete(`/vendors/products/${id}/`);
     return response.data;
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingBag,
@@ -17,19 +18,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/hooks/useAuth';
 import {
     fetchSamagriItems,
     fetchSamagriCategories,
+    fetchActiveBanners,
     type SamagriItem,
     type SamagriCategory
 } from '@/lib/api';
@@ -37,7 +33,6 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ShopFilterSidebar from '@/components/shop/ShopFilterSidebar';
 import { BannerCarousel } from '@/components/shop/BannerCarousel';
-import { fetchActiveBanners } from '@/lib/api';
 import heroBg from '@/assets/images/agarbati_brands.webp';
 
 const CategoryScroll = ({ 
@@ -46,7 +41,7 @@ const CategoryScroll = ({
     onCategoryChange 
 }: { 
     categories: SamagriCategory[], 
-    selectedCategory: string | number, 
+    selectedCategory: string, 
     onCategoryChange: (id: string) => void 
 }) => {
     return (
@@ -117,6 +112,9 @@ const Samagri = () => {
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 99999]);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 8;
+    
+    const [searchParams, setSearchParams] = useSearchParams();
+    const { user } = useAuth();
     const { toast } = useToast();
     const { addItem, openDrawer } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
@@ -126,6 +124,21 @@ const Samagri = () => {
     useEffect(() => {
         loadData();
     }, []);
+
+    // Sync categories from URL
+    useEffect(() => {
+        if (categories.length > 0) {
+            const catSlug = searchParams.get('category');
+            if (catSlug) {
+                const category = categories.find(c => c.slug === catSlug);
+                if (category) {
+                    setSelectedCategory(category.id.toString());
+                } else if (catSlug === 'all') {
+                    setSelectedCategory('all');
+                }
+            }
+        }
+    }, [searchParams, categories]);
 
     const loadData = async () => {
         try {
@@ -142,7 +155,7 @@ const Samagri = () => {
             console.error('Failed to load shop data:', error);
             toast({
                 title: "Error",
-                description: "Failed to load products. Please try again.",
+                description: "Failed to load products.",
                 variant: "destructive"
             });
         } finally {
@@ -156,14 +169,12 @@ const Samagri = () => {
         return Math.ceil(Math.max(...items.map(i => Number(i.price))));
     }, [items]);
 
-    // Initialize price range once data loads
     useEffect(() => {
         if (items.length > 0) {
             setPriceRange([0, maxPrice]);
         }
     }, [maxPrice, items.length]);
 
-    // Filtering
     const filteredItems = items.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             item.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -172,32 +183,30 @@ const Samagri = () => {
         return matchesSearch && matchesCategory && matchesPrice;
     });
 
-    // Sorting
     const sortedItems = [...filteredItems].sort((a, b) => {
         switch (sortBy) {
             case 'price-asc': return a.price - b.price;
             case 'price-desc': return b.price - a.price;
             case 'name-asc': return a.name.localeCompare(b.name);
-            default: return 0; // featured
+            default: return 0;
         }
     });
 
-    // Pagination
-    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
     const paginatedItems = sortedItems.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
 
-    // Reset filters helper
+    const totalPages = Math.ceil(sortedItems.length / itemsPerPage);
+
     const handleResetFilters = () => {
         setSelectedCategory('all');
         setSortBy('featured');
         setPriceRange([0, maxPrice]);
         setSearchQuery('');
+        setSearchParams({});
     };
 
-    // Reset page when filters change
     useEffect(() => {
         setCurrentPage(1);
     }, [searchQuery, selectedCategory, sortBy, priceRange]);
@@ -207,12 +216,9 @@ const Samagri = () => {
             id: item.id,
             title: item.name,
             price: Number(item.price),
-            image: item.image || '/images/bhasma.png', // Fallback image if null
+            image: item.image || '/images/bhasma.png',
         });
-        toast({
-            title: "Added to Cart",
-            description: `${item.name} has been added to your cart.`,
-        });
+        toast({ title: "Added to Cart", description: `${item.name} added.` });
         openDrawer();
     };
 
@@ -225,440 +231,184 @@ const Samagri = () => {
             image: item.image || undefined,
             description: item.description || undefined,
         });
-        
-        const isNowFavorite = !isFavorite(item.id);
-        toast({
-            title: isNowFavorite ? "❤️ Added to Favorites" : "Removed from Favorites",
-            description: isNowFavorite 
-                ? `${item.name} has been added to your favorites.`
-                : `${item.name} has been removed from your favorites.`,
-            className: isNowFavorite 
-                ? "bg-pink-600 text-white border-none shadow-2xl"
-                : "bg-gray-600 text-white border-none shadow-2xl"
-        });
     };
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
 
-            {/* Hero Section / Banner Carousel */}
             {hasBanners ? (
                 <div className="container mx-auto px-4 mt-8">
                     <BannerCarousel />
                 </div>
             ) : (
                 <section className="relative text-white py-24 px-4 overflow-hidden">
-                    {/* Background Image */}
                     <div className="absolute inset-0 z-0">
-                        <img
-                            src={heroBg}
-                            alt="Sacred Samagri"
-                            className="w-full h-full object-cover"
-                        />
+                        <img src={heroBg} alt="Sacred Samagri" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-r from-orange-900/80 to-amber-900/70 backdrop-blur-[2px]" />
                     </div>
-
                     <div className="container mx-auto text-center max-w-3xl relative z-10">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6 }}
-                        >
-                            <Badge className="bg-white/20 text-white hover:bg-white/30 border-none mb-4">
-                                <ShoppingBag className="w-4 h-4 mr-2" />
-                                Official Samagri Store
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                            <Badge className="bg-white/20 text-white border-none mb-4">
+                                <ShoppingBag className="w-4 h-4 mr-2" /> Official Samagri Store
                             </Badge>
-                            <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">
-                                Sacred Puja Materials
-                            </h1>
+                            <h1 className="text-4xl md:text-5xl font-bold mb-6 font-playfair">Sacred Puja Materials</h1>
                             <p className="text-orange-100 text-lg mb-8 leading-relaxed">
-                                Authentic, pure, and curated samagri kits delivered to your doorstep.
-                                Everything you need for a divine ceremony.
+                                Authentic, pure, and curated samagri kits.
                             </p>
                         </motion.div>
                     </div>
                 </section>
             )}
 
-            {/* Global Search Bar (moved below hero) */}
             <div className="container mx-auto px-4 mt-8">
                 <div className="relative max-w-2xl mx-auto">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                     <Input
                         type="text"
                         placeholder="Search for diyas, incense, complete kits..."
-                        className="pl-12 h-14 bg-white text-gray-900 border border-orange-100 shadow-lg hover:shadow-orange-200/50 transition-shadow rounded-2xl focus-visible:ring-orange-500"
+                        className="pl-12 h-14 bg-white rounded-2xl"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
             </div>
 
-            {/* Mobile/Tablet Category Scroller */}
-            <div className="bg-orange-50/30 border-y border-orange-100 mt-8 mb-4 overflow-visible">
-                <div className="container mx-auto px-4 overflow-visible">
+            <div className="bg-orange-50/30 border-y border-orange-100 mt-8 mb-4">
+                <div className="container mx-auto px-4">
                     <CategoryScroll 
                         categories={categories} 
                         selectedCategory={selectedCategory} 
-                        onCategoryChange={setSelectedCategory} 
+                        onCategoryChange={(val) => {
+                            setSelectedCategory(val);
+                            const cat = categories.find(c => c.id.toString() === val);
+                            if (cat) setSearchParams({ category: cat.slug });
+                            else setSearchParams({});
+                        }} 
                     />
                 </div>
             </div>
 
-            <main className="flex-1 container mx-auto py-8 lg:py-12 px-4">
+            <main className="flex-1 container mx-auto py-8 px-4">
+                <div className="flex flex-col lg:flex-row gap-8">
+                    <ShopFilterSidebar
+                        categories={categories}
+                        selectedCategory={selectedCategory}
+                        onCategoryChange={setSelectedCategory}
+                        sortBy={sortBy}
+                        onSortChange={setSortBy}
+                        priceRange={priceRange}
+                        onPriceRangeChange={setPriceRange}
+                        maxPrice={maxPrice}
+                        totalItems={sortedItems.length}
+                        onReset={handleResetFilters}
+                    />
 
-                {/* Desktop: Sidebar + Grid */}
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                    <div className="flex-1 min-w-0">
+                        {loading ? (
+                            <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 animate-spin text-orange-600" /></div>
+                        ) : paginatedItems.length > 0 ? (
+                            <motion.div layout className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <AnimatePresence>
+                                    {paginatedItems.map((item) => (
+                                        <motion.div layout key={item.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }}>
+                                            <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col rounded-xl">
+                                                <div className="aspect-square bg-stone-50 relative overflow-hidden">
+                                                    <Badge className="absolute top-3 left-3 bg-orange-500 text-white z-10">Hot</Badge>
+                                                    
+                                                    {user?.role !== 'vendor' && (
+                                                        <button
+                                                            onClick={() => handleToggleFavorite(item)}
+                                                            className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center z-10 ${
+                                                                isFavorite(item.id) ? 'bg-red-500 text-white' : 'bg-white text-gray-400'
+                                                            }`}
+                                                        >
+                                                            <Heart className={`w-4 h-4 ${isFavorite(item.id) ? 'fill-current' : ''}`} />
+                                                        </button>
+                                                    )}
 
-                {/* Desktop Sidebar */}
-                <ShopFilterSidebar
-                    categories={categories}
-                    selectedCategory={selectedCategory}
-                    onCategoryChange={setSelectedCategory}
-                    sortBy={sortBy}
-                    onSortChange={setSortBy}
-                    priceRange={priceRange}
-                    onPriceRangeChange={setPriceRange}
-                    maxPrice={maxPrice}
-                    totalItems={sortedItems.length}
-                    onReset={handleResetFilters}
-                />
-
-                {/* Product Grid */}
-                <div className="flex-1 min-w-0">
-                {loading ? (
-                    <div className="flex justify-center py-20">
-                        <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
-                    </div>
-                ) : paginatedItems.length > 0 ? (
-                    <motion.div
-                        layout
-                        className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
-                    >
-                        <AnimatePresence>
-                            {paginatedItems.map((item) => (
-                                <motion.div
-                                    layout
-                                    key={item.id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    whileHover={{ y: -5 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col rounded-xl">
-                                        <div className="aspect-square bg-stone-50 relative overflow-hidden">
-                                            {/* Discount/Hot Badge */}
-                                            <Badge className="absolute top-3 left-3 bg-orange-500 hover:bg-orange-600 text-white border-none px-3 py-1 rounded-full z-10">
-                                                Hot
-                                            </Badge>
-
-                                            {/* Favorite Button */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleToggleFavorite(item);
-                                                }}
-                                                className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center z-10 transition-all duration-200 ${
-                                                    isFavorite(item.id)
-                                                        ? 'bg-red-500 text-white shadow-lg shadow-red-200'
-                                                        : 'bg-white/90 text-gray-400 hover:text-red-500 hover:bg-white shadow-md'
-                                                }`}
-                                                title={isFavorite(item.id) ? 'Remove from favorites' : 'Add to favorites'}
-                                            >
-                                                <Heart className={`w-4 h-4 ${isFavorite(item.id) ? 'fill-current' : ''}`} />
-                                            </button>
-
-                                            {item.image ? (
-                                                <img
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <ShoppingBag className="w-16 h-16 text-orange-200" />
+                                                    {item.image ? (
+                                                        <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-16 h-16 text-orange-200" /></div>
+                                                    )}
                                                 </div>
-                                            )}
-                                        </div>
 
-                                        <CardContent className="p-5 flex-1 flex flex-col">
-                                            <div className="mb-2">
-                                                <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">
-                                                    {categories.find(c => c.id === item.category)?.name || 'Samagri'}
-                                                </span>
-                                            </div>
+                                                <CardContent className="p-5 flex-1 flex flex-col">
+                                                    <div className="mb-2 uppercase text-[10px] font-bold text-orange-600 tracking-wider">
+                                                        {categories.find(c => c.id === item.category)?.name || 'Samagri'}
+                                                    </div>
+                                                    <h3 className="font-bold text-lg mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">{item.name}</h3>
+                                                    <div className="flex items-center gap-2 mb-4">
+                                                        <span className="font-bold text-lg">Rs. {item.price}</span>
+                                                        <span className="text-gray-400 text-sm border-l pl-2">${(item as any).price_usd}</span>
+                                                    </div>
 
-                                            <h3 className="font-bold text-lg text-gray-900 mb-1 line-clamp-1 group-hover:text-orange-600 transition-colors">
-                                                {item.name}
-                                            </h3>
-
-                                            <div className="flex flex-col mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-gray-900 font-bold text-lg">
-                                                        Rs. {item.price}
-                                                    </span>
-                                                    <span className="text-gray-400 font-medium text-sm border-l pl-2">
-                                                        ${(item as any).price_usd}
-                                                    </span>
-                                                </div>
-                                                {item.stock_quantity < 5 && item.stock_quantity > 0 && (
-                                                    <span className="text-[10px] text-red-500 font-medium mt-1">
-                                                        Only {item.stock_quantity} units left!
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="mt-auto grid grid-cols-2 gap-3 pt-4 border-t border-gray-50">
-                                                {item.stock_quantity === 0 ? (
-                                                    <>
-                                                        <Button
-                                                            variant="secondary"
-                                                            className="w-full bg-gray-300 text-gray-500 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm cursor-not-allowed"
-                                                            disabled
-                                                        >
-                                                            <ShoppingCart className="w-4 h-4" /> Out of Stock
-                                                        </Button>
-                                                        <Button
-                                                            variant="secondary"
-                                                            className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
-                                                            onClick={() => setSelectedItem(item)}
-                                                        >
-                                                            <Eye className="w-4 h-4" /> View
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Button
-                                                            onClick={() => handleAddToCart(item)}
-                                                            variant="secondary"
-                                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm shadow-sm hover:shadow-md transition-all duration-300"
-                                                        >
-                                                            <ShoppingCart className="w-4 h-4" /> Add
-                                                        </Button>
-                                                        <Button
-                                                            variant="secondary"
-                                                            className="w-full bg-white hover:bg-orange-50 text-orange-600 border border-orange-200 font-medium flex items-center justify-center gap-2 h-10 rounded-lg text-xs sm:text-sm transition-all duration-300"
-                                                            onClick={() => setSelectedItem(item)}
-                                                        >
-                                                            <Eye className="w-4 h-4" /> View
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                            {item.stock_quantity === 0 && (
-                                                <div className="mt-2 text-center text-xs font-semibold text-orange-600 animate-pulse">
-                                                    Restocking Soon
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
-                    </motion.div>
-                ) : (
-                    <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-dashed">
-                        <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No Items Found</h3>
-                        <p className="text-gray-500 max-w-sm mx-auto">
-                            We couldn't find any samagri matching your search. Try adjusting your filters.
-                        </p>
-                        <Button
-                            variant="link"
-                            className="mt-4 text-orange-600"
-                            onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
-                        >
-                            Clear all filters
-                        </Button>
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {sortedItems.length > itemsPerPage && (
-                    <div className="flex justify-center items-center mt-12 gap-1 md:gap-4">
-                        <Button 
-                            variant="ghost" 
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-                            disabled={currentPage === 1}
-                            className="bg-white/50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-all duration-300 rounded-xl px-2 md:px-4"
-                        >
-                            <ChevronLeft className="w-4 h-4 mr-1 md:mr-2" />
-                            <span className="hidden sm:inline">Previous</span>
-                        </Button>
-                        
-                        <div className="flex items-center gap-1 md:gap-2">
-                            {totalPages <= 5 ? (
-                                Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                    <Button
-                                        key={page}
-                                        variant={currentPage === page ? "default" : "ghost"}
-                                        size="sm"
-                                        onClick={() => setCurrentPage(page)}
-                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
-                                            currentPage === page 
-                                                ? "bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/20 scale-105" 
-                                                : "text-gray-500 hover:bg-orange-50 hover:text-orange-600"
-                                        }`}
-                                    >
-                                        {page}
-                                    </Button>
-                                ))
-                            ) : (
-                                // Logic for many pages (Basic)
-                                <>
-                                    {[1, 2, 3].map(page => (
-                                        <Button
-                                            key={page}
-                                            variant={currentPage === page ? "default" : "ghost"}
-                                            size="sm"
-                                            onClick={() => setCurrentPage(page)}
-                                            className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
-                                                currentPage === page ? "bg-orange-600 text-white" : "text-gray-500 hover:bg-orange-50 hover:text-orange-600"
-                                            }`}
-                                        >
-                                            {page}
-                                        </Button>
+                                                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
+                                                        {user?.role === 'vendor' ? (
+                                                            <div className="w-full text-center py-2 bg-gray-50 rounded-lg text-xs font-bold text-gray-400 flex items-center justify-center gap-2">
+                                                                <Search size={14} /> Action Restricted
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <Button variant="ghost" size="sm" className="text-orange-600 hover:bg-orange-50 font-bold" onClick={() => setSelectedItem(item)}>
+                                                                    <Eye className="w-4 h-4 mr-2" /> Details
+                                                                </Button>
+                                                                <Button size="sm" className="bg-orange-600 text-white font-bold rounded-lg" onClick={() => handleAddToCart(item)}>
+                                                                    <ShoppingCart className="w-4 h-4 mr-2" /> Add
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
                                     ))}
-                                    <span className="text-gray-400 px-1 pt-2">...</span>
-                                    <Button
-                                        variant={currentPage === totalPages ? "default" : "ghost"}
-                                        size="sm"
-                                        onClick={() => setCurrentPage(totalPages)}
-                                        className={`w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold transition-all duration-300 ${
-                                            currentPage === totalPages ? "bg-orange-600 text-white" : "text-gray-500"
-                                        }`}
-                                    >
-                                        {totalPages}
-                                    </Button>
-                                </>
-                            )}
-                        </div>
-
-                        <Button 
-                            variant="ghost" 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} 
-                            disabled={currentPage === totalPages}
-                            className="bg-white/50 hover:bg-orange-50 text-gray-600 hover:text-orange-600 font-medium transition-all duration-300 rounded-xl px-2 md:px-4"
-                        >
-                            <span className="hidden sm:inline">Next</span>
-                            <ChevronRight className="w-4 h-4 ml-1 md:ml-2" />
-                        </Button>
+                                </AnimatePresence>
+                            </motion.div>
+                        ) : (
+                            <div className="text-center py-20 bg-white rounded-xl border border-dashed">
+                                <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                <h3 className="text-xl font-semibold mb-2">No Items Found</h3>
+                                <Button variant="link" className="text-orange-600" onClick={handleResetFilters}>Clear filters</Button>
+                            </div>
+                        )}
                     </div>
-                )}
-                </div>{/* end flex-1 min-w-0 */}
-                </div>{/* end flex gap-8 */}
+                </div>
             </main>
 
             <Footer />
 
-            {/* Quick View Modal */}
             <AnimatePresence>
                 {selectedItem && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setSelectedItem(null)}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row"
-                        >
-                            {/* Product Image */}
-                            <div className="md:w-1/2 bg-gray-50 relative overflow-hidden min-h-[300px] md:min-h-full">
-                                <button
-                                    onClick={() => setSelectedItem(null)}
-                                    className="absolute top-4 left-4 p-2 bg-white/80 backdrop-blur-md rounded-full shadow-lg hover:bg-white transition-all z-10 md:hidden"
-                                >
-                                    <X className="w-5 h-5 text-gray-600" />
-                                </button>
-
-                                {selectedItem.image ? (
-                                    <img
-                                        src={selectedItem.image}
-                                        alt={selectedItem.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center p-12 bg-gradient-to-br from-orange-50 to-orange-100">
-                                        <ShoppingBag className="w-24 h-24 text-orange-200 mb-4" />
-                                        <p className="text-orange-400 font-medium">No Image Available</p>
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedItem(null)} className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+                        <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl max-w-2xl w-full overflow-hidden flex flex-col md:flex-row">
+                            <div className="md:w-1/2 bg-gray-50 relative min-h-[300px]">
+                                {selectedItem.image ? <img src={selectedItem.image} alt={selectedItem.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center p-12 bg-orange-50"><ShoppingBag className="w-24 h-24 text-orange-200" /></div>}
                             </div>
-
-                            {/* Product Details */}
                             <div className="md:w-1/2 p-8 flex flex-col">
                                 <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100 border-none mb-2">
-                                            {categories.find(c => c.id === selectedItem.category)?.name || 'Samagri'}
-                                        </Badge>
-                                        <h2 className="text-3xl font-bold text-gray-900 font-playfair">{selectedItem.name}</h2>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedItem(null)}
-                                        className="hidden md:block p-2 hover:bg-gray-100 rounded-full transition-colors"
-                                    >
-                                        <X className="w-6 h-6 text-gray-400" />
-                                    </button>
+                                    <h2 className="text-3xl font-bold font-playfair">{selectedItem.name}</h2>
+                                    <button onClick={() => setSelectedItem(null)}><X className="w-6 h-6 text-gray-400" /></button>
                                 </div>
-
-                                <div className="flex items-center gap-3 mb-6">
-                                            <div className="flex items-center gap-3 mb-6 p-4 bg-orange-50/50 rounded-2xl border border-orange-100/50">
-                                                <span className="text-3xl font-bold text-orange-600">
-                                                    Rs. {selectedItem.price}
-                                                </span>
-                                                <span className="text-xl font-medium text-gray-400 border-l border-orange-200 pl-3">
-                                                    ${(selectedItem as any).price_usd}
-                                                </span>
-                                            </div>
-                                    {selectedItem.stock_quantity > 0 ? (
-                                        <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                            In Stock ({selectedItem.stock_quantity})
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="destructive">Out of Stock</Badge>
-                                    )}
+                                <div className="flex items-center gap-3 mb-6 p-4 bg-orange-50/50 rounded-2xl">
+                                    <span className="text-3xl font-bold text-orange-600">Rs. {selectedItem.price}</span>
+                                    <span className="text-xl font-medium text-gray-400 border-l pl-3">${(selectedItem as any).price_usd}</span>
                                 </div>
-                                {selectedItem.stock_quantity === 0 && (
-                                    <div className="mb-4 text-center text-sm font-semibold text-orange-600 animate-pulse">
-                                        Restocking Soon
-                                    </div>
-                                )}
-
-                                <div className="flex-1">
-                                    <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2">Description</h4>
-                                    <p className="text-gray-600 leading-relaxed mb-6">
-                                        {selectedItem.description || "Authentic and pure puja samagri curated for your sacred rituals. High quality and traditionally prepared."}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <Button
-                                        onClick={() => { handleAddToCart(selectedItem); setSelectedItem(null); }}
-                                        disabled={selectedItem.stock_quantity === 0}
-                                        className="w-full h-14 bg-orange-600 hover:bg-orange-700 text-white font-bold text-lg rounded-2xl shadow-xl shadow-orange-600/20 gap-3"
-                                    >
+                                <p className="text-gray-600 mb-6 flex-1">{selectedItem.description || "Authentic puja samagri."}</p>
+                                
+                                {user?.role === 'vendor' ? (
+                                    <div className="w-full py-4 text-center bg-gray-100 rounded-2xl text-gray-400 font-bold">Action Restricted for Vendors</div>
+                                ) : (
+                                    <Button onClick={() => { handleAddToCart(selectedItem); setSelectedItem(null); }} className="w-full h-14 bg-orange-600 text-white font-bold rounded-2xl gap-3">
                                         <ShoppingCart className="w-6 h-6" /> Add to Cart
                                     </Button>
-                                    <p className="text-center text-xs text-gray-400 italic">
-                                        Free delivery on orders above ₹1000
-                                    </p>
-                                </div>
+                                )}
                             </div>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
-
         </div>
     );
 };

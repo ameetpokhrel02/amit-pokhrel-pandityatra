@@ -10,9 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 import { 
     fetchVendorProducts, 
     fetchSamagriCategories, 
-    createSamagriItem, 
-    updateSamagriItem, 
-    deleteSamagriItem,
+    createVendorProduct, 
+    updateVendorProduct, 
+    deleteVendorProduct,
     type SamagriItem,
     type SamagriCategory
 } from "@/lib/api";
@@ -48,6 +48,8 @@ export default function VendorProducts() {
   const itemsPerPage = 8;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const [form, setForm] = useState<{
       name: string;
@@ -114,14 +116,18 @@ export default function VendorProducts() {
       setIsDialogOpen(true);
   };
   
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+      if (!itemToDelete) return;
+      setIsDeleting(true);
       try {
-          await deleteSamagriItem(id);
+          await deleteVendorProduct(itemToDelete);
           toast({ title: "Success", description: "Product deleted." });
           loadData();
-          setConfirmOpen(false);
+          setItemToDelete(null);
       } catch (err: any) {
           toast({ title: "Error", description: "Failed to delete product.", variant: "destructive" });
+      } finally {
+          setIsDeleting(false);
       }
   };
 
@@ -142,10 +148,10 @@ export default function VendorProducts() {
 
     try {
       if (editingItem) {
-          await updateSamagriItem(editingItem.id, formData);
+          await updateVendorProduct(editingItem.id, formData);
           toast({ title: "Success", description: "Product updated and sent for re-approval." });
       } else {
-          await createSamagriItem(formData);
+          await createVendorProduct(formData);
           toast({ title: "Success", description: "Product created and sent for approval." });
       }
       setIsDialogOpen(false);
@@ -358,12 +364,7 @@ export default function VendorProducts() {
                                               variant="ghost" 
                                               size="sm" 
                                               className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                              onClick={() => {
-                                                // Simplified delete without extra confirm for now
-                                                if(confirm("Are you sure you want to delete this product?")) {
-                                                  handleDelete(item.id);
-                                                }
-                                              }}
+                                              onClick={() => setItemToDelete(item.id)}
                                           >
                                               <Trash2 className="h-4 w-4" />
                                           </Button>
@@ -399,6 +400,18 @@ export default function VendorProducts() {
             </p>
           </div>
         </div>
+
+        <ActionConfirmationDialog
+            open={itemToDelete !== null}
+            onOpenChange={(open) => !open && setItemToDelete(null)}
+            onConfirm={handleDelete}
+            title="Delete Product?"
+            description="This action cannot be undone. The product will be permanently removed from your inventory and the shop."
+            confirmLabel="Delete Product"
+            cancelLabel="Keep Product"
+            isDestructive={true}
+            isLoading={isDeleting}
+        />
       </div>
     </DashboardLayout>
   );

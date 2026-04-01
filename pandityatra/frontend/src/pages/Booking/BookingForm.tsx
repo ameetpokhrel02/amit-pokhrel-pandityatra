@@ -40,6 +40,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { recommenderApi } from '@/api/recommender';
+import { useAuth } from '@/hooks/useAuth';
 import { z } from 'zod';
 
 const bookingSchema = z.object({
@@ -97,6 +98,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
   const [pandits, setPandits] = useState<Pandit[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const { user } = useAuth(); // Added for role check
   const [samagriRequirements, setSamagriRequirements] = useState<any[]>([]);
   const [ruleBasedSamagri, setRuleBasedSamagri] = useState<any[]>([]);
   const [pujaTemplates, setPujaTemplates] = useState<any[]>([]);
@@ -468,7 +470,28 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
       animate={{ opacity: 1, y: 0 }}
       className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8"
     >
-      <Card className="border-orange-100 shadow-xl overflow-hidden">
+      {user?.role !== 'user' && (
+        <Alert className="mb-8 border-orange-200 bg-orange-50/50 backdrop-blur-sm p-6 shadow-lg rounded-2xl animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="flex items-center gap-4">
+            <div className="bg-orange-100 p-3 rounded-full">
+              <Bot className="w-8 h-8 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-orange-900 mb-1 font-playfair">Booking Restricted</p>
+              <AlertDescription className="text-orange-800/80 font-medium max-w-lg">
+                Namaste! Only <strong>Customer</strong> accounts can book Puja services. 
+                As a {user?.role || 'Guest'}, you can explore the platform, but to schedule a ceremony, 
+                please sign in with a different account.
+              </AlertDescription>
+              <div className="mt-4 flex gap-3">
+                 <Button variant="outline" className="border-orange-200 text-orange-700 hover:bg-orange-100/50 rounded-xl" onClick={() => navigate('/login')}>Switch Account</Button>
+              </div>
+            </div>
+          </div>
+        </Alert>
+      )}
+
+      <Card className={`border-orange-100 shadow-xl overflow-hidden ${user?.role !== 'user' ? 'opacity-40 pointer-events-none' : ''}`}>
         <CardHeader className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 border-b border-orange-100">
           <CardTitle className="text-2xl font-playfair text-orange-900 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-orange-600" />

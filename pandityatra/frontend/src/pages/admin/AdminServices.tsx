@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { fetchAllPujas, type Puja } from "@/lib/api";
+import { fetchAllPujas, type Puja, fetchPujaCategories, type PujaCategory } from "@/lib/api";
 import apiClient from "@/lib/api-client";
 import { DataTablePagination } from "@/components/common/DataTablePagination";
 import { Pencil, Trash2 } from "lucide-react";
@@ -16,6 +16,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface AdminPuja extends Puja {
   is_available: boolean;
@@ -24,6 +31,7 @@ interface AdminPuja extends Puja {
 export default function AdminServices() {
   const [pujas, setPujas] = useState<AdminPuja[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<PujaCategory[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -38,6 +46,7 @@ export default function AdminServices() {
   const [form, setForm] = useState<{
     name: string;
     description: string;
+    category: string;
     base_duration_minutes: number;
     base_price: string;
     is_available: boolean;
@@ -45,6 +54,7 @@ export default function AdminServices() {
   }>({
     name: "",
     description: "",
+    category: "",
     base_duration_minutes: 60,
     base_price: "",
     is_available: true,
@@ -52,19 +62,23 @@ export default function AdminServices() {
   });
   const { toast } = useToast();
 
-  const loadPujas = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const data = await fetchAllPujas();
-      setPujas(data as AdminPuja[]);
+      const [pujasData, catsData] = await Promise.all([
+        fetchAllPujas(),
+        fetchPujaCategories()
+      ]);
+      setPujas(pujasData as AdminPuja[]);
+      setCategories(catsData);
     } catch (err) {
-      toast({ title: "Error", description: "Failed to load pujas." });
+      toast({ title: "Error", description: "Failed to load services data." });
     }
     setLoading(false);
   };
 
   useEffect(() => {
-    loadPujas();
+    loadData();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,10 +94,11 @@ export default function AdminServices() {
     setForm({
       name: puja.name || "",
       description: puja.description || "",
+      category: puja.category ? String(puja.category) : "",
       base_duration_minutes: puja.base_duration_minutes || 60,
       base_price: puja.base_price ? String(puja.base_price) : "",
       is_available: puja.is_available,
-      image: null, // Reset image input on edit as we can't set file input value
+      image: null,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -93,6 +108,7 @@ export default function AdminServices() {
     setForm({
       name: "",
       description: "",
+      category: "",
       base_duration_minutes: 60,
       base_price: "",
       is_available: true,
@@ -108,7 +124,7 @@ export default function AdminServices() {
         try {
           await apiClient.delete(`/services/${id}/`);
           toast({ title: "Success", description: "Puja deleted successfully." });
-          loadPujas();
+          loadData();
           setConfirmOpen(false);
         } catch (err: any) {
           console.error(err);
@@ -123,9 +139,6 @@ export default function AdminServices() {
     e.preventDefault();
     const formData = new FormData();
     Object.entries(form).forEach(([key, value]) => {
-      // Don't send null image on update unless you want to clear it (logic depends on backend)
-      // Usually backend ignores valid key if not present in request. 
-      // If image is null here, it means user didn't select a new file.
       if (key === 'image' && value === null) return;
 
       if (value !== null && value !== "") {
@@ -148,15 +161,15 @@ export default function AdminServices() {
         await apiClient.patch(`/services/${editingId}/`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast({ title: "Success", description: "Puja updated and synced with Cloudinary successfully." });
+        toast({ title: "Success", description: "Puja updated successfully." });
       } else {
         await apiClient.post("/services/", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        toast({ title: "Success", description: "New puja added and uploaded to Cloudinary." });
+        toast({ title: "Success", description: "New puja added successfully." });
       }
-      handleCancel(); // Reset form
-      loadPujas();
+      handleCancel();
+      loadData();
     } catch (err: any) {
       console.error(err);
       toast({ title: "Error", description: err.response?.data?.detail || err.message || "Failed to save puja." });
@@ -177,6 +190,24 @@ export default function AdminServices() {
             <Input name="name" value={form.name} onChange={handleChange} placeholder="Name" required />
             <Input name="base_price" value={form.base_price} onChange={handleChange} placeholder="Base Price (₹)" required type="number" min="0" />
             <Input name="base_duration_minutes" value={form.base_duration_minutes} onChange={handleChange} placeholder="Duration (min)" required type="number" min="1" />
+            
+            <Select 
+              value={form.category} 
+              onValueChange={(val) => setForm(prev => ({ ...prev, category: val }))}
+              required
+            >
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={String(cat.id)}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <div className="flex flex-col gap-2">
               <Input name="image" type="file" accept="image/*" onChange={handleChange} />
               {editingId && <span className="text-xs text-gray-500">Leave empty to keep existing image</span>}
@@ -207,6 +238,7 @@ export default function AdminServices() {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Description</TableHead>
+                      <TableHead>Category</TableHead>
                       <TableHead>Price (₹)</TableHead>
                       <TableHead>Duration (min)</TableHead>
                       <TableHead>Available</TableHead>
@@ -218,6 +250,9 @@ export default function AdminServices() {
                       <TableRow key={puja.id}>
                         <TableCell>{puja.name}</TableCell>
                         <TableCell className="max-w-xs truncate">{puja.description}</TableCell>
+                        <TableCell>
+                          {puja.category_details?.name || <span className="text-gray-400 italic">None</span>}
+                        </TableCell>
                         <TableCell>{puja.base_price}</TableCell>
                         <TableCell>{puja.base_duration_minutes}</TableCell>
                         <TableCell>{puja.is_available ? "Yes" : "No"}</TableCell>

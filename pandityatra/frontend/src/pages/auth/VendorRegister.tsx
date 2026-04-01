@@ -190,7 +190,15 @@ const VendorRegisterPage: React.FC = () => {
 
       setTimeout(() => navigate(token ? '/vendor/dashboard' : '/login'), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Registration failed. Please try again.');
+      // Handle both flat and nested error structures
+      const errorData = err.response?.data;
+      if (typeof errorData === 'object' && errorData !== null) {
+        const firstValue = Object.values(errorData)[0];
+        const errorMessage = Array.isArray(firstValue) ? firstValue[0] : (typeof firstValue === 'string' ? firstValue : errorData.detail);
+        setError(errorMessage || 'Registration failed. Please try again.');
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

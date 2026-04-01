@@ -122,9 +122,16 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
     if (isOnline && isAuthenticated) {
       try {
         const { generateKundali } = await import('@/lib/api');
+        
+        let h24 = parseInt(formData.hour);
+        const amPm = formData.amPm || 'AM';
+        if (amPm === 'PM' && h24 < 12) h24 += 12;
+        if (amPm === 'AM' && h24 === 12) h24 = 0;
+        const time24 = `${h24.toString().padStart(2, '0')}:${formData.minute.padStart(2, '0')}`;
+
         const payload = {
           dob: `${formData.year}-${formData.month}-${formData.day}`,
-          time: `${formData.hour}:${formData.minute}`,
+          time: time24,
           latitude: formData.latitude || latitude || 27.7172,
           longitude: formData.longitude || longitude || 85.3240,
           timezone: 'Asia/Kathmandu',
@@ -156,7 +163,12 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
 
     // 2. OFFLINE MODE (Fallback or Primary)
     try {
-      const date = new Date(parseInt(formData.year), parseInt(formData.month) - 1, parseInt(formData.day), parseInt(formData.hour), parseInt(formData.minute));
+      let h24 = parseInt(formData.hour);
+      const amPm = formData.amPm || 'AM';
+      if (amPm === 'PM' && h24 < 12) h24 += 12;
+      if (amPm === 'AM' && h24 === 12) h24 = 0;
+
+      const date = new Date(parseInt(formData.year), parseInt(formData.month) - 1, parseInt(formData.day), h24, parseInt(formData.minute));
       const finalLat = formData.latitude || latitude || 27.7172;
       const finalLng = formData.longitude || longitude || 85.3240;
       const observer = new Astronomy.Observer(finalLat, finalLng, 1350);
@@ -235,14 +247,33 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
             onDateChange={(d) => setFormData({ ...formData, day: d.day, month: d.month, year: d.year })}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="space-y-2">
             <Label>Hour</Label>
-            <Input type="number" min="0" max="23" value={formData.hour} onChange={(e) => setFormData({ ...formData, hour: e.target.value })} placeholder="HH" />
+            <Input type="number" min="1" max="12" value={formData.hour} onChange={(e) => setFormData({ ...formData, hour: e.target.value })} placeholder="HH" />
           </div>
           <div className="space-y-2">
             <Label>Minute</Label>
             <Input type="number" min="0" max="59" value={formData.minute} onChange={(e) => setFormData({ ...formData, minute: e.target.value })} placeholder="MM" />
+          </div>
+          <div className="space-y-2">
+            <Label>AM/PM</Label>
+            <div className="flex bg-gray-100 p-1 rounded-md h-10">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, amPm: 'AM' })}
+                className={`flex-1 text-xs font-bold rounded ${formData.amPm === 'AM' ? 'bg-white text-[#FF6F00] shadow-sm' : 'text-gray-500'}`}
+              >
+                AM
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, amPm: 'PM' })}
+                className={`flex-1 text-xs font-bold rounded ${formData.amPm === 'PM' ? 'bg-white text-[#FF6F00] shadow-sm' : 'text-gray-500'}`}
+              >
+                PM
+              </button>
+            </div>
           </div>
         </div>
         <div className="space-y-2">
@@ -252,7 +283,7 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
             <Dialog open={isMapOpen} onOpenChange={setIsMapOpen}>
               <DialogTrigger asChild>
                 <Button type="button" variant="outline" size="icon" className="shrink-0 border-[#FF6F00] text-[#FF6F00] hover:bg-orange-50">
-                  <MapPin className="w-4 h-4" />
+                   <MapPin className="w-4 h-4" />
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] bg-white">
@@ -382,9 +413,16 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
                   try {
                     setSaveStatus('saving');
                     const { generateKundali } = await import('@/lib/api');
+                    
+                    let h24 = parseInt(formData.hour);
+                    const amPm = formData.amPm || 'AM';
+                    if (amPm === 'PM' && h24 < 12) h24 += 12;
+                    if (amPm === 'AM' && h24 === 12) h24 = 0;
+                    const time24 = `${h24.toString().padStart(2, '0')}:${formData.minute.padStart(2, '0')}`;
+
                     const payload = {
                       dob: `${formData.year}-${formData.month}-${formData.day}`,
-                      time: `${formData.hour}:${formData.minute}`,
+                      time: time24,
                       latitude: formData.latitude || latitude || 27.7172,
                       longitude: formData.longitude || longitude || 85.3240,
                       timezone: 'Asia/Kathmandu',
@@ -526,6 +564,7 @@ const OfflineKundali: React.FC = () => {
     year: '',
     hour: '',
     minute: '',
+    amPm: 'AM',
     place: '',
     latitude: null as number | null,
     longitude: null as number | null
@@ -534,6 +573,11 @@ const OfflineKundali: React.FC = () => {
   const handleLoadChart = (chart: any) => {
     const dobDate = new Date(chart.dob);
     const timeParts = chart.time.split(':');
+    
+    let h24 = parseInt(timeParts[0]);
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    const amPm = h24 >= 12 ? 'PM' : 'AM';
 
     setFormData(prev => ({
       ...prev,
@@ -541,8 +585,9 @@ const OfflineKundali: React.FC = () => {
       day: dobDate.getDate().toString(),
       month: (dobDate.getMonth() + 1).toString(),
       year: dobDate.getFullYear().toString(),
-      hour: timeParts[0],
+      hour: h12.toString(),
       minute: timeParts[1],
+      amPm: amPm,
       place: chart.place,
       latitude: chart.latitude,
       longitude: chart.longitude

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,7 +34,8 @@ import {
     CheckCircle,
     XCircle,
     ShieldCheck,
-    Clock
+    Clock,
+    Store
 } from "lucide-react"; // Added Icons
 import {
     Tooltip,
@@ -56,12 +58,16 @@ export default function AdminSamagri() {
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false); // New state
   const [editingItem, setEditingItem] = useState<SamagriItem | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams] = useSearchParams();
+  const vendorIdFromQuery = searchParams.get('vendorId');
+  const [selectedVendorName, setSelectedVendorName] = useState<string | null>(null);
   const itemsPerPage = 8;
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void }>({
+  const [confirmConfig, setConfirmConfig] = useState<{ title: string; description: string; onConfirm: () => void; isDestructive?: boolean }>({
       title: "",
       description: "",
-      onConfirm: () => { }
+      onConfirm: () => { },
+      isDestructive: false
   });
   
   const [form, setForm] = useState<{
@@ -95,11 +101,21 @@ export default function AdminSamagri() {
     setLoading(true);
     try {
       const [itemsData, catsData] = await Promise.all([
-          fetchSamagriItems(),
+          fetchSamagriItems(vendorIdFromQuery ? { vendor: vendorIdFromQuery } : undefined),
           fetchSamagriCategories()
       ]);
       setItems(itemsData);
       setCategories(catsData);
+      
+      // If filtering by vendor, determine their name from any of their products
+      if (vendorIdFromQuery && itemsData.length > 0) {
+          // If the API doesn't return vendor details in the item, we might need a separate fetch, 
+          // but usually the first item with a vendor will suffice if populated.
+          const anyItem = itemsData.find(i => i.vendor);
+          if (anyItem && (anyItem as any).vendor_details) {
+              setSelectedVendorName((anyItem as any).vendor_details.shop_name);
+          }
+      }
     } catch (err) {
       toast({ title: "Error", description: "Failed to load inventory." });
     }
@@ -470,6 +486,26 @@ export default function AdminSamagri() {
         </div>
       </div>
 
+      {vendorIdFromQuery && (
+          <div className="mb-6 p-4 bg-orange-50 border border-orange-100 rounded-xl flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-3 text-orange-800">
+                  <Store className="h-5 w-5" />
+                  <div>
+                      <p className="font-bold">Filtering by Vendor</p>
+                      <p className="text-sm opacity-90">Currently showing products for {selectedVendorName || `Vendor ID: ${vendorIdFromQuery}`}</p>
+                  </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="bg-white border-orange-200 text-orange-600 hover:bg-orange-100"
+                onClick={() => window.location.href = '/admin/inventory'}
+              >
+                  Clear Filter
+              </Button>
+          </div>
+      )}
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -498,47 +534,94 @@ export default function AdminSamagri() {
                     <TableRow key={item.id}>
                         <TableCell>
                             {item.image ? (
-                                <img src={item.image} alt={item.name} className="h-10 w-10 object-cover rounded-md" />
+                                <img src={item.image} alt={item.name} className="h-10 w-10 object-cover rounded-md shadow-sm" />
                             ) : (
-                                <div className="h-10 w-10 bg-gray-200 rounded-md flex items-center justify-center text-xs text-gray-500">No Img</div>
+                                <div className="h-10 w-10 bg-gray-100 rounded-md flex items-center justify-center text-[10px] text-gray-400 border border-dashed">No Img</div>
                             )}
                         </TableCell>
-                        <TableCell className="font-medium">{item.name}</TableCell>
-                        <TableCell>{categories.find(c => c.id === item.category)?.name || '-'}</TableCell>
-                        <TableCell>NPR {item.price}</TableCell>
                         <TableCell>
-                            <span className={item.stock_quantity < 10 ? "text-red-500 font-bold" : ""}>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-900">{item.name}</span>
+                                {item.vendor && (
+                                    <span className="text-[10px] text-gray-400 capitalize">By: {(item as any).vendor_details?.shop_name || 'Vendor'}</span>
+                                )}
+                            </div>
+                        </TableCell>
+                        <TableCell>{categories.find(c => c.id === item.category)?.name || '-'}</TableCell>
+                        <TableCell className="font-semibold text-orange-600">NPR {item.price}</TableCell>
+                        <TableCell>
+                            <span className={item.stock_quantity < 10 ? "text-red-500 font-bold" : "text-gray-600"}>
                                 {item.stock_quantity} {item.stock_quantity < 10 && "(Low)"}
                             </span>
                         </TableCell>
                         <TableCell>
                             {(item as any).is_approved ? (
-                                <div className="flex items-center gap-1 text-green-600 font-medium text-xs">
-                                    <ShieldCheck className="h-3.5 w-3.5" /> Approved
+                                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-green-50 text-green-700 font-bold text-[10px] shadow-sm ring-1 ring-inset ring-green-600/20">
+                                    <CheckCircle className="h-3 w-3" /> Live
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-1 text-orange-600 font-medium text-xs">
-                                    <Clock className="h-3.5 w-3.5" /> Pending
+                                <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full bg-orange-50 text-orange-700 font-bold text-[10px] shadow-sm ring-1 ring-inset ring-orange-600/20">
+                                    <Clock className="h-3 w-3" /> Under Review
                                 </div>
                             )}
                         </TableCell>
                         <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                                {!(item as any).is_approved && (
+                                {(item as any).is_approved ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                                onClick={() => {
+                                                    setConfirmConfig({
+                                                        title: "Decline Product?",
+                                                        description: `Are you sure you want to decline "${item.name}"? It will be removed from the public shop.`,
+                                                        isDestructive: true,
+                                                        onConfirm: async () => {
+                                                            try {
+                                                                await rejectSamagriItem(item.id);
+                                                                toast({ title: "Unapproved", description: "Product is no longer live." });
+                                                                loadData();
+                                                                setConfirmOpen(false);
+                                                            } catch (e) {
+                                                                toast({ title: "Error", description: "Decline failed.", variant: "destructive" });
+                                                            }
+                                                        }
+                                                    });
+                                                    setConfirmOpen(true);
+                                                }}
+                                            >
+                                                <XCircle className="h-4 w-4" />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Decline Product</TooltipContent>
+                                    </Tooltip>
+                                ) : (
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm" 
                                                 className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                                onClick={async () => {
-                                                    try {
-                                                        await approveSamagriItem(item.id);
-                                                        toast({ title: "Approved", description: "Product is now live." });
-                                                        loadData();
-                                                    } catch (e) {
-                                                        toast({ title: "Error", description: "Approval failed.", variant: "destructive" });
-                                                    }
+                                                onClick={() => {
+                                                    setConfirmConfig({
+                                                        title: "Approve Product?",
+                                                        description: `Ready to go live! Make "${item.name}" available for customers in the marketplace?`,
+                                                        isDestructive: false,
+                                                        onConfirm: async () => {
+                                                            try {
+                                                                await approveSamagriItem(item.id);
+                                                                toast({ title: "Approved", description: "Product is now live." });
+                                                                loadData();
+                                                                setConfirmOpen(false);
+                                                            } catch (e) {
+                                                                toast({ title: "Error", description: "Approval failed.", variant: "destructive" });
+                                                            }
+                                                        }
+                                                    });
+                                                    setConfirmOpen(true);
                                                 }}
                                             >
                                                 <CheckCircle className="h-4 w-4" />
@@ -597,6 +680,7 @@ export default function AdminSamagri() {
           title={confirmConfig.title}
           description={confirmConfig.description}
           onConfirm={confirmConfig.onConfirm}
+          isDestructive={confirmConfig.isDestructive}
       />
     </DashboardLayout>
   );
