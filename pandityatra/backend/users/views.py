@@ -17,7 +17,8 @@ from .serializers import (
 from .otp_utils import send_local_otp, verify_local_otp 
 import requests
 from django.conf import settings
-from pandits.models import Pandit # 🚨 Import for Admin Stats 
+from pandits.models import PanditUser # 🚨 Import for Admin Stats 
+from vendors.models import Vendor
 
 
 class RegisterUserView(APIView):
@@ -444,13 +445,13 @@ class ProfileView(APIView):
 from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
-from vendors.models import VendorProfile
+from vendors.models import Vendor
 from samagri.models import SamagriItem
 from .serializers import UserSerializer
 from bookings.models import Booking
 from payments.models import Payment
 from adminpanel.models import PaymentErrorLog
-from pandits.models import Pandit
+from pandits.models import PanditUser
 
 
 class AdminStatsView(APIView):
@@ -474,10 +475,9 @@ class AdminStatsView(APIView):
         last_month_end = start_of_month - timedelta(seconds=1)
         last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Basic Stats
         total_users = User.objects.count()
-        total_pandits = Pandit.objects.count()
-        total_vendors = VendorProfile.objects.count()
+        total_pandits = PanditUser.objects.count()
+        total_vendors = Vendor.objects.count()
         total_bookings = Booking.objects.count()
         
         # Revenue (Completed payments)
@@ -498,19 +498,18 @@ class AdminStatsView(APIView):
                 return 100 if current > 0 else 0
             return round(((current - previous) / previous) * 100, 1)
 
+        # Stats Calculations (MTI ensures these are User records too)
         users_last_month = User.objects.filter(date_joined__lt=start_of_month).count()
         users_this_month_new = User.objects.filter(date_joined__gte=start_of_month).count()
-        user_growth = calc_growth(users_this_month_new, users_last_month / 12 if users_last_month > 0 else 0) # Simplified monthly growth
-        # Better: compare new users this month vs new users last month
         users_prev_month_new = User.objects.filter(date_joined__gte=last_month_start, date_joined__lte=last_month_end).count()
         user_growth = calc_growth(users_this_month_new, users_prev_month_new)
 
-        pandits_this_month_new = Pandit.objects.filter(user__date_joined__gte=start_of_month).count()
-        pandits_prev_month_new = Pandit.objects.filter(user__date_joined__gte=last_month_start, user__date_joined__lte=last_month_end).count()
+        pandits_this_month_new = PanditUser.objects.filter(date_joined__gte=start_of_month).count()
+        pandits_prev_month_new = PanditUser.objects.filter(date_joined__gte=last_month_start, date_joined__lte=last_month_end).count()
         pandit_growth = calc_growth(pandits_this_month_new, pandits_prev_month_new)
 
-        vendors_this_month_new = VendorProfile.objects.filter(user__date_joined__gte=start_of_month).count()
-        vendors_prev_month_new = VendorProfile.objects.filter(user__date_joined__gte=last_month_start, user__date_joined__lte=last_month_end).count()
+        vendors_this_month_new = Vendor.objects.filter(date_joined__gte=start_of_month).count()
+        vendors_prev_month_new = Vendor.objects.filter(date_joined__gte=last_month_start, date_joined__lte=last_month_end).count()
         vendor_growth = calc_growth(vendors_this_month_new, vendors_prev_month_new)
 
         bookings_this_month = Booking.objects.filter(created_at__gte=start_of_month).count()
@@ -520,8 +519,8 @@ class AdminStatsView(APIView):
         revenue_growth = calc_growth(float(revenue_this_month), float(revenue_last_month))
 
         # Insightful counts
-        pending_verifications = Pandit.objects.filter(is_verified=False).count()
-        pending_vendors = VendorProfile.objects.filter(is_verified=False).count()
+        pending_verifications = PanditUser.objects.filter(is_verified=False).count()
+        pending_vendors = Vendor.objects.filter(is_verified=False).count()
         low_stock_count = SamagriItem.objects.filter(stock_quantity__lte=5).count()
         
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)

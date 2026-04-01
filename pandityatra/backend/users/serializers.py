@@ -1,8 +1,8 @@
 import re
 from rest_framework import serializers
 from .models import User 
-from pandits.models import Pandit
-from vendors.models import VendorProfile
+from pandits.models import PanditUser
+from vendors.models import Vendor
 from django.utils.crypto import get_random_string 
 
 # Define the length of the random password (e.g., 20 characters)
@@ -81,16 +81,17 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         # Ensure we use the correct creation method for the custom user model
         user = User.objects.create_user(**user_data)
         
-        # 🚨 Auto-Create Pandit Profile if role is 'pandit'
+        # 🚨 Inherited Models are handled by their own registration serializers.
+        # This generic serializer is mainly for 'user' (customer) role.
+        # But we keep this for backwards compatibility / internal use.
         if user.role == 'pandit':
-            # Create a default profile
-            Pandit.objects.create(
-                user=user,
-                experience_years=0, # Default
-                language="Nepali, Hindi", # Default
-                expertise="General", # Default
-                bio="New Pandit Member"
-            )
+            # Note: In MTI, we'd ideally convert the user to PanditUser
+            # But for simplicity in this generic serializer, we just ensure the record exists.
+            if not hasattr(user, 'pandituser'):
+                PanditUser.objects.get_or_create(
+                    user_ptr=user,
+                    defaults={'experience_years': 0, 'language': "Nepali, Hindi", 'expertise': "General", 'bio': "New Pandit Member"}
+                )
 
         return user
 
@@ -158,6 +159,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 class UserSerializer(serializers.ModelSerializer):
     """Serializer for outputting user profile data."""
     pandit_profile = serializers.SerializerMethodField()
+    vendor_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -178,8 +180,8 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'role', 'is_active', 'is_superuser', 'is_staff', 'date_joined')
 
     def get_pandit_profile(self, obj):
-        if obj.role == 'pandit' and hasattr(obj, 'pandit_profile'):
-            p = obj.pandit_profile
+        if obj.role == 'pandit' and hasattr(obj, 'pandituser'):
+            p = obj.pandituser
             return {
                 'id': p.id,
                 'expertise': p.expertise,
@@ -194,8 +196,8 @@ class UserSerializer(serializers.ModelSerializer):
         return None
 
     def get_vendor_profile(self, obj):
-        if obj.role == 'vendor' and hasattr(obj, 'vendor_profile'):
-            v = obj.vendor_profile
+        if obj.role == 'vendor' and hasattr(obj, 'vendor'):
+            v = obj.vendor
             return {
                 'id': v.id,
                 'shop_name': v.shop_name,
