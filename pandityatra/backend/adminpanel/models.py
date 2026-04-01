@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-from pandits.models import Pandit
+from pandits.models import PanditUser
 
 class PaymentErrorLog(models.Model):
 	"""
@@ -35,8 +35,8 @@ class ActivityLog(models.Model):
     Log of system activities, mainly for Admin review.
     Tracks actions by Users and Pandits like Login, Profile View, Booking, etc.
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
-    pandit = models.ForeignKey(Pandit, on_delete=models.SET_NULL, null=True, blank=True, related_name='activity_logs')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='user_activity_logs')
+    pandit = models.ForeignKey(PanditUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='pandit_activity_logs')
     action_type = models.CharField(max_length=50) # LOGIN, VIEW_PROFILE, ADD_TO_CART, BOOKING, PAYMENT, VIDEO_CALL, REVIEW
     details = models.TextField()
     ip_address = models.GenericIPAddressField(null=True, blank=True)

@@ -1,14 +1,13 @@
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from bookings.models import Booking
-from pandits.models import Pandit
-from .models import PaymentErrorLog
-from rest_framework import status
 from django.utils import timezone
-from vendors.models import VendorProfile
+from bookings.models import Booking
+from pandits.models import PanditUser
+from vendors.models import Vendor
+from adminpanel.models import PaymentErrorLog
+
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def admin_error_logs(request):
@@ -65,11 +64,11 @@ def admin_dashboard(request):
         return Response({"detail": "Admin only"}, status=403)
 
     total_users = User.objects.count()
-    total_pandits = Pandit.objects.count()
-    pending_pandits = Pandit.objects.filter(verification_status="PENDING").count()
+    total_pandits = PanditUser.objects.count()
+    pending_pandits = PanditUser.objects.filter(verification_status="PENDING").count()
     total_bookings = Booking.objects.count()
-    total_vendors = VendorProfile.objects.count()
-    pending_vendors = VendorProfile.objects.filter(is_verified=False).count()
+    total_vendors = Vendor.objects.count()
+    pending_vendors = Vendor.objects.filter(is_verified=False).count()
 
     return Response({
         "total_users": total_users,
@@ -126,7 +125,7 @@ def admin_activity_logs(request):
         actor_name = log.user.full_name if log.user else "System"
         actor_email = log.user.email if log.user else ""
         
-        pandit_name = log.pandit.user.full_name if (log.pandit and log.pandit.user) else ""
+        pandit_name = log.pandit.full_name if log.pandit else ""
 
         data.append({
              "id": log.id,
@@ -144,7 +143,7 @@ def admin_activity_logs(request):
 from django.db.models.functions import TruncMonth
 from django.db.models import Count, Avg, Sum
 from samagri.models import ShopOrder
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from users.models import User
 from bookings.models import Booking, BookingStatus
 
@@ -198,11 +197,11 @@ def admin_analytics_deep(request):
         })
 
     # 4. Pandit Performance
-    top_pandits = Pandit.objects.filter(is_verified=True).order_by('-rating')[:5]
+    top_pandits = PanditUser.objects.filter(is_verified=True).order_by('-rating')[:5]
     pandit_perf = []
     for p in top_pandits:
         pandit_perf.append({
-            "name": p.user.full_name or p.user.username,
+            "name": p.full_name or p.username,
             "bookings": Booking.objects.filter(pandit=p).count(),
             "rating": float(p.rating),
             "revenue": float(Booking.objects.filter(pandit=p, status=BookingStatus.COMPLETED).aggregate(total=Sum('total_fee'))['total'] or 0)

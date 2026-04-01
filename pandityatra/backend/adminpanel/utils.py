@@ -30,8 +30,8 @@ def log_activity(user=None, action_type="", details="", request=None, pandit=Non
         
         # If user is a pandit, try to attach their pandit profile if not explicitly provided
         if not pandit and user and getattr(user, 'role', '') == 'pandit':
-            if hasattr(user, 'pandit_profile'):
-                pandit = user.pandit_profile
+            if hasattr(user, 'pandituser'):
+                pandit = user.pandituser
 
         ActivityLog.objects.create(
             user=user if user and user.is_authenticated else None,
