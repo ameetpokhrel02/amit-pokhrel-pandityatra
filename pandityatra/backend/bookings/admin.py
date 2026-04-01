@@ -5,7 +5,7 @@ from .models import Booking, BookingStatus
 class BookingAdmin(admin.ModelAdmin):
     list_display = ('id', 'user_link', 'pandit_link', 'service_name', 'booking_date', 'status', 'total_fee')
     list_filter = ('status', 'booking_date', 'payment_status')
-    search_fields = ('user__full_name', 'pandit__user__full_name', 'id')
+    search_fields = ('user__full_name', 'pandit__full_name', 'id')
     readonly_fields = ('created_at',)
     actions = ['cancel_booking']
 

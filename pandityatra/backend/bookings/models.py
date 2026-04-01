@@ -30,7 +30,7 @@ class Booking(models.Model):
         verbose_name='Customer'
     )
     pandit = models.ForeignKey(
-        'pandits.Pandit', # Referencing the Pandit model in the pandits app
+        'pandits.PanditUser', # Referencing the PanditUser model in the pandits app
         on_delete=models.CASCADE, 
         related_name='pandit_appointments'
     )

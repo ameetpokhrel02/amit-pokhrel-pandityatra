@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from .models import Booking, BookingStatus, LocationChoices
 from services.models import Puja
-from pandits.models import Pandit
+from pandits.models import PanditUser
 
 class BookingCreateSerializer(serializers.ModelSerializer):
     """
@@ -66,7 +66,7 @@ class BookingListSerializer(serializers.ModelSerializer):
     Serializer for listing bookings
     """
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
-    pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
+    pandit_full_name = serializers.CharField(source='pandit.full_name', read_only=True)
     pandit_expertise = serializers.CharField(source='pandit.expertise', read_only=True)
     service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
     is_reviewed = serializers.SerializerMethodField()
@@ -93,7 +93,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
     """
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
     user_phone = serializers.CharField(source='user.phone_number', read_only=True)
-    pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
+    pandit_full_name = serializers.CharField(source='pandit.full_name', read_only=True)
     pandit_expertise = serializers.CharField(source='pandit.expertise', read_only=True)
     pandit_language = serializers.CharField(source='pandit.language', read_only=True)
     service_duration = serializers.IntegerField(source='service.base_duration_minutes', read_only=True)
@@ -132,7 +132,7 @@ class BookingSerializer(serializers.ModelSerializer):
     """
     # Read-only fields for display
     user_full_name = serializers.CharField(source='user.full_name', read_only=True)
-    pandit_full_name = serializers.CharField(source='pandit.user.full_name', read_only=True)
+    pandit_full_name = serializers.CharField(source='pandit.full_name', read_only=True)
     is_reviewed = serializers.SerializerMethodField()
 
     def get_is_reviewed(self, obj):

@@ -22,7 +22,7 @@ from .serializers import (
     BookingDetailSerializer,
     BookingSerializer
 )
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from notifications.services import (
     notify_booking_created,
     notify_booking_accepted,
@@ -52,7 +52,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         # Pandit sees his bookings
         if user.role == "pandit":
-            return Booking.objects.filter(pandit__user=user).select_related("user", "pandit", "service")
+            return Booking.objects.filter(pandit=user).select_related("user", "pandit", "service")
 
         # Customer sees own bookings
         return Booking.objects.filter(user=user).select_related("user", "pandit", "service")
@@ -95,7 +95,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         log_activity(
             user=user, 
             action_type="BOOKING", 
-            details=f"Booked {serializer.validated_data.get('service').name} with {pandit.user.full_name}", 
+            details=f"Booked {serializer.validated_data.get('service').name} with {pandit.full_name}", 
             request=self.request,
             pandit=pandit
         )
@@ -108,7 +108,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         user = request.user
 
-        if user.role != "pandit" or booking.pandit.user != user:
+        if user.role != "pandit" or booking.pandit != user:
             return Response({"detail": "Not your booking"}, status=403)
 
         new_status = request.data.get("status")
@@ -244,8 +244,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             return Response({"detail": "pandit_id and date required"}, status=400)
 
         try:
-            pandit = Pandit.objects.get(id=pandit_id, is_verified=True)
-        except Pandit.DoesNotExist:
+            pandit = PanditUser.objects.get(id=pandit_id, is_verified=True)
+        except PanditUser.DoesNotExist:
             return Response({"detail": "Pandit not found or not verified"}, status=404)
 
         # Get requested service duration from Puja model
@@ -281,7 +281,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             busy_intervals.append((start_time, end_time))
 
         # 🚨 ADDED: Fetch manual unavailability blocks
-        from pandits.models import PanditAvailability
+        from pandits.models import PanditUserAvailability
         manual_blocks = PanditAvailability.objects.filter(
             pandit=pandit,
             start_time__date=booking_date_obj
@@ -322,7 +322,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         """GET /api/bookings/{id}/invoice/ — Download PDF invoice for a booking"""
         try:
             booking = Booking.objects.select_related(
-                'user', 'pandit', 'pandit__user', 'service'
+                'user', 'pandit', 'service'
             ).get(id=pk, user=request.user)
         except Booking.DoesNotExist:
             return Response({"error": "Booking not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -379,7 +379,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
         # --- Pandit Info ---
         elements.append(Paragraph("Pandit", heading_style))
-        pandit_name = booking.pandit.user.full_name if booking.pandit and booking.pandit.user else 'N/A'
+        pandit_name = booking.pandit.full_name if booking.pandit else 'N/A'
         elements.append(Paragraph(f"<b>{pandit_name}</b>", normal))
         if booking.pandit and booking.pandit.expertise:
             elements.append(Paragraph(f"Expertise: {booking.pandit.expertise}", normal))
