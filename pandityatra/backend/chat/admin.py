@@ -6,7 +6,7 @@ from .models import ChatRoom, Message
 class ChatRoomAdmin(admin.ModelAdmin):
     list_display = ['id', 'customer', 'pandit', 'booking', 'created_at', 'is_active']
     list_filter = ['is_active', 'created_at']
-    search_fields = ['customer__username', 'pandit__user__username']
+    search_fields = ['customer__username', 'pandit__username']
     readonly_fields = ['created_at']
 
 

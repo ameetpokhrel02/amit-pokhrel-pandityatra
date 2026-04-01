@@ -19,14 +19,14 @@ class ChatRoom(models.Model):
         related_name='customer_chats'
     )
     pandit = models.ForeignKey(
-        'pandits.Pandit',
+        'pandits.PanditUser',
         on_delete=models.CASCADE,
         related_name='pandit_chats',
         null=True,
         blank=True
     )
     vendor = models.ForeignKey(
-        'vendors.VendorProfile',
+        'vendors.Vendor',
         on_delete=models.CASCADE,
         related_name='vendor_chats',
         null=True,
@@ -53,7 +53,7 @@ class ChatRoom(models.Model):
         unique_together = ['customer', 'pandit', 'vendor', 'is_pre_booking']
     
     def __str__(self):
-        return f"Chat: {self.customer.username} <-> {self.pandit.user.username}"
+        return f"Chat: {self.customer.username} <-> {self.pandit.username if self.pandit else self.vendor.shop_name if self.vendor else 'Unknown'}"
 
 
 class Message(models.Model):
@@ -141,7 +141,7 @@ class ChatMessage(models.Model):
     
     # Optional: Link to pandit for interaction mode
     pandit = models.ForeignKey(
-        'pandits.Pandit',
+        'pandits.PanditUser',
         on_delete=models.CASCADE,
         related_name='sent_chat_messages',
         null=True,

@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import ChatRoom, Message, ChatMessage
 from users.models import User
-from pandits.models import Pandit
-from vendors.models import VendorProfile
+from pandits.models import PanditUser
+from vendors.models import Vendor
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -12,19 +12,15 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PanditSimpleSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    
     class Meta:
-        model = Pandit
-        fields = ['id', 'user', 'rating', 'expertise']
+        model = PanditUser
+        fields = ['id', 'full_name', 'rating', 'expertise']
 
 
 class VendorSimpleSerializer(serializers.ModelSerializer):
-    user = UserSerializer()
-    
     class Meta:
-        model = VendorProfile
-        fields = ['id', 'user', 'shop_name']
+        model = Vendor
+        fields = ['id', 'full_name', 'shop_name']
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -39,9 +35,9 @@ class MessageSerializer(serializers.ModelSerializer):
     
     def get_sender(self, obj):
         """Determine if sender is customer, pandit, or vendor"""
-        if obj.chat_room and obj.chat_room.pandit and obj.sender.id == obj.chat_room.pandit.user.id:
+        if obj.chat_room and obj.chat_room.pandit and obj.sender.id == obj.chat_room.pandit.id:
             return 'pandit'
-        if obj.chat_room and obj.chat_room.vendor and obj.sender.id == obj.chat_room.vendor.user.id:
+        if obj.chat_room and obj.chat_room.vendor and obj.sender.id == obj.chat_room.vendor.id:
             return 'vendor'
         return 'user'
     

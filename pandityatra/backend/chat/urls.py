@@ -11,6 +11,7 @@ urlpatterns = [
     
     # Message endpoints
     path('messages/<int:pk>/mark-read/', views.MarkMessageReadView.as_view(), name='mark-message-read'),
+    path('unread-count/', views.UnreadMessageCountView.as_view(), name='unread-count'),
     
     # Quick Chat (Guide Mode) - AI Help
     path('quick-chat/', views.QuickChatView.as_view(), name='quick-guide-chat'),
