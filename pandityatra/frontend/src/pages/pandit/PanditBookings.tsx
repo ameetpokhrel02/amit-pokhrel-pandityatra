@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import apiClient from '@/lib/api-client'
-import { Video, Check, X } from 'lucide-react'
+import { Video, Check, X, XCircle } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 
 interface Booking {
@@ -79,22 +79,22 @@ const PanditBookings = () => {
             <p className="text-muted-foreground">Manage your upcoming and past service requests.</p>
           </div>
           <div className="flex bg-gray-100 p-1 rounded-lg">
-             <Button 
-               variant={activeTab === 'bookings' ? 'default' : 'ghost'} 
-               size="sm" 
-               onClick={() => setActiveTab('bookings')}
-               className={activeTab === 'bookings' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-             >
-               Bookings
-             </Button>
-             <Button 
-               variant={activeTab === 'history' ? 'default' : 'ghost'} 
-               size="sm" 
-               onClick={() => setActiveTab('history')}
-               className={activeTab === 'history' ? 'bg-orange-600 hover:bg-orange-700' : ''}
-             >
-               History
-             </Button>
+            <Button
+              variant={activeTab === 'bookings' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('bookings')}
+              className={activeTab === 'bookings' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+            >
+              Bookings
+            </Button>
+            <Button
+              variant={activeTab === 'history' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveTab('history')}
+              className={activeTab === 'history' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+            >
+              History
+            </Button>
           </div>
         </div>
 
@@ -168,9 +168,28 @@ const PanditBookings = () => {
                       </>
                     )}
                     {booking.status === 'ACCEPTED' && (booking.daily_room_url || booking.video_room_url) && (
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}>
-                        <Video className="w-4 h-4 mr-1" /> Start Puja
-                      </Button>
+                      (() => {
+                        const sessionDate = new Date(`${booking.booking_date}T${booking.booking_time}`);
+                        const now = new Date();
+                        const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                        const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000);
+                        const isPast = isPastDay || isPastHour;
+
+                        if (isPast) {
+                          return (
+                            <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 px-2 py-1 flex items-center gap-1 text-[10px]">
+                              <XCircle className="h-3 w-3" />
+                              Missed
+                            </Badge>
+                          );
+                        }
+
+                        return (
+                          <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}>
+                            <Video className="w-4 h-4 mr-1" /> Start Puja
+                          </Button>
+                        );
+                      })()
                     )}
                     {booking.status === 'ACCEPTED' && (
                       <div className="flex gap-2">
@@ -188,8 +207,8 @@ const PanditBookings = () => {
                             }
                           }}
                         >
-                          <Video className="w-4 h-4 mr-1" /> 
-                          { (booking.daily_room_url || booking.video_room_url) ? 'Regenerate Link' : 'Generate Link' }
+                          <Video className="w-4 h-4 mr-1" />
+                          {(booking.daily_room_url || booking.video_room_url) ? 'Regenerate Link' : 'Generate Link'}
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => handleStatusUpdate(booking.id, 'COMPLETED')}>
                           Mark Completed

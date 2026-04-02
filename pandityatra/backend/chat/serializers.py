@@ -12,15 +12,47 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class PanditSimpleSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
     class Meta:
         model = PanditUser
-        fields = ['id', 'full_name', 'rating', 'expertise']
+        fields = ['id', 'user', 'full_name', 'rating', 'expertise']
+        
+    def get_user(self, obj):
+        request = self.context.get('request')
+        profile_pic = obj.profile_pic.url if obj.profile_pic else None
+        if profile_pic and request:
+            profile_pic = request.build_absolute_uri(profile_pic)
+
+        return {
+            'id': obj.id,
+            'username': obj.username,
+            'full_name': obj.full_name,
+            'profile_pic': profile_pic,
+            'profile_picture': profile_pic,
+        }
 
 
 class VendorSimpleSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    
     class Meta:
         model = Vendor
-        fields = ['id', 'full_name', 'shop_name']
+        fields = ['id', 'user', 'full_name', 'shop_name']
+        
+    def get_user(self, obj):
+        request = self.context.get('request')
+        profile_pic = obj.profile_pic.url if obj.profile_pic else None
+        if profile_pic and request:
+            profile_pic = request.build_absolute_uri(profile_pic)
+
+        return {
+            'id': obj.id,
+            'username': obj.username,
+            'full_name': obj.shop_name, # Vendors show shop name as identity
+            'profile_pic': profile_pic,
+            'profile_picture': profile_pic,
+        }
 
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -61,10 +93,16 @@ class ChatRoomSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         """Return customer info as 'user' field for pandit's view"""
         if obj.customer:
+            request = self.context.get('request')
+            profile_pic = obj.customer.profile_pic.url if obj.customer.profile_pic else None
+            if profile_pic and request:
+                profile_pic = request.build_absolute_uri(profile_pic)
+
             return {
                 'id': obj.customer.id,
                 'full_name': obj.customer.full_name,
-                'profile_picture': obj.customer.profile_pic.url if obj.customer.profile_pic else None
+                'profile_pic': profile_pic,
+                'profile_picture': profile_pic,
             }
         return None
     

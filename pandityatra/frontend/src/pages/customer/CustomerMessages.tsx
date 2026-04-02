@@ -10,18 +10,35 @@ import api from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { WS_BASE_URL } from '@/lib/helper';
+import { ROOT_URL, WS_BASE_URL } from '@/lib/helper';
 
 interface ChatRoom {
   id: number;
-  pandit: {
+  pandit?: {
     id: number;
     user: {
       id: number;
       full_name: string;
+      username?: string;
       profile_pic?: string;
+      profile_picture?: string;
     };
     expertise?: string;
+    profile_pic?: string;
+    profile_picture?: string;
+  };
+  vendor?: {
+    id: number;
+    user: {
+      id: number;
+      full_name: string;
+      username?: string;
+      profile_pic?: string;
+      profile_picture?: string;
+    };
+    shop_name?: string;
+    profile_pic?: string;
+    profile_picture?: string;
   };
   last_message?: string;
   last_message_time?: string;
@@ -41,6 +58,10 @@ interface Message {
   sender_name: string;
   timestamp: string;
   is_read: boolean;
+  sender_obj?: {
+    profile_pic?: string;
+    profile_picture?: string;
+  };
 }
 
 const CustomerMessages: React.FC = () => {
@@ -70,6 +91,7 @@ const CustomerMessages: React.FC = () => {
   useEffect(() => {
     if (selectedRoom && token) {
       isInitialLoadRef.current = true;
+      previousMessageCountRef.current = 0;
       connectWebSocket(selectedRoom.id);
       fetchMessages(selectedRoom.id);
     }
@@ -80,6 +102,26 @@ const CustomerMessages: React.FC = () => {
       }
     };
   }, [selectedRoom, token]);
+
+  // Auto-scroll chat window to latest messages.
+  useEffect(() => {
+    if (!selectedRoom) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const isInitialLoad = isInitialLoadRef.current;
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+
+    if (isInitialLoad || hasNewMessage) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: isInitialLoad ? 'auto' : 'smooth',
+      });
+      isInitialLoadRef.current = false;
+    }
+
+    previousMessageCountRef.current = messages.length;
+  }, [messages, selectedRoom]);
 
   const fetchChatRooms = async () => {
     try {
@@ -95,7 +137,54 @@ const CustomerMessages: React.FC = () => {
   const fetchMessages = async (roomId: number) => {
     try {
       const response = await api.get(`/chat/rooms/${roomId}/messages/`);
-      setMessages(response.data.results || response.data);
+      const data = response.data.results || response.data;
+      setMessages(data);
+
+      // Some room payloads miss participant avatar; derive from first pandit message as fallback.
+      const firstPanditMessage = (data || []).find((m: any) => m.sender === 'pandit');
+      const messageAvatar =
+        firstPanditMessage?.sender_obj?.profile_pic ||
+        firstPanditMessage?.sender_obj?.profile_picture;
+
+      if (messageAvatar) {
+        setSelectedRoom((prev) => {
+          if (!prev || prev.id !== roomId) return prev;
+          const currentAvatar = getParticipantAvatar(prev);
+          if (currentAvatar) return prev;
+          return {
+            ...prev,
+            pandit: {
+              ...(prev.pandit || { id: 0, user: { id: 0, full_name: '' } }),
+              user: {
+                ...prev.pandit?.user,
+                id: prev.pandit?.user?.id || prev.pandit?.id || 0,
+                full_name: prev.pandit?.user?.full_name || (prev.pandit as any)?.full_name || '',
+                profile_pic: messageAvatar,
+              },
+            },
+          };
+        });
+
+        setChatRooms((prev) =>
+          prev.map((room) => {
+            if (room.id !== roomId) return room;
+            const currentAvatar = getParticipantAvatar(room);
+            if (currentAvatar) return room;
+            return {
+              ...room,
+              pandit: {
+                ...(room.pandit || { id: 0, user: { id: 0, full_name: '' } }),
+                user: {
+                  ...room.pandit?.user,
+                  id: room.pandit?.user?.id || room.pandit?.id || 0,
+                  full_name: room.pandit?.user?.full_name || (room.pandit as any)?.full_name || '',
+                  profile_pic: messageAvatar,
+                },
+              },
+            };
+          })
+        );
+      }
     } catch (error) {
       console.error('Failed to fetch messages:', error);
     }
@@ -229,9 +318,85 @@ const CustomerMessages: React.FC = () => {
     }
   };
 
-  const filteredRooms = chatRooms.filter((room) =>
-    room.pandit?.user?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const normalizeMediaUrl = (url?: string) => {
+    if (!url) return undefined;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return `${ROOT_URL}${url}`;
+    return `${ROOT_URL}/${url}`;
+  };
+
+  const getParticipantName = (room: ChatRoom) => {
+    const panditName =
+      room.pandit?.user?.full_name ||
+      (room.pandit as any)?.full_name ||
+      room.pandit?.user?.username;
+
+    const vendorName =
+      room.vendor?.user?.full_name ||
+      (room.vendor as any)?.full_name ||
+      room.vendor?.shop_name ||
+      room.vendor?.user?.username;
+
+    return panditName || vendorName || 'Sacred Interaction';
+  };
+
+  const getParticipantAvatar = (room: ChatRoom) => {
+    const panditPic =
+      room.pandit?.user?.profile_pic ||
+      room.pandit?.user?.profile_picture ||
+      (room.pandit as any)?.profile_pic ||
+      (room.pandit as any)?.profile_picture ||
+      (room.pandit as any)?.avatar ||
+      (room.pandit as any)?.image;
+
+    const vendorPic =
+      room.vendor?.user?.profile_pic ||
+      room.vendor?.user?.profile_picture ||
+      (room.vendor as any)?.profile_pic ||
+      (room.vendor as any)?.profile_picture ||
+      (room.vendor as any)?.avatar ||
+      (room.vendor as any)?.image;
+
+    const knownAvatar = panditPic || vendorPic;
+    if (knownAvatar) return normalizeMediaUrl(knownAvatar);
+
+    // Last-resort fallback: inspect shallow participant objects for common image-like values.
+    const shallowValues = [
+      ...(room.pandit ? Object.values(room.pandit as any) : []),
+      ...(room.pandit?.user ? Object.values(room.pandit.user as any) : []),
+      ...(room.vendor ? Object.values(room.vendor as any) : []),
+      ...(room.vendor?.user ? Object.values(room.vendor.user as any) : []),
+    ];
+
+    const inferred = shallowValues.find((val) => {
+      if (typeof val !== 'string') return false;
+      const low = val.toLowerCase();
+      return (
+        low.includes('/media/') ||
+        low.endsWith('.jpg') ||
+        low.endsWith('.jpeg') ||
+        low.endsWith('.png') ||
+        low.endsWith('.webp') ||
+        low.startsWith('http://') ||
+        low.startsWith('https://')
+      );
+    }) as string | undefined;
+
+    return normalizeMediaUrl(inferred);
+  };
+
+  const getParticipantSubtitle = (room: ChatRoom) => {
+    return room.pandit?.expertise || room.vendor?.shop_name || '';
+  };
+
+  const filteredRooms = chatRooms.filter((room) => {
+    const searchLow = searchQuery.toLowerCase();
+    const displayName = getParticipantName(room).toLowerCase();
+    const serviceTitle = room.booking?.service_name?.toLowerCase() || '';
+    
+    return displayName.includes(searchLow) || 
+           serviceTitle.includes(searchLow);
+  });
 
   const formatTime = (timestamp: string) => {
     try {
@@ -277,6 +442,10 @@ const CustomerMessages: React.FC = () => {
                 ) : (
                   <div className="divide-y divide-orange-50">
                     {filteredRooms.map((room) => (
+                      (() => {
+                        const participantName = getParticipantName(room);
+                        const participantAvatar = getParticipantAvatar(room);
+                        return (
                       <div
                         key={room.id}
                         className={`p-4 cursor-pointer transition-all duration-200 ${
@@ -289,9 +458,9 @@ const CustomerMessages: React.FC = () => {
                         <div className="flex items-start gap-3">
                           <div className="relative">
                             <Avatar className="h-11 w-11 border-2 border-white shadow-sm">
-                              <AvatarImage src={room.pandit?.user?.profile_pic} />
+                              <AvatarImage src={participantAvatar} />
                               <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">
-                                {room.pandit?.user?.full_name?.[0]}
+                                {participantName?.[0] || 'S'}
                               </AvatarFallback>
                             </Avatar>
                             {room.unread_count > 0 && (
@@ -306,11 +475,11 @@ const CustomerMessages: React.FC = () => {
                                 "font-bold text-sm truncate",
                                 room.unread_count > 0 ? "text-orange-950" : "text-gray-900"
                               )}>
-                                {room.pandit?.user?.full_name}
+                                {participantName}
                               </p>
                             </div>
                             <p className="text-[11px] text-orange-600/70 truncate uppercase tracking-wider font-semibold mt-0.5">
-                              {room.booking?.service_name || 'Inquiry'}
+                              {room.booking?.service_name || (room.vendor ? 'Product Inquiry' : 'General Consultation')}
                             </p>
                             {room.last_message && (
                               <p className={cn(
@@ -323,6 +492,8 @@ const CustomerMessages: React.FC = () => {
                           </div>
                         </div>
                       </div>
+                        );
+                      })()
                     ))}
                   </div>
                 )}
@@ -341,31 +512,40 @@ const CustomerMessages: React.FC = () => {
  
             {selectedRoom ? (
               <>
+                {(() => {
+                  const participantName = getParticipantName(selectedRoom);
+                  const participantAvatar = getParticipantAvatar(selectedRoom);
+                  const participantSubtitle = getParticipantSubtitle(selectedRoom);
+                  return (
                 <CardHeader className="border-b py-4 bg-white z-20">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-12 w-12 border-2 border-orange-100">
-                        <AvatarImage src={selectedRoom.pandit?.user?.profile_pic} />
+                        <AvatarImage src={participantAvatar} />
                         <AvatarFallback className="bg-orange-100 text-orange-600 font-bold text-lg">
-                          {selectedRoom.pandit?.user?.full_name?.[0]}
+                          {participantName?.[0] || 'S'}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <CardTitle className="text-xl font-bold text-orange-950">{selectedRoom.pandit?.user?.full_name}</CardTitle>
+                        <CardTitle className="text-xl font-bold text-orange-950">
+                          {participantName}
+                        </CardTitle>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="outline" className="text-[10px] uppercase border-orange-200 text-orange-700 bg-orange-50">
-                            {selectedRoom.is_pre_booking ? 'Consultation' : 'Active Booking'}
+                            {selectedRoom.is_pre_booking ? 'Consultation' : selectedRoom.vendor ? 'Order Inquiry' : 'Active Booking'}
                           </Badge>
-                          {selectedRoom.pandit?.expertise && (
+                          {participantSubtitle && (
                             <span className="text-xs text-muted-foreground font-medium">
-                              • {selectedRoom.pandit.expertise}
+                              • {participantSubtitle}
                             </span>
-                        )}
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
+                  );
+                })()}
                 <CardContent className="flex-1 p-0 overflow-hidden flex flex-col bg-white">
                   <div 
                     ref={scrollContainerRef}

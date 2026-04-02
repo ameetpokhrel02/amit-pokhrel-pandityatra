@@ -34,11 +34,21 @@ class ChatRoomListView(generics.ListAPIView):
     
     def get_queryset(self):
         user = self.request.user
-        # For customers, show rooms they are part of
-        # For pandits/vendors, show rooms they are part of
-        return ChatRoom.objects.filter(
-            Q(customer=user) | Q(pandit=user) | Q(vendor=user)
-        ).distinct().order_by('-created_at')
+        # Role-scoped visibility prevents cross-role leakage in dedicated dashboards.
+        if user.role == 'pandit':
+            # Pandits see messages where they are the PROVIDER, excluding self-chats.
+            return ChatRoom.objects.filter(
+                pandit=user
+            ).exclude(customer=user).distinct().order_by('-created_at')
+
+        if user.role == 'vendor':
+            # Vendors see messages where they are the PROVIDER, excluding self-chats.
+            return ChatRoom.objects.filter(
+                vendor=user
+            ).exclude(customer=user).distinct().order_by('-created_at')
+
+        # Default customer/user view: show rooms where user is the CUSTOMER.
+        return ChatRoom.objects.filter(customer=user).distinct().order_by('-created_at')
 
 
 class ChatRoomDetailView(generics.RetrieveUpdateAPIView):

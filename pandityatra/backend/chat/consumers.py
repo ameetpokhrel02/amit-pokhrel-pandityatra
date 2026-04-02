@@ -132,8 +132,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             room = ChatRoom.objects.get(id=self.room_id)
             is_customer = room.customer_id == self.user.id
-            is_pandit = room.pandit.user_id == self.user.id
-            return is_customer or is_pandit
+            is_pandit = bool(room.pandit and room.pandit.user_id == self.user.id)
+            is_vendor = bool(room.vendor and room.vendor.user_id == self.user.id)
+            return is_customer or is_pandit or is_vendor
         except ChatRoom.DoesNotExist:
             return False
 
@@ -147,7 +148,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 
             # Only customers are limited, pandits can reply
             from users.models import User
-            if self.user.role != 'customer':
+            if self.user.role != 'user':
                 return True, None
 
             # Limit to 10 messages per 24 hours

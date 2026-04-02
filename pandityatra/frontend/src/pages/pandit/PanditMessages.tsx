@@ -66,6 +66,7 @@ const PanditMessages: React.FC = () => {
   useEffect(() => {
     if (selectedRoom && token) {
       isInitialLoadRef.current = true;
+      previousMessageCountRef.current = 0;
       connectWebSocket(selectedRoom.id);
       fetchMessages(selectedRoom.id);
     }
@@ -76,6 +77,26 @@ const PanditMessages: React.FC = () => {
       }
     };
   }, [selectedRoom, token]);
+
+  // Auto-scroll chat window to latest messages.
+  useEffect(() => {
+    if (!selectedRoom) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const isInitialLoad = isInitialLoadRef.current;
+    const hasNewMessage = messages.length > previousMessageCountRef.current;
+
+    if (isInitialLoad || hasNewMessage) {
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: isInitialLoad ? 'auto' : 'smooth',
+      });
+      isInitialLoadRef.current = false;
+    }
+
+    previousMessageCountRef.current = messages.length;
+  }, [messages, selectedRoom]);
 
   const fetchChatRooms = async () => {
     try {

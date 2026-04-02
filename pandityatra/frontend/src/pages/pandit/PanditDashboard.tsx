@@ -355,9 +355,28 @@ const PanditDashboard = () => {
                                                         <div className="flex items-center gap-2">
                                                             <Badge variant={item.status === 'ACCEPTED' ? 'default' : 'secondary'}>{item.status}</Badge>
                                                             {item.video_link && (
-                                                                <Button size="icon" variant="ghost" className="h-8 w-8 bg-blue-50 text-blue-600 hover:text-blue-700 hover:bg-blue-100" onClick={() => window.open(item.video_link, '_blank')}>
-                                                                    <Video className="h-4 w-4" />
-                                                                </Button>
+                                                                (() => {
+                                                                    const sessionTime = new Date();
+                                                                    const [hours, minutes] = item.time.split(':').map(Number);
+                                                                    sessionTime.setHours(hours, minutes, 0, 0);
+                                                                    const now = new Date();
+                                                                    const isPast = now > new Date(sessionTime.getTime() + 1 * 60 * 60 * 1000);
+
+                                                                    if (isPast) {
+                                                                        return (
+                                                                            <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 px-2 py-1 flex items-center gap-1 text-[10px]">
+                                                                                <XCircle className="h-3 w-3" />
+                                                                                Missed
+                                                                            </Badge>
+                                                                        );
+                                                                    }
+
+                                                                    return (
+                                                                        <Button size="icon" variant="ghost" className="h-8 w-8 bg-blue-50 text-blue-600 hover:text-blue-700 hover:bg-blue-100" onClick={() => window.open(item.video_link, '_blank')}>
+                                                                            <Video className="h-4 w-4" />
+                                                                        </Button>
+                                                                    );
+                                                                })()
                                                             )}
                                                         </div>
                                                     </div>
@@ -422,10 +441,29 @@ const PanditDashboard = () => {
                                                 {t('mark_completed')}
                                             </Button>
                                             {nextPuja.videoLink && (
-                                                <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => window.open(nextPuja.videoLink, '_blank')}>
-                                                    <Video className="h-4 w-4" />
-                                                    {t('join_video')}
-                                                </Button>
+                                                (() => {
+                                                    const sessionDate = new Date(`${nextPuja.date}T${nextPuja.time}`);
+                                                    const now = new Date();
+                                                    const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                                                    const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000);
+                                                    const isPast = isPastDay || isPastHour;
+
+                                                    if (isPast) {
+                                                        return (
+                                                            <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 px-4 py-2 flex items-center gap-2">
+                                                                <XCircle className="h-4 w-4" />
+                                                                Missed Session
+                                                            </Badge>
+                                                        );
+                                                    }
+
+                                                    return (
+                                                        <Button className="gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => window.open(nextPuja.videoLink, '_blank')}>
+                                                            <Video className="h-4 w-4" />
+                                                            {t('join_video')}
+                                                        </Button>
+                                                    );
+                                                })()
                                             )}
                                         </CardFooter>
                                     </Card>
