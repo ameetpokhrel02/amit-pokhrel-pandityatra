@@ -27,4 +27,4 @@ RUN python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Use Gunicorn (already in your requirements.txt)
-CMD ["gunicorn", "pandityatra_backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "pandityatra_backend.asgi:application"]

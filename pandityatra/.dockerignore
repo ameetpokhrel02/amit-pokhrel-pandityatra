@@ -1,9 +1,33 @@
-__pycache__
-*.pyc
-*.pyo
-*.pyd
-env
-venv
+# Dockerignore - Exclude development files from image
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+ENV/
+build/
+dist/
+
+# Git
 .git
 .gitignore
-node_modules
+
+# Frontend specific (if built in same context)
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Project specific
+db.sqlite3
+media/
+staticfiles/
+docker-compose.yml
+Dockerfile
+README.md
