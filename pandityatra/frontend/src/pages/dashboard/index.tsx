@@ -46,7 +46,28 @@ export default function CustomerDashboard() {
                 <div>Date: {nextBooking.date}</div>
                 <div>Time: {nextBooking.time}</div>
                 <div>Pandit: {nextBooking.panditName}</div>
-                <Button onClick={() => navigate(`/video/${nextBooking.id}`)} className="mt-2">Join Video</Button>
+                {(() => {
+                  const sessionDate = new Date(`${nextBooking.date}T${nextBooking.time}`);
+                  const now = new Date();
+                  const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                  const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000);
+                  const isPast = isPastDay || isPastHour;
+
+                  if (isPast) {
+                    return (
+                      <div className="mt-2 text-red-600 text-sm font-bold flex items-center gap-1">
+                        <MessageCircle className="h-4 w-4" />
+                        Missed Session
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Button onClick={() => navigate(`/video/${nextBooking.id}`)} className="mt-2">
+                      Join Video
+                    </Button>
+                  );
+                })()}
               </div>
             ) : (
               <div>No upcoming bookings.</div>

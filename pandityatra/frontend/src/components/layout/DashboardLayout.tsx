@@ -29,7 +29,8 @@ import {
     Crown,
     FileText,
     Shield,
-    Bot
+    Bot,
+    PlayCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +97,42 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         return () => clearInterval(intervalId);
     }, [user]);
 
+    // Real-time WebSocket for Admin Bug Report notifications
+    useEffect(() => {
+        if (!user || (user.role !== 'admin' && !user.is_superuser)) return;
+
+        const token = localStorage.getItem('access_token');
+        if (!token) return;
+
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+        const wsHost = import.meta.env.VITE_API_URL 
+            ? new URL(import.meta.env.VITE_API_URL).host 
+            : window.location.host;
+        const wsUrl = `${wsProtocol}://${wsHost}/ws/admin/notifications/?token=${token}`;
+
+        let ws: WebSocket;
+        try {
+            ws = new WebSocket(wsUrl);
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'NEW_BUG_REPORT') {
+                    toast({
+                        title: '🐛 New Bug Report',
+                        description: data.payload?.message || 'A new bug has been reported.',
+                        className: 'bg-red-600 text-white border-none shadow-2xl',
+                    });
+                }
+            };
+            ws.onerror = () => { /* silently fail */ };
+        } catch {
+            // WebSocket connection failed silently
+        }
+
+        return () => {
+            if (ws) ws.close();
+        };
+    }, [user]);
+
     // Auto-expand when URL changes
     useEffect(() => {
         if (location.search.includes('tab=marketplace') && !expandedItems.includes('Marketplace')) {
@@ -120,6 +157,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         user: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
             { icon: Calendar, label: 'My Bookings', path: '/my-bookings' },
+            { icon: PlayCircle, label: 'My Recordings', path: '/my-bookings?tab=recordings' },
             { icon: Store, label: 'Marketplace', path: '/dashboard?tab=marketplace', children: [
                 { icon: ShoppingCart, label: 'My Cart', path: '/dashboard?tab=marketplace&sub=cart' },
                 { icon: Heart, label: 'My Favorites', path: '/dashboard?tab=marketplace&sub=favorites' },
@@ -133,6 +171,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: User, label: 'Profile', path: '/profile' },
             { icon: Bot, label: 'AI Preferences', path: '/profile?tab=ai-preferences' },
             { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
+            { icon: AlertTriangle, label: 'Report Bug', path: '/report-bug' },
         ],
         pandit: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/pandit/dashboard' },
@@ -140,10 +179,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: BookOpen, label: 'My Services', path: '/pandit/services' },
             { icon: Calendar, label: 'Calendar', path: '/pandit/calendar' },
             { icon: ClipboardList, label: 'Bookings', path: '/pandit/bookings' },
+            { icon: Package, label: 'Shop Orders', path: '/pandit/dashboard?tab=orders' },
             { icon: MessageCircle, label: 'Messages', path: '/pandit/messages' },
             { icon: Wallet, label: 'Earnings', path: '/pandit/earnings' },
             { icon: Star, label: 'Reviews', path: '/pandit/reviews' },
             { icon: MessageSquareHeart, label: 'App Feedback', path: '/pandit/app-feedback' },
+            { icon: AlertTriangle, label: 'Report Bug', path: '/pandit/report-bug' },
         ],
         admin: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
@@ -172,6 +213,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             // Manage Admins — only visible if superadmin (injected below)
             { icon: Settings, label: 'Settings', path: '/admin/settings' },
             { icon: User, label: 'My Profile', path: '/admin/profile' },
+            { icon: AlertTriangle, label: 'Bug Reports', path: '/admin/bugs' },
         ],
         vendor: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/vendor/dashboard' },
@@ -181,6 +223,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: User, label: 'Shop Profile', path: '/vendor/profile' },
             { icon: MessageCircle, label: 'Messages', path: '/vendor/messages' },
             { icon: Settings, label: 'Settings', path: '/vendor/settings' },
+            { icon: AlertTriangle, label: 'Report Bug', path: '/vendor/report-bug' },
         ]
     };
 

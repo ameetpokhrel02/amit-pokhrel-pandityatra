@@ -345,14 +345,33 @@ const CustomerDashboard: React.FC = () => {
                         <div className="flex gap-2">
                           {(nextBooking.daily_room_url ||
                             nextBooking.video_room_url) && (
-                            <Button
-                              onClick={() =>
-                                navigate(`/puja-room/${nextBooking.id}`)
+                            (() => {
+                              const sessionDate = new Date(`${nextBooking.booking_date}T${nextBooking.booking_time}`);
+                              const now = new Date();
+                              const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                              const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000);
+                              const isPast = isPastDay || isPastHour;
+
+                              if (isPast) {
+                                return (
+                                  <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 px-4 py-2 flex items-center gap-2">
+                                    <XCircle className="h-4 w-4" />
+                                    Missed Session
+                                  </Badge>
+                                );
                               }
-                            >
-                              <Video className="mr-2 h-4 w-4" />
-                              Join Video
-                            </Button>
+
+                              return (
+                                <Button
+                                  onClick={() =>
+                                    navigate(`/puja-room/${nextBooking.id}`)
+                                  }
+                                >
+                                  <Video className="mr-2 h-4 w-4" />
+                                  Join Video
+                                </Button>
+                              );
+                            })()
                           )}
                           <Button
                             variant="outline"
@@ -1184,14 +1203,33 @@ const CustomerDashboard: React.FC = () => {
                                     <div className="flex flex-wrap gap-2">
                                       {(booking.daily_room_url || booking.video_room_url) &&
                                         ['ACCEPTED', 'PENDING'].includes(booking.status) && (
-                                        <Button
-                                          size="sm"
-                                          className="bg-blue-600 hover:bg-blue-700"
-                                          onClick={() => navigate(`/puja-room/${booking.id}`)}
-                                        >
-                                          <Video className="h-4 w-4 mr-1.5" />
-                                          Join Video
-                                        </Button>
+                                        (() => {
+                                          const sessionDate = new Date(`${booking.booking_date}T${booking.booking_time}`);
+                                          const now = new Date();
+                                          const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                                          const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000);
+                                          const isPast = isPastDay || isPastHour;
+
+                                          if (isPast) {
+                                            return (
+                                              <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 flex items-center gap-1.5 h-9 px-3">
+                                                <XCircle className="h-3.5 w-3.5" />
+                                                Missed
+                                              </Badge>
+                                            );
+                                          }
+
+                                          return (
+                                            <Button
+                                              size="sm"
+                                              className="bg-blue-600 hover:bg-blue-700"
+                                              onClick={() => navigate(`/puja-room/${booking.id}`)}
+                                            >
+                                              <Video className="h-4 w-4 mr-1.5" />
+                                              Join Video
+                                            </Button>
+                                          );
+                                        })()
                                       )}
                                       {booking.recording_url && booking.recording_available && (
                                         <Button

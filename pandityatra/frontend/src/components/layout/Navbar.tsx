@@ -35,7 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
 import logo from '@/assets/images/PanditYatralogo.png';
-import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown, Heart, Store } from 'lucide-react';
+import { Search, Menu, ShoppingCart, User, LogOut, LayoutDashboard, Wallet, BookOpen, Home, MonitorDown, ChevronDown, Heart, Store, ClipboardList } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import LanguageSelector from './LanguageSelector';
 import { usePWA } from '@/hooks/usePWA';
@@ -378,6 +378,11 @@ const Navbar: React.FC = () => {
                           <Wallet className="w-4 h-4" /> My Earnings
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
+                        <Link to="/pandit/dashboard?tab=orders" className="cursor-pointer gap-2">
+                          <ClipboardList className="w-4 h-4" /> My Shop Orders
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-orange-100" />
                     </>
                   )}
@@ -564,9 +569,14 @@ const Navbar: React.FC = () => {
 
                         <div className="grid gap-1">
                           {user.role === 'pandit' && (
-                            <Link to="/pandit/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-orange-50 text-gray-700">
-                              <LayoutDashboard className="w-4 h-4 text-orange-500" /> Dashboard
-                            </Link>
+                            <>
+                              <Link to="/pandit/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-orange-50 text-gray-700">
+                                <LayoutDashboard className="w-4 h-4 text-orange-500" /> Dashboard
+                              </Link>
+                              <Link to="/pandit/dashboard?tab=orders" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium hover:bg-orange-50 text-gray-700">
+                                <ClipboardList className="w-4 h-4 text-orange-500" /> Shop Orders
+                              </Link>
+                            </>
                           )}
                           {(user.role === 'admin' || user.is_superuser) && (
                             <Link to="/admin/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-purple-600 hover:bg-purple-50">

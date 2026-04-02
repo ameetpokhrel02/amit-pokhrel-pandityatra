@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -43,9 +43,21 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled' | 'recordings'>('all');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [recordingUrls, setRecordingUrls] = useState<Record<number, string | null>>({});
+  const [videoHistory, setVideoHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const location = useLocation();
+
+  // Sync tab filter with URL param ?tab=recordings
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab === 'recordings') {
+      setFilter('recordings');
+    }
+  }, [location.search]);
 
   // Download chat log for a booking
   const handleDownloadChatLog = async (bookingId: number, serviceName: string) => {
@@ -101,7 +113,22 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
 
   useEffect(() => {
     fetchBookings();
-  }, []);
+    if (filter === 'recordings') {
+      fetchVideoHistory();
+    }
+  }, [filter]);
+
+  const fetchVideoHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      const response = await apiClient.get('/video/history/');
+      setVideoHistory(response.data);
+    } catch (err) {
+      console.error("Failed to load video history", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -194,7 +221,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {(['all', 'pending', 'accepted', 'completed', 'cancelled'] as const).map((status) => (
+        {(['all', 'pending', 'accepted', 'completed', 'cancelled', 'recordings'] as const).map((status) => (
           <Button
             key={status}
             variant={filter === status ? 'default' : 'outline'}
@@ -202,14 +229,48 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
             className={`capitalize ${filter === status ? 'bg-orange-600 hover:bg-orange-700' : ''
               }`}
           >
-            {status}
+            {status === 'recordings' ? 'My Recordings' : status}
           </Button>
         ))}
       </div>
 
       {/* Bookings List */}
       <div className="grid gap-6">
-        {filteredBookings.length === 0 ? (
+        {filter === 'recordings' ? (
+          historyLoading ? (
+            <div className="flex justify-center py-12"><Loader2 className="animate-spin text-orange-600" /></div>
+          ) : videoHistory.length === 0 ? (
+            <Card><CardContent className="py-12 text-center text-gray-500">No video recordings found.</CardContent></Card>
+          ) : (
+            videoHistory.map((history) => (
+              <Card key={history.id} className="border-l-4 border-l-green-600">
+                <CardHeader>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <CardTitle>{history.puja_name}</CardTitle>
+                      <CardDescription>With {history.partner_name} • {new Date(history.date).toLocaleDateString()}</CardDescription>
+                    </div>
+                    {history.duration_seconds && (
+                      <Badge variant="outline">{Math.floor(history.duration_seconds / 60)} mins</Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleDownloadChatLog(history.booking_id, history.puja_name)}>
+                    View Chat
+                  </Button>
+                  {history.recording_url ? (
+                    <Button className="bg-green-600 hover:bg-green-700" onClick={() => window.open(history.recording_url, '_blank')}>
+                      <PlayCircle className="w-4 h-4 mr-2" /> Watch Recording
+                    </Button>
+                  ) : (
+                    <Badge variant="secondary">Recording processing...</Badge>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )
+        ) : filteredBookings.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12 text-center">
               <Calendar className="h-12 w-12 text-gray-300 mb-4" />
@@ -310,15 +371,36 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                         View Recording
                       </Button>
                     )}
-                    {/* VIDEO CALL BUTTON */}
+                    {/* VIDEO CALL BUTTON (ONLY IF NOT PAST) */}
                     {booking.status === 'ACCEPTED' && (booking.daily_room_url || booking.video_room_url) && (
-                      <Button
-                        onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}
-                        className="bg-[#f97316] hover:bg-[#ea580c] text-white gap-2"
-                      >
-                        <Video className="h-4 w-4" />
-                        Join Live Puja
-                      </Button>
+                      (() => {
+                        const sessionDate = new Date(`${booking.booking_date}T${booking.booking_time}`);
+                        const now = new Date();
+                        
+                        // Check if it's in the past (1 hour buffer for same day, or any past day)
+                        const isPastDay = new Date(now.toDateString()) > new Date(sessionDate.toDateString());
+                        const isPastHour = now > new Date(sessionDate.getTime() + 1 * 60 * 60 * 1000); // 1 hour buffer
+                        const isPast = isPastDay || isPastHour;
+                        
+                        if (isPast) {
+                          return (
+                            <Badge variant="outline" className="border-red-200 text-red-600 bg-red-50 px-4 py-2 flex items-center gap-2">
+                              <X className="h-4 w-4" />
+                              Missed Session
+                            </Badge>
+                          );
+                        }
+                        
+                        return (
+                          <Button
+                            onClick={() => window.open(booking.daily_room_url || booking.video_room_url, '_blank')}
+                            className="bg-[#f97316] hover:bg-[#ea580c] text-white gap-2"
+                          >
+                            <Video className="h-4 w-4" />
+                            Join Live Puja
+                          </Button>
+                        );
+                      })()
                     )}
 
                     {booking.status === 'PENDING' && (

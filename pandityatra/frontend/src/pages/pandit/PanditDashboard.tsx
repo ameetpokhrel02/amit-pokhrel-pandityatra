@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import apiClient from '@/lib/api-client'
 import { useToast } from "@/hooks/use-toast"
 import { PanditCalendar } from '@/components/pandit/PanditCalendar'
-import { fetchSiteReviews, submitSiteReview } from '@/lib/api'
+import { fetchSiteReviews, submitSiteReview, fetchMyOrders, type ShopOrder } from '@/lib/api'
 import {
     Calendar as CalendarIcon,
     Wallet,
@@ -26,6 +26,13 @@ import {
     Star,
     Send,
     MessageSquareHeart,
+    ClipboardList,
+    Package,
+    CreditCard,
+    Truck,
+    XCircle,
+    ExternalLink,
+    ShoppingBag
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -41,7 +48,7 @@ import {
 const PanditDashboard = () => {
     const { t } = useTranslation('dashboard')
     const { toast } = useToast()
-    const [searchParams] = useSearchParams()
+    const [searchParams, setSearchParams] = useSearchParams()
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState<any>(null)
     const [nextPuja, setNextPuja] = useState<any>(null)
@@ -49,6 +56,10 @@ const PanditDashboard = () => {
     const [todaySchedule, setTodaySchedule] = useState<any[]>([])
     const [isOnline, setIsOnline] = useState(false)
     const [errorStatus, setErrorStatus] = useState<'PENDING' | 'REJECTED' | 'INCOMPLETE' | null>(null);
+
+    // Orders
+    const [orders, setOrders] = useState<ShopOrder[]>([])
+    const [ordersLoading, setOrdersLoading] = useState(false)
 
     // App Feedback state
     const [feedbackRating, setFeedbackRating] = useState(0)
@@ -61,7 +72,47 @@ const PanditDashboard = () => {
 
     // Determine default tab from URL
     const urlTab = searchParams.get('tab')
-    const defaultTab = urlTab === 'feedback' ? 'feedback' : 'overview'
+    const defaultTab = ['feedback', 'orders', 'calendar'].includes(urlTab || '') ? urlTab! : 'overview'
+
+    useEffect(() => {
+        if (urlTab === 'orders') {
+            loadOrders()
+        }
+    }, [urlTab])
+
+    const loadOrders = async () => {
+        setOrdersLoading(true)
+        try {
+            const data = await fetchMyOrders()
+            setOrders(data)
+        } catch (error) {
+            console.error("Failed to load orders", error)
+        } finally {
+            setOrdersLoading(false)
+        }
+    }
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case "DELIVERED": return "bg-green-100 text-green-700 border-green-200"
+            case "PAID": return "bg-blue-100 text-blue-700 border-blue-200"
+            case "SHIPPED": return "bg-purple-100 text-purple-700 border-purple-200"
+            case "PENDING": return "bg-yellow-100 text-yellow-700 border-yellow-200"
+            case "CANCELLED": return "bg-red-100 text-red-700 border-red-200"
+            default: return "bg-gray-100 text-gray-700 border-gray-200"
+        }
+    }
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case "DELIVERED": return <CheckCircle2 className="h-4 w-4" />
+            case "PAID": return <CreditCard className="h-4 w-4" />
+            case "SHIPPED": return <Truck className="h-4 w-4" />
+            case "PENDING": return <Clock className="h-4 w-4" />
+            case "CANCELLED": return <XCircle className="h-4 w-4" />
+            default: return <Package className="h-4 w-4" />
+        }
+    }
 
     useEffect(() => {
         fetchDashboardData()
@@ -236,13 +287,14 @@ const PanditDashboard = () => {
                 </div>
 
                 {/* Tabs */}
-                <Tabs defaultValue={defaultTab} className="w-full">
-                    <TabsList className="grid w-full md:w-[520px] grid-cols-3">
+                <Tabs value={defaultTab} onValueChange={(v) => setSearchParams({tab: v})} className="w-full">
+                    <TabsList className="grid w-full md:w-[680px] grid-cols-4 overflow-x-auto h-auto min-h-10 p-1">
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="calendar">Calendar</TabsTrigger>
+                        <TabsTrigger value="orders" className="gap-1.5"><ClipboardList className="h-4 w-4" /> <span className="hidden sm:inline">Shop Orders</span></TabsTrigger>
                         <TabsTrigger value="feedback" className="gap-1.5">
                             <MessageSquareHeart className="h-4 w-4" />
-                            App Feedback
+                            <span className="hidden sm:inline">App Feedback</span>
                         </TabsTrigger>
                     </TabsList>
 
@@ -585,6 +637,115 @@ const PanditDashboard = () => {
                                         </Button>
                                     </CardFooter>
                                 </Card>
+                            )}
+                        </div>
+                    </TabsContent>
+
+                    {/* Orders Tab */}
+                    <TabsContent value="orders" className="mt-4">
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <ClipboardList className="h-6 w-6 text-blue-600" />
+                                    My Orders
+                                    {orders.length > 0 && (
+                                        <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                            {orders.length} orders
+                                        </Badge>
+                                    )}
+                                </h2>
+                            </div>
+
+                            {ordersLoading ? (
+                                <div className="flex items-center justify-center py-16">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600" />
+                                </div>
+                            ) : orders.length === 0 ? (
+                                <Card className="border-dashed">
+                                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                                        <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                                            <ClipboardList className="h-10 w-10 text-blue-200" />
+                                        </div>
+                                        <h3 className="text-xl font-semibold mb-2">No orders yet</h3>
+                                        <p className="text-muted-foreground mb-6 max-w-sm">
+                                            Once you purchase items from the shop, your order history will appear here.
+                                        </p>
+                                        <Button onClick={() => window.location.href = "/shop/samagri"} className="bg-orange-600 hover:bg-orange-700">
+                                            <ShoppingBag className="h-4 w-4 mr-2" />
+                                            Start Shopping
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <div className="space-y-4">
+                                    {orders.map((order) => (
+                                        <Card key={order.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                                            <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                                                    <div>
+                                                        <span className="text-muted-foreground">Order </span>
+                                                        <span className="font-bold">#{order.id}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-muted-foreground">Placed </span>
+                                                        <span className="font-medium">
+                                                            {new Date(order.created_at).toLocaleDateString("en-IN", {
+                                                                year: "numeric", month: "short", day: "numeric",
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-muted-foreground">Total </span>
+                                                        <span className="font-bold text-orange-600">
+                                                            ₹{Number(order.total_amount).toLocaleString("en-IN")}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Badge className={`${getStatusColor(order.status)} border gap-1.5 font-medium`} variant="outline">
+                                                    {getStatusIcon(order.status)}
+                                                    {order.status}
+                                                </Badge>
+                                            </div>
+                                            <CardContent className="p-6">
+                                                <div className="space-y-3">
+                                                    {order.items.map((item, idx) => (
+                                                        <div key={idx} className="flex items-center gap-4 py-2 border-b last:border-0">
+                                                            <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
+                                                                <Package className="h-5 w-5 text-orange-400" />
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="font-medium text-sm line-clamp-1">{item.item_name}</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    Qty: {item.quantity} × ₹{Number(item.price_at_purchase).toLocaleString("en-IN")}
+                                                                </p>
+                                                            </div>
+                                                            <p className="font-semibold text-sm">
+                                                                ₹{(Number(item.price_at_purchase) * item.quantity).toLocaleString("en-IN")}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-4 pt-4 border-t gap-3">
+                                                    <div className="text-xs text-muted-foreground space-y-0.5">
+                                                        <p>
+                                                            <span className="font-medium">Shipping:</span> {order.shipping_address}, {order.city}
+                                                        </p>
+                                                        <p>
+                                                            <span className="font-medium">Payment:</span> {order.payment_method}
+                                                            {order.transaction_id && (
+                                                                <span className="ml-2 text-gray-400">({order.transaction_id.slice(0, 12)}...)</span>
+                                                            )}
+                                                        </p>
+                                                    </div>
+                                                    <Button variant="outline" size="sm" className="text-orange-600 border-orange-200 hover:bg-orange-50" onClick={() => window.location.href = "/shop/samagri"}>
+                                                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                                                        Buy Again
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </TabsContent>

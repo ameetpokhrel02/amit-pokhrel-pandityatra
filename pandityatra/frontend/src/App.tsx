@@ -87,6 +87,10 @@ import AdminBanners from '@/pages/admin/AdminBanners'
 import AdminSupport from './pages/admin/AdminSupport'
 import AdminErrorLogs from './pages/admin/AdminErrorLogs'
 import ManageAdmins from './pages/admin/ManageAdmins'
+import AdminBugReports from './pages/admin/AdminBugReports'
+
+// Bug Reports
+import ReportBug from './pages/bugs/ReportBug'
 
 // Profile
 import EditProfile from './pages/customer/Profile'
@@ -267,6 +271,12 @@ function App() {
                       </ProtectedRoute>
                     } />
 
+                    <Route path="/pandit/report-bug" element={
+                      <ProtectedRoute allowedRoles={['pandit']}>
+                        <ReportBug />
+                      </ProtectedRoute>
+                    } />
+
                     <Route path="/pandit/profile" element={
                       <ProtectedRoute allowedRoles={['pandit']}>
                         <PanditPrivateProfile />
@@ -313,6 +323,12 @@ function App() {
                     <Route path="/vendor/settings" element={
                       <ProtectedRoute allowedRoles={['vendor']}>
                         <VendorSettings />
+                      </ProtectedRoute>
+                    } />
+
+                    <Route path="/vendor/report-bug" element={
+                      <ProtectedRoute allowedRoles={['vendor']}>
+                        <ReportBug />
                       </ProtectedRoute>
                     } />
 
@@ -413,6 +429,14 @@ function App() {
                     <Route path="/admin/support" element={<ProtectedRoute allowedRoles={['admin']}><AdminSupport /></ProtectedRoute>} />
                     <Route path="/admin/manage-admins" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><ManageAdmins /></ProtectedRoute>} />
                     <Route path="/admin/error-logs" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminErrorLogs /></ProtectedRoute>} />
+                    <Route path="/admin/bugs" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminBugReports /></ProtectedRoute>} />
+
+                    {/* 🐛 Bug Reports (All Roles) */}
+                    <Route path="/report-bug" element={
+                      <ProtectedRoute allowedRoles={['user', 'pandit', 'vendor']}>
+                        <ReportBug />
+                      </ProtectedRoute>
+                    } />
 
                     {/* 💳 Payments */}
                     <Route path="/payment/:bookingId" element={
