@@ -12,6 +12,16 @@ class PanditUser(User):
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     bio = models.TextField(default="")
     is_available = models.BooleanField(default=True)
+ 
+    @property
+    def user(self):
+        """Backward compatibility for when PanditUser had a OneToOne 'user' field."""
+        return self
+ 
+    @property
+    def user_id(self):
+        """Backward compatibility for code expecting a user_id on a profile model."""
+        return self.id
 
     VERIFICATION_STATUS_CHOICES = (
         ('PENDING', 'Pending Review'),

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, exceptions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -76,13 +76,13 @@ class BookingViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role != "user":
-            raise permissions.PermissionDenied("Only customers can create bookings.")
+            raise exceptions.PermissionDenied("Only customers can create bookings.")
 
         pandit = serializer.validated_data["pandit"]
 
         # 🚨 Only verified pandits can receive bookings
         if not pandit.is_verified:
-            raise permissions.PermissionDenied("This Pandit is not verified by admin.")
+            raise exceptions.PermissionDenied("This Pandit is not verified by admin.")
 
         serializer.save(user=user, status=BookingStatus.PENDING)
         
@@ -90,12 +90,14 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = serializer.instance
         notify_booking_created(booking)
         
-        # Log Activity
+        service = serializer.validated_data.get('service')
+        service_name = getattr(service, 'name', 'Service')
+        
         from adminpanel.utils import log_activity
         log_activity(
             user=user, 
             action_type="BOOKING", 
-            details=f"Booked {serializer.validated_data.get('service').name} with {pandit.full_name}", 
+            details=f"Booked {service_name} with {pandit.full_name}", 
             request=self.request,
             pandit=pandit
         )
@@ -108,7 +110,7 @@ class BookingViewSet(viewsets.ModelViewSet):
         booking = self.get_object()
         user = request.user
 
-        if user.role != "pandit" or booking.pandit != user:
+        if user.role != "pandit" or booking.pandit_id != user.id:
             return Response({"detail": "Not your booking"}, status=403)
 
         new_status = request.data.get("status")
