@@ -22,6 +22,7 @@ class Notification(models.Model):
         ('REMINDER', 'Reminder'),
         ('PUJA_ROOM_READY', 'Puja Room Ready'),
         ('VIDEO_CALL_INCOMING', 'Incoming Video Call'),
+        ('VIDEO_CALL_MISSED', 'Video Call Missed'),
         ('RECORDING_READY_REVIEW', 'Recording Ready (Review Prompt)'),
     ]
     

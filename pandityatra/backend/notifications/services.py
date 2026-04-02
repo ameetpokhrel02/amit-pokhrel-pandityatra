@@ -308,6 +308,53 @@ def notify_incoming_video_call(booking, caller_user):
     )
 
 
+def notify_missed_video_puja(booking, missing_user_role):
+    """
+    Notify users when a video puja is missed.
+    missing_user_role: 'customer' or 'pandit'
+    """
+    if missing_user_role == 'customer':
+        # Anita missed the call
+        create_notification(
+            user=booking.user,
+            notification_type='VIDEO_CALL_MISSED',
+            title='You missed your Puja session 🙏',
+            message=f'You missed the scheduled {booking.service_name} with {booking.pandit.user.full_name}. Would you like to reschedule?',
+            booking=booking,
+            title_ne='पूजा सत्र छुटेको छ 🙏',
+            message_ne=f'तपाईंको {booking.pandit.user.full_name} सँगको {booking.service_name} छुटेको छ। के तपाईं अर्को समय मिलाउन चाहनुहुन्छ?'
+        )
+        create_notification(
+            user=booking.pandit.user,
+            notification_type='VIDEO_CALL_MISSED',
+            title=f'{booking.user.full_name} did not join',
+            message=f'{booking.user.full_name} did not join the {booking.service_name}. The session has ended. Recording not created.',
+            booking=booking,
+            title_ne='ग्राहक सामेल हुनुभएन',
+            message_ne=f'{booking.user.full_name} पूजामा सामेल हुनुभएन। सत्र समाप्त भएको छ।'
+        )
+    else:
+        # Pandit missed the call
+        create_notification(
+            user=booking.user,
+            notification_type='VIDEO_CALL_MISSED',
+            title='Pandit did not join',
+            message=f'{booking.pandit.user.full_name} did not join the session. We have notified him. You can request a reschedule.',
+            booking=booking,
+            title_ne='पण्डित सामेल हुनुभएन',
+            message_ne=f'{booking.pandit.user.full_name} सामेल हुनुभएन। तपाईं अर्को समय अनुरोध गर्न सक्नुहुन्छ।'
+        )
+        create_notification(
+            user=booking.pandit.user,
+            notification_type='VIDEO_CALL_MISSED',
+            title='You missed a scheduled Puja 🙏',
+            message=f'You missed the {booking.service_name} with {booking.user.full_name}. Please contact the customer to reschedule.',
+            booking=booking,
+            title_ne='पूजा सत्र छुटेको छ 🙏',
+            message_ne=f'तपाईंको {booking.user.full_name} सँगको {booking.service_name} छुटेको छ।'
+        )
+
+
 def notify_recording_ready_review(booking):
     """Notify customer to review recording and leave rating after upload."""
     create_notification(
