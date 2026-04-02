@@ -48,7 +48,7 @@ const Unauthorized: React.FC = () => {
                 <div className="flex-1 relative order-1 md:order-2 flex justify-center md:justify-end">
                     <div className="relative w-72 h-72 md:w-[450px] md:h-[450px] drop-shadow-[0_35px_35px_rgba(0,0,0,0.15)]">
                         <img
-                            src={sadPandit}
+                            src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1775122347/errro_p4ej8m.png"
                             alt="Sad Pandit"
                             className="w-full h-full object-contain animate-float"
                         />
