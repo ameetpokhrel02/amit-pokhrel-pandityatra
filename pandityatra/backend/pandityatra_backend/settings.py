@@ -104,6 +104,7 @@ INSTALLED_APPS = [
     'drf_spectacular',  # API documentation with OpenAPI/Swagger
     'banners',  # New Dynamic Banner Module
     'vendors',  # Multi-vendor E-commerce
+    'bug_reports', # Bug reporting module
 ]
 
 # Django Channels Configuration
@@ -340,9 +341,13 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # App Password n
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', False)
+CORS_ALLOW_ALL_ORIGINS = True  # Required for Expo mobile environment flexibility
 CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', os.getenv('FRONTEND_URL', 'http://localhost:5173'))
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')},http://localhost:8000")
+
+# Mobile Absolute URL Support
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)

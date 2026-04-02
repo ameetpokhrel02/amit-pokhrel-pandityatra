@@ -59,6 +59,9 @@ urlpatterns = [
     # Notifications endpoints
     path('api/notifications/', include('notifications.urls')),
 
+    # Bug Reports
+    path('api/bug-reports/', include('bug_reports.urls')),
+
     # Bookings (Generic api/ must be last)
     path('api/', include('bookings.urls')),
 

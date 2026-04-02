@@ -16,6 +16,7 @@ django_asgi_app = get_asgi_application()
 
 from chat import routing as chat_routing  # noqa: E402
 from video import routing as video_routing  # noqa: E402
+from bug_reports import routing as bug_routing  # noqa: E402
 from chat.middleware import JWTAuthMiddleware  # noqa: E402
 
 application = ProtocolTypeRouter({
@@ -23,7 +24,9 @@ application = ProtocolTypeRouter({
     "websocket": JWTAuthMiddleware(
         AuthMiddlewareStack(
             URLRouter(
-                chat_routing.websocket_urlpatterns + video_routing.websocket_urlpatterns
+                chat_routing.websocket_urlpatterns + 
+                video_routing.websocket_urlpatterns +
+                bug_routing.websocket_urlpatterns
             )
         )
     ),
