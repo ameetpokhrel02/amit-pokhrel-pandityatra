@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { Card } from "@/components/ui/card";
-import { User, MicOff } from 'lucide-react';
+import { User, MicOff, Monitor } from 'lucide-react';
 
 interface VideoTileProps {
   stream: MediaStream | null;
@@ -31,12 +31,14 @@ export default function VideoTile({ stream, isLocal, label, className }: VideoTi
   }, [stream]);
 
   return (
-    <Card className={`relative overflow-hidden bg-slate-800 ${className || (isLocal ? 'h-32 w-48 absolute bottom-4 right-4 z-10 border-2 border-orange-500 shadow-lg rounded-xl' : 'w-full h-full border border-slate-700/60 rounded-xl')}`}>
+    <Card className={`relative overflow-hidden bg-[#1a1a1a] group transition-all duration-500 rounded-[2rem] border border-white/5 ${className || (isLocal ? 'h-44 w-64 absolute bottom-8 right-8 z-30 ring-4 ring-orange-500/30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]' : 'w-full h-full shadow-2xl')}`}>
       {/* Video not available fallback */}
       {isVideoOff ? (
-        <div className="w-full h-full flex items-center justify-center flex-col text-slate-300 bg-gradient-to-br from-slate-800 to-slate-900">
-           <User className="h-14 w-14 mb-2 opacity-60" />
-           <span className="text-xs font-medium">{isLocal ? "Camera Off" : "Video Paused"}</span>
+        <div className="w-full h-full flex items-center justify-center flex-col bg-gradient-to-br from-[#1e1e1e] to-[#111]">
+           <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center border border-white/10 shadow-inner group-hover:scale-110 transition-transform duration-700">
+              <User className="h-10 w-10 text-white/20" />
+           </div>
+           <span className="mt-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{isLocal ? "Self Camera Off" : (label || "Participant")}</span>
         </div>
       ) : (
         <video 
@@ -44,7 +46,7 @@ export default function VideoTile({ stream, isLocal, label, className }: VideoTi
             autoPlay 
             playsInline 
             muted={isLocal} 
-            className={`w-full h-full object-cover ${isLocal ? 'scale-x-[-1]' : ''}`} 
+            className={`w-full h-full ${videoTrack?.label?.toLowerCase().includes('screen') || !isLocal ? 'object-contain bg-black' : 'object-cover scale-x-[-1]'}`} 
         />
       )}
       
@@ -52,10 +54,20 @@ export default function VideoTile({ stream, isLocal, label, className }: VideoTi
       {!isLocal && <audio ref={audioRef} autoPlay playsInline />}
       
       {/* Indicators */}
-      <div className="absolute bottom-2 left-2 flex gap-2">
-        <div className="bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full flex items-center gap-2 border border-white/20">
-          {isAudioOff && <MicOff className="h-3 w-3 text-red-400" />}
-          {label || (isLocal ? "You" : "Live Feed")}
+      <div className="absolute bottom-4 left-4 flex gap-2 z-20">
+        <div className="bg-black/40 backdrop-blur-3xl px-4 py-2 rounded-2xl flex items-center gap-3 border border-white/10 shadow-2xl">
+          {isAudioOff && (
+            <div className="flex items-center justify-center w-5 h-5 bg-red-500/20 rounded-full border border-red-500/30">
+               <MicOff className="h-2.5 w-2.5 text-red-400" />
+            </div>
+          )}
+          {videoTrack?.label?.toLowerCase().includes('screen') && (
+            <div className="flex items-center gap-1.5 bg-orange-500/20 px-2 py-0.5 rounded-lg border border-orange-500/30">
+               <Monitor className="h-2.5 w-2.5 text-orange-400" />
+               <span className="text-[9px] font-bold text-orange-400 uppercase">Screen</span>
+            </div>
+          )}
+          <span className="text-white/90 text-xs font-black uppercase tracking-widest">{label || (isLocal ? "You" : "Participant")}</span>
          </div>
       </div>
     </Card>

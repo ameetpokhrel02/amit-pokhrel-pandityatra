@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # ICE config for frontend WebRTC clients
     path("ice-servers/", views.ice_servers),
+    path("history/", views.video_history),
 
     # Step 2 - WebRTC room REST APIs
     path("rooms/create/", views.create_room_auto),

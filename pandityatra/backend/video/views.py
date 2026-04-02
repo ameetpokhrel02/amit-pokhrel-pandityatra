@@ -57,13 +57,16 @@ def _booking_start_dt(booking):
 def _booking_time_window_ok(booking):
     start_dt = _booking_start_dt(booking)
     if not start_dt:
-        return False, "Booking start time is not configured"
+        return False, "config_missing", "Booking start time is not configured"
 
     now = timezone.now()
     late_buffer = start_dt + timedelta(hours=4)
     if now <= late_buffer:
-        return True, "ok"
-    return False, "Room has expired (4 hours past scheduled time)"
+        # Check if booking was marked completed or cancelled
+        if booking.status == "CANCELLED":
+            return False, "cancelled", "This booking was cancelled"
+        return True, "ok", "ok"
+    return False, "expired", "This video session has expired (4 hours past scheduled time)"
 
 
 def _validate_booking_video_state(booking):
@@ -186,7 +189,12 @@ def room_details(request, room_id):
         return Response({"error": "Unable to resolve room"}, status=400)
 
     if not can_access_booking(request.user, room.booking):
-        return Response({"error": "Not authorized"}, status=403)
+        return Response({"error": "Not authorized", "code": "unauthorized"}, status=403)
+
+    # Check window on GET room details too
+    window_ok, window_code, window_reason = _booking_time_window_ok(room.booking)
+    if not window_ok:
+        return Response({"error": window_reason, "code": window_code}, status=400)
 
     if request.method == "PATCH":
         serializer = VideoRoomUpdateSerializer(room, data=request.data, partial=True)
@@ -376,9 +384,9 @@ def validate_room_access(request, room_id):
     if not state_ok:
         return Response({"valid": False, "reason": state_reason}, status=400)
 
-    window_ok, window_reason = _booking_time_window_ok(room.booking)
+    window_ok, window_code, window_reason = _booking_time_window_ok(room.booking)
     if not window_ok:
-        return Response({"valid": False, "reason": window_reason}, status=400)
+        return Response({"valid": False, "reason": window_reason, "code": window_code}, status=400)
 
     start_dt = _booking_start_dt(room.booking)
     return Response({
@@ -597,3 +605,27 @@ def generate_video_link(request, booking_id):
     except Exception as e:
         logger.error(f"Manual room creation failed: {e}")
         return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def video_history(request):
+    """
+    Returns a list of completed video calls for the current user.
+    """
+    user = request.user
+    
+    # Filter rooms where the status is ended
+    queryset = VideoRoom.objects.filter(
+        status="ended"
+    ).select_related("booking", "booking__user", "booking__pandit")
+    
+    if user.role == "pandit":
+        queryset = queryset.filter(booking__pandit__user=user)
+    else:
+        queryset = queryset.filter(booking__user=user)
+        
+    queryset = queryset.order_by("-ended_at")
+    
+    from .serializers import VideoHistorySerializer
+    serializer = VideoHistorySerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Send one-time reminders 5 minutes before scheduled online video sessions."
+    help = "Send one-time reminders around 10 minutes before scheduled online video sessions."
 
     def handle(self, *args, **options):
         now = timezone.localtime(timezone.now())
@@ -44,8 +44,8 @@ class Command(BaseCommand):
             session_start = timezone.make_aware(session_start_naive, current_tz)
             minutes_to_start = (session_start - now).total_seconds() / 60
 
-            # Run every minute: accept a small [4, 6] minute window around "5 min before".
-            if not (4 <= minutes_to_start <= 6):
+            # Run every minute: accept a small [4, 11] minute window around "10 min before".
+            if not (4 <= minutes_to_start <= 11):
                 skipped_count += 1
                 continue
 

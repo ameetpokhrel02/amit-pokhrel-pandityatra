@@ -3,6 +3,7 @@ from typing import Optional
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.conf import settings
 from django.utils import timezone
 
 from chat.models import ChatMessage
@@ -51,8 +52,11 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
         await self._upsert_participant(self.room.id)
-        await self._notify_incoming_call(self.room.id)
+        # await self._notify_incoming_call(self.room.id) # Already handled or redundant here
 
+        # Check if both participants are present to start recording
+        status_info = await self._get_room_status_info(self.room.id)
+        
         await self.send(
             text_data=json.dumps(
                 {
@@ -61,9 +65,27 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
                     "resolved_room_id": self.room.id,
                     "user_id": self.user.id,
                     "username": getattr(self.user, "username", ""),
+                    "is_waiting": status_info["participant_count"] < 2,
+                    "peer_role": status_info["peer_role"],
+                    "peer_name": status_info["peer_name"],
                 }
             )
         )
+        
+        if status_info["participant_count"] >= 2:
+            await self._trigger_recording_if_needed(self.room.id)
+            # Broadcast to everyone that the call is now fully joined
+            await self.channel_layer.group_send(
+                self.group_name,
+                {
+                    "type": "signal_event",
+                    "event": {
+                        "type": "call-started",
+                        "message": "Both participants joined. Puja starting...",
+                        "timestamp": timezone.now().isoformat(),
+                    },
+                },
+            )
 
         recent_chat = await self._get_recent_chat_messages(self.room.id)
         await self.send(
@@ -219,7 +241,7 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
 
         booking = room.booking
         is_customer = booking.user_id == self.user.id
-        is_pandit = booking.pandit and booking.pandit.user_id == self.user.id
+        is_pandit = booking.pandit and booking.pandit_id == self.user.id
         is_admin = bool(self.user.is_staff or self.user.is_superuser)
 
         return bool(is_customer or is_pandit or is_admin)
@@ -283,6 +305,45 @@ class VideoSignalingConsumer(AsyncWebsocketConsumer):
             "booking_id": room.booking_id,
             "timestamp": chat.timestamp.isoformat(),
         }
+
+    @database_sync_to_async
+    def _get_room_status_info(self, room_id: int):
+        room = VideoRoom.objects.select_related("booking__user", "booking__pandit").get(id=room_id)
+        active_participants = VideoParticipant.objects.filter(room_id=room_id, left_at__isnull=True)
+        count = active_participants.count()
+        
+        peer_name = "Pandit" if self.user.role == 'user' else "Customer"
+        # Try to get actual name
+        booking = room.booking
+        if self.user.role == 'user':
+            peer_name = booking.pandit.full_name if booking.pandit else "Pandit"
+            peer_role = 'pandit'
+        else:
+            peer_name = booking.user.full_name
+            peer_role = 'customer'
+            
+        return {
+            "participant_count": count,
+            "peer_role": peer_role,
+            "peer_name": peer_name
+        }
+
+    @database_sync_to_async
+    def _trigger_recording_if_needed(self, room_id: int):
+        from .utils import daily_service
+        room = VideoRoom.objects.get(id=room_id)
+        if room.status != 'ended' and not room.recording_url:
+            # We only trigger recording via Daily.co if both joined
+            # and if room is not already recording (status check)
+            if room.status == 'scheduled':
+                room.status = 'live'
+                room.save(update_fields=['status'])
+            
+            # Start recording if enabled in settings
+            if getattr(settings, 'DAILY_ENABLE_RECORDING', False):
+                daily_service.start_recording(room.room_name)
+                return True
+        return False
 
     @database_sync_to_async
     def _get_recent_chat_messages(self, room_id: int):

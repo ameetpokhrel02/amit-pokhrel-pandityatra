@@ -8,5 +8,5 @@ def can_access_booking(user, booking: Booking) -> bool:
         return True
 
     is_customer = booking.user_id == user.id
-    is_pandit = bool(booking.pandit and booking.pandit.user_id == user.id)
+    is_pandit = bool(booking.pandit and booking.pandit_id == user.id)
     return is_customer or is_pandit
