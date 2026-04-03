@@ -1,5 +1,4 @@
 # PanditYatra - AI-Powered Hindu Rituals Platform 🕉️
-<img width="828" height="828" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
@@ -10,6 +9,8 @@
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04+-E95420.svg)](https://ubuntu.com/)
 
 **PanditYatra** is a comprehensive digital platform connecting devotees with verified pandits for Hindu religious ceremonies and rituals. Built with AI-powered recommendations, real-time chat, and seamless booking system.
+
+<img width="8" height="828" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
 
 ## 🔗 Quick Navigation
 
