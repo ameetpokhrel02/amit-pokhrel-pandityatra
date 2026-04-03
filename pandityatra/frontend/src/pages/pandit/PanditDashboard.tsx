@@ -14,7 +14,10 @@ import { useToast } from "@/hooks/use-toast"
 import { PanditCalendar } from '@/components/pandit/PanditCalendar'
 import { fetchSiteReviews, submitSiteReview, fetchMyOrders, type ShopOrder } from '@/lib/api'
 import {
+    Calendar,
     Calendar as CalendarIcon,
+    MessageSquare,
+    ShoppingBag,
     Wallet,
     Clock,
     CheckCircle2,
@@ -32,7 +35,6 @@ import {
     Truck,
     XCircle,
     ExternalLink,
-    ShoppingBag
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -271,18 +273,21 @@ const PanditDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/services'}>
-                        Add New Service
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => window.location.href = '/pandit/services'}>
+                        <Package className="h-4 w-4" /> Add Service
                     </Button>
-                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/calendar'}>
-                        Open Calendar
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => window.location.href = '/pandit/calendar'}>
+                        <Calendar className="h-4 w-4" /> Open Calendar
                     </Button>
-                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/messages'}>
-                        View Messages
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => window.location.href = '/shop/samagri'}>
+                        <ShoppingBag className="h-4 w-4" /> Buy Samagri
                     </Button>
-                    <Button variant="outline" className="justify-start" onClick={() => window.location.href = '/pandit/earnings'}>
-                        Withdraw Earnings
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => window.location.href = '/pandit/messages'}>
+                        <MessageSquare className="h-4 w-4" /> View Messages
+                    </Button>
+                    <Button variant="outline" className="justify-start gap-2" onClick={() => window.location.href = '/pandit/earnings'}>
+                        <Wallet className="h-4 w-4" /> Withdraw
                     </Button>
                 </div>
 
