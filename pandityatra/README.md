@@ -1,4 +1,5 @@
 # PanditYatra - AI-Powered Hindu Rituals Platform 🕉️
+<img width="828" height="828" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
