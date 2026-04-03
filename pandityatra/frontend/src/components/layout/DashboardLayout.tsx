@@ -203,6 +203,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 { icon: BookOpen, label: 'Services', path: '/admin/services' },
             ]},
             { icon: Wallet, label: 'Payments', path: '/admin/payments' },
+            { icon: ShoppingCart, label: 'Marketplace Orders', path: '/admin/marketplace-orders' },
             { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
             { icon: Star, label: 'Reviews', path: '/admin/reviews' },
             { icon: FileText, label: 'Site Content', path: '/admin/site-content' },

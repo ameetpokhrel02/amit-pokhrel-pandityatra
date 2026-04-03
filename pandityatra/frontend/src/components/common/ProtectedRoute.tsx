@@ -6,9 +6,10 @@ import { LoadingSpinner } from './LoadingSpinner';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: string[];  // Optional: restrict to specific roles
-}                   
+  isPublic?: boolean;       // If true, allows unauthenticated users but restricts roles if authenticated
+}
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles, isPublic }) => {
   const { token, loading, role } = useAuth();
 
   if (loading) {
@@ -19,13 +20,17 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
+  // Handle unauthenticated state
   if (!token) {
+    if (isPublic) {
+      return <>{children}</>;
+    }
     // If trying to access admin routes, redirect to admin login
     const isAdminRoute = allowedRoles && (allowedRoles.includes('admin') || allowedRoles.includes('superadmin'));
     return <Navigate to={isAdminRoute ? "/admin/login" : "/login"} replace />;
   }
 
-  // Check if role is allowed (if specified)
+  // If authenticated, check if role is allowed (if specified)
   if (allowedRoles && role && !allowedRoles.includes(role)) {
     // superadmin can access all admin routes
     if (role === 'superadmin' && allowedRoles.includes('admin')) {
@@ -34,6 +39,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     // Redirect based on role
     if (role === 'pandit') {
       return <Navigate to="/pandit/dashboard" replace />;
+    } else if (role === 'vendor') {
+      return <Navigate to="/vendor/dashboard" replace />;
     } else if (role === 'admin' || role === 'superadmin') {
       return <Navigate to="/admin/dashboard" replace />;
     } else {

@@ -113,7 +113,16 @@ const Navbar: React.FC = () => {
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-bag"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
   );
 
-  const navItems = [
+  const isRestrictedRole = user?.role === 'pandit' || user?.role === 'vendor';
+
+  const navItems = isRestrictedRole ? [
+    {
+      name: t('marketplace', 'Marketplace'),
+      path: '/shop/samagri',
+      icon: <ShoppingBagIcon />,
+      hasMegaMenu: true
+    },
+  ] : [
     { name: t('home'), path: '/', icon: <Home className="w-4 h-4" />, hideOnDesktop: true },
     { name: t('about'), path: '/about', icon: <User className="w-4 h-4" /> },
     { name: t('offline_kundali'), path: '/kundali', icon: <BookOpen className="w-4 h-4" /> },
@@ -292,9 +301,19 @@ const Navbar: React.FC = () => {
               </div>
             )}
 
-            <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-4 xl:px-6 shadow-md hover:shadow-lg transition-all whitespace-nowrap">
-              <Link to="/booking">{t('find_pandit')}</Link>
-            </Button>
+            {!isSearchExpanded && isRestrictedRole && (
+              <Button asChild variant="outline" className="border-orange-200 text-orange-600 hover:bg-orange-50 rounded-full px-4 xl:px-6 shadow-sm transition-all whitespace-nowrap">
+                <Link to={user?.role === 'pandit' ? "/pandit/dashboard" : "/vendor/dashboard"}>
+                  <LayoutDashboard className="w-4 h-4 mr-2" /> Back to Dashboard
+                </Link>
+              </Button>
+            )}
+
+            {!isRestrictedRole && (
+              <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white rounded-full px-4 xl:px-6 shadow-md hover:shadow-lg transition-all whitespace-nowrap">
+                <Link to="/booking">{t('find_pandit')}</Link>
+              </Button>
+            )}
 
             <LanguageSelector />
 
@@ -395,12 +414,12 @@ const Navbar: React.FC = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
-                        <Link to="/vendor/shop" className="cursor-pointer gap-2">
+                        <Link to="/vendor/products" className="cursor-pointer gap-2">
                           <Store className="w-4 h-4" /> My Shop
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
-                        <Link to="/vendor/earnings" className="cursor-pointer gap-2">
+                        <Link to="/vendor/payouts" className="cursor-pointer gap-2">
                           <Wallet className="w-4 h-4" /> Sales & Earnings
                         </Link>
                       </DropdownMenuItem>
@@ -424,7 +443,7 @@ const Navbar: React.FC = () => {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild className="focus:bg-orange-50 focus:text-orange-700">
-                    <Link to="/profile" className="cursor-pointer gap-2">
+                    <Link to={user.role === 'vendor' ? "/vendor/profile" : "/profile"} className="cursor-pointer gap-2">
                       <User className="w-4 h-4" /> {t('profile')}
                     </Link>
                   </DropdownMenuItem>
@@ -546,12 +565,21 @@ const Navbar: React.FC = () => {
                       ))}
                     </nav>
 
-                    <Button asChild className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg shadow-orange-200 font-bold">
-                      <Link to="/booking" className="flex items-center justify-center gap-2">
-                        <User className="w-4 h-4" />
-                        {t('find_my_pandit', 'Find My Pandit')}
-                      </Link>
-                    </Button>
+                    {isRestrictedRole ? (
+                      <Button asChild variant="outline" className="w-full h-12 border-orange-200 text-orange-700 rounded-xl font-bold">
+                        <Link to={user?.role === 'pandit' ? "/pandit/dashboard" : "/vendor/dashboard"} className="flex items-center justify-center gap-2">
+                          <LayoutDashboard className="w-4 h-4" />
+                          Return to Dashboard
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button asChild className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white rounded-xl shadow-lg shadow-orange-200 font-bold">
+                        <Link to="/booking" className="flex items-center justify-center gap-2">
+                          <User className="w-4 h-4" />
+                          {t('find_my_pandit', 'Find My Pandit')}
+                        </Link>
+                      </Button>
+                    )}
 
                     {token && user ? (
                       <div className="border-t border-orange-100 pt-6 mt-2 space-y-4">
