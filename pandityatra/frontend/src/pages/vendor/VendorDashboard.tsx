@@ -94,9 +94,14 @@ const VendorDashboard = () => {
                         <h1 className="text-3xl font-bold tracking-tight text-gray-800">Shop Dashboard</h1>
                         <p className="text-muted-foreground mt-1 font-medium">Welcome back! Here's how your business is doing today.</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         <Button variant="outline" className="border-orange-200 hover:bg-orange-50 text-orange-700 font-semibold" onClick={() => navigate('/vendor/products')}>
                             Manage Shop
+                        </Button>
+                        <Button asChild variant="outline" className="border-blue-200 hover:bg-blue-50 text-blue-700 font-semibold shadow-sm">
+                            <Link to="/shop/samagri">
+                                <ShoppingBag className="mr-2 h-4 w-4" /> Preview Shop
+                            </Link>
                         </Button>
                         <Button className="bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100" onClick={() => navigate('/vendor/products')}>
                             <Plus className="mr-2 h-4 w-4" /> Add Product

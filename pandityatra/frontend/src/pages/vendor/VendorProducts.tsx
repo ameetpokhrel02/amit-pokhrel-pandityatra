@@ -145,6 +145,13 @@ export default function VendorProducts() {
     if (form.image) {
         formData.append("image", form.image);
     }
+    
+    // Explicitly append is_active so DRF doesn't parse missing property as False
+    if (editingItem) {
+        formData.append("is_active", (editingItem as any).is_active !== undefined ? String((editingItem as any).is_active) : "true");
+    } else {
+        formData.append("is_active", "true");
+    }
 
     try {
       if (editingItem) {
@@ -333,7 +340,12 @@ export default function VendorProducts() {
                               </div>
                           </TableCell>
                           <TableCell>
-                            {(item as any).is_approved ? (
+                            {/* Correctly show the actual visibility state of the item */}
+                            {!(item as any).is_active ? (
+                              <Badge variant="destructive" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-50">
+                                <AlertCircle className="mr-1 h-3 w-3" /> Hidden
+                              </Badge>
+                            ) : (item as any).is_approved ? (
                               <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-50">
                                 <CheckCircle2 className="mr-1 h-3 w-3" /> Live
                               </Badge>

@@ -176,6 +176,7 @@ export default function VendorOrders() {
                   <TableRow>
                     <TableHead className="font-bold text-gray-700">Order ID</TableHead>
                     <TableHead className="font-bold text-gray-700">Customer</TableHead>
+                    <TableHead className="font-bold text-gray-700">Buyer Type</TableHead>
                     <TableHead className="font-bold text-gray-700">Date</TableHead>
                     <TableHead className="font-bold text-gray-700">Items (My Products)</TableHead>
                     <TableHead className="font-bold text-gray-700">Status</TableHead>
@@ -204,6 +205,11 @@ export default function VendorOrders() {
                             </div>
                             <span className="font-medium text-gray-700">{order.full_name}</span>
                           </div>
+                        </TableCell>
+                        <TableCell>
+                            <Badge variant="outline" className={`${order.buyer_role === 'pandit' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                {order.buyer_role?.toUpperCase() || 'CUSTOMER'}
+                            </Badge>
                         </TableCell>
                         <TableCell className="text-gray-600 text-sm">
                           <div className="flex items-center gap-1">
@@ -279,7 +285,12 @@ export default function VendorOrders() {
                             Order Details #{selectedOrder.id}
                             {getStatusBadge(selectedOrder.status)}
                         </DialogTitle>
-                        <DialogDescription className="text-sm font-medium">Placed on {new Date(selectedOrder.created_at).toLocaleString()}</DialogDescription>
+                        <DialogDescription className="text-sm font-medium flex items-center justify-between">
+                            <span>Placed on {new Date(selectedOrder.created_at).toLocaleString()}</span>
+                            <Badge variant="outline" className={`${selectedOrder.buyer_role === 'pandit' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+                                {selectedOrder.buyer_role?.toUpperCase() || 'CUSTOMER'}
+                            </Badge>
+                        </DialogDescription>
                     </DialogHeader>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
