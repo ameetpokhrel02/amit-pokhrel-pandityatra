@@ -321,6 +321,7 @@ export interface AdminStats {
     todays_pujas_count: number;
     error_logs_count: number;
     system_status: string;
+    total_shop_orders?: number;
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
@@ -738,6 +739,7 @@ export interface ShopOrder {
     user_email: string;
     total_amount: string | number;
     status: 'PENDING' | 'PAID' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+    buyer_role?: string;
     full_name: string;
     phone_number: string;
     shipping_address: string;
@@ -770,6 +772,12 @@ export async function downloadShopInvoice(orderId: number): Promise<void> {
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+}
+
+export async function fetchAdminAllOrders(status?: string, role?: string): Promise<ShopOrder[]> {
+    const params = { status, role };
+    const response = await apiClient.get('/samagri/checkout/admin-all-orders/', { params });
+    return response.data;
 }
 
 export async function downloadBookingInvoice(bookingId: number): Promise<void> {
