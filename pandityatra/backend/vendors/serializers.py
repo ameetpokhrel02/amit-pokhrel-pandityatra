@@ -122,7 +122,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopOrder
         fields = [
-            'id', 'customer_name', 'customer_email', 'total_amount', 
+            'id', 'customer_name', 'customer_email', 'buyer_role', 'total_amount', 
             'status', 'shipping_address', 'city', 'phone_number', 
             'items', 'created_at'
         ]
