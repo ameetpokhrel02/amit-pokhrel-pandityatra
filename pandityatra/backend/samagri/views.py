@@ -18,7 +18,7 @@ from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, 
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 
-from users.permissions import IsAdminOrReadOnly
+from users.permissions import IsAdminOrReadOnly, IsAdmin
 from services.models import Puja
 from payments.utils import initiate_khalti_payment, initiate_esewa_payment, convert_npr_to_usd
 from adminpanel.utils import log_activity
@@ -361,7 +361,8 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                     phone_number=data['phone_number'],
                     shipping_address=data['shipping_address'],
                     city=data['city'],
-                    payment_method=payment_method
+                    payment_method=payment_method,
+                    buyer_role=getattr(request.user, 'role', 'user')
                 )
 
                 total_amount = 0
@@ -476,6 +477,23 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    @action(detail=False, methods=['get'], permission_classes=[IsAdmin], url_path='admin-all-orders')
+    def admin_all_orders(self, request):
+        """GET /api/samagri/checkout/admin-all-orders/ — Admin see ALL orders with filtering"""
+        queryset = ShopOrder.objects.prefetch_related(
+            'items', 'items__samagri_item'
+        ).all().order_by('-created_at')
+        
+        status_param = request.query_params.get('status')
+        role_param = request.query_params.get('role')
+        
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+        if role_param:
+            queryset = queryset.filter(buyer_role=role_param)
+            
+        serializer = ShopOrderSerializer(queryset, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='my-orders')
     def my_orders(self, request):

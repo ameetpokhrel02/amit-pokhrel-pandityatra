@@ -75,6 +75,7 @@ class ShopOrder(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='shop_orders')
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=ShopOrderStatus.choices, default=ShopOrderStatus.PENDING)
+    buyer_role = models.CharField(max_length=20, default='user', help_text="Role of the user when placing the order")
     
     # Shipping Info
     full_name = models.CharField(max_length=100)

@@ -64,7 +64,7 @@ class ShopOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShopOrder
         fields = [
-            'id', 'user_email', 'total_amount', 'status', 
+            'id', 'user_email', 'total_amount', 'status', 'buyer_role',
             'full_name', 'phone_number', 'shipping_address', 'city',
             'payment_method', 'transaction_id', 'items', 'created_at'
         ]
