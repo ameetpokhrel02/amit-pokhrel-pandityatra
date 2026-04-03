@@ -10,7 +10,7 @@
 
 **PanditYatra** is a comprehensive digital platform connecting devotees with verified pandits for Hindu religious ceremonies and rituals. Built with AI-powered recommendations, real-time chat, and seamless booking system.
 
-<img width="8" height="828" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
+<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
 
 ## 🔗 Quick Navigation
 
