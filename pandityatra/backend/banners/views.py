@@ -11,7 +11,7 @@ class BannerViewSet(viewsets.ModelViewSet):
     serializer_class = BannerSerializer
     
     def get_permissions(self):
-        if self.action in ["list", "retrieve", "active_banners"]:
+        if self.action in ["list", "retrieve", "active_banners", "track_view", "track_click"]:
             return [permissions.AllowAny()]
         return [permissions.IsAdminUser()]
 
