@@ -1,301 +1,122 @@
 # PanditYatra - AI-Powered Hindu Rituals Platform 🕉️
 
+[![Final Year Project](https://img.shields.io/badge/FYP-2025%2F2026-orange.svg)](https://iic.edu.np/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.2.9-green.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-blue.svg)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-24+-2496ED.svg)](https://www.docker.com/)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04+-E95420.svg)](https://ubuntu.com/)
+[![pnpm](https://img.shields.io/badge/pnpm-10+-E8BA24.svg)](https://pnpm.io/)
 
-**PanditYatra** is a comprehensive digital platform connecting devotees with verified pandits for Hindu religious ceremonies and rituals. Built with AI-powered recommendations, real-time chat, and seamless booking system.
+**PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance.
 
-<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
-
-## 🔗 Quick Navigation
-
-- [Root Environment Example (.env.example)](.env.example)
-- [Backend Folder](backend/)
-- [Frontend Folder](frontend/)
-- [Docker Compose File](docker-compose.yml)
-- [About Us Page](frontend/src/pages/AboutUs.tsx)
+<div align="center">
+  <img width="800" alt="PanditYatra Hero" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
+  <p><i>The complete digital gateway to Hindu rituals and spiritual wellbeing.</i></p>
+</div>
 
 ---
 
-## 🌟 Key Features
+## 🏗️ Core Pillars & Features
 
-### For Devotees
+### 1. 🤖 AI-Powered Spiritual Intelligence
+- **Intelligent Ritual Assistant**: A context-aware AI chatbot that guides users through complex ritual procedures and provides philosophical insights.
+- **Smart Recommendation Engine**: Personalizes user experiences by suggesting relevant pujas and rituals based on astrological timing and user history.
 
-- **🤖 AI Chatbot**: Intelligent assistant for ritual guidance and information
-- **🔍 Smart Pandit Discovery**: Find verified pandits based on specialization, location, and availability
-- **📅 Online Booking System**: Schedule pujas with instant confirmation
-- **🛒 Sacred Items (Samagri)**: Order ritual items with delivery
-- **⭐ Review & Ratings**: Community-driven pandit verification
-- **💬 Real-time Chat**: Direct communication with pandits via WebSocket
-- **🎥 High-Definition Video Consultations**: Real-time interactive sessions via Daily.co integration
-- **📊 World's First Offline Kundali**: WebAssembly-powered horoscope generation (100% private & offline)
-- **🙏 Temple Directory**: Explore sacred destinations with HD images
+### 2. 📅 Comprehensive Booking Ecosystem
+- **Multi-Role Integration**: Dedicated dashboards for **Customers**, **Pandits**, **Vendors**, and **Administrators**.
+- **Real-Time Scheduling**: Conflict-free booking with instant confirmation and automated calendar synchronization.
+- **Flexible Service Locations**: Support for Online (Video), Temple, or Home-based rituals.
 
-### For Pandits
+### 3. 🎥 Professional Video Consultations
+- **HD Video Integration**: High-definition, low-latency video calls powered by Daily.co for remote rituals and consultations.
+- **Session Records**: Secure storage of completed sessions for future reference.
 
-- **✅ Verification System**: Multi-stage approval process
-- **📆 Schedule Management**: Calendar integration and availability control
-- **💰 Payment Integration**: Secure online transactions
-- **📱 Mobile Dashboard**: Manage bookings on the go
-- **📈 Performance Analytics**: Track ratings and bookings
+### 4. 📊 World's First 100% Offline Kundali Generator
+- **Privacy-First Astrology**: A specialized WebAssembly-based engine that generates accurate horizontal and North-Indian style horoscopes entirely on the client side—ensuring 100% data privacy.
 
----
-
-## 🏗️ Architecture
-
-### Backend (Django)
-
-```text
-pandityatra/backend/
-├── pandityatra_backend/ # Django core settings, ASGI/WSGI, root URLs
-├── adminpanel/          # Admin workflows and moderation tools
-├── users/          # Authentication & user management
-├── pandits/        # Pandit profiles & verification
-├── bookings/       # Booking system & scheduling
-├── chat/           # WebSocket chat (Django Channels)
-├── ai/             # AI assistant + MCP-style tool orchestration layer
-├── recommender/    # Recommendation engine and ranking logic
-├── kundali/        # Horoscope analysis
-├── panchang/       # Panchang calendar and festival intelligence
-├── samagri/        # Sacred items catalog
-├── payments/       # Payment processing
-├── reviews/        # Rating & review system
-├── notifications/  # In-app notifications and alerts
-├── video/          # Daily.co video consultation integration
-└── services/       # Service catalog
-```
-
-### Frontend (React + TypeScript)
-
-```text
-pandityatra/frontend/src/
-├── components/     # Reusable UI components
-├── pages/          # Route pages
-├── contexts/       # React Context (Auth, Cart)
-├── lib/            # Shared API helpers and utilities
-├── services/       # API integration
-├── hooks/          # Custom hooks
-├── i18n/           # Internationalization resources
-├── types/          # TypeScript interfaces
-└── utils/          # Formatting, constants, and helper utilities
-```
-
----
-
-## 🚀 Quick Start
-
-### ✅ Version Requirements
-
-- **Python**: 3.11+
-- **Node.js**: 18+
-- **pnpm**: 8+
-- **Docker**: 24+
-- **Docker Compose**: v2+
-- **OS (Recommended)**: Ubuntu 22.04+ / macOS / Windows 10+
-
-### 1) Clone Repository
-
-```bash
-git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra.git
-cd amit-pokhrel-pandityatra/pandityatra
-```
-
-### 2) Configure Environment
-
-Use the root env file (already used by Docker + Django in this project):
-
-#### Linux / macOS (Env setup)
-
-```bash
-cp .env.example .env
-```
-
-#### Windows (PowerShell) (Env setup)
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Then update important values in `.env` (especially `SECRET_KEY`, email, payment keys, AI keys).
-
----
-
-### 3) Run Backend + Database + Redis with Docker (Recommended)
-
-This starts:
-
-- Django backend (`web`)
-- PostgreSQL (`db`)
-- Redis (`redis`)
-- pgAdmin and Adminer
-
-```bash
-docker compose up --build -d
-```
-
-Run migrations and create admin user:
-
-```bash
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
-```
-
-Useful Docker commands:
-
-```bash
-docker compose logs -f web
-docker compose ps
-docker compose down
-```
-
----
-
-### 4) Run Frontend (Vite)
-
-#### Linux / macOS / Windows
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
-Frontend runs at `http://localhost:5173`.
-
----
-
-### 5) Access Services
-
-- Frontend: `http://localhost:5173`
-- Backend API: `http://localhost:8000`
-- Admin Panel: `http://localhost:8000/admin`
-- Swagger Docs: `http://localhost:8000/api/docs/`
-- ReDoc: `http://localhost:8000/api/redoc/`
-- pgAdmin: `http://localhost:5050`
-- Adminer: `http://localhost:8080`
-
----
-
-### 6) Optional: Run Backend Locally (Without Docker)
-
-If you want local backend instead of Docker, ensure PostgreSQL + Redis are running locally and set proper values in `.env`.
-
-#### Linux / macOS (Local backend)
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-#### Windows (PowerShell) (Local backend)
-
-```powershell
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
+### 5. 🛠️ Advanced Admin Oversight
+- **Dynamic User Creation**: Manual onboarding module for Admins to create and activate any user role immediately.
+- **Financial Transparency**: Detailed ledgers for transaction tracking and platform commission management.
+- **System Monitoring**: Comprehensive activity logs and error tracking for platform stability.
 
 ---
 
 ## 🛠️ Technology Stack
 
-### Backend
+### Backend (The Brain)
+- **Django 5.2.9**: Secure and scalable core.
+- **Django Channels**: Real-time WebSocket communication for chat and notifications.
+- **PostgreSQL**: Robust relational data management.
+- **Redis**: High-speed caching and message brokering.
 
-- **Framework**: Django 5.2.9
-- **WebSocket**: Django Channels + Daphne
-- **API**: Django REST Framework
-- **Database**: PostgreSQL / SQLite
-- **Cache**: Redis
-- **AI**: OpenAI GPT-3.5-turbo
-- **Authentication**: JWT (djangorestframework-simplejwt)
-
-### Frontend
-
-- **Framework**: React 18 + Vite
-- **Language**: TypeScript 5.6
-- **UI Library**: shadcn/ui + Tailwind CSS 4
-- **Animation**: Framer Motion 11
-- **Icons**: Lucide React, React Icons
-- **Routing**: React Router DOM
-- **HTTP Client**: Axios
-
-### DevOps
-
-- **Containerization**: Docker + Docker Compose
-- **Package Manager**: pnpm (frontend), pip (backend)
-- **Version Control**: Git + GitHub
+### Frontend (The Face)
+- **React 18 + Vite**: Lightning-fast, modern UI framework.
+- **TypeScript**: Type-safe development for enterprise reliability.
+- **Shadcn UI + Tailwind CSS 4**: Premium, customizable design system with glassmorphism and modern aesthetics.
+- **Framer Motion**: Fluid, physics-based micro-animations for an interactive experience.
 
 ---
 
-## 📚 Documentation
+## 🚀 Installation & Setup
 
-All detailed documentation is available in [`pandityatra/docs/`](pandityatra/docs/):
+### Requirements
+- **Python** 3.11+
+- **pnpm** 10.0+ (Required for Frontend)
+- **Docker** 24.0+ & **Docker Compose** v2.0+
 
-- [START_HERE.md](pandityatra/docs/START_HERE.md) - Complete project overview
-- [TESTING_GUIDE.md](pandityatra/docs/TESTING_GUIDE.md) - Testing procedures
-- [DOCKER_STATUS.md](pandityatra/docs/DOCKER_STATUS.md) - Container setup
-- [CHATBOT_README.md](pandityatra/docs/CHATBOT_README.md) - AI chatbot implementation
-- [AUTHENTICATION_STATUS.md](pandityatra/docs/AUTHENTICATION_STATUS.md) - Auth system
-- [BOOKING_SYSTEM_COMPLETE.md](pandityatra/docs/BOOKING_SYSTEM_COMPLETE.md) - Booking flow
-- [DATABASE_ENHANCEMENTS.md](pandityatra/docs/DATABASE_ENHANCEMENTS.md) - Schema details
+### 1. Clone & Initialize
+```bash
+git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra.git
+cd amit-pokhrel-pandityatra/pandityatra
+cp .env.example .env
+```
+
+### 2. Launch Services (Docker Recommended)
+This will set up the Backend (Django), Database (Postgres), and Cache (Redis) automatically.
+```bash
+docker compose up --build -d
+```
+
+**Run Initial Migrations:**
+```bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+```
+
+### 3. Start Frontend (Vite)
+Open a new terminal and navigate to the frontend directory.
+```bash
+cd frontend
+pnpm install
+pnpm dev
+```
+Access the application at `http://localhost:5173`.
 
 ---
 
-## 🎯 Project Status
+## 📂 Project Navigation
 
-✅ **Phase 1 Complete**: Core booking system, authentication, pandit profiles  
-✅ **Phase 2 Complete**: AI chatbot, real-time chat, recommendations  
-✅ **Phase 3 Complete**: Payment integration, Offline Kundali Generator, advanced analytics
-
-See [PHASE2_IMPLEMENTATION_STATUS.md](pandityatra/docs/PHASE2_IMPLEMENTATION_STATUS.md) for detailed progress.
+- [Root Configuration](.env.example) - Global environment settings
+- [Backend Services](backend/) - Django apps and AI logic
+- [Frontend Portal](frontend/) - React components and UI
+- [Documentation Hub](docs/) - Detailed implementation guides
 
 ---
 
-## 🤝 Contributing
+## 👥 The Final Year Project Team
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open Pull Request
+**Itahari International College** (London Metropolitan University)  
+**Lead Developer**: Amit Pokhrel (Student ID: 23056626)  
+**Project**: Final Year Project (FYP) 2025/2026
 
 ---
 
 ## 📄 License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Team
-
-**Final Year Project - 2025/2026** - [Itahari International College](https://iic.edu.np/) (London Metropolitan University)  
-**Lead Developer**: Amit Pokhrel (Student ID: 23056626)  
-**Supervision**: Guidance from Internal and External Project Supervisors
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📞 Support
-
-For issues, questions, or suggestions:
-
-- GitHub Issues: [Report here](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra/issues)
-- Email: [ameetpokhrel02@gmail.com](mailto:ameetpokhrel02@gmail.com)
-
----
-
-Made with ❤️ for the Hindu community
+<div align="center">
+  <p>Made with ❤️ for the Global Hindu Community</p>
+  <img src="https://img.shields.io/badge/Status-Final_Build-success?style=for-the-badge" alt="Build Status" />
+</div>

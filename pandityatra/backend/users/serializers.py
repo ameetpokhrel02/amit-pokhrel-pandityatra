@@ -95,6 +95,109 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
         return user
 
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer used by Admin to manually create any type of user account.
+    Immediately activates and verifies the account.
+    """
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password_strength])
+    role = serializers.ChoiceField(choices=[
+        ('user', 'Customer'), 
+        ('pandit', 'Pandit'), 
+        ('vendor', 'Vendor'), 
+        ('admin', 'Admin'), 
+        ('superadmin', 'Super Admin')
+    ], default='user')
+    
+    # Pandit-specific fields
+    expertise = serializers.CharField(required=False, allow_blank=True)
+    experience_years = serializers.IntegerField(required=False, default=0)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    
+    # Vendor-specific fields
+    shop_name = serializers.CharField(required=False, allow_blank=True)
+    business_type = serializers.CharField(required=False, allow_blank=True)
+    address = serializers.CharField(required=False, allow_blank=True)
+    city = serializers.CharField(required=False, allow_blank=True)
+    bank_account_number = serializers.CharField(required=False, allow_blank=True)
+    bank_name = serializers.CharField(required=False, allow_blank=True)
+    account_holder_name = serializers.CharField(required=False, allow_blank=True)
+    
+    class Meta:
+        model = User
+        fields = (
+            'id', 'email', 'phone_number', 'full_name', 'password', 'role', 
+            'expertise', 'experience_years', 'bio', 
+            'shop_name', 'business_type', 'address', 'city', 
+            'bank_account_number', 'bank_name', 'account_holder_name'
+        )
+        read_only_fields = ('id',)
+
+    def validate_email(self, value):
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
+    def create(self, validated_data):
+        role = validated_data.get('role', 'user')
+        email = validated_data['email'].strip().lower()
+        password = validated_data['password']
+        full_name = validated_data.get('full_name', '')
+        phone_number = validated_data.get('phone_number')
+        
+        # Base user data
+        user_data = {
+            'username': email,
+            'email': email,
+            'full_name': full_name,
+            'phone_number': phone_number,
+            'role': role,
+            'is_active': True,
+        }
+        
+        if role in ['admin', 'superadmin']:
+            user_data['is_staff'] = True
+            if role == 'superadmin':
+                user_data['is_superuser'] = True
+
+        if role == 'pandit':
+            # Create PanditUser (Multi-Table Inheritance)
+            pandit_data = {
+                'expertise': validated_data.get('expertise', 'General'),
+                'experience_years': validated_data.get('experience_years', 0),
+                'bio': validated_data.get('bio', ''),
+                'is_verified': True,
+                'verification_status': 'APPROVED'
+            }
+            user_data.update(pandit_data)
+            user = PanditUser.objects.create_user(**user_data)
+            user.set_password(password) # set password properly
+            user.save()
+        elif role == 'vendor':
+            # Create Vendor (Multi-Table Inheritance)
+            vendor_data = {
+                'shop_name': validated_data.get('shop_name', f"{full_name}'s Shop"),
+                'business_type': validated_data.get('business_type', 'Ritual Samagri'),
+                'address': validated_data.get('address', 'N/A'),
+                'city': validated_data.get('city', 'N/A'),
+                'bank_account_number': validated_data.get('bank_account_number', ''),
+                'bank_name': validated_data.get('bank_name', ''),
+                'account_holder_name': validated_data.get('account_holder_name', full_name),
+                'is_verified': True,
+                'verification_status': 'APPROVED'
+            }
+            user_data.update(vendor_data)
+            user = Vendor.objects.create_user(**user_data)
+            user.set_password(password)
+            user.save()
+        else:
+            # Regular User or Admin
+            user = User.objects.create_user(**user_data)
+            user.set_password(password)
+            user.save()
+
+        return user
+
 # Existing: Serializer that handles generating the tokens after OTP verification.
 # Used for the new LoginOTPView
 class PhoneTokenSerializer(serializers.Serializer):

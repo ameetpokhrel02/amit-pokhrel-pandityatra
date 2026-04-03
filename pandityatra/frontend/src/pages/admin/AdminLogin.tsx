@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Lock, User } from 'lucide-react';
+import { Loader2, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 const AdminLoginPage: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { passwordLogin, token, role, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -93,14 +94,22 @@ const AdminLoginPage: React.FC = () => {
             <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
             <Input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
-              className="pl-10 h-12 rounded-xl border-gray-200 focus:ring-black"
+              className="pl-10 pr-10 h-12 rounded-xl border-gray-200 focus:ring-black"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 

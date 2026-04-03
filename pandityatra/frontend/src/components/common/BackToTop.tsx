@@ -1,9 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
 
 const BackToTop = () => {
+    const location = useLocation();
     const [showScrollTop, setShowScrollTop] = useState(false);
+
+    // List of dashboard path prefixes where we DON'T want the button
+    const dashboardPaths = ['/admin', '/pandit', '/vendor', '/dashboard', '/profile', '/my-bookings', '/messages'];
+    const isDashboardPage = dashboardPaths.some(path => location.pathname.startsWith(path));
 
     useEffect(() => {
         const handleScroll = () => {
@@ -16,6 +22,8 @@ const BackToTop = () => {
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
+
+    if (isDashboardPage) return null;
 
     return (
         <AnimatePresence>

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -8,7 +9,7 @@ import axiosInstance from '@/lib/api-client';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { DataTablePagination } from "@/components/common/DataTablePagination";
-import { Pencil, Trash2, UserX, UserCheck, Check, X } from 'lucide-react';
+import { Pencil, Trash2, UserX, UserCheck, Check, X, UserPlus } from 'lucide-react';
 import { ActionConfirmationDialog } from "@/components/common/ActionConfirmationDialog";
 import {
     Tooltip,
@@ -28,6 +29,7 @@ interface User {
 }
 
 const AdminUsers = () => {
+    const navigate = useNavigate();
     const { toast } = useToast();
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -135,7 +137,13 @@ const AdminUsers = () => {
             <div className="space-y-6">
                 <div className="flex justify-between items-center">
                     <h1 className="text-3xl font-bold">User Management</h1>
-                    <span className="text-muted-foreground">Total: {users.length}</span>
+                    <div className="flex items-center gap-4">
+                        <Button onClick={() => navigate('/admin/users/create')} className="bg-orange-600 hover:bg-orange-700">
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            Add User
+                        </Button>
+                        <span className="text-muted-foreground font-medium">Total: {users.length}</span>
+                    </div>
                 </div>
                 <TooltipProvider>
                     <Card className="mb-6">

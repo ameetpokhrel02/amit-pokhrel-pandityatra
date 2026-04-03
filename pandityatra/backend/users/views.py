@@ -12,7 +12,7 @@ from .models import User, PlatformSetting, SiteContent
 from .serializers import (
     UserRegisterSerializer, PhoneTokenSerializer, UserSerializer, PasswordLoginSerializer,
     ForgotPasswordRequestSerializer, ForgotPasswordOTPVerifySerializer, ResetPasswordSerializer,
-    SiteContentSerializer
+    SiteContentSerializer, AdminUserCreateSerializer
 )
 from .otp_utils import send_local_otp, verify_local_otp 
 import requests
@@ -874,6 +874,48 @@ def admin_create_admin(request):
         'is_active': user.is_active,
         'date_joined': user.date_joined.isoformat(),
     }, status=201)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def admin_create_account(request):
+    """
+    Create a new account (Customer, Pandit, Vendor, Admin, Superadmin).
+    Requires Admin or Superadmin permissions.
+    """
+    if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
+        return Response({"error": "Admin access only"}, status=403)
+    
+    requested_role = request.data.get('role', 'user')
+    
+    # 🚨 SECURITY: Only superadmin can create other admin/superadmin accounts
+    if requested_role in ['admin', 'superadmin'] and request.user.role != 'superadmin':
+        return Response({"error": "Only Super Admins can create other Admin accounts."}, status=403)
+    
+    serializer = AdminUserCreateSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        
+        # Log Activity
+        from adminpanel.utils import log_activity
+        log_activity(
+            user=request.user, 
+            action_type="USER_CREATED", 
+            details=f"Manually created {requested_role} account for {user.email}", 
+            request=request
+        )
+        
+        return Response({
+            "message": f"{requested_role.capitalize()} account created successfully.",
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role
+            }
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['PATCH'])

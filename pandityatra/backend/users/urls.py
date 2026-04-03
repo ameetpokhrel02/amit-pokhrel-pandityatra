@@ -5,6 +5,7 @@ from .views import (
     ResetPasswordView, ProfileView, AdminStatsView, ContactView, GoogleLoginView,
     # 🚨 ADMIN VIEWS (Added)
     admin_get_users, admin_toggle_user_status, admin_delete_user, admin_platform_settings,
+    admin_create_account,
     # 🚨 SUPERADMIN VIEWS
     admin_list_admins, admin_create_admin, admin_update_admin, admin_delete_admin,
     # 🚨 SITE CONTENT
@@ -44,6 +45,7 @@ urlpatterns = [
 
     # 🚨 ADMIN: User Management
     path('admin/users/', admin_get_users, name='admin-users'),
+    path('admin/users/create/', admin_create_account, name='admin-user-create'),
     path('admin/users/<int:user_id>/', admin_delete_user, name='admin-user-delete'),
     path('admin/users/<int:user_id>/toggle-status/', admin_toggle_user_status, name='admin-user-toggle'),
 
