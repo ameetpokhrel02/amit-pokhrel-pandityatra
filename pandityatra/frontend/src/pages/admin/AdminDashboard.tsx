@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, User, BookOpen, DollarSign, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Bell, XCircle, Calendar, Package, FileWarning, Activity, ArrowUpRight, ArrowDownRight, Search, Filter, RefreshCw, Clock, MoreVertical, CreditCard, ChevronLeft, ChevronRight, Store } from 'lucide-react';
+import { Users, User, BookOpen, DollarSign, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Bell, XCircle, Calendar, Package, FileWarning, Activity, ArrowUpRight, ArrowDownRight, Search, Filter, RefreshCw, Clock, MoreVertical, CreditCard, ChevronLeft, ChevronRight, Store, ShoppingCart } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { fetchAdminStats, fetchBookings, fetchSamagriItems, fetchAdminPayments } from '@/lib/api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -92,40 +92,40 @@ const AdminDashboard: React.FC = () => {
 
                 {/* Metric Cards Row 1 - Modern Look */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                    <MetricCard 
-                        title="Total Users" 
-                        value={stats?.total_users || 0} 
-                        change={stats?.user_growth || 0} 
+                    <MetricCard
+                        title="Total Users"
+                        value={stats?.total_users || 0}
+                        change={stats?.user_growth || 0}
                         icon={<Users className="w-6 h-6" />}
                         onClick={() => navigate('/admin/users')}
                     />
-                    <MetricCard 
-                        title="Total Pandits" 
-                        value={stats?.total_pandits || 0} 
-                        change={stats?.pandit_growth || 0} 
+                    <MetricCard
+                        title="Total Pandits"
+                        value={stats?.total_pandits || 0}
+                        change={stats?.pandit_growth || 0}
                         icon={<User className="w-6 h-6" />}
                         onClick={() => navigate('/admin/pandits-list')}
                         subtitle={`${stats?.pending_verifications || 0} pending verification`}
                     />
-                    <MetricCard 
-                        title="Total Vendors" 
-                        value={stats?.total_vendors || 0} 
-                        change={stats?.vendor_growth || 0} 
+                    <MetricCard
+                        title="Total Vendors"
+                        value={stats?.total_vendors || 0}
+                        change={stats?.vendor_growth || 0}
                         icon={<Store className="w-6 h-6" />}
                         onClick={() => navigate('/admin/vendors-list')}
                         subtitle={`${stats?.pending_vendors || 0} pending verification`}
                     />
-                    <MetricCard 
-                        title="Total Bookings" 
-                        value={stats?.total_bookings || 0} 
-                        change={stats?.booking_growth || 0} 
+                    <MetricCard
+                        title="Total Bookings"
+                        value={stats?.total_bookings || 0}
+                        change={stats?.booking_growth || 0}
                         icon={<BookOpen className="w-6 h-6" />}
                         onClick={() => navigate('/admin/bookings')}
                     />
-                    <MetricCard 
-                        title="Revenue This Month" 
-                        value={`₹${(stats?.revenue_this_month || 0).toLocaleString()}`} 
-                        change={stats?.revenue_growth || 0} 
+                    <MetricCard
+                        title="Revenue This Month"
+                        value={`₹${(stats?.revenue_this_month || 0).toLocaleString()}`}
+                        change={stats?.revenue_growth || 0}
                         icon={<DollarSign className="w-6 h-6" />}
                         onClick={() => navigate('/admin/payments')}
                     />
@@ -133,39 +133,46 @@ const AdminDashboard: React.FC = () => {
 
                 {/* Second Row: Insightful Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                    <InsightCard 
-                        title="Pending Pandits" 
-                        value={stats?.pending_verifications || 0} 
-                        icon={<CheckCircle className="w-5 h-5" />} 
-                        color="red" 
+                    <InsightCard
+                        title="Pending Pandits"
+                        value={stats?.pending_verifications || 0}
+                        icon={<CheckCircle className="w-5 h-5" />}
+                        color="red"
                         onClick={() => navigate('/admin/pandits-list')}
                     />
-                    <InsightCard 
-                        title="Pending Vendors" 
-                        value={stats?.pending_vendors || 0} 
-                        icon={<Store className="w-5 h-5" />} 
-                        color="orange" 
+                    <InsightCard
+                        title="Pending Vendors"
+                        value={stats?.pending_vendors || 0}
+                        icon={<Store className="w-5 h-5" />}
+                        color="orange"
                         onClick={() => navigate('/admin/vendors-verification')}
                     />
-                    <InsightCard 
-                        title="Low Stock" 
-                        value={stats?.low_stock_count || 0} 
-                        icon={<Package className="w-5 h-5" />} 
-                        color="orange" 
+                    <InsightCard
+                        title="Low Stock"
+                        value={stats?.low_stock_count || 0}
+                        icon={<Package className="w-5 h-5" />}
+                        color="orange"
                         onClick={() => navigate('/admin/inventory')}
                     />
-                    <InsightCard 
-                        title="Today's Bookings" 
-                        value={stats?.todays_pujas_count || 0} 
-                        icon={<Calendar className="w-5 h-5" />} 
-                        color="green" 
+                    <InsightCard
+                        title="Today's Bookings"
+                        value={stats?.todays_pujas_count || 0}
+                        icon={<Calendar className="w-5 h-5" />}
+                        color="green"
                         onClick={() => navigate('/admin/bookings')}
                     />
-                    <InsightCard 
-                        title="Errors" 
-                        value={stats?.error_logs_count || 0} 
-                        icon={<AlertTriangle className="w-5 h-5" />} 
-                        color="red" 
+                    <InsightCard
+                        title="Marketplace Orders"
+                        value={stats?.total_shop_orders || 0}
+                        icon={<ShoppingCart className="w-5 h-5" />}
+                        color="blue"
+                        onClick={() => navigate('/admin/marketplace-orders')}
+                    />
+                    <InsightCard
+                        title="Errors"
+                        value={stats?.error_logs_count || 0}
+                        icon={<AlertTriangle className="w-5 h-5" />}
+                        color="red"
                         onClick={() => navigate('/admin/activity-logs')}
                     />
                 </div>
@@ -184,11 +191,11 @@ const AdminDashboard: React.FC = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <LineChart data={sampleChartData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                                    <XAxis 
-                                        dataKey="month" 
-                                        axisLine={false} 
-                                        tickLine={false} 
-                                        tick={{fill: '#9CA3AF', fontSize: 12}} 
+                                    <XAxis
+                                        dataKey="month"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
                                         dy={10}
                                     />
                                     <YAxis yAxisId="left" hide />
@@ -203,7 +210,7 @@ const AdminDashboard: React.FC = () => {
 
                     <Card className="rounded-2xl shadow-sm border border-orange-100 bg-white p-6 flex flex-col items-center justify-center">
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Revenue Goal</h3>
-                        <p className="text-sm text-gray-500 mb-6">Monthly Target: ₹{(revenueGoal/1000).toFixed(0)}k</p>
+                        <p className="text-sm text-gray-500 mb-6">Monthly Target: ₹{(revenueGoal / 1000).toFixed(0)}k</p>
                         <div className="relative flex items-center justify-center">
                             <svg className="w-48 h-48 transform -rotate-90">
                                 <circle cx="96" cy="96" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-gray-100" />
@@ -221,11 +228,11 @@ const AdminDashboard: React.FC = () => {
                         <div className="mt-8 grid grid-cols-2 gap-4 w-full">
                             <div className="bg-orange-50 rounded-xl p-3 text-center border border-orange-100">
                                 <p className="text-[10px] uppercase font-bold text-orange-400 mb-1">Current</p>
-                                <p className="text-sm font-bold text-orange-700">₹{((stats?.revenue_this_month || 0)/1000).toFixed(1)}k</p>
+                                <p className="text-sm font-bold text-orange-700">₹{((stats?.revenue_this_month || 0) / 1000).toFixed(1)}k</p>
                             </div>
                             <div className="bg-gray-50 rounded-xl p-3 text-center border border-gray-100">
                                 <p className="text-[10px] uppercase font-bold text-gray-400 mb-1">Remaining</p>
-                                <p className="text-sm font-bold text-gray-700">₹{Math.max(0, (revenueGoal - (stats?.revenue_this_month || 0))/1000).toFixed(1)}k</p>
+                                <p className="text-sm font-bold text-gray-700">₹{Math.max(0, (revenueGoal - (stats?.revenue_this_month || 0)) / 1000).toFixed(1)}k</p>
                             </div>
                         </div>
                     </Card>
@@ -260,11 +267,10 @@ const AdminDashboard: React.FC = () => {
                                             <TableCell className="py-4 text-sm text-gray-600">{b.service_name}</TableCell>
                                             <TableCell className="py-4 text-right font-bold text-gray-900">₹{b.total_fee}</TableCell>
                                             <TableCell className="py-4 text-center">
-                                                <Badge className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                                    b.status === 'COMPLETED' ? 'bg-green-100 text-green-700' : 
-                                                    b.status === 'PENDING' ? 'bg-orange-100 text-orange-700' : 
-                                                    'bg-gray-100 text-gray-500'
-                                                }`}>
+                                                <Badge className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${b.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
+                                                    b.status === 'PENDING' ? 'bg-orange-100 text-orange-700' :
+                                                        'bg-gray-100 text-gray-500'
+                                                    }`}>
                                                     {b.status}
                                                 </Badge>
                                             </TableCell>
@@ -347,10 +353,9 @@ const AdminDashboard: React.FC = () => {
                                         </TableCell>
                                         <TableCell className="py-4 font-bold text-gray-900">₹{p.amount.toLocaleString()}</TableCell>
                                         <TableCell className="py-4">
-                                            <Badge className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
-                                                p.status === 'COMPLETED' ? 'bg-green-50 text-green-600' :
+                                            <Badge className={`rounded-lg px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${p.status === 'COMPLETED' ? 'bg-green-50 text-green-600' :
                                                 p.status === 'PENDING' ? 'bg-orange-50 text-orange-600' : 'bg-red-50 text-red-600'
-                                            }`}>
+                                                }`}>
                                                 {p.status === 'COMPLETED' ? 'Paid' : p.status}
                                             </Badge>
                                         </TableCell>
@@ -414,8 +419,8 @@ const MetricCard: React.FC<{ title: string; value: string | number; change: numb
     </Card>
 );
 
-const InsightCard: React.FC<{ title: string; value: number; icon: React.ReactNode; color: 'red' | 'orange' | 'green'; onClick: () => void; }> = ({ title, value, icon, color, onClick }) => {
-    const colors = { red: 'border-red-500 text-red-600 bg-red-50', orange: 'border-orange-400 text-orange-600 bg-orange-50', green: 'border-green-500 text-green-600 bg-green-50' };
+const InsightCard: React.FC<{ title: string; value: number; icon: React.ReactNode; color: 'red' | 'orange' | 'green' | 'blue'; onClick: () => void; }> = ({ title, value, icon, color, onClick }) => {
+    const colors = { red: 'border-red-500 text-red-600 bg-red-50', orange: 'border-orange-400 text-orange-600 bg-orange-50', green: 'border-green-500 text-green-600 bg-green-50', blue: 'border-blue-500 text-blue-600 bg-blue-50' };
     return (
         <Card className={`p-4 rounded-xl shadow-sm border border-orange-100 border-l-4 ${colors[color]} hover:scale-[1.02] transition-transform cursor-pointer bg-white`} onClick={onClick}>
             <div className="flex items-center justify-between">

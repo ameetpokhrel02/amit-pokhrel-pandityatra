@@ -194,6 +194,13 @@ export default function AdminSamagri() {
         formData.append("image", form.image);
     }
     
+    // Explicitly append is_active so DRF doesn't parse missing property as False
+    if (editingItem) {
+        formData.append("is_active", (editingItem as any).is_active !== undefined ? String((editingItem as any).is_active) : "true");
+    } else {
+        formData.append("is_active", "true");
+    }
+    
     // Log form data for debugging
     // form.image && console.log("Uploading file:", form.image.name);
 
