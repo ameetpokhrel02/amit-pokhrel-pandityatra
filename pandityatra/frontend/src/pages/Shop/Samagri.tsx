@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShoppingBag,
@@ -12,7 +12,8 @@ import {
     ChevronRight,
     X,
     Heart,
-    Image as ImageIcon
+    Image as ImageIcon,
+    LayoutDashboard
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -177,7 +178,7 @@ const Samagri = () => {
 
     const filteredItems = items.filter(item => {
         const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            item.description.toLowerCase().includes(searchQuery.toLowerCase());
+            (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesCategory = selectedCategory === 'all' || item.category?.toString() === selectedCategory;
         const matchesPrice = Number(item.price) >= priceRange[0] && Number(item.price) <= priceRange[1];
         return matchesSearch && matchesCategory && matchesPrice;
@@ -236,6 +237,35 @@ const Samagri = () => {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
+
+            {/* Role Context Banner */}
+            {user?.role === 'pandit' && (
+                <div className="bg-orange-600 text-white py-3 px-4 shadow-md sticky top-20 z-30 animate-in slide-in-from-top duration-300">
+                    <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-1.5 rounded-lg"><ShoppingBag className="w-5 h-5 flex-shrink-0" /></div>
+                            <p className="text-sm font-bold tracking-tight">Shopping for Ritual Services: You are in Marketplace Mode.</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="bg-white text-orange-600 border-none hover:bg-orange-50 font-bold rounded-full h-9 px-6 transition-all shadow-sm">
+                            <Link to="/pandit/dashboard">Return to Dashboard</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {user?.role === 'vendor' && (
+                <div className="bg-blue-600 text-white py-3 px-4 shadow-md sticky top-20 z-30 animate-in slide-in-from-top duration-300">
+                    <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-1.5 rounded-lg"><Eye className="w-5 h-5 flex-shrink-0" /></div>
+                            <p className="text-sm font-bold tracking-tight">Marketplace Preview: Viewing how your products appear to customers.</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="bg-white text-blue-600 border-none hover:bg-blue-50 font-bold rounded-full h-9 px-6 transition-all shadow-sm">
+                            <Link to="/vendor/dashboard">Manage My Shop</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {hasBanners ? (
                 <div className="container mx-auto px-4 mt-8">
@@ -314,7 +344,14 @@ const Samagri = () => {
                                         <motion.div layout key={item.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} whileHover={{ y: -5 }}>
                                             <Card className="h-full border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group bg-white flex flex-col rounded-xl">
                                                 <div className="aspect-square bg-stone-50 relative overflow-hidden">
-                                                    <Badge className="absolute top-3 left-3 bg-orange-500 text-white z-10">Hot</Badge>
+                                                    <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+                                                        {user?.role === 'vendor' && item.vendor === user.id && (
+                                                            <Badge className="bg-blue-600 text-white shadow-lg w-fit">My Listing</Badge>
+                                                        )}
+                                                        {item.is_approved && (
+                                                            <Badge className="bg-orange-500 text-white w-fit">Verified</Badge>
+                                                        )}
+                                                    </div>
                                                     
                                                     {user?.role !== 'vendor' && (
                                                         <button
@@ -346,9 +383,17 @@ const Samagri = () => {
 
                                                     <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between gap-2">
                                                         {user?.role === 'vendor' ? (
-                                                            <div className="w-full text-center py-2 bg-gray-50 rounded-lg text-xs font-bold text-gray-400 flex items-center justify-center gap-2">
-                                                                <Search size={14} /> Action Restricted
-                                                            </div>
+                                                            item.vendor === user.id ? (
+                                                                <Button asChild variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 hover:bg-blue-50 font-bold">
+                                                                    <Link to="/vendor/dashboard">
+                                                                        <LayoutDashboard className="w-4 h-4 mr-2" /> Manage
+                                                                    </Link>
+                                                                </Button>
+                                                            ) : (
+                                                                <div className="w-full text-center py-2 bg-gray-50 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2">
+                                                                    <Eye size={12} /> Preview Mode
+                                                                </div>
+                                                            )
                                                         ) : (
                                                             <>
                                                                 <Button variant="ghost" size="sm" className="text-orange-600 hover:bg-orange-50 font-bold" onClick={() => setSelectedItem(item)}>

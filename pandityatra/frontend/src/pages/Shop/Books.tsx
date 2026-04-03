@@ -27,6 +27,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useAuth } from '@/hooks/useAuth';
+import { Link } from 'react-router-dom';
 import {
     fetchSamagriItems,
     fetchSamagriCategories,
@@ -52,6 +54,7 @@ const Books = () => {
     const { addItem, openDrawer } = useCart();
     const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedBook, setSelectedBook] = useState<SamagriItem | null>(null);
+    const { user } = useAuth();
     const [hasBanners, setHasBanners] = useState(false);
 
     useEffect(() => {
@@ -179,6 +182,35 @@ const Books = () => {
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
+
+            {/* Role Context Banner */}
+            {user?.role === 'pandit' && (
+                <div className="bg-orange-600 text-white py-3 px-4 shadow-md sticky top-20 z-30 animate-in slide-in-from-top duration-300">
+                    <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-1.5 rounded-lg"><ShoppingBag className="w-5 h-5 flex-shrink-0" /></div>
+                            <p className="text-sm font-bold tracking-tight">Spiritual Repository: You are in Marketplace Mode.</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="bg-white text-orange-600 border-none hover:bg-orange-50 font-bold rounded-full h-9 px-6 transition-all shadow-sm">
+                            <Link to="/pandit/dashboard">Return to Dashboard</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            {user?.role === 'vendor' && (
+                <div className="bg-blue-600 text-white py-3 px-4 shadow-md sticky top-20 z-30 animate-in slide-in-from-top duration-300">
+                    <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 p-1.5 rounded-lg"><Eye className="w-5 h-5 flex-shrink-0" /></div>
+                            <p className="text-sm font-bold tracking-tight">Marketplace Preview: Viewing how your products appear to customers.</p>
+                        </div>
+                        <Button asChild variant="outline" size="sm" className="bg-white text-blue-600 border-none hover:bg-blue-50 font-bold rounded-full h-9 px-6 transition-all shadow-sm">
+                            <Link to="/vendor/dashboard">Manage My Shop</Link>
+                        </Button>
+                    </div>
+                </div>
+            )}
 
             {/* Hero Section / Banner Carousel */}
             {hasBanners ? (
@@ -339,20 +371,28 @@ const Books = () => {
                                                 </div>
 
                                                 <div className="grid grid-cols-2 gap-2">
-                                                    <Button
-                                                        onClick={() => handleAddToCart(book)}
-                                                        disabled={book.stock_quantity === 0}
-                                                        className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium h-9 text-xs"
-                                                    >
-                                                        <ShoppingCart className="w-3 h-3 mr-2" /> Add
-                                                    </Button>
-                                                    <Button
-                                                        variant="secondary"
-                                                        onClick={() => setSelectedBook(book)}
-                                                        className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium h-9 text-xs"
-                                                    >
-                                                        <Eye className="w-3 h-3 mr-2" /> View
-                                                    </Button>
+                                                    {user?.role === 'vendor' ? (
+                                                        <div className="col-span-2 w-full text-center py-2 bg-gray-50 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center justify-center gap-2">
+                                                            <Eye size={12} /> Preview Mode
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <Button
+                                                                onClick={() => handleAddToCart(book)}
+                                                                disabled={book.stock_quantity === 0}
+                                                                className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium h-9 text-xs"
+                                                            >
+                                                                <ShoppingCart className="w-3 h-3 mr-2" /> Add
+                                                            </Button>
+                                                            <Button
+                                                                variant="secondary"
+                                                                onClick={() => setSelectedBook(book)}
+                                                                className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-medium h-9 text-xs"
+                                                            >
+                                                                <Eye className="w-3 h-3 mr-2" /> View
+                                                            </Button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -510,24 +550,30 @@ const Books = () => {
 
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button
-                                            onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }}
-                                            disabled={selectedBook.stock_quantity === 0}
-                                            className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xl shadow-orange-600/20 gap-2"
-                                        >
-                                            <ShoppingCart className="w-5 h-5" /> Add
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={() => handleToggleFavorite(selectedBook)}
-                                            className={`w-full h-12 rounded-xl border ${isFavorite(selectedBook.id)
-                                                ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100'
-                                                : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
-                                        >
-                                            <Heart className={`w-5 h-5 mr-2 ${isFavorite(selectedBook.id) ? 'fill-current' : ''}`} />
-                                            {isFavorite(selectedBook.id) ? 'Saved' : 'Wishlist'}
-                                        </Button>
+                                        {user?.role === 'vendor' ? (
+                                            <div className="col-span-2 w-full py-4 text-center bg-gray-100 rounded-2xl text-gray-400 font-bold">Action Restricted for Vendors</div>
+                                        ) : (
+                                            <>
+                                                <Button
+                                                    onClick={() => { handleAddToCart(selectedBook); setSelectedBook(null); }}
+                                                    disabled={selectedBook.stock_quantity === 0}
+                                                    className="w-full h-12 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-xl shadow-orange-600/20 gap-2"
+                                                >
+                                                    <ShoppingCart className="w-5 h-5" /> Add
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    onClick={() => handleToggleFavorite(selectedBook)}
+                                                    className={`w-full h-12 rounded-xl border ${isFavorite(selectedBook.id)
+                                                        ? 'border-red-300 text-red-600 bg-red-50 hover:bg-red-100'
+                                                        : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                                                >
+                                                    <Heart className={`w-5 h-5 mr-2 ${isFavorite(selectedBook.id) ? 'fill-current' : ''}`} />
+                                                    {isFavorite(selectedBook.id) ? 'Saved' : 'Wishlist'}
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
                                     <p className="text-center text-xs text-gray-400 italic">
                                         Pure knowledge delivered to your doorstep.
