@@ -64,6 +64,7 @@ class SiteReview(models.Model):
     ROLE_CHOICES = [
         ('customer', 'Customer'),
         ('pandit', 'Pandit'),
+        ('vendor', 'Vendor'),
     ]
     
     user = models.ForeignKey(

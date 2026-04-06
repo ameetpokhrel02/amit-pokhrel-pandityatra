@@ -164,9 +164,14 @@ class SiteReviewListCreateView(APIView):
             return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Determine role
-        role = 'customer'
-        if hasattr(request.user, 'pandit_profile'):
-            role = 'pandit'
+        role = request.user.role
+        if role not in ['customer', 'pandit', 'vendor']:
+            # Fallback for older data or unexpected roles
+            role = 'customer'
+            if hasattr(request.user, 'pandit_profile'):
+                role = 'pandit'
+            elif hasattr(request.user, 'vendor_profile'):
+                role = 'vendor'
         
         # Check if user already submitted
         existing = SiteReview.objects.filter(user=request.user).first()
