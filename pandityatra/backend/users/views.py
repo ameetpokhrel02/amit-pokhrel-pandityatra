@@ -17,8 +17,8 @@ from .serializers import (
 from .otp_utils import send_local_otp, verify_local_otp 
 import requests
 from django.conf import settings
-from pandits.models import PanditUser # 🚨 Import for Admin Stats 
 from vendors.models import Vendor
+from samagri.models import SamagriItem, ShopOrder
 
 
 class RegisterUserView(APIView):
@@ -446,7 +446,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from datetime import timedelta
 from vendors.models import Vendor
-from samagri.models import SamagriItem
+from samagri.models import SamagriItem, ShopOrder
 from .serializers import UserSerializer
 from bookings.models import Booking
 from payments.models import Payment
@@ -479,18 +479,34 @@ class AdminStatsView(APIView):
         total_pandits = PanditUser.objects.count()
         total_vendors = Vendor.objects.count()
         total_bookings = Booking.objects.count()
+        total_shop_orders = ShopOrder.objects.count()
         
-        # Revenue (Completed payments)
-        revenue_this_month = Payment.objects.filter(
+        # Revenue (Completed payments from bookings + PAID shop orders)
+        booking_revenue_this_month = Payment.objects.filter(
             status='COMPLETED', 
             created_at__gte=start_of_month
         ).aggregate(total=Sum('amount'))['total'] or 0
         
-        revenue_last_month = Payment.objects.filter(
+        shop_revenue_this_month = ShopOrder.objects.filter(
+            status__in=['PAID', 'SHIPPED', 'DELIVERED'],
+            created_at__gte=start_of_month
+        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        revenue_this_month = float(booking_revenue_this_month) + float(shop_revenue_this_month)
+        
+        booking_revenue_last_month = Payment.objects.filter(
             status='COMPLETED', 
             created_at__gte=last_month_start,
             created_at__lte=last_month_end
         ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        shop_revenue_last_month = ShopOrder.objects.filter(
+            status__in=['PAID', 'SHIPPED', 'DELIVERED'],
+            created_at__gte=last_month_start,
+            created_at__lte=last_month_end
+        ).aggregate(total=Sum('total_amount'))['total'] or 0
+        
+        revenue_last_month = float(booking_revenue_last_month) + float(shop_revenue_last_month)
 
         # Growth Calculations
         def calc_growth(current, previous):
@@ -518,6 +534,10 @@ class AdminStatsView(APIView):
 
         revenue_growth = calc_growth(float(revenue_this_month), float(revenue_last_month))
 
+        shop_orders_this_month = ShopOrder.objects.filter(created_at__gte=start_of_month).count()
+        shop_orders_last_month = ShopOrder.objects.filter(created_at__gte=last_month_start, created_at__lte=last_month_end).count()
+        shop_order_growth = calc_growth(shop_orders_this_month, shop_orders_last_month)
+
         # Insightful counts
         pending_verifications = PanditUser.objects.filter(is_verified=False).count()
         pending_vendors = Vendor.objects.filter(is_verified=False).count()
@@ -534,22 +554,21 @@ class AdminStatsView(APIView):
             "total_pandits": total_pandits,
             "total_vendors": total_vendors,
             "total_bookings": total_bookings,
-            "revenue_this_month": float(revenue_this_month),
+            "total_shop_orders": total_shop_orders,
+            "revenue_this_month": revenue_this_month,
             "user_growth": user_growth,
             "pandit_growth": pandit_growth,
             "vendor_growth": vendor_growth,
             "booking_growth": booking_growth,
             "revenue_growth": revenue_growth,
+            "shop_order_growth": shop_order_growth,
             "pending_verifications": pending_verifications,
             "pending_vendors": pending_vendors,
             "low_stock_count": low_stock_count,
             "todays_pujas_count": todays_pujas_count,
             "error_logs_count": error_logs_count,
-            "system_status": "Healthy"
-        }, status=status.HTTP_200_OK)
-# ----------------------------------------------------
-# 📌 ADMIN: USER MANAGEMENT
-# ----------------------------------------------------
+            "system_status": "Operational"
+        })
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

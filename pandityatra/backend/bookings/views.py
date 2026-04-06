@@ -283,7 +283,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             busy_intervals.append((start_time, end_time))
 
         # 🚨 ADDED: Fetch manual unavailability blocks
-        from pandits.models import PanditUserAvailability
+        from pandits.models import PanditAvailability
         manual_blocks = PanditAvailability.objects.filter(
             pandit=pandit,
             start_time__date=booking_date_obj
