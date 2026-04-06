@@ -69,6 +69,7 @@ const VendorPayouts = lazy(() => import('./pages/vendor/VendorPayouts'))
 const VendorProfilePage = lazy(() => import('./pages/vendor/VendorProfile'))
 const VendorMessages = lazy(() => import('./pages/vendor/VendorMessages'))
 const VendorSettings = lazy(() => import('./pages/vendor/VendorSettings'))
+const VendorAppFeedback = lazy(() => import('./pages/vendor/VendorAppFeedback'))
 
 // Admin
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -339,6 +340,12 @@ function App() {
                       <Route path="/vendor/report-bug" element={
                         <ProtectedRoute allowedRoles={['vendor']}>
                           <ReportBug />
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/vendor/app-feedback" element={
+                        <ProtectedRoute allowedRoles={['vendor']}>
+                          <VendorAppFeedback />
                         </ProtectedRoute>
                       } />
 
