@@ -345,7 +345,14 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                         <span className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4" /> Total Fee:
                         </span>
-                        <span>₹{booking.total_fee}</span>
+                        <div className="flex items-center gap-2">
+                          {booking.payment_status ? (
+                            <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Paid</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">Payment Pending</Badge>
+                          )}
+                          <span>₹{booking.total_fee}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

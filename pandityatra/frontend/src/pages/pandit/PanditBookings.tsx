@@ -146,12 +146,14 @@ const PanditBookings = () => {
                     <p><span className="font-semibold">Client:</span> {booking.user_full_name}</p>
                     <p><span className="font-semibold">Date:</span> {booking.booking_date}</p>
                     <p><span className="font-semibold">Time:</span> {booking.booking_time}</p>
-                    <p>
-                      <span className="font-semibold">Payment:</span>{' '}
-                      <span className={booking.payment_status ? 'text-green-700 font-medium' : 'text-yellow-700 font-medium'}>
-                        {booking.payment_status ? `Paid${booking.payment_method ? ` (${booking.payment_method})` : ''}` : 'Unpaid'}
-                      </span>
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-700">Payment:</span>{' '}
+                      {booking.payment_status ? (
+                        <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Paid {booking.payment_method ? `(${booking.payment_method})` : ''}</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">Payment Pending</Badge>
+                      )}
+                    </div>
                     {booking.transaction_id && (
                       <p><span className="font-semibold">Transaction:</span> {booking.transaction_id}</p>
                     )}
