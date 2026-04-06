@@ -90,8 +90,8 @@ const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Metric Cards Row 1 - Modern Look */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                {/* Metric Cards Row 1 & 2 - Modern Look */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     <MetricCard
                         title="Total Users"
                         value={stats?.total_users || 0}
@@ -121,6 +121,13 @@ const AdminDashboard: React.FC = () => {
                         change={stats?.booking_growth || 0}
                         icon={<BookOpen className="w-6 h-6" />}
                         onClick={() => navigate('/admin/bookings')}
+                    />
+                    <MetricCard
+                        title="Marketplace Orders"
+                        value={stats?.total_shop_orders || 0}
+                        change={stats?.shop_order_growth || 0}
+                        icon={<ShoppingCart className="w-6 h-6" />}
+                        onClick={() => navigate('/admin/marketplace-orders')}
                     />
                     <MetricCard
                         title="Revenue This Month"
@@ -160,13 +167,6 @@ const AdminDashboard: React.FC = () => {
                         icon={<Calendar className="w-5 h-5" />}
                         color="green"
                         onClick={() => navigate('/admin/bookings')}
-                    />
-                    <InsightCard
-                        title="Marketplace Orders"
-                        value={stats?.total_shop_orders || 0}
-                        icon={<ShoppingCart className="w-5 h-5" />}
-                        color="blue"
-                        onClick={() => navigate('/admin/marketplace-orders')}
                     />
                     <InsightCard
                         title="Errors"

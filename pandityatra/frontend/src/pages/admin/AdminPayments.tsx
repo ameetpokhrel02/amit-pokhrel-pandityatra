@@ -12,8 +12,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCcw, Loader2, CreditCard, RotateCcw } from "lucide-react";
-import { fetchAdminPayments, refundPayment, type AdminPayment } from "@/lib/api";
+import { RefreshCcw, Loader2, CreditCard, RotateCcw, Check } from "lucide-react";
+import { fetchAdminPayments, refundPayment, verifyPaymentManual, type AdminPayment } from "@/lib/api";
 
 export default function AdminPayments() {
     const [payments, setPayments] = useState<AdminPayment[]>([]);
@@ -55,6 +55,25 @@ export default function AdminPayments() {
             toast({
                 title: "Refund Failed",
                 description: error.message || "Failed to process refund.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleVerifyManual = async (id: number) => {
+        if (!confirm("Are you sure you want to manually verify this payment? This will update the booking status and notify the user.")) return;
+        
+        try {
+            await verifyPaymentManual(id);
+            toast({
+                title: "Payment Verified",
+                description: "The payment has been marked as COMPLETED manually.",
+            });
+            loadPayments();
+        } catch (error: any) {
+            toast({
+                title: "Verification Failed",
+                description: error.message || "Failed to manually verify payment.",
                 variant: "destructive",
             });
         }
@@ -175,7 +194,7 @@ export default function AdminPayments() {
                                                     {p.transaction_id || '-'}
                                                 </TableCell>
                                                 <TableCell>{getStatusBadge(p.status)}</TableCell>
-                                                <TableCell className="text-right">
+                                                <TableCell className="text-right space-x-2">
                                                     {(p.status === 'COMPLETED' || (p.status as string) === 'PAID') && (
                                                         <Button 
                                                             variant="destructive" 
@@ -185,6 +204,17 @@ export default function AdminPayments() {
                                                         >
                                                             <RotateCcw className="mr-2 h-3 w-3" />
                                                             Refund
+                                                        </Button>
+                                                    )}
+                                                    {p.status === 'PENDING' && (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm"
+                                                            className="h-8 px-2 border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800"
+                                                            onClick={() => handleVerifyManual(p.id)}
+                                                        >
+                                                            <Check className="mr-2 h-3 w-3" />
+                                                            Verify
                                                         </Button>
                                                     )}
                                                 </TableCell>
