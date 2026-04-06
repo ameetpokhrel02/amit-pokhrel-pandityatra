@@ -213,7 +213,8 @@
     "no_reviews": "अहिलेसम्म कुनै समीक्षा छैन",
     "be_the_first": "आफ्नो अनुभव साझा गर्ने पहिलो बन्नुहोस्!",
     "for_pandit": "{{panditName}} को लागि",
-    "pandit_badge": "🙏 पण्डित"
+    "pandit_badge": "🙏 पण्डित",
+    "vendor_badge": "🙏 विक्रेता"
   },
   "featured_pandits": {
     "title": "विशेष पण्डितहरू",
