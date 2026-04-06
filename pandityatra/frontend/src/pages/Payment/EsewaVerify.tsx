@@ -30,7 +30,7 @@ const EsewaVerify: React.FC = () => {
   const verifyPayment = async () => {
     const data = searchParams.get('data');
 
-    if (!data || !token) {
+    if (!data) {
       setError('Invalid payment parameters');
       setVerifying(false);
       setTimeout(() => navigate('/payment/cancel'), 3000);
@@ -44,8 +44,10 @@ const EsewaVerify: React.FC = () => {
         setSuccess(true);
         setVerifying(false);
 
-        // Store booking ID for success page
-        sessionStorage.setItem('pending_booking_id', result.booking_id.toString());
+        // Store common details
+        sessionStorage.setItem('last_payment_method', result.payment_method || 'ESEWA');
+        sessionStorage.setItem('is_first_booking', result.is_first_booking ? 'true' : 'false');
+        sessionStorage.setItem('last_transaction_id', result.transaction_id || '');
 
         toast({
           title: 'Payment Verified!',
@@ -53,9 +55,17 @@ const EsewaVerify: React.FC = () => {
           variant: 'default',
         });
 
-        // Redirect to success page
+        // Type-based redirection
         setTimeout(() => {
-          navigate(`/payment/success/${result.booking_id}`);
+          if (result.type === 'SHOP_ORDER' && result.order_id) {
+            sessionStorage.setItem('last_order_id', result.order_id.toString());
+            navigate(`/shop/payment/success?order_id=${result.order_id}`);
+          } else if (result.booking_id) {
+            sessionStorage.setItem('pending_booking_id', result.booking_id.toString());
+            navigate(`/payment/success/${result.booking_id}`);
+          } else {
+            navigate('/');
+          }
         }, 1500);
       } else {
         throw new Error('Payment verification returned failure status.');

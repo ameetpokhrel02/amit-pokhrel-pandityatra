@@ -31,7 +31,7 @@ const KhaltiVerify: React.FC = () => {
     const pidx = searchParams.get('pidx');
     const status = searchParams.get('status');
 
-    if (!pidx || !token) {
+    if (!pidx) {
       setError('Invalid payment parameters');
       setVerifying(false);
       setTimeout(() => navigate('/payment/cancel'), 3000);
@@ -53,8 +53,10 @@ const KhaltiVerify: React.FC = () => {
         setSuccess(true);
         setVerifying(false);
 
-        // Store booking ID for success page
-        sessionStorage.setItem('pending_booking_id', result.booking_id.toString());
+        // Store common details
+        sessionStorage.setItem('last_payment_method', result.payment_method || 'KHALTI');
+        sessionStorage.setItem('is_first_booking', result.is_first_booking ? 'true' : 'false');
+        sessionStorage.setItem('last_transaction_id', result.transaction_id || pidx);
 
         toast({
           title: 'Payment Verified!',
@@ -62,9 +64,17 @@ const KhaltiVerify: React.FC = () => {
           variant: 'default',
         });
 
-        // Redirect to success page
+        // Type-based redirection
         setTimeout(() => {
-          navigate(`/payment/success/${result.booking_id}`);
+          if (result.type === 'SHOP_ORDER' && result.order_id) {
+            sessionStorage.setItem('last_order_id', result.order_id.toString());
+            navigate(`/shop/payment/success?order_id=${result.order_id}`);
+          } else if (result.booking_id) {
+            sessionStorage.setItem('pending_booking_id', result.booking_id.toString());
+            navigate(`/payment/success/${result.booking_id}`);
+          } else {
+            navigate('/');
+          }
         }, 1500);
       } else {
         throw new Error('Payment verification returned failure status.');

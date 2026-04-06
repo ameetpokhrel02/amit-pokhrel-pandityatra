@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/useCart';
-import apiClient from '@/lib/api-client';
+import apiClient, { publicApi } from '@/lib/api-client';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,7 +42,7 @@ const ShopEsewaVerify: React.FC = () => {
       const verifyUrl = orderId
         ? `/payments/esewa/verify/?data=${encodeURIComponent(data)}&order_id=${encodeURIComponent(orderId)}`
         : `/payments/esewa/verify/?data=${encodeURIComponent(data)}`;
-      const result = await apiClient.get(verifyUrl);
+      const result = await publicApi.get(verifyUrl);
 
       if (result.data.success && result.data.type === 'SHOP_ORDER') {
         setSuccess(true);
@@ -50,6 +50,10 @@ const ShopEsewaVerify: React.FC = () => {
         
         // Clear the cart
         clear();
+
+        // Store details for success page
+        sessionStorage.setItem('last_payment_method', result.data.payment_method || 'ESEWA');
+        sessionStorage.setItem('last_transaction_id', result.data.transaction_id || '');
 
         toast({
           title: 'Payment Verified!',

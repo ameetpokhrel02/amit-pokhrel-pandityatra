@@ -1,73 +1,57 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, ShoppingBag, Home } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ShoppingBag } from 'lucide-react';
+import Confetti from 'react-confetti';
+import { PaymentSuccessState } from '@/components/payment/PaymentSuccessState';
 
 const ShopPaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('order_id');
-
-  useEffect(() => {
-    // Optionally: Verify payment status with backend here if needed
-    // const sessionId = searchParams.get('session_id');
-  }, [searchParams]);
+  
+  // Get order ID from search params or session storage
+  const orderId = searchParams.get('order_id') || sessionStorage.getItem('last_order_id');
+  
+  // Get payment metadata from session storage
+  const lastPaymentMethod = sessionStorage.getItem('last_payment_method') || 'ESEWA';
+  const lastTransactionId = sessionStorage.getItem('last_transaction_id') || '';
 
   return (
-    <div className="min-h-screen bg-orange-50/30 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+    <div className="min-h-screen bg-orange-50/10 flex items-center justify-center p-4 relative overflow-hidden font-inter">
+      <Confetti
+        recycle={false}
+        numberOfPieces={500}
+        gravity={0.15}
+      />
+      
+      <PaymentSuccessState
+        gateway={lastPaymentMethod}
+        transactionId={lastTransactionId}
+        title="Order Placed!"
+        subtitle="Your samagri order has been successfully confirmed."
+        onAction={() => navigate('/shop/samagri')}
+        actionText="Shop More Samagri"
+        onSecondaryAction={() => navigate('/')}
+        secondaryActionText="Back to Home"
       >
-        <Card className="max-w-md w-full border-0 shadow-2xl bg-white/80 backdrop-blur-xl overflow-hidden">
-          <div className="h-2 bg-gradient-to-r from-green-400 to-green-600" />
-          <CardContent className="pt-10 pb-10 px-8 text-center space-y-6">
+        <div className="bg-white/50 border border-orange-100/50 rounded-2xl p-6 flex flex-col items-center gap-3 text-center">
+          <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 mb-2">
+            <ShoppingBag size={24} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-none">Order ID</p>
+            <p className="text-2xl font-mono font-bold text-gray-800">#{orderId || 'N/A'}</p>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 px-4">
+            Our vendors are notified and will prepare your samagari for delivery as scheduled.
+          </p>
+        </div>
+      </PaymentSuccessState>
 
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-              className="flex justify-center"
-            >
-              <div className="rounded-full bg-green-100 p-6 shadow-green-200/50 shadow-lg">
-                <CheckCircle className="w-20 h-20 text-green-600" strokeWidth={2.5} />
-              </div>
-            </motion.div>
-
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Order Placed!</h1>
-              <p className="text-gray-600 text-lg">
-                Your samagri order has been successfully confirmed.
-              </p>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-6 border border-gray-100/50 flex flex-col gap-3">
-              <p className="text-sm text-gray-500 uppercase tracking-wider font-semibold">Order ID</p>
-              <p className="text-2xl font-mono font-bold text-gray-800">#{orderId || 'Unknown'}</p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 pt-4">
-              <Button
-                variant="outline"
-                className="h-12 text-base border-gray-200 hover:bg-gray-50 hover:text-gray-900"
-                onClick={() => navigate('/')}
-              >
-                <Home className="w-4 h-4 mr-2" /> Home
-              </Button>
-              <Button
-                className="h-12 text-base bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20"
-                onClick={() => navigate('/shop/samagri')}
-              >
-                <ShoppingBag className="w-4 h-4 mr-2" /> Shop More
-              </Button>
-            </div>
-
-          </CardContent>
-        </Card>
-      </motion.div>
+      <div className="absolute bottom-8 left-0 right-0 text-center relative z-10">
+        <p className="text-gray-400 text-xs">
+          Secure Shopping Experience on PanditYatra Samagri Store
+        </p>
+      </div>
     </div>
   );
 };
