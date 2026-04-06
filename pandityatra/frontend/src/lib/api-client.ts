@@ -84,6 +84,8 @@ apiClient.interceptors.response.use(
                 apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
                 processQueue(null, access);
 
+                // Update originalRequest header before retrying
+                originalRequest.headers['Authorization'] = `Bearer ${access}`;
                 return apiClient(originalRequest);
             } catch (err) {
                 processQueue(err, null);

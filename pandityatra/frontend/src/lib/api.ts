@@ -44,6 +44,11 @@ export async function refundPayment(id: number) {
     return response.data;
 }
 
+export async function verifyPaymentManual(id: number) {
+    const response = await apiClient.post(`/payments/${id}/verify-manual/`);
+    return response.data;
+}
+
 // ----------------------
 // Pandit APIs
 // ----------------------
@@ -322,6 +327,7 @@ export interface AdminStats {
     error_logs_count: number;
     system_status: string;
     total_shop_orders?: number;
+    shop_order_growth?: number;
 }
 
 export async function fetchAdminStats(): Promise<AdminStats> {
@@ -498,7 +504,7 @@ export interface SiteReviewData {
     id: number;
     user_name: string;
     user_avatar: string | null;
-    role: 'customer' | 'pandit';
+    role: 'customer' | 'pandit' | 'vendor';
     rating: number;
     comment: string;
     created_at: string;
@@ -567,7 +573,7 @@ export interface AdminSiteReview {
     user_name: string;
     user_email: string;
     user_avatar: string | null;
-    role: 'customer' | 'pandit';
+    role: 'customer' | 'pandit' | 'vendor';
     rating: number;
     comment: string;
     is_approved: boolean;

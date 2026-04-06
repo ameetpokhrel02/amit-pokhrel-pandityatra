@@ -93,10 +93,18 @@ export const getExchangeRate = async (nprAmount?: number): Promise<ExchangeRate>
  */
 export const verifyKhaltiPayment = async (
   pidx: string,
-  token: string
-): Promise<{ success: boolean; booking_id: number; transaction_id: string }> => {
-  const { default: apiClient } = await import('./api-client');
-  const response = await apiClient.get(`/payments/khalti/verify/?pidx=${pidx}`);
+  token?: string | null
+): Promise<{ 
+  success: boolean; 
+  booking_id?: number; 
+  order_id?: number;
+  transaction_id: string;
+  payment_method?: string;
+  is_first_booking?: boolean;
+  type?: 'BOOKING' | 'SHOP_ORDER';
+}> => {
+  const { publicApi } = await import('./api-client');
+  const response = await publicApi.get(`/payments/khalti/verify/?pidx=${pidx}`);
   return response.data;
 };
 
@@ -105,10 +113,18 @@ export const verifyKhaltiPayment = async (
  */
 export const verifyEsewaPayment = async (
   data: string,
-  token: string
-): Promise<{ success: boolean; booking_id: number; transaction_id: string }> => {
-  const { default: apiClient } = await import('./api-client');
-  const response = await apiClient.get(`/payments/esewa/verify/?data=${encodeURIComponent(data)}`);
+  token?: string | null
+): Promise<{ 
+  success: boolean; 
+  booking_id?: number; 
+  order_id?: number;
+  transaction_id: string;
+  payment_method?: string;
+  is_first_booking?: boolean;
+  type?: 'BOOKING' | 'SHOP_ORDER';
+}> => {
+  const { publicApi } = await import('./api-client');
+  const response = await publicApi.get(`/payments/esewa/verify/?data=${encodeURIComponent(data)}`);
   return response.data;
 };
 
