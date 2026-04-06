@@ -64,49 +64,82 @@ def stripe_webhook(request):
 
 def _handle_successful_payment(session, webhook_log):
     try:
-        booking_id = session.get('metadata', {}).get('booking_id')
-        payment_id = session.get('metadata', {}).get('payment_id')
-        
-        if not booking_id or not payment_id:
-            logger.error("Missing metadata in Stripe session")
-            return
+        metadata = session.get('metadata', {})
+        booking_id = metadata.get('booking_id')
+        payment_id = metadata.get('payment_id')
+        order_id = metadata.get('order_id')
+        type_param = metadata.get('type')
 
         with transaction.atomic():
-            payment = Payment.objects.select_for_update().get(id=payment_id)
+            # Handle Booking Flow
+            if booking_id and payment_id:
+                payment = Payment.objects.select_for_update().get(id=payment_id)
+                if payment.status == 'COMPLETED':
+                    logger.info(f"Payment {payment_id} already completed")
+                    return
 
-            # Prevent duplicate processing
-            if payment.status == 'COMPLETED':
-                logger.info(f"Payment {payment_id} already completed")
-                return
+                payment.status = 'COMPLETED'
+                payment.transaction_id = session['id']
+                payment.gateway_response = session
+                payment.completed_at = timezone.now()
+                payment.save()
 
-            payment.status = 'COMPLETED'
-            payment.transaction_id = session['id']
-            payment.gateway_response = session
-            payment.completed_at = timezone.now()
-            payment.save()
+                booking = Booking.objects.select_for_update().get(id=booking_id)
+                booking.payment_status = True
+                booking.payment_method = 'STRIPE'
+                booking.status = 'ACCEPTED' 
+                booking.transaction_id = session['id']
+                booking.save()
 
-            booking = Booking.objects.select_for_update().get(id=booking_id)
-            booking.payment_status = True
-            booking.payment_method = 'STRIPE'
-            booking.status = 'ACCEPTED' # Or CONFIRMED
-            booking.transaction_id = session['id']
-            
-            # Create video room if ONLINE
-            if getattr(booking, 'service_location', None) == 'ONLINE':
-                room_url = create_video_room(
-                    booking.id,
-                    str(booking.booking_date),
-                    booking.service_name
-                )
-                if room_url:
-                    booking.video_room_url = room_url
-            
-            booking.save()
-            
+                # 🚨 CHECK FOR FIRST TIME BOOKING (New User for Puja)
+                from payments.models import Payment
+                is_first_booking = not Payment.objects.filter(
+                    user=payment.user, 
+                    status='COMPLETED', 
+                    booking__isnull=False
+                ).exclude(id=payment.id).exists()
+
+                if is_first_booking:
+                    from adminpanel.utils import log_activity
+                    log_activity(
+                        user=payment.user,
+                        action_type="NEW_USER_PUJA",
+                        details=f"First time booking Pandit Puja via Stripe: {booking.service_name}",
+                        request=None
+                    )
+                
+                # Create video room if ONLINE
+                if getattr(booking, 'service_location', None) == 'ONLINE':
+                    from video.utils import create_video_room
+                    room_url = create_video_room(
+                        booking.id,
+                        str(booking.booking_date),
+                        booking.service_name
+                    )
+                    if room_url:
+                        booking.video_room_url = room_url
+                        booking.save()
+                
+                logger.info(f"Payment completed for booking {booking_id}")
+
+            # Handle Shop Order Flow
+            elif order_id or type_param == 'shop_order':
+                from samagri.models import ShopOrder, ShopOrderStatus
+                order = ShopOrder.objects.select_for_update().get(id=order_id)
+                
+                if order.status == ShopOrderStatus.PAID:
+                    logger.info(f"Order {order_id} already paid")
+                    return
+
+                order.status = ShopOrderStatus.PAID
+                order.payment_method = 'STRIPE'
+                order.transaction_id = session['id']
+                order.save()
+                
+                logger.info(f"Stripe payment completed for shop order {order_id}")
+
             webhook_log.processed = True
             webhook_log.save()
-            
-            logger.info(f"Payment completed for booking {booking_id}")
 
     except Exception as e:
         logger.error(f"Stripe webhook processing error: {e}")

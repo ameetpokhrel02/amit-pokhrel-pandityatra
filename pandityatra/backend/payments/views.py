@@ -461,16 +461,25 @@ class KhaltiVerifyView(APIView):
             booking.payment_status = True
             booking.payment_method = 'KHALTI'
             booking.status = 'ACCEPTED'
-            booking.transaction_id = pidx
-            
-            # Create video room for online puja
-            if booking.service_location == 'ONLINE':
-                try:
-                    ensure_video_room_for_booking(booking)
-                except Exception as e:
-                    logger.error(f"Failed to create video room: {e}")
-            
+            booking.transaction_id = transaction_id
             booking.save()
+
+            # 🚨 CHECK FOR FIRST TIME BOOKING (New User for Puja)
+            from payments.models import Payment
+            is_first_booking = not Payment.objects.filter(
+                user=payment.user, 
+                status='COMPLETED', 
+                booking__isnull=False
+            ).exclude(id=payment.id).exists()
+
+            if is_first_booking:
+                from adminpanel.utils import log_activity
+                log_activity(
+                    user=payment.user,
+                    action_type="NEW_USER_PUJA",
+                    details=f"First time booking Pandit Puja: {booking.service_name}",
+                    request=self.request
+                )
             
             # 🔔 Send payment success notification
             notify_payment_success(booking, payment.amount)
@@ -479,6 +488,8 @@ class KhaltiVerifyView(APIView):
                 'success': True,
                 'booking_id': booking.id,
                 'transaction_id': transaction_id,
+                'payment_method': 'KHALTI',
+                'is_first_booking': is_first_booking,
                 'type': 'BOOKING'
             })
         else:
@@ -498,13 +509,15 @@ class KhaltiVerifyView(APIView):
         
         if success:
             order.status = ShopOrderStatus.PAID
-            order.transaction_id = pidx # Confirm pidx
+            order.payment_method = 'KHALTI'
+            order.transaction_id = transaction_id
             order.save()
             
             return Response({
                 'success': True,
                 'order_id': order.id,
                 'transaction_id': transaction_id,
+                'payment_method': 'KHALTI',
                 'type': 'SHOP_ORDER'
             })
         else:
@@ -593,15 +606,24 @@ class EsewaVerifyView(APIView):
             booking.payment_method = 'ESEWA'
             booking.status = 'ACCEPTED'
             booking.transaction_id = transaction_code
-            
-            # Create video room for online puja
-            if booking.service_location == 'ONLINE':
-                try:
-                    ensure_video_room_for_booking(booking)
-                except Exception as e:
-                    logger.error(f"Failed to create video room: {e}")
-            
             booking.save()
+
+            # 🚨 CHECK FOR FIRST TIME BOOKING (New User for Puja)
+            from payments.models import Payment
+            is_first_booking = not Payment.objects.filter(
+                user=payment.user, 
+                status='COMPLETED', 
+                booking__isnull=False
+            ).exclude(id=payment.id).exists()
+
+            if is_first_booking:
+                from adminpanel.utils import log_activity
+                log_activity(
+                    user=payment.user,
+                    action_type="NEW_USER_PUJA",
+                    details=f"First time booking Pandit Puja: {booking.service_name}",
+                    request=self.request
+                )
             
             # 🔔 Send payment success notification
             notify_payment_success(booking, payment.amount)
@@ -610,6 +632,8 @@ class EsewaVerifyView(APIView):
                 'success': True,
                 'booking_id': booking.id,
                 'transaction_id': transaction_code,
+                'payment_method': 'ESEWA',
+                'is_first_booking': is_first_booking,
                 'type': 'BOOKING'
             })
         else:
@@ -629,6 +653,7 @@ class EsewaVerifyView(APIView):
         
         if success:
             order.status = ShopOrderStatus.PAID
+            order.payment_method = 'ESEWA'
             # Keep original transaction UUID for idempotent callback re-verification.
             # Only set transaction_id if it was empty.
             if not order.transaction_id:
@@ -639,6 +664,7 @@ class EsewaVerifyView(APIView):
                 'success': True,
                 'order_id': order.id,
                 'transaction_id': transaction_code,
+                'payment_method': 'ESEWA',
                 'type': 'SHOP_ORDER'
             })
         else:
@@ -766,6 +792,75 @@ def refund_payment(request, payment_id):
              
     except Payment.DoesNotExist:
         return Response({"detail": "Payment not found"}, status=404)
+
+
+# ---------------------------
+# ADMIN: Manual Verification (For exceptions)
+# ---------------------------
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_payment_manual(request, payment_id):
+    """
+    Manually mark a pending payment as completed (Admin Only)
+    """
+    if not (request.user.is_superuser or request.user.is_staff or getattr(request.user, 'role', '') == 'admin'):
+        return Response({"detail": "Admin only"}, status=403)
+        
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        
+        if payment.status == 'COMPLETED':
+            return Response({"detail": "Payment is already completed"}, status=400)
+            
+        with transaction.atomic():
+            payment.status = 'COMPLETED'
+            payment.completed_at = timezone.now()
+            payment.transaction_id = f"MANUAL-{timezone.now().timestamp()}"
+            payment.gateway_response = {"manual_verification": True, "admin": request.user.username}
+            payment.save()
+            
+            # Update booking if exists
+            if payment.booking:
+                booking = payment.booking
+                booking.payment_status = True
+                booking.payment_method = payment.payment_method or 'MANUAL'
+                booking.transaction_id = payment.transaction_id
+                
+                # Update booking status to ACCEPTED if it was PENDING
+                if booking.status == 'PENDING':
+                    booking.status = 'ACCEPTED'
+                
+                # Handle video room creation for online pujas
+                if booking.service_location == 'ONLINE':
+                    from video.utils import create_video_room
+                    try:
+                        room_url = create_video_room(
+                            booking.id,
+                            str(booking.booking_date),
+                            booking.service_name
+                        )
+                        if room_url:
+                            booking.video_room_url = room_url
+                    except Exception as e:
+                        logger.error(f"Failed to create manual video room: {e}")
+                
+                booking.save()
+            
+            # Log Activity
+            from adminpanel.utils import log_activity
+            log_activity(
+                user=request.user,
+                action_type="PAYMENT_VERIFY_MANUAL",
+                details=f"Manual verification for payment #{payment.id} (Booking #{payment.booking.id if payment.booking else 'N/A'})",
+                request=request
+            )
+            
+        return Response({"detail": "Payment manually verified successfully"})
+        
+    except Payment.DoesNotExist:
+        return Response({"detail": "Payment not found"}, status=404)
+    except Exception as e:
+        return Response({"detail": str(e)}, status=500)
 
 
 # ===============================
