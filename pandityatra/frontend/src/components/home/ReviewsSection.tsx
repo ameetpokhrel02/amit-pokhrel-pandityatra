@@ -421,12 +421,20 @@ const ReviewsSection: React.FC = () => {
                                                     badge={
                                                         activeTab === 'pandit'
                                                             ? t('reviews.for_pandit', { panditName: (review as PanditReviewData).pandit_name })
-                                                            : (review as SiteReviewData).role === 'pandit' ? t('reviews.pandit_badge') : undefined
+                                                            : (review as SiteReviewData).role === 'pandit'
+                                                                ? t('reviews.pandit_badge')
+                                                                : (review as SiteReviewData).role === 'vendor'
+                                                                    ? t('reviews.vendor_badge')
+                                                                    : undefined
                                                     }
                                                     badgeColor={
                                                         activeTab === 'pandit'
                                                             ? 'bg-blue-50 text-blue-600'
-                                                            : (review as SiteReviewData).role === 'pandit' ? 'bg-purple-50 text-purple-600' : undefined
+                                                            : (review as SiteReviewData).role === 'pandit'
+                                                                ? 'bg-purple-50 text-purple-600'
+                                                                : (review as SiteReviewData).role === 'vendor'
+                                                                    ? 'bg-blue-50 text-blue-600'
+                                                                    : undefined
                                                     }
                                                 />
                                             ))}

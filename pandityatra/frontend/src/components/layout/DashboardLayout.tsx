@@ -223,6 +223,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: Wallet, label: 'Earnings', path: '/vendor/payouts' },
             { icon: User, label: 'Shop Profile', path: '/vendor/profile' },
             { icon: MessageCircle, label: 'Messages', path: '/vendor/messages' },
+            { icon: MessageSquareHeart, label: 'App Feedback', path: '/vendor/app-feedback' },
             { icon: Settings, label: 'Settings', path: '/vendor/settings' },
             { icon: AlertTriangle, label: 'Report Bug', path: '/vendor/report-bug' },
         ]
