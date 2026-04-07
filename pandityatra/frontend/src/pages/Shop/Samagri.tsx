@@ -217,6 +217,7 @@ const Samagri = () => {
             id: item.id,
             title: item.name,
             price: Number(item.price),
+            stock_quantity: item.stock_quantity,
             image: item.image || '/images/bhasma.png',
         });
         toast({ title: "Added to Cart", description: `${item.name} added.` });
@@ -365,9 +366,16 @@ const Samagri = () => {
                                                     )}
 
                                                     {item.image ? (
-                                                        <img src={item.image} alt={item.name} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                                        <img src={item.image} alt={item.name} className={`absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-110 ${item.stock_quantity <= 0 ? 'grayscale opacity-60' : ''}`} />
                                                     ) : (
                                                         <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="w-16 h-16 text-orange-200" /></div>
+                                                    )}
+
+                                                    {/* Out of Stock Overlay */}
+                                                    {item.stock_quantity <= 0 && (
+                                                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-10">
+                                                            <Badge className="bg-red-600 text-white font-bold py-1 px-3 shadow-xl uppercase tracking-wider scale-110">Sold Out</Badge>
+                                                        </div>
                                                     )}
                                                 </div>
 
@@ -399,9 +407,15 @@ const Samagri = () => {
                                                                 <Button variant="ghost" size="sm" className="text-orange-600 hover:bg-orange-50 font-bold" onClick={() => setSelectedItem(item)}>
                                                                     <Eye className="w-4 h-4 mr-2" /> Details
                                                                 </Button>
-                                                                <Button size="sm" className="bg-orange-600 text-white font-bold rounded-lg" onClick={() => handleAddToCart(item)}>
-                                                                    <ShoppingCart className="w-4 h-4 mr-2" /> Add
-                                                                </Button>
+                                                                {item.stock_quantity > 0 ? (
+                                                                    <Button size="sm" className="bg-orange-600 text-white font-bold rounded-lg" onClick={() => handleAddToCart(item)}>
+                                                                        <ShoppingCart className="w-4 h-4 mr-2" /> Add
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button size="sm" disabled className="bg-gray-200 text-gray-400 font-bold rounded-lg cursor-not-allowed">
+                                                                        Sold Out
+                                                                    </Button>
+                                                                )}
                                                             </>
                                                         )}
                                                     </div>
@@ -416,6 +430,47 @@ const Samagri = () => {
                                 <ShoppingBag className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                                 <h3 className="text-xl font-semibold mb-2">No Items Found</h3>
                                 <Button variant="link" className="text-orange-600" onClick={handleResetFilters}>Clear filters</Button>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 mt-12 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                                <Button 
+                                    variant="outline" 
+                                    size="icon"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                    className="border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </Button>
+
+                                <div className="flex items-center gap-1 mx-2">
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => setCurrentPage(pageNum)}
+                                            className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                                                currentPage === pageNum 
+                                                ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-md shadow-orange-500/30'
+                                                : 'bg-transparent text-gray-500 hover:bg-orange-50 hover:text-orange-600'
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <Button 
+                                    variant="outline" 
+                                    size="icon"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="border-gray-200 text-gray-500 hover:text-orange-600 hover:border-orange-200"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </Button>
                             </div>
                         )}
                     </div>
@@ -444,10 +499,14 @@ const Samagri = () => {
                                 
                                 {user?.role === 'vendor' ? (
                                     <div className="w-full py-4 text-center bg-gray-100 rounded-2xl text-gray-400 font-bold">Action Restricted for Vendors</div>
-                                ) : (
+                                ) : selectedItem.stock_quantity > 0 ? (
                                     <Button onClick={() => { handleAddToCart(selectedItem); setSelectedItem(null); }} className="w-full h-14 bg-orange-600 text-white font-bold rounded-2xl gap-3">
                                         <ShoppingCart className="w-6 h-6" /> Add to Cart
                                     </Button>
+                                ) : (
+                                    <div className="w-full py-4 text-center bg-red-50 text-red-600 rounded-2xl font-bold flex items-center justify-center gap-2 border border-red-100 shadow-sm">
+                                        <X className="w-5 h-5" /> Currently Out of Stock
+                                    </div>
                                 )}
                             </div>
                         </motion.div>

@@ -736,6 +736,7 @@ export interface ShopOrderItem {
     id: number;
     samagri_item: number | null;
     item_name: string;
+    item_image?: string;
     quantity: number;
     price_at_purchase: string | number;
 }
@@ -785,6 +786,12 @@ export async function fetchAdminAllOrders(status?: string, role?: string): Promi
     const response = await apiClient.get('/samagri/checkout/admin-all-orders/', { params });
     return response.data;
 }
+
+export async function updateAdminOrderStatus(orderId: number, status: string): Promise<ShopOrder> {
+    const response = await apiClient.patch(`/samagri/checkout/${orderId}/admin-update-status/`, { status });
+    return response.data;
+}
+
 
 export async function downloadBookingInvoice(bookingId: number): Promise<void> {
     const response = await apiClient.get(`/bookings/${bookingId}/invoice/`, {
@@ -894,12 +901,12 @@ export async function fetchVendorProducts(): Promise<SamagriItem[]> {
 }
 
 export async function fetchVendorOrders(): Promise<ShopOrder[]> {
-    const response = await apiClient.get('/vendors/orders/');
+    const response = await apiClient.get('/samagri/checkout/vendor-orders/');
     return response.data;
 }
 
-export async function updateVendorOrderStatus(orderId: number, status: string) {
-    const response = await apiClient.post(`/vendors/orders/${orderId}/update_status/`, { status });
+export async function updateVendorOrderStatus(orderId: number, status: string): Promise<ShopOrder> {
+    const response = await apiClient.patch(`/samagri/checkout/${orderId}/vendor-update-status/`, { status });
     return response.data;
 }
 
