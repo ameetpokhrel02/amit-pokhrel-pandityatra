@@ -47,17 +47,18 @@ export const PaymentSuccessState: React.FC<PaymentSuccessStateProps> = ({
       case 'KHALTI':
         return (
           <img 
-            src="/images/khalti.jpeg" 
+            src="/images/khalti.webp" 
             alt="Khalti" 
             className="h-10 object-contain rounded shadow-sm"
           />
         );
       case 'STRIPE':
         return (
-          <div className="flex items-center gap-2 bg-[#635BFF] py-1.5 px-3 rounded text-white shadow-sm">
-            <CreditCard size={18} />
-            <span className="font-bold text-sm tracking-tight">Stripe</span>
-          </div>
+          <img 
+            src="/images/stripe.png" 
+            alt="Stripe" 
+            className="h-10 object-contain rounded shadow-sm mix-blend-multiply"
+          />
         );
       default:
         return (

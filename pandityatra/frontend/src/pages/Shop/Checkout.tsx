@@ -12,11 +12,13 @@ import {
 } from 'lucide-react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { useToast } from '@/hooks/use-toast';
 import apiClient from '@/lib/api-client';
 
 const CheckoutPage: React.FC = () => {
     const { items, total, clear, updateQuantity, removeItem } = useCart();
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [stockError, setStockError] = useState<string | null>(null);
     const [cartValid, setCartValid] = useState(true);
@@ -102,6 +104,13 @@ const CheckoutPage: React.FC = () => {
             };
             const response = await apiClient.post('/samagri/checkout/initiate/', payload);
             
+            // Store payment metadata for success page
+            sessionStorage.setItem('last_payment_method', formData.payment_method);
+            sessionStorage.setItem('last_order_amount', totalPayable.toString());
+            if (response.data.order_id) {
+                sessionStorage.setItem('last_order_id', response.data.order_id.toString());
+            }
+
             // Handle different payment gateways
             if (response.data.gateway === 'ESEWA' && response.data.form_data) {
                 // eSewa requires form POST submission
@@ -110,7 +119,13 @@ const CheckoutPage: React.FC = () => {
                 window.location.href = response.data.payment_url;
             }
         } catch (err: any) {
-            setStockError(err.response?.data?.error || "Checkout initiation failed. Please check stock and try again.");
+            const errorMsg = err.response?.data?.error || "Checkout initiation failed. Please check stock and try again.";
+            setStockError(errorMsg);
+            toast({
+                title: "Purchase Error",
+                description: errorMsg,
+                variant: "destructive"
+            });
             setCartValid(false);
         } finally {
             setLoading(false);
