@@ -158,11 +158,30 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
         # Payout Stats
         total_withdrawn = VendorPayout.objects.filter(vendor=vendor, status='PAID').aggregate(Sum('amount'))['amount__sum'] or 0
         
+        # Low stock item details for display
+        low_stock_items_qs = SamagriItem.objects.filter(vendor=vendor, stock_quantity__lte=5)
+        low_stock_items = []
+        for item in low_stock_items_qs:
+            image_url = None
+            if item.image:
+                try:
+                    request_obj = request
+                    image_url = request_obj.build_absolute_uri(item.image.url)
+                except Exception:
+                    image_url = str(item.image)
+            low_stock_items.append({
+                "id": item.id,
+                "name": item.name,
+                "stock_quantity": item.stock_quantity,
+                "image": image_url
+            })
+
         return Response({
             "total_revenue": total_sales,
             "total_orders": total_orders,
             "total_products": total_products,
             "low_stock_count": low_stock_products,
+            "low_stock_items": low_stock_items,
             "current_balance": vendor.balance,
             "total_withdrawn": total_withdrawn,
             "is_verified": vendor.is_verified,
