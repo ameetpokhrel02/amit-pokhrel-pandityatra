@@ -7,6 +7,11 @@ from payments.webhooks.stripe import stripe_webhook
 from payments.webhooks.khalti import khalti_webhook
 
 urlpatterns = [
+    # Verify
+    path("verify-stripe/", views.VerifyStripePaymentView.as_view(), name="stripe-verify"),
+    path("khalti/verify/", views.KhaltiVerifyView.as_view(), name="khalti-verify"),
+    path("esewa/verify/", views.EsewaVerifyView.as_view(), name="esewa-verify"),
+
     # Payment initiation
     path("create/", views.CreatePaymentIntentView.as_view(), name="payment-create"),
     path("initiate/", views.CreatePaymentIntentView.as_view(), name="payment-initiate"),
@@ -21,8 +26,4 @@ urlpatterns = [
     path("admin/withdrawals/<int:id>/approve/", views.approve_withdrawal), # 🆕 Action
     path("<int:payment_id>/refund/", views.refund_payment),
     path("<int:payment_id>/verify-manual/", views.verify_payment_manual),
-    
-    # Verify
-    path("khalti/verify/", views.KhaltiVerifyView.as_view()),
-    path("esewa/verify/", views.EsewaVerifyView.as_view()),
 ]

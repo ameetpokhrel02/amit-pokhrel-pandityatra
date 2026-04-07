@@ -4,8 +4,8 @@ Payment Views - Stripe, Khalti, and eSewa Integration
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes # 🆕 Added decorators
 from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import status, permissions
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.conf import settings
 from django.utils import timezone
 from decimal import Decimal
@@ -797,6 +797,65 @@ def refund_payment(request, payment_id):
 # ---------------------------
 # ADMIN: Manual Verification (For exceptions)
 # ---------------------------
+class VerifyStripePaymentView(APIView):
+    """
+    Verify Stripe Checkout Session status (Frontend landing page check)
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        session_id = request.query_params.get('session_id')
+        order_id = request.query_params.get('order_id')
+        
+        if not session_id:
+            return Response({"error": "Missing session_id"}, status=400)
+            
+        try:
+            # 1. Fetch the session from Stripe
+            session = stripe.checkout.Session.retrieve(session_id)
+            
+            if session.payment_status == 'paid':
+                # 2. Update the order if order_id is provided
+                amount_npr = 0
+                if order_id:
+                    from samagri.models import ShopOrder, ShopOrderStatus
+                    try:
+                        # Use select_for_update to handle race conditions with webhooks
+                        order = ShopOrder.objects.select_for_update().get(id=order_id)
+                        amount_npr = float(order.total_amount)
+                        
+                        if order.status == ShopOrderStatus.PENDING:
+                            order.status = ShopOrderStatus.PAID
+                            order.transaction_id = session.id
+                            order.save()
+                            logger.info(f"Verified Stripe payment for ShopOrder #{order_id}")
+                        else:
+                            logger.info(f"ShopOrder #{order_id} already processed (status: {order.status})")
+                    except ShopOrder.DoesNotExist:
+                        logger.warning(f"ShopOrder #{order_id} not found during Stripe verification")
+                        pass
+
+                return Response({
+                    "success": True,
+                    "status": "PAID",
+                    "payment_method": "STRIPE",
+                    "order_id": order_id,
+                    "transaction_id": session.id,
+                    "amount": amount_npr,
+                    "date": session.created # Use Stripe session creation time
+                })
+            else:
+                return Response({
+                    "success": False,
+                    "status": session.payment_status,
+                    "message": "Payment not completed"
+                })
+                
+        except Exception as e:
+            logger.error(f"Stripe verification error: {e}")
+            return Response({"error": str(e)}, status=500)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def verify_payment_manual(request, payment_id):
