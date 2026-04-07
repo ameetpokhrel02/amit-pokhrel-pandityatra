@@ -99,8 +99,16 @@ const CartDrawer: React.FC = () => {
                           </button>
                           <span className="text-xs font-bold w-4 text-center">{it.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(it.id, it.quantity + 1)}
-                            className="w-6 h-6 flex items-center justify-center hover:bg-white dark:hover:bg-gray-700 rounded-full"
+                            onClick={() => {
+                              if (it.stock_quantity !== undefined && it.quantity >= it.stock_quantity) return;
+                              updateQuantity(it.id, it.quantity + 1);
+                            }}
+                            disabled={it.stock_quantity !== undefined && it.quantity >= it.stock_quantity}
+                            className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
+                              it.stock_quantity !== undefined && it.quantity >= it.stock_quantity
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'hover:bg-white dark:hover:bg-gray-700'
+                            }`}
                           >
                             <Plus size={12} />
                           </button>

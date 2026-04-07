@@ -24,7 +24,14 @@ const CartPage: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => updateQuantity(it.id, Math.max(1, it.quantity - 1))}>-</Button>
                     <div className="px-3">{it.quantity}</div>
-                    <Button size="sm" variant="outline" onClick={() => updateQuantity(it.id, it.quantity + 1)}>+</Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => updateQuantity(it.id, it.quantity + 1)}
+                      disabled={it.stock_quantity !== undefined && it.quantity >= it.stock_quantity}
+                    >
+                      +
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -38,7 +45,7 @@ const CartPage: React.FC = () => {
             <div className="text-lg font-semibold">Total: ₹{total.toFixed(2)}</div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => clear()}>Clear</Button>
-              <Button onClick={() => alert('Checkout not implemented (frontend-only).')}>Proceed to Checkout</Button>
+              <Button onClick={() => window.location.href = '/shop/checkout'}>Proceed to Checkout</Button>
             </div>
           </div>
         </div>
