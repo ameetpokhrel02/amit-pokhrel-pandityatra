@@ -66,7 +66,7 @@ def customer_user(db):
         role='user'
     )
 
-
+    
 @pytest.fixture
 def pandit_user_with_wallet(db):
     """Fixture: Create pandit user with wallet"""
