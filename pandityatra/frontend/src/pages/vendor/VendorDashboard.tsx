@@ -38,13 +38,8 @@ const VendorDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const [statsData, ordersData] = await Promise.all([
-                fetchVendorStats(),
-                fetchVendorOrders()
-            ]);
+            const statsData = await fetchVendorStats();
             setStats(statsData);
-            setRecentOrders(ordersData.slice(0, 5));
-            
             if (!statsData.is_verified && statsData.verification_status !== 'APPROVED') {
                 setErrorStatus(statsData.verification_status as any);
             }
@@ -57,6 +52,14 @@ const VendorDashboard = () => {
             }
         } finally {
             setLoading(false);
+        }
+
+        // Load recent orders separately — errors here should not block the dashboard
+        try {
+            const ordersData = await fetchVendorOrders();
+            setRecentOrders(ordersData.slice(0, 5));
+        } catch (err) {
+            console.warn("Could not load recent orders for dashboard", err);
         }
     };
 
@@ -184,17 +187,33 @@ const VendorDashboard = () => {
                         </CardHeader>
                         <CardContent className="space-y-4 relative">
                             {stats && stats.low_stock_count > 0 && (
-                                <div className="flex items-start gap-4 p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 animate-in fade-in slide-in-from-right duration-500">
-                                    <div className="p-2 bg-white rounded-xl text-red-600 shadow-sm">
-                                        <Package className="h-4 w-4" />
+                                <div className="space-y-3 animate-in fade-in slide-in-from-right duration-500">
+                                    <div className="flex items-center gap-2 px-1">
+                                        <div className="p-1.5 bg-red-100 rounded-lg">
+                                            <Package className="h-3.5 w-3.5 text-red-600" />
+                                        </div>
+                                        <p className="text-sm font-bold text-red-700">{stats.low_stock_count} Product{stats.low_stock_count > 1 ? 's' : ''} Low on Stock</p>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-bold">{stats.low_stock_count} Products Low on Stock</p>
-                                        <p className="text-xs opacity-80 mt-1 font-medium italic">Re-stock soon to avoid losing sales.</p>
-                                        <Button variant="link" className="p-0 h-auto text-xs text-red-800 font-bold decoration-red-800 underline mt-2" asChild>
-                                            <Link to="/vendor/products">Update Inventory</Link>
-                                        </Button>
-                                    </div>
+                                    {(stats.low_stock_items || []).map((item: any) => (
+                                        <div key={item.id} className="flex items-center gap-3 p-3 bg-red-50 rounded-xl border border-red-100">
+                                            <div className="w-9 h-9 rounded-lg overflow-hidden bg-white border border-red-100 shrink-0 shadow-sm">
+                                                {item.image ? (
+                                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-red-300 font-bold text-xs">
+                                                        {item.name?.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-bold text-red-800 truncate">{item.name}</p>
+                                                <p className="text-[10px] text-red-500 font-medium">{item.stock_quantity} left in stock</p>
+                                            </div>
+                                            <Button variant="link" className="p-0 h-auto text-[10px] text-red-700 font-bold shrink-0" asChild>
+                                                <Link to="/vendor/products">Restock</Link>
+                                            </Button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                             

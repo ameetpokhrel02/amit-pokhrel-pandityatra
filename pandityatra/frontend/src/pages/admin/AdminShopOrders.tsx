@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { 
     fetchAdminAllOrders,
+    updateAdminOrderStatus,
     type ShopOrder 
 } from "@/lib/api";
 import { 
@@ -42,6 +43,7 @@ export default function AdminShopOrders() {
   const [selectedOrder, setSelectedOrder] = useState<ShopOrder | null>(null);
   const ordersPerPage = 8;
   const { toast } = useToast();
+  const [updating, setUpdating] = useState(false);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -55,6 +57,23 @@ export default function AdminShopOrders() {
       toast({ title: "Error", description: "Failed to load marketplace orders.", variant: "destructive" });
     }
     setLoading(false);
+  };
+
+  const handleUpdateStatus = async (orderId: number, newStatus: string) => {
+    setUpdating(true);
+    try {
+      const updatedOrder = await updateAdminOrderStatus(orderId, newStatus);
+      setOrders(prev => prev.map(o => o.id === orderId ? updatedOrder : o));
+      setSelectedOrder(updatedOrder);
+      toast({ title: "Order Updated", description: `Status changed to ${newStatus}` });
+    } catch (err: any) {
+      toast({ 
+        title: "Update Failed", 
+        description: err.response?.data?.error || "Failed to update status", 
+        variant: "destructive" 
+      });
+    }
+    setUpdating(false);
   };
 
   useEffect(() => {
@@ -264,12 +283,12 @@ export default function AdminShopOrders() {
                         <TableCell>{getStatusBadge(order.status)}</TableCell>
                         <TableCell className="text-right pr-6">
                             <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="h-8 gap-1.5 hover:bg-[#FF6B35] hover:text-white transition-all group-hover:shadow-md"
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 text-gray-400 hover:text-orange-600 hover:bg-orange-50 transition-all"
                               onClick={() => setSelectedOrder(order)}
                             >
-                              <Eye className="h-3.5 w-3.5" /> Inspect
+                              <Eye className="h-4 w-4" />
                             </Button>
                         </TableCell>
                       </TableRow>
@@ -364,9 +383,20 @@ export default function AdminShopOrders() {
                                 </div>
                                 {selectedOrder.items.map((item, idx) => (
                                     <div key={idx} className="grid grid-cols-4 items-center p-4 border-b last:border-0 hover:bg-gray-50 transition-colors">
-                                        <div className="col-span-2">
-                                            <span className="font-bold text-sm text-gray-800 block">{item.item_name}</span>
-                                            <span className="text-[10px] text-orange-400 font-bold uppercase tracking-tighter">Vendor: Shop #{idx + 1}</span>
+                                        <div className="col-span-2 flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 shrink-0 border border-orange-100">
+                                                {item.item_image ? (
+                                                    <img src={item.item_image} alt={item.item_name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-orange-300 font-bold text-sm">
+                                                        {item.item_name.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <span className="font-bold text-sm text-gray-800 block">{item.item_name}</span>
+                                                <span className="text-[10px] text-orange-400 font-bold uppercase tracking-tighter">Samagri Item</span>
+                                            </div>
                                         </div>
                                         <div className="text-center font-bold text-gray-600 text-sm">x{item.quantity}</div>
                                         <div className="text-right font-black text-gray-900 text-sm">NPR {Number(item.price_at_purchase) * item.quantity}</div>
@@ -378,12 +408,38 @@ export default function AdminShopOrders() {
                                 </div>
                             </div>
 
-                            <div className="mt-8 flex gap-3">
-                                <Button className="flex-1 bg-orange-600 hover:bg-orange-700 shadow-xl shadow-orange-200">
-                                    <Download className="h-4 w-4 mr-2" /> Global Invoice
-                                </Button>
-                                <Button variant="outline" className="flex-1">
-                                    Manage Escalation
+                            <div className="mt-8 flex flex-col gap-3">
+                                <div className="flex items-center gap-3 w-full">
+                                    <Select 
+                                        value={selectedOrder.status} 
+                                        onValueChange={(val) => handleUpdateStatus(selectedOrder.id, val)}
+                                        disabled={updating || selectedOrder.status === 'CANCELLED'}
+                                    >
+                                        <SelectTrigger className="flex-1 font-bold">
+                                            <SelectValue placeholder="Update Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="PENDING">Pending</SelectItem>
+                                            <SelectItem value="PAID">Paid</SelectItem>
+                                            <SelectItem value="SHIPPED">Shipped</SelectItem>
+                                            <SelectItem value="DELIVERED">Delivered</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <Button 
+                                        variant="destructive" 
+                                        disabled={updating || selectedOrder.status === 'CANCELLED'}
+                                        onClick={() => {
+                                            if (confirm('Cancel this order? Inventory will be restored.')) {
+                                                handleUpdateStatus(selectedOrder.id, 'CANCELLED');
+                                            }
+                                        }}
+                                    >
+                                        Cancel Order
+                                    </Button>
+                                </div>
+                                <Button className="w-full bg-orange-600 hover:bg-orange-700 shadow-sm" variant="default">
+                                    <Download className="h-4 w-4 mr-2" /> Download Global Invoice
                                 </Button>
                             </div>
                         </div>

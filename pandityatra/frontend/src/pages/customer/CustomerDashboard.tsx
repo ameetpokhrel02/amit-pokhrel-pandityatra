@@ -1007,8 +1007,14 @@ const CustomerDashboard: React.FC = () => {
                         <div className="space-y-3">
                           {order.items.map((item, idx) => (
                             <div key={idx} className="flex items-center gap-4 py-2 border-b last:border-0">
-                              <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                                <Package className="h-5 w-5 text-orange-400" />
+                              <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-orange-100">
+                                {item.item_image ? (
+                                  <img src={item.item_image} alt={item.item_name} className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-400 font-bold text-base">
+                                    {item.item_name?.charAt(0)}
+                                  </div>
+                                )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="font-medium text-sm line-clamp-1">{item.item_name}</p>
@@ -1436,8 +1442,14 @@ const CustomerDashboard: React.FC = () => {
                                   <div className="space-y-3">
                                     {order.items.map((item, idx) => (
                                       <div key={idx} className="flex items-center gap-4 py-2 border-b last:border-0">
-                                        <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0">
-                                          <Package className="h-5 w-5 text-orange-400" />
+                                        <div className="h-12 w-12 rounded-lg bg-orange-50 flex items-center justify-center flex-shrink-0 overflow-hidden border border-orange-100">
+                                          {item.item_image ? (
+                                            <img src={item.item_image} alt={item.item_name} className="w-full h-full object-cover" />
+                                          ) : (
+                                            <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-400 font-bold text-base">
+                                              {item.item_name?.charAt(0)}
+                                            </div>
+                                          )}
                                         </div>
                                         <div className="flex-1 min-w-0">
                                           <p className="font-medium text-sm line-clamp-1">{item.item_name}</p>

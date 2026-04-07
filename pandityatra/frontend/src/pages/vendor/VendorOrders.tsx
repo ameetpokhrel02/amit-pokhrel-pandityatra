@@ -323,9 +323,20 @@ export default function VendorOrders() {
                             <div className="border rounded-xl bg-white overflow-hidden">
                                 {selectedOrder.items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center p-3 border-b last:border-0 hover:bg-gray-50 transition-colors">
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-sm text-gray-800">{item.item_name}</span>
-                                            <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-lg overflow-hidden bg-orange-50 border border-orange-100 shrink-0">
+                                                {item.item_image ? (
+                                                    <img src={item.item_image} alt={item.item_name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-orange-400 font-bold text-sm">
+                                                        {item.item_name.charAt(0)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-sm text-gray-800">{item.item_name}</span>
+                                                <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                                            </div>
                                         </div>
                                         <span className="font-bold text-orange-600 text-sm">Rs. {Number(item.price_at_purchase) * item.quantity}</span>
                                     </div>
