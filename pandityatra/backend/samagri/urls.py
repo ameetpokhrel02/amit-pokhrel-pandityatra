@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import SamagriCategoryViewSet, SamagriItemViewSet, PujaSamagriRequirementViewSet, ShopCheckoutViewSet, AISamagriRecommendationView, WishlistViewSet
+from .views import SamagriCategoryViewSet, SamagriItemViewSet, PujaSamagriRequirementViewSet, ShopCheckoutViewSet, AISamagriRecommendationView, WishlistViewSet, CartItemViewSet
 
 # Create a router for Samagri management viewsets
 router = DefaultRouter()
@@ -15,6 +15,9 @@ router.register(r'checkout', ShopCheckoutViewSet, basename='shop-checkout')
 
 # Wishlist endpoints
 router.register(r'wishlist', WishlistViewSet, basename='wishlist')
+
+# Cart endpoints
+router.register(r'cart', CartItemViewSet, basename='cart')
 
 urlpatterns = [
     # Include all router endpoints

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem, Wishlist
+from .models import SamagriCategory, SamagriItem, PujaSamagriRequirement, ShopOrder, ShopOrderItem, Wishlist, CartItem
 from services.serializers import PujaSerializer
 from payments.utils import convert_npr_to_usd
 
@@ -46,16 +46,24 @@ class SamagriItemSerializer(serializers.ModelSerializer):
 
 class ShopOrderItemSerializer(serializers.ModelSerializer):
     item_name = serializers.SerializerMethodField()
+    item_image = serializers.SerializerMethodField()
     
     class Meta:
         model = ShopOrderItem
-        fields = ['id', 'samagri_item', 'item_name', 'quantity', 'price_at_purchase']
+        fields = ['id', 'samagri_item', 'item_name', 'item_image', 'quantity', 'price_at_purchase']
 
     def get_item_name(self, obj):
         if obj.samagri_item:
             return obj.samagri_item.name
-        # Fallback to the snapshot name if item is deleted
         return obj.item_name or "Deleted Item"
+
+    def get_item_image(self, obj):
+        if obj.samagri_item and obj.samagri_item.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.samagri_item.image.url)
+            return str(obj.samagri_item.image)
+        return None
 
 class ShopOrderSerializer(serializers.ModelSerializer):
     items = ShopOrderItemSerializer(many=True, read_only=True)
@@ -68,7 +76,7 @@ class ShopOrderSerializer(serializers.ModelSerializer):
             'full_name', 'phone_number', 'shipping_address', 'city',
             'payment_method', 'transaction_id', 'items', 'created_at'
         ]
-        read_only_fields = ['id', 'user_email', 'status', 'total_amount', 'transaction_id', 'created_at']
+        read_only_fields = ['id', 'user_email', 'total_amount', 'transaction_id', 'created_at']
 
 class ShopCheckoutSerializer(serializers.Serializer):
     items = serializers.ListField(
@@ -117,4 +125,21 @@ class WishlistAddSerializer(serializers.Serializer):
     def validate_item_id(self, value):
         if not SamagriItem.objects.filter(id=value).exists():
             raise serializers.ValidationError("Item not found.")
+        return value
+
+# --- 6. Cart Serializers ---
+
+class CartItemSerializer(serializers.ModelSerializer):
+    """Serializer for reading and writing cart items"""
+    item = SamagriItemSerializer(source='samagri_item', read_only=True)
+    item_id = serializers.IntegerField(write_only=True, required=True)
+
+    class Meta:
+        model = CartItem
+        fields = ['id', 'item', 'item_id', 'quantity', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'item', 'created_at', 'updated_at']
+
+    def validate_item_id(self, value):
+        if not SamagriItem.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Samagri item not found.")
         return value

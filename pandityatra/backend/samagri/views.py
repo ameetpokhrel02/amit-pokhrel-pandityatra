@@ -25,7 +25,7 @@ from adminpanel.utils import log_activity
 
 from .models import (
     SamagriItem, ShopOrder, ShopOrderItem, ShopOrderStatus, 
-    SamagriCategory, PujaSamagriRequirement, Wishlist
+    SamagriCategory, PujaSamagriRequirement, Wishlist, CartItem
 )
 from .serializers import (
     SamagriCategorySerializer, 
@@ -34,7 +34,8 @@ from .serializers import (
     ShopCheckoutSerializer,
     PujaSamagriRequirementSerializer,
     WishlistSerializer,
-    WishlistAddSerializer
+    WishlistAddSerializer,
+    CartItemSerializer
 )
 
 # --- AI-based Samagri Recommendation Endpoint ---
@@ -337,6 +338,7 @@ class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
 
 class ShopCheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    queryset = ShopOrder.objects.all()  # Required for DRF router to resolve {pk} in detail actions
 
     @action(detail=False, methods=['post'])
     def initiate(self, request):
@@ -477,6 +479,90 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['patch'], permission_classes=[IsAdmin], url_path='admin-update-status')
+    def admin_update_status(self, request, pk=None):
+        """PATCH /api/samagri/checkout/{id}/admin-update-status/ — Admin updates global order status"""
+        try:
+            with transaction.atomic():
+                order = ShopOrder.objects.select_for_update().get(id=pk)
+                new_status = request.data.get('status')
+                
+                if not new_status or new_status not in dict(ShopOrderStatus.choices):
+                    return Response({"error": "Valid status is required"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # If changing TO cancelled from any non-cancelled state, restore inventory
+                if new_status == 'CANCELLED' and order.status != 'CANCELLED':
+                    for order_item in order.items.all():
+                        if order_item.samagri_item:
+                            samagri = SamagriItem.objects.select_for_update().get(id=order_item.samagri_item.id)
+                            samagri.stock_quantity += order_item.quantity
+                            samagri.save()
+                            
+                order.status = new_status
+                order.save()
+                
+                log_activity(
+                    user=request.user, 
+                    action_type="ADMIN_SHOP_ORDER_UPDATE", 
+                    details=f"Updated shop order #{order.id} status to {new_status}", 
+                    request=request
+                )
+                
+                serializer = ShopOrderSerializer(order, context={'request': request})
+                return Response(serializer.data)
+                
+        except ShopOrder.DoesNotExist:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], url_path='vendor-orders')
+    def vendor_orders(self, request):
+        """GET /api/samagri/checkout/vendor-orders/ — Vendor sees orders containing their products"""
+        from vendors.models import Vendor
+        user = request.user
+        try:
+            vendor = Vendor.objects.get(pk=user.pk)
+        except Vendor.DoesNotExist:
+            return Response({"error": "Only vendors can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Filter orders that contain at least one item from this vendor
+        vendor_item_ids = SamagriItem.objects.filter(vendor=vendor).values_list('id', flat=True)
+        orders = ShopOrder.objects.filter(
+            items__samagri_item__id__in=vendor_item_ids
+        ).prefetch_related('items', 'items__samagri_item').distinct().order_by('-created_at')
+
+        serializer = ShopOrderSerializer(orders, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], url_path='vendor-update-status')
+    def vendor_update_status(self, request, pk=None):
+        """PATCH /api/samagri/checkout/{id}/vendor-update-status/ — Vendor updates order status (Shipped/Delivered)"""
+        from vendors.models import Vendor
+        user = request.user
+        try:
+            vendor = Vendor.objects.get(pk=user.pk)
+        except Vendor.DoesNotExist:
+            return Response({"error": "Only vendors can update order status."}, status=status.HTTP_403_FORBIDDEN)
+
+        vendor_item_ids = SamagriItem.objects.filter(vendor=vendor).values_list('id', flat=True)
+
+        try:
+            order = ShopOrder.objects.get(id=pk, items__samagri_item__id__in=vendor_item_ids)
+        except ShopOrder.DoesNotExist:
+            return Response({"error": "Order not found or not your product."}, status=status.HTTP_404_NOT_FOUND)
+
+        new_status = request.data.get('status')
+        allowed = ['SHIPPED', 'DELIVERED']
+        if new_status not in allowed:
+            return Response({"error": f"Vendors can only set: {', '.join(allowed)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.status = new_status
+        order.save()
+        serializer = ShopOrderSerializer(order, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin], url_path='admin-all-orders')
     def admin_all_orders(self, request):
         """GET /api/samagri/checkout/admin-all-orders/ — Admin see ALL orders with filtering"""
@@ -492,7 +578,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         if role_param:
             queryset = queryset.filter(buyer_role=role_param)
             
-        serializer = ShopOrderSerializer(queryset, many=True)
+        serializer = ShopOrderSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=False, methods=['get'], url_path='my-orders')
@@ -501,7 +587,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         orders = ShopOrder.objects.filter(user=request.user).prefetch_related(
             'items', 'items__samagri_item'
         ).order_by('-created_at')
-        serializer = ShopOrderSerializer(orders, many=True)
+        serializer = ShopOrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['get'], url_path='detail')
@@ -511,7 +597,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
             order = ShopOrder.objects.prefetch_related(
                 'items', 'items__samagri_item'
             ).get(id=pk, user=request.user)
-            serializer = ShopOrderSerializer(order)
+            serializer = ShopOrderSerializer(order, context={'request': request})
             return Response(serializer.data)
         except ShopOrder.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -754,3 +840,58 @@ class WishlistViewSet(viewsets.ViewSet):
                 "message": "Item removed from favorites",
                 "is_favorite": False
             }, status=status.HTTP_200_OK)
+
+# --- Cart ViewSet ---
+
+class CartItemViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing user's shopping cart items.
+    
+    Endpoints:
+    - GET /api/samagri/cart/ → List all cart items for user
+    - POST /api/samagri/cart/ → Add item or increment quantity
+    - PUT/PATCH /api/samagri/cart/{id}/ → Update quantity
+    - DELETE /api/samagri/cart/{id}/ → Remove item from cart
+    """
+    serializer_class = CartItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = None
+
+    def get_queryset(self):
+        return CartItem.objects.filter(user=self.request.user).select_related('samagri_item', 'samagri_item__category')
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        item_id = serializer.validated_data['item_id']
+        quantity = serializer.validated_data.get('quantity', 1)
+
+        try:
+            samagri_item = SamagriItem.objects.get(id=item_id)
+        except SamagriItem.DoesNotExist:
+            return Response({"error": "Samagri item not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if item is already in the cart
+        cart_item, created = CartItem.objects.get_or_create(
+            user=request.user,
+            samagri_item=samagri_item,
+            defaults={'quantity': quantity}
+        )
+
+        if not created:
+            # If it exists, increment the quantity
+            cart_item.quantity += quantity
+            cart_item.save()
+
+        # Return the updated cart item
+        output_serializer = self.get_serializer(cart_item)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=False, methods=['delete'])
+    def clear(self, request):
+        """DELETE /api/samagri/cart/clear/ - Clear all items from cart"""
+        CartItem.objects.filter(user=request.user).delete()
+        return Response({"message": "Cart cleared"}, status=status.HTTP_204_NO_CONTENT)
