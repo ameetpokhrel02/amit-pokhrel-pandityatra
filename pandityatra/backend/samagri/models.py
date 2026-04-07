@@ -122,3 +122,22 @@ class Wishlist(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.samagri_item.name}"
 
+# --- Cart Model ---
+
+class CartItem(models.Model):
+    """Stores user's shopping cart items persistently"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart_items')
+    samagri_item = models.ForeignKey(SamagriItem, on_delete=models.CASCADE, related_name='in_carts')
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'samagri_item')
+        ordering = ['-updated_at']
+        verbose_name = "Cart Item"
+        verbose_name_plural = "Cart Items"
+
+    def __str__(self):
+        return f"{self.user.email} - {self.quantity}x {self.samagri_item.name}"
+
