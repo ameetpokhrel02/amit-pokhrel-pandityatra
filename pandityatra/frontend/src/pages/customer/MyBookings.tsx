@@ -17,8 +17,10 @@ interface Booking {
   id: number;
   user_full_name: string;
   pandit_full_name: string;
+  pandit_id: number;
   pandit_expertise: string;
   service_name: string;
+  service_image?: string | null;
   service_location: string;
   booking_date: string;
   booking_time: string;
@@ -35,7 +37,8 @@ interface Booking {
   daily_room_name?: string;
   recording_available?: boolean;
   recording_url?: string;
-  pandit_id: number;
+  pandit: number;
+  cancelled_by?: string | null;
 }
 
 const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
@@ -43,7 +46,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'accepted' | 'completed' | 'cancelled' | 'recordings'>('all');
+  const [filter, setFilter] = useState<'all' | 'upcoming' | 'history' | 'recordings' | 'pending' | 'accepted' | 'completed' | 'cancelled'>('all');
   const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [recordingUrls, setRecordingUrls] = useState<Record<number, string | null>>({});
   const [videoHistory, setVideoHistory] = useState<any[]>([]);
@@ -177,13 +180,27 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
         return 'bg-green-100 text-green-800 border-green-200';
       case 'CANCELLED':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'MISSED':
+        return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'RESCHEDULED':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const filteredBookings = bookings.filter(booking => {
+    const now = new Date();
+    const bDate = new Date(`${booking.booking_date}T${booking.booking_time || '00:00:00'}`);
+    const isPast = bDate.getTime() < (now.getTime() - (60 * 60 * 1000)); // Consider past if more than 1hr ago
+
     if (filter === 'all') return true;
+    if (filter === 'upcoming') {
+      return !isPast && (booking.status === 'PENDING' || booking.status === 'ACCEPTED');
+    }
+    if (filter === 'history') {
+      return isPast || booking.status === 'COMPLETED' || booking.status === 'CANCELLED';
+    }
     return booking.status === filter.toUpperCase();
   });
 
@@ -221,7 +238,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-6">
-        {(['all', 'pending', 'accepted', 'completed', 'cancelled', 'recordings'] as const).map((status) => (
+        {(['all', 'upcoming', 'history', 'recordings'] as const).map((status) => (
           <Button
             key={status}
             variant={filter === status ? 'default' : 'outline'}
@@ -229,7 +246,9 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
             className={`capitalize ${filter === status ? 'bg-orange-600 hover:bg-orange-700' : ''
               }`}
           >
-            {status === 'recordings' ? 'My Recordings' : status}
+            {status === 'recordings' ? 'My Recordings' : 
+             status === 'upcoming' ? 'Upcoming' :
+             status === 'history' ? 'History' : status}
           </Button>
         ))}
       </div>
@@ -292,11 +311,21 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <Card className="hover:shadow-md transition-shadow duration-300 border-l-4 border-l-orange-500">
+              <Card className="hover:shadow-md transition-shadow duration-300 border-l-4 border-l-orange-500 overflow-hidden">
                 <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl font-bold text-gray-900 mb-1">
+                  <div className="flex justify-between items-start gap-4">
+                    {/* Service image thumbnail */}
+                    <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-orange-100 shadow-sm">
+                      {booking.service_image ? (
+                        <img src={booking.service_image} alt={booking.service_name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-xl">
+                          {booking.service_name?.charAt(0) || '🪔'}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-xl font-bold text-gray-900 mb-1 truncate">
                         {booking.service_name}
                       </CardTitle>
                       <CardDescription className="flex items-center gap-1">
@@ -304,7 +333,7 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                         Pandit: <Link to={`/pandits/${booking.pandit_id}`} className="text-orange-600 hover:underline font-medium ml-1">{booking.pandit_full_name}</Link>
                       </CardDescription>
                     </div>
-                    <Badge className={`${getStatusColor(booking.status)} px-3 py-1 rounded-full`}>
+                    <Badge className={`${getStatusColor(booking.status)} px-3 py-1 rounded-full shrink-0`}>
                       {booking.status}
                     </Badge>
                   </div>
@@ -452,6 +481,31 @@ const MyBookingsPage: React.FC<{ embedded?: boolean }> = ({ embedded = false }) 
                         <Video className="h-4 w-4 mr-2" />
                         { (booking.daily_room_url || booking.video_room_url) ? 'Regenerate Link' : 'Generate Link' }
                       </Button>
+                    )}
+
+                    {/* RESCHEDULE BUTTON for MISSED or CANCELLED */}
+                    {(booking.status === 'MISSED' || (booking.status === 'CANCELLED' && booking.cancelled_by !== 'admin')) && (
+                      (() => {
+                        const bookingDate = new Date(booking.booking_date);
+                        const diffDays = Math.ceil((new Date().getTime() - bookingDate.getTime()) / (1000 * 60 * 60 * 24));
+                        
+                        // Policy: Free reschedule within 7 days
+                        if (diffDays <= 7) {
+                          return (
+                            <Button 
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                              onClick={() => {
+                                // Redirect to a specialized reschedule page or open modal
+                                // For simplicity and consistency with the story, we'll use a specific route
+                                navigate(`/booking/reschedule/${booking.id}`);
+                              }}
+                            >
+                              <Calendar className="w-4 h-4 mr-2" /> Reschedule Puja
+                            </Button>
+                          );
+                        }
+                        return null;
+                      })()
                     )}
                   </div>
                 </CardContent>

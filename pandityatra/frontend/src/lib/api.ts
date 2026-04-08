@@ -187,11 +187,12 @@ export async function fetchAllPujas(): Promise<Puja[]> {
 
 export interface Booking {
     id: number;
-    user: number; // or object depending on serializer
-    user_full_name?: string; // from serializer
-    pandit: number; // or object
-    pandit_name?: string; // helper for UI
-    pandit_full_name?: string; // from serializer
+    user: number;
+    user_full_name?: string;
+    pandit: number;
+    pandit_id?: number;
+    pandit_name?: string;
+    pandit_full_name?: string;
     pandit_expertise?: string;
     status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
     booking_date: string;
@@ -204,9 +205,11 @@ export interface Booking {
     payment_method?: string;
     transaction_id?: string;
     service_name?: string;
+    service_image?: string | null;
     service_location?: string;
     service_duration?: number;
     created_at?: string;
+    is_reviewed?: boolean;
 
     // Daily.co Integration
     daily_room_url?: string;

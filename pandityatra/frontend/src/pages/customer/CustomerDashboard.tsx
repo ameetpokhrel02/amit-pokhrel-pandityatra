@@ -92,8 +92,15 @@ const CustomerDashboard: React.FC = () => {
           fetchPandits(),
         ]);
 
+        const now = new Date();
         const upcoming = bookingsRes
-          .filter((b) => ["PENDING", "ACCEPTED"].includes(b.status))
+          .filter((b) => {
+            const isStatusUpcoming = ["PENDING", "ACCEPTED"].includes(b.status);
+            // Consider it past if it was more than 1 hour ago
+            const bookingDateTime = new Date(`${b.booking_date}T${b.booking_time || '00:00:00'}`);
+            const isFuture = bookingDateTime.getTime() > (now.getTime() - (60 * 60 * 1000));
+            return isStatusUpcoming && isFuture;
+          })
           .sort(
             (a, b) =>
               new Date(`${a.booking_date}T${a.booking_time}`).getTime() -
@@ -121,12 +128,14 @@ const CustomerDashboard: React.FC = () => {
               b.status === "PENDING"
                 ? `Request sent for ${b.service_name}`
                 : b.status === "ACCEPTED"
-                ? `Booking confirmed with ${b.pandit_name}`
+                ? `Booking confirmed with ${b.pandit_name || b.pandit_full_name}`
                 : b.status === "COMPLETED"
                 ? `Completed ${b.service_name}`
                 : `Cancelled ${b.service_name}`,
             date: b.booking_date,
             status: b.status,
+            image: b.service_image,
+            serviceName: b.service_name,
           }));
         setActivities(acts);
 
@@ -139,6 +148,13 @@ const CustomerDashboard: React.FC = () => {
       }
     };
     loadData();
+
+    // Auto-refresh: when user returns to this tab (e.g. after booking payment), reload data instantly
+    const handleVisible = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', handleVisible);
+    return () => document.removeEventListener('visibilitychange', handleVisible);
   }, []);
 
   // Load orders when marketplace tab is active
@@ -329,18 +345,21 @@ const CustomerDashboard: React.FC = () => {
                   </CardHeader>
                   <CardContent>
                     {nextBooking ? (
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-lg">
-                            {nextBooking.service_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            With {nextBooking.pandit_name}
-                          </p>
-                          <p className="text-sm">
-                            {nextBooking.booking_date} at{" "}
-                            {nextBooking.booking_time}
-                          </p>
+                      <div className="flex flex-col md:flex-row md:items-center gap-4">
+                        {/* Service image */}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-orange-200 shadow-sm">
+                          {nextBooking.service_image ? (
+                            <img src={nextBooking.service_image} alt={nextBooking.service_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-2xl">
+                              {nextBooking.service_name?.charAt(0) || '🪔'}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-lg">{nextBooking.service_name}</p>
+                          <p className="text-sm text-muted-foreground">With {nextBooking.pandit_name || nextBooking.pandit_full_name}</p>
+                          <p className="text-sm">{nextBooking.booking_date} at {nextBooking.booking_time}</p>
                         </div>
                         <div className="flex gap-2">
                           {(nextBooking.daily_room_url ||
@@ -536,19 +555,30 @@ const CustomerDashboard: React.FC = () => {
                         activities.map((activity, i) => (
                           <div
                             key={i}
-                            className="flex gap-3 pb-3 border-b last:border-0 last:pb-0"
+                            className="flex items-center gap-4 pb-3 border-b last:border-0 last:pb-0"
                           >
-                            <div
-                              className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${
-                                activity.status === "ACCEPTED"
-                                  ? "bg-green-500"
-                                  : activity.status === "COMPLETED"
-                                  ? "bg-blue-500"
-                                  : activity.status === "CANCELLED"
-                                  ? "bg-red-500"
-                                  : "bg-orange-500"
-                              }`}
-                            />
+                            <div className="relative">
+                              <div className="w-10 h-10 rounded-lg overflow-hidden border border-orange-100 shrink-0">
+                                {activity.image ? (
+                                  <img src={activity.image} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <div className="w-full h-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white font-bold text-sm">
+                                    {activity.serviceName?.charAt(0) || '🪔'}
+                                  </div>
+                                )}
+                              </div>
+                              <div
+                                className={`absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-2 border-white flex-shrink-0 ${
+                                  activity.status === "ACCEPTED"
+                                    ? "bg-green-500"
+                                    : activity.status === "COMPLETED"
+                                    ? "bg-blue-500"
+                                    : activity.status === "CANCELLED"
+                                    ? "bg-red-500"
+                                    : "bg-orange-500"
+                                }`}
+                              />
+                            </div>
                             <div>
                               <p className="text-sm font-medium">
                                 {activity.text}

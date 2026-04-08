@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { WS_BASE_URL } from "@/lib/helper"
 import { useAuth } from "@/hooks/useAuth"
 import VideoTile from "./VideoTile"
-import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff, Send, FileText, Maximize2, Minimize2 } from "lucide-react"
+import { Loader2, Mic, MicOff, Video, VideoOff, PhoneOff, Send, FileText, Maximize2, Minimize2, MonitorUp } from "lucide-react"
 
 type SignalPayload = {
   type: string
@@ -113,6 +113,7 @@ export default function PujaRoom() {
   const [wakeLockActive, setWakeLockActive] = useState(false)
   const [needsMediaPermission, setNeedsMediaPermission] = useState(false)
   const [resolvedContext, setResolvedContext] = useState<{ roomId: string; bookingId: string | null } | null>(null)
+  const [bookingDetails, setBookingDetails] = useState<any>(null)
   const [showSidebar, setShowSidebar] = useState(false)
   const [activeTab, setActiveTab] = useState<'chat' | 'info'>('chat')
   const [unreadCount, setUnreadCount] = useState(0)
@@ -513,17 +514,20 @@ export default function PujaRoom() {
     }
 
     if (data.type === 'chat') {
+      const isHistorical = (data as any).is_historical;
       setChatMessages((prev) => {
         const next: RoomChatMessage = {
           id: data.chat_id || Date.now(),
           message: data.message || '',
           userId: data.user_id,
           username: data.username,
-          sender: data.sender,
+          sender: data.sender as any,
           timestamp: data.timestamp,
         }
         if (!next.message) return prev
-        if (!showSidebar) setUnreadCount(c => c + 1)
+        // Avoid duplicates if we already fetched history
+        if (prev.some(m => m.id === next.id)) return prev
+        if (!showSidebar && !isHistorical) setUnreadCount(c => c + 1)
         return [...prev, next]
       })
       return
@@ -540,7 +544,7 @@ export default function PujaRoom() {
 
     if (data.type === 'heartbeat-ack') {
       if (heartbeatTimeoutRef.current) {
-        window.clearTimeout(heartbeatTimeoutRef.current)
+        window.clearTimeout(heartbeatTimeoutRef.current as number)
         heartbeatTimeoutRef.current = null
       }
       return
@@ -559,7 +563,7 @@ export default function PujaRoom() {
       return
     }
 
-    const remoteUserId = data.user_id
+    const remoteUserId = data.user_id!
 
     if (data.username) {
       setParticipantNames((prev) => ({ ...prev, [String(remoteUserId)]: data.username || `Participant ${remoteUserId}` }))
@@ -577,15 +581,16 @@ export default function PujaRoom() {
 
     if (data.type === 'participant-joined' || data.type === 'join') {
       if (!myUserId) return
-      if (myUserId < remoteUserId) {
+      if (myUserId! < remoteUserId) {
         await createOfferFor(remoteUserId)
       }
       return
     }
 
     if (data.type === 'offer' && data.sdp) {
+      console.log('WebRTC: Received Offer from', remoteUserId)
       const pc = createOrGetPeer(remoteUserId)
-      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp!))
       const answer = await pc.createAnswer()
       await pc.setLocalDescription(answer)
       sendSignal({ type: 'answer', sdp: answer, target_user_id: remoteUserId })
@@ -593,12 +598,14 @@ export default function PujaRoom() {
     }
 
     if (data.type === 'answer' && data.sdp) {
+      console.log('WebRTC: Received Answer from', remoteUserId)
       const pc = createOrGetPeer(remoteUserId)
-      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp!))
       return
     }
 
     if (data.type === 'ice-candidate' && data.candidate) {
+      console.log('WebRTC: Received ICE Candidate from', remoteUserId)
       const pc = createOrGetPeer(remoteUserId)
       await pc.addIceCandidate(new RTCIceCandidate(data.candidate))
     }
@@ -797,32 +804,99 @@ export default function PujaRoom() {
     navigate('/my-bookings')
   }, [closeAll, isRecording, navigate, sendSignal, stopLocalMedia, stopRecordingAndUpload])
 
-  const sendChatMessage = useCallback(() => {
+  const sendChatMessage = useCallback(async () => {
     const content = chatInput.trim()
     if (!content) return
+    
+    // 1. Send via signaling for real-time appearance in video sidebar
     sendSignal({ type: 'chat', message: content })
     setChatInput('')
-  }, [chatInput, sendSignal])
 
-  const toggleAudio = useCallback(() => {
-    const activeStream = localStreamRef.current || localStream
-    if (!activeStream) return
-    const enabled = !isMicOn
-    activeStream.getAudioTracks().forEach((track) => {
-      track.enabled = enabled
-    })
-    setIsMicOn(enabled)
-  }, [isMicOn, localStream])
+    // 2. Persist to backend chat room if linked
+    const roomId = bookingDetails?.chat_room_id
+    if (roomId) {
+      try {
+        await apiClient.post(`/chat/rooms/${roomId}/messages/`, {
+          content: content,
+          message_type: 'TEXT'
+        })
+      } catch (err) {
+        console.error('Failed to persist call message to inquiry chat', err)
+      }
+    }
+  }, [chatInput, sendSignal, bookingDetails?.chat_room_id])
 
-  const toggleVideo = useCallback(() => {
-    const activeStream = localStreamRef.current || localStream
-    if (!activeStream) return
-    const enabled = !isVideoOn
-    activeStream.getVideoTracks().forEach((track) => {
-      track.enabled = enabled
-    })
-    setIsVideoOn(enabled)
-  }, [isVideoOn, localStream])
+  const toggleAudio = useCallback(async () => {
+    if (isMicOn) {
+      // Turn OFF: Stop track and release hardware
+      const tracks = localStreamRef.current?.getAudioTracks() || []
+      tracks.forEach(t => {
+        t.enabled = false
+        t.stop()
+      })
+      setIsMicOn(false)
+    } else {
+      // Turn ON: Re-acquire hardware
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: selectedAudioInput ? { deviceId: { exact: selectedAudioInput } } : true,
+          video: false
+        })
+        const newTrack = stream.getAudioTracks()[0]
+        if (newTrack) {
+          if (localStreamRef.current) {
+            localStreamRef.current.getAudioTracks().forEach(t => {
+              t.stop()
+              localStreamRef.current?.removeTrack(t)
+            })
+            localStreamRef.current.addTrack(newTrack)
+            await replaceTrackAcrossPeers('audio', newTrack)
+            setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
+          }
+          setIsMicOn(true)
+        }
+      } catch (err) {
+        console.error("Failed to re-acquire audio hardware", err)
+        setError("Unable to access microphone. Please check permissions.")
+      }
+    }
+  }, [isMicOn, selectedAudioInput, replaceTrackAcrossPeers])
+
+  const toggleVideo = useCallback(async () => {
+    if (isVideoOn) {
+      // Turn OFF: Stop track and release hardware (camera light goes off)
+      const tracks = localStreamRef.current?.getVideoTracks() || []
+      tracks.forEach(t => {
+        t.enabled = false
+        t.stop()
+      })
+      setIsVideoOn(false)
+    } else {
+      // Turn ON: Re-acquire hardware
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: selectedVideoInput ? { deviceId: { exact: selectedVideoInput } } : true,
+          audio: false
+        })
+        const newTrack = stream.getVideoTracks()[0]
+        if (newTrack) {
+          if (localStreamRef.current) {
+            localStreamRef.current.getVideoTracks().forEach(t => {
+              t.stop()
+              localStreamRef.current?.removeTrack(t)
+            })
+            localStreamRef.current.addTrack(newTrack)
+            await replaceTrackAcrossPeers('video', newTrack)
+            setLocalStream(new MediaStream(localStreamRef.current.getTracks()))
+          }
+          setIsVideoOn(true)
+        }
+      } catch (err) {
+        console.error("Failed to re-acquire camera hardware", err)
+        setError("Unable to access camera. Please check permissions.")
+      }
+    }
+  }, [isVideoOn, selectedVideoInput, replaceTrackAcrossPeers])
 
   const toggleFullscreen = useCallback(async () => {
     try {
@@ -1116,6 +1190,29 @@ export default function PujaRoom() {
         await validateRoomAccess(resolvedRoomId, resolvedBookingId)
         setResolvedContext({ roomId: resolvedRoomId, bookingId: resolvedBookingId })
 
+        if (resolvedBookingId) {
+          try {
+            const bResp = await apiClient.get(`/bookings/${resolvedBookingId}/`)
+            setBookingDetails(bResp.data)
+            
+            // If we have a chat room, fetch history
+            if (bResp.data?.chat_room_id) {
+               const cResp = await apiClient.get(`/chat/rooms/${bResp.data.chat_room_id}/messages/`)
+               const history: RoomChatMessage[] = (cResp.data || []).map((m: any) => ({
+                 id: m.id,
+                 message: m.content,
+                 userId: m.sender_obj?.id,
+                 username: m.sender_name,
+                 sender: m.sender, // Already 'user' or 'pandit'
+                 timestamp: m.timestamp
+               }))
+               setChatMessages(history)
+            }
+          } catch (err) {
+            console.error('Failed to load booking/chat context', err)
+          }
+        }
+
         await startMediaAndConnect(resolvedRoomId, resolvedBookingId, token)
       } catch (err: unknown) {
         console.error(err)
@@ -1281,7 +1378,7 @@ export default function PujaRoom() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#111] overflow-hidden relative flex flex-col font-sans select-none">
+    <div ref={videoStageRef} className="h-screen w-full bg-[#111] overflow-hidden relative flex flex-col font-sans select-none">
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 via-black to-slate-900 pointer-events-none opacity-40" />
 
@@ -1357,7 +1454,20 @@ export default function PujaRoom() {
                     <Video className="h-8 w-8 text-orange-500 opacity-60" />
                   </div>
                 </div>
-                <h3 className="mt-6 text-xl font-bold text-white/80">Waiting for Pandit Ji...</h3>
+                <div className="flex flex-col items-center">
+                  <div className="w-24 h-24 rounded-full bg-orange-100/10 flex items-center justify-center mb-6">
+                    <Video className="w-12 h-12 text-orange-500/50" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">
+                    {user?.role === 'pandit' 
+                      ? `Waiting for ${bookingDetails?.user_full_name || 'Customer'}...`
+                      : `Waiting for Pandit ${bookingDetails?.pandit_full_name || 'Ji'}...`
+                    }
+                  </h3>
+                  <p className="text-white/40 text-center max-w-xs">
+                    The ritual space is being prepared. Your connection will start automatically when the other participant joins.
+                  </p>
+                </div>
                 <p className="text-sm opacity-60 mt-2 italic">The sacred space is being prepared</p>
               </div>
             )}
@@ -1424,7 +1534,7 @@ export default function PujaRoom() {
               onClick={toggleScreenShare}
               title={isScreenSharing ? 'Stop sharing screen' : 'Share screen'}
             >
-              <Maximize2 className={`h-5 w-5 ${isScreenSharing ? 'rotate-45' : ''}`} />
+              <MonitorUp className={`h-5 w-5 ${isScreenSharing ? 'rotate-45' : ''}`} />
             </Button>
 
             <Button

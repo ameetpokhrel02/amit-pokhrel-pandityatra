@@ -44,6 +44,7 @@ const BookingForm = lazy(() => import('./pages/Booking/BookingForm'))
 const Confirmation = lazy(() => import('./pages/Booking/Confirmation'))
 const ReviewForm = lazy(() => import('./pages/Booking/ReviewForm'))
 const MyBookingsPage = lazy(() => import('./pages/customer/MyBookings'))
+const RescheduleBooking = lazy(() => import('./pages/Booking/RescheduleBooking'))
 
 // Customer
 const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'))
@@ -230,6 +231,12 @@ function App() {
                       <Route path="/booking/confirmation" element={
                         <ProtectedRoute allowedRoles={['user']}>
                           <Confirmation />
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/booking/reschedule/:id" element={
+                        <ProtectedRoute allowedRoles={['user']}>
+                          <RescheduleBooking />
                         </ProtectedRoute>
                       } />
 
