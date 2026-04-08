@@ -6,7 +6,7 @@ from rest_framework import status
 from django.utils import timezone
 
 from users.models import User
-from pandits.models import Pandit, PanditService
+from pandits.models import PanditUser, PanditService
 from services.models import Puja
 from samagri.models import SamagriCategory, SamagriItem
 
@@ -21,15 +21,12 @@ class UserE2EFlowTests(APITestCase):
             role='user'
         )
 
-        self.pandit_user = User.objects.create_user(
+        self.pandit_profile = PanditUser.objects.create_user(
             username='testpandit',
             email='pandit@test.com',
             password='testpassword123',
             full_name='Test Pandit',
-            role='pandit'
-        )
-        self.pandit_profile = Pandit.objects.create(
-            user=self.pandit_user,
+            role='pandit',
             bio='Test Bio',
             experience_years=5,
             is_verified=True,

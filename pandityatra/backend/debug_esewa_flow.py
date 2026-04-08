@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.test import Client
 
 from bookings.models import Booking, BookingStatus, LocationChoices
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from payments.models import Payment
 from payments.utils import (
     initiate_esewa_payment,
@@ -191,7 +191,7 @@ def run_shop_path(client, user):
 def main():
     User = get_user_model()
     user = User.objects.order_by("id").first()
-    pandit = Pandit.objects.select_related("user").order_by("id").first()
+    pandit = PanditUser.objects.order_by("id").first()
 
     if not user:
         print("No user exists in DB. Cannot run test.")

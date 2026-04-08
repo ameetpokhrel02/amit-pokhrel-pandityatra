@@ -1,11 +1,21 @@
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import RequestFactory
 from django.contrib.auth import get_user_model
 from vendors.serializers import VendorRegisterSerializer
+from unittest.mock import patch, MagicMock
 
 User = get_user_model()
 
-def run_test():
+@patch('cloudinary.uploader.upload')
+def run_test(mock_upload):
+    # Setup mock return value
+    mock_upload.return_value = {
+        'public_id': 'test_id',
+        'secure_url': 'https://test-cloudinary.com/id_proof.jpg',
+        'format': 'jpg'
+    }
+    
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from django.test import RequestFactory
+
     factory = RequestFactory()
     request = factory.post('/api/vendors/register/')
 

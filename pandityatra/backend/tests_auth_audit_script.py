@@ -9,8 +9,8 @@ django.setup()
 
 from django.test import Client
 from users.models import User
-from pandits.models import Pandit
-from vendors.models import VendorProfile
+from pandits.models import PanditUser
+from vendors.models import Vendor
 import json
 
 def test_auth_audit():

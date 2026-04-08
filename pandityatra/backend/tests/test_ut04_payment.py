@@ -5,7 +5,7 @@ from rest_framework import status
 from unittest.mock import patch, MagicMock
 from users.models import User
 from bookings.models import Booking
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from services.models import Puja
 import datetime
 
@@ -16,10 +16,10 @@ class PaymentIntegrationTests(TestCase):
         self.customer = User.objects.create_user(
             username='pay_customer', password='123', email='pay@example.com', role='user'
         )
-        self.pandit_user = User.objects.create_user(
+        self.pandit = PanditUser.objects.create_user(
             username='pay_pandit', password='123', email='p@example.com', role='pandit'
         )
-        self.pandit = Pandit.objects.create(user=self.pandit_user)
+        self.pandit_user = self.pandit
         self.puja = Puja.objects.create(name='Test Puja', base_price=100)
         
         self.booking = Booking.objects.create(

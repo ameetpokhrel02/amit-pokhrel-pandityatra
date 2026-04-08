@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from users.models import User
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from services.models import Puja
 import datetime
 
@@ -19,18 +19,16 @@ class PanditBookingTests(TestCase):
         )
         
         # Create a pandit user and profile
-        self.pandit_user = User.objects.create_user(
+        self.pandit = PanditUser.objects.create_user(
             username='pandit1',
             password='TestPassword123!',
             email='pandit@example.com',
-            role='pandit'
-        )
-        self.pandit = Pandit.objects.create(
-            user=self.pandit_user,
+            role='pandit',
             bio='Experienced Pandit',
             experience_years=10,
             is_verified=True
         )
+        self.pandit_user = self.pandit
         
         # Create a Puja service
         self.puja = Puja.objects.create(

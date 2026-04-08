@@ -17,7 +17,7 @@ def check_bookings():
     for b in bookings:
         print(f"Booking ID: {b.id}")
         print(f"  User: {b.user.email} ({b.user.full_name})")
-        print(f"  Pandit: {b.pandit.user.full_name}")
+        print(f"  Pandit: {b.pandit.full_name}")
         print(f"  Date: {b.booking_date}")
         print(f"  Status: {b.status}")
         print(f"  Location: {b.service_location}")

@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from users.models import User, ContactMessage
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from bookings.models import Booking, LocationChoices, BookingStatus
 from chat.models import ChatRoom, Message
 from samagri.models import SamagriCategory, SamagriItem
@@ -25,21 +25,19 @@ class UltimateProjectAPITests(APITestCase):
             phone_number="9841234567"
         )
         
-        self.pandit_user = User.objects.create_user(
+        self.pandit = PanditUser.objects.create_user(
             username="ultimate_pandit",
             email="ultimate_pandit@example.com",
             password=self.user_password,
             role="pandit",
             full_name="Ultimate Pandit",
-            phone_number="9800000000"
-        )
-        self.pandit = Pandit.objects.create(
-            user=self.pandit_user, 
+            phone_number="9800000000",
             is_verified=True, 
             expertise="Vedic",
             language="Sanskrit",
             experience_years=10
         )
+        self.pandit_user = self.pandit
         
         self.puja_category = PujaCategory.objects.create(name="Ultimate Category")
         self.puja = Puja.objects.create(

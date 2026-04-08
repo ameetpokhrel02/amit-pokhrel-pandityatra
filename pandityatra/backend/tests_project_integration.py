@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from users.models import User, ContactMessage
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from bookings.models import Booking, LocationChoices, BookingStatus
 from chat.models import ChatRoom, Message
 from samagri.models import SamagriCategory, SamagriItem
@@ -24,15 +24,15 @@ class ProjectIntegrationTests(APITestCase):
             phone_number="9841234567"
         )
         
-        self.pandit_user = User.objects.create_user(
+        self.pandit = PanditUser.objects.create_user(
             username="testpandit",
             email="pandit@example.com",
             password=self.user_password,
             role="pandit",
-            full_name="Test Pandit"
+            full_name="Test Pandit",
+            is_verified=True
         )
-        # Pandit must be verified to receive bookings
-        self.pandit = Pandit.objects.create(user=self.pandit_user, is_verified=True)
+        self.pandit_user = self.pandit
         
         self.puja_category = PujaCategory.objects.create(name="Festivals")
         self.puja = Puja.objects.create(
@@ -179,7 +179,7 @@ class ProjectIntegrationTests(APITestCase):
         notify_booking_created(booking)
         
         # Authenticate as pandit to check notifications
-        self.client.force_authenticate(user=self.pandit_user)
+        self.client.force_authenticate(user=self.pandit)
         url = reverse('notification-list')
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
