@@ -24,9 +24,10 @@ def send_puja_email(recipient_email, subject, template_name, context):
         )
         msg.attach_alternative(html_content, "text/html")
         msg.send(fail_silently=False)
+        logger.info(f"Successfully sent email to {recipient_email} with subject: {subject}")
         return True
     except Exception as e:
-        logger.error(f"Failed to send email to {recipient_email}: {e}")
+        logger.error(f"Failed to send email to {recipient_email}: {str(e)}", exc_info=True)
         return False
 
 def send_room_ready_email(booking):

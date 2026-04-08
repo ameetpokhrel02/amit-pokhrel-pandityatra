@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from drf_spectacular.utils import extend_schema
 from django.utils import timezone
 from django.conf import settings
 from .models import Notification, PushNotificationToken
@@ -37,12 +38,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 class PushTokenView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = PushTokenSerializer
 
+    @extend_schema(summary="Get Push Tokens")
     def get(self, request):
         tokens = PushNotificationToken.objects.filter(user=request.user, is_active=True)
         serializer = PushTokenSerializer(tokens, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(summary="Register Push Token")
     def post(self, request):
         serializer = PushTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -81,6 +85,7 @@ class PushTokenView(APIView):
 class PushVapidPublicKeyView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(summary="Get VAPID Public Key")
     def get(self, request):
         return Response(
             {'vapid_public_key': getattr(settings, 'VAPID_PUBLIC_KEY', '')},

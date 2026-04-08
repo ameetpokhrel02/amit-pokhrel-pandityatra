@@ -128,7 +128,7 @@ def _send_push_for_notification(notification):
 
 def notify_booking_created(booking):
     """Notify pandit when a new booking is created"""
-    pandit_user = booking.pandit.user
+    pandit_user = booking.pandit
     create_notification(
         user=pandit_user,
         notification_type='BOOKING_CREATED',
@@ -146,7 +146,7 @@ def notify_booking_accepted(booking):
         user=booking.user,
         notification_type='BOOKING_ACCEPTED',
         title='Booking Confirmed! 🎉',
-        message=f'Your {booking.service_name} with {booking.pandit.user.full_name} on {booking.booking_date} has been confirmed.',
+        message=f'Your {booking.service_name} with {booking.pandit.full_name} on {booking.booking_date} has been confirmed.',
         booking=booking,
         title_ne='बुकिङ स्वीकृत!',
         message_ne=f'तपाईंको {booking.service_name} स्वीकृत भएको छ।'
@@ -167,7 +167,7 @@ def notify_booking_completed(booking):
     
     # Also notify pandit
     create_notification(
-        user=booking.pandit.user,
+        user=booking.pandit,
         notification_type='BOOKING_COMPLETED',
         title='Booking Completed',
         message=f'{booking.service_name} for {booking.user.full_name} has been marked as completed.',
@@ -180,7 +180,7 @@ def notify_booking_cancelled(booking, cancelled_by='user'):
     if cancelled_by == 'user':
         # Notify pandit
         create_notification(
-            user=booking.pandit.user,
+            user=booking.pandit,
             notification_type='BOOKING_CANCELLED',
             title='Booking Cancelled',
             message=f'{booking.user.full_name} has cancelled the {booking.service_name} booking for {booking.booking_date}.',
@@ -192,7 +192,7 @@ def notify_booking_cancelled(booking, cancelled_by='user'):
             user=booking.user,
             notification_type='BOOKING_CANCELLED',
             title='Booking Cancelled',
-            message=f'Your {booking.service_name} booking with {booking.pandit.user.full_name} has been cancelled.',
+            message=f'Your {booking.service_name} booking with {booking.pandit.full_name} has been cancelled.',
             booking=booking
         )
 
@@ -211,7 +211,7 @@ def notify_payment_success(booking, amount):
     
     # Notify pandit about the payment
     create_notification(
-        user=booking.pandit.user,
+        user=booking.pandit,
         notification_type='PAYMENT_SUCCESS',
         title='Payment Received',
         message=f'Payment of ₹{amount} received for {booking.service_name} from {booking.user.full_name}.',
@@ -242,13 +242,13 @@ def notify_new_message(message):
     message_preview = message.content
     
     # Determine recipient
-    if chat_room.pandit and chat_room.pandit.user == sender:
+    if chat_room.pandit and chat_room.pandit == sender:
         recipient = chat_room.customer
-    elif chat_room.vendor and chat_room.vendor.user == sender:
+    elif chat_room.vendor and chat_room.vendor == sender:
         recipient = chat_room.customer
     else:
         # Sender is customer, recipient is either pandit or vendor
-        recipient = chat_room.pandit.user if chat_room.pandit else chat_room.vendor.user
+        recipient = chat_room.pandit if chat_room.pandit else chat_room.vendor
     
     sender_name = sender.full_name or sender.username
     
@@ -274,7 +274,7 @@ def notify_puja_room_ready(booking):
     
     # Notify pandit
     create_notification(
-        user=booking.pandit.user,
+        user=booking.pandit,
         notification_type='PUJA_ROOM_READY',
         title='Puja Room Ready (Pandit)',
         message=f'The room for {booking.service_name} is ready. Start when scheduled.',
@@ -285,7 +285,7 @@ def notify_puja_room_ready(booking):
 def notify_incoming_video_call(booking, caller_user):
     """Notify the opposite participant that call is incoming."""
     caller_id = getattr(caller_user, 'id', None)
-    recipient = booking.pandit.user if booking.user_id == caller_id else booking.user
+    recipient = booking.pandit if booking.user_id == caller_id else booking.user
 
     # anti-spam guard: do not create repeated incoming-call notifications within 30 seconds
     recent_cutoff = timezone.now() - timedelta(seconds=30)
@@ -319,13 +319,13 @@ def notify_missed_video_puja(booking, missing_user_role):
             user=booking.user,
             notification_type='VIDEO_CALL_MISSED',
             title='You missed your Puja session 🙏',
-            message=f'You missed the scheduled {booking.service_name} with {booking.pandit.user.full_name}. Would you like to reschedule?',
+            message=f'You missed the scheduled {booking.service_name} with {booking.pandit.full_name}. Would you like to reschedule?',
             booking=booking,
             title_ne='पूजा सत्र छुटेको छ 🙏',
-            message_ne=f'तपाईंको {booking.pandit.user.full_name} सँगको {booking.service_name} छुटेको छ। के तपाईं अर्को समय मिलाउन चाहनुहुन्छ?'
+            message_ne=f'तपाईंको {booking.pandit.full_name} सँगको {booking.service_name} छुटेको छ। के तपाईं अर्को समय मिलाउन चाहनुहुन्छ?'
         )
         create_notification(
-            user=booking.pandit.user,
+            user=booking.pandit,
             notification_type='VIDEO_CALL_MISSED',
             title=f'{booking.user.full_name} did not join',
             message=f'{booking.user.full_name} did not join the {booking.service_name}. The session has ended. Recording not created.',
@@ -339,13 +339,13 @@ def notify_missed_video_puja(booking, missing_user_role):
             user=booking.user,
             notification_type='VIDEO_CALL_MISSED',
             title='Pandit did not join',
-            message=f'{booking.pandit.user.full_name} did not join the session. We have notified him. You can request a reschedule.',
+            message=f'{booking.pandit.full_name} did not join the session. We have notified him. You can request a reschedule.',
             booking=booking,
             title_ne='पण्डित सामेल हुनुभएन',
-            message_ne=f'{booking.pandit.user.full_name} सामेल हुनुभएन। तपाईं अर्को समय अनुरोध गर्न सक्नुहुन्छ।'
+            message_ne=f'{booking.pandit.full_name} सामेल हुनुभएन। तपाईं अर्को समय अनुरोध गर्न सक्नुहुन्छ।'
         )
         create_notification(
-            user=booking.pandit.user,
+            user=booking.pandit,
             notification_type='VIDEO_CALL_MISSED',
             title='You missed a scheduled Puja 🙏',
             message=f'You missed the {booking.service_name} with {booking.user.full_name}. Please contact the customer to reschedule.',
@@ -366,7 +366,7 @@ def notify_recording_ready_review(booking):
     )
 
     create_notification(
-        user=booking.pandit.user,
+        user=booking.pandit,
         notification_type='RECORDING_READY_REVIEW',
         title='Recording Uploaded',
         message=f'The recording for {booking.service_name} is ready for customer review.',
@@ -385,7 +385,7 @@ def notify_puja_room_reminder(booking):
     )
 
     create_notification(
-        user=booking.pandit.user,
+        user=booking.pandit,
         notification_type='PUJA_ROOM_READY',
         title='Upcoming puja in 5 minutes ⏰',
         message=f'{booking.service_name} with {booking.user.full_name} starts in 5 minutes. Please join the room.',
@@ -396,7 +396,7 @@ def notify_puja_room_reminder(booking):
 def notify_review_received(review):
     """Notify pandit when they receive a review"""
     create_notification(
-        user=review.pandit.user,
+        user=review.pandit,
         notification_type='REVIEW_RECEIVED',
         title=f'New Review ⭐ {review.rating}/5',
         message=f'{review.customer.full_name} left a review: "{review.comment[:80]}..."' if review.comment else f'{review.customer.full_name} rated you {review.rating} stars.',
@@ -407,7 +407,7 @@ def notify_review_received(review):
 def notify_pandit_verified(pandit):
     """Notify pandit when their profile is verified"""
     create_notification(
-        user=pandit.user,
+        user=pandit,
         notification_type='PANDIT_VERIFIED',
         title='Profile Verified ✓',
         message='Congratulations! Your pandit profile has been verified. You can now receive bookings.',
@@ -421,7 +421,7 @@ def notify_pandit_rejected(pandit, reason=None):
         message += f' Reason: {reason}'
     
     create_notification(
-        user=pandit.user,
+        user=pandit,
         notification_type='PANDIT_REJECTED',
         title='Profile Verification Update',
         message=message,
