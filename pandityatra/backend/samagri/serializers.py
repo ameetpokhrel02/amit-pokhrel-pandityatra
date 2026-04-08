@@ -87,7 +87,7 @@ class ShopCheckoutSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
     shipping_address = serializers.CharField()
     city = serializers.CharField(max_length=100)
-    payment_method = serializers.ChoiceField(choices=['STRIPE', 'KHALTI', 'ESEWA'])
+    payment_method = serializers.ChoiceField(choices=['STRIPE', 'KHALTI', 'ESEWA', 'COD'])
 
 # --- 4. Puja Requirement Serializer ---
 class PujaSamagriRequirementSerializer(serializers.ModelSerializer):

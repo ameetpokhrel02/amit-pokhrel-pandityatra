@@ -28,12 +28,22 @@ const EsewaVerify: React.FC = () => {
   }, []);
 
   const verifyPayment = async () => {
-    const data = searchParams.get('data');
+    let data = searchParams.get('data');
+
+    // Handle eSewa's weird URL string combinations. Sometimes it appends ?data= instead of &data=
+    if (!data) {
+      const searchStr = window.location.search;
+      const dataMatch = searchStr.match(/[?&]data=([^&]+)/);
+      if (dataMatch) {
+         data = dataMatch[1];
+      }
+    }
 
     if (!data) {
-      setError('Invalid payment parameters');
+      console.error("Full URL search string:", window.location.search);
+      setError(`Invalid parameters. Received: ${window.location.search}`);
       setVerifying(false);
-      setTimeout(() => navigate('/payment/cancel'), 3000);
+      setTimeout(() => navigate('/payment/cancel'), 5000);
       return;
     }
 

@@ -509,11 +509,18 @@ class KhaltiVerifyView(APIView):
             payment.status = 'FAILED'
             payment.save()
             
+            # Log exact failure reason
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                message=f"Khalti Booking verification failed: {details}",
+                context={"payment_id": payment.id, "pidx": pidx}
+            )
+            
             # 🔔 Send payment failed notification
             notify_payment_failed(booking, "Khalti payment verification failed")
             
             return Response(
-                {"error": "Payment verification failed"},
+                {"error": f"Payment verification failed: {details}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -534,8 +541,13 @@ class KhaltiVerifyView(APIView):
                 'type': 'SHOP_ORDER'
             })
         else:
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                message=f"Khalti Shop verification failed: {details}",
+                context={"order_id": order.id, "pidx": pidx}
+            )
             return Response(
-                {"error": "Payment verification failed"},
+                {"error": f"Payment verification failed: {details}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -616,6 +628,21 @@ class EsewaVerifyView(APIView):
         success, transaction_code, details = verify_esewa_payment(encoded_data)
         
         if success:
+            # Strict Amount Validation
+            import decimal
+            esewa_amount = str(details.get('total_amount', '0')).replace(',', '')
+            try:
+                if float(payment.amount_npr) != float(esewa_amount):
+                    PaymentErrorLog.objects.create(
+                        error_type="PAYMENT",
+                        message=f"Booking eSewa Amount mismatch. Expected {payment.amount_npr}, got {esewa_amount}",
+                        context={"payment_id": payment.id, "esewa_data": details}
+                    )
+                    return Response({"error": "Payment amount mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(f"Error checking eSewa amount: {e}")
+                pass
+                
             # Update payment
             payment.status = 'COMPLETED'
             payment.completed_at = timezone.now()
@@ -661,11 +688,18 @@ class EsewaVerifyView(APIView):
             payment.status = 'FAILED'
             payment.save()
             
+            # Log the exact failure reason from eSewa verify
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                message=f"eSewa Booking verification failed: {details}",
+                context={"payment_id": payment.id, "encoded_data": encoded_data}
+            )
+            
             # 🔔 Send payment failed notification
             notify_payment_failed(booking, "eSewa payment verification failed")
             
             return Response(
-                {"error": "Payment verification failed"},
+                {"error": f"Payment verification failed: {details}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -673,8 +707,24 @@ class EsewaVerifyView(APIView):
         success, transaction_code, details = verify_esewa_payment(encoded_data)
         
         if success:
+            # Strict Amount Validation
+            import decimal
+            esewa_amount = str(details.get('total_amount', '0')).replace(',', '')
+            try:
+                if float(order.total_amount) != float(esewa_amount):
+                    PaymentErrorLog.objects.create(
+                        error_type="PAYMENT",
+                        message=f"Shop eSewa Amount mismatch. Expected {order.total_amount}, got {esewa_amount}",
+                        context={"order_id": order.id, "esewa_data": details}
+                    )
+                    return Response({"error": "Payment amount mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.error(f"Error checking eSewa amount: {e}")
+                pass
+                
             order.status = ShopOrderStatus.PAID
             order.payment_method = 'ESEWA'
+            
             # Keep original transaction UUID for idempotent callback re-verification.
             # Only set transaction_id if it was empty.
             if not order.transaction_id:
@@ -689,8 +739,14 @@ class EsewaVerifyView(APIView):
                 'type': 'SHOP_ORDER'
             })
         else:
+            # Log the exact failure reason from eSewa verify
+            PaymentErrorLog.objects.create(
+                error_type="PAYMENT",
+                message=f"eSewa Shop verification failed: {details}",
+                context={"order_id": order.id, "encoded_data": encoded_data}
+            )
             return Response(
-                {"error": "Payment verification failed"},
+                {"error": f"Payment verification failed: {details}"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 

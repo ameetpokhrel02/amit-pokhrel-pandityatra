@@ -62,7 +62,7 @@ const CheckoutPage: React.FC = () => {
         shipping_address: '',
         city: '',
         zip_code: '',
-        payment_method: 'ESEWA' as 'STRIPE' | 'KHALTI' | 'ESEWA'
+        payment_method: 'ESEWA' as 'STRIPE' | 'KHALTI' | 'ESEWA' | 'COD'
     });
 
     if (items.length === 0) {
@@ -115,6 +115,10 @@ const CheckoutPage: React.FC = () => {
             if (response.data.gateway === 'ESEWA' && response.data.form_data) {
                 // eSewa requires form POST submission
                 submitEsewaForm(response.data.payment_url, response.data.form_data);
+            } else if (response.data.gateway === 'COD') {
+                // COD bypasses external gateway
+                clear();
+                navigate(`/shop/payment/success?order_id=${response.data.order_id}`);
             } else if (response.data.payment_url) {
                 window.location.href = response.data.payment_url;
             }
@@ -376,7 +380,7 @@ const CheckoutPage: React.FC = () => {
                                         <RadioGroup
                                             defaultValue="ESEWA"
                                             onValueChange={(v) => setFormData({ ...formData, payment_method: v as any })}
-                                            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
                                         >
                                             {/* eSewa */}
                                             <Label
@@ -443,6 +447,28 @@ const CheckoutPage: React.FC = () => {
                                                     </div>
                                                 )}
                                             </Label>
+
+                                            {/* Cash on Delivery */}
+                                            <Label
+                                                htmlFor="cod"
+                                                className={`relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all hover:shadow-lg ${
+                                                    formData.payment_method === 'COD' 
+                                                        ? 'border-orange-500 bg-gradient-to-br from-orange-50 to-orange-100/50 shadow-lg shadow-orange-500/20' 
+                                                        : 'border-gray-200 hover:border-orange-300'
+                                                }`}
+                                            >
+                                                <RadioGroupItem value="COD" id="cod" className="sr-only" />
+                                                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-orange-400 to-orange-500 shadow-md flex items-center justify-center mb-3">
+                                                    <Truck className="w-8 h-8 text-white" />
+                                                </div>
+                                                <p className="font-bold text-gray-800">COD</p>
+                                                <p className="text-xs text-gray-500 text-center mt-1">Cash on Delivery</p>
+                                                {formData.payment_method === 'COD' && (
+                                                    <div className="absolute top-2 right-2 w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+                                                        <ChevronRight className="w-4 h-4 text-white" />
+                                                    </div>
+                                                )}
+                                            </Label>
                                         </RadioGroup>
                                     </div>
                                 </div>
@@ -456,7 +482,9 @@ const CheckoutPage: React.FC = () => {
                                             ? 'bg-gradient-to-r from-[#60BB46] to-[#4fa339] hover:from-[#4fa339] hover:to-[#3d8a2d]' 
                                             : formData.payment_method === 'KHALTI'
                                             ? 'bg-gradient-to-r from-[#5C2D91] to-[#4a2475] hover:from-[#4a2475] hover:to-[#3a1c5e]'
-                                            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                                            : formData.payment_method === 'STRIPE'
+                                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+                                            : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700'
                                     }`}
                                 >
                                     {loading ? (
@@ -475,7 +503,10 @@ const CheckoutPage: React.FC = () => {
                                             {formData.payment_method === 'STRIPE' && (
                                                 <CreditCard className="w-6 h-6" />
                                             )}
-                                            Process to Checkout
+                                            {formData.payment_method === 'COD' && (
+                                                <Truck className="w-6 h-6" />
+                                            )}
+                                            {formData.payment_method === 'COD' ? 'Place Order' : 'Process to Checkout'}
                                             <ChevronRight className="w-5 h-5" />
                                         </span>
                                     )}

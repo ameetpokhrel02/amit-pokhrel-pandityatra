@@ -28,13 +28,29 @@ const ShopEsewaVerify: React.FC = () => {
   }, []);
 
   const verifyPayment = async () => {
-    const data = searchParams.get('data');
-    const orderId = searchParams.get('order_id');
+    let data = searchParams.get('data');
+    let orderId = searchParams.get('order_id');
+
+    // Handle eSewa's weird URL string combinations. Sometimes it appends ?data= instead of &data=
+    if (!data) {
+      const searchStr = window.location.search;
+      const dataMatch = searchStr.match(/[?&]data=([^&]+)/);
+      if (dataMatch) {
+         data = dataMatch[1];
+      }
+    }
+    
+    if (!data && orderId && orderId.includes('?data=')) {
+      const parts = orderId.split('?data=');
+      orderId = parts[0];
+      data = parts[1];
+    }
 
     if (!data) {
-      setError('Invalid payment parameters');
+      console.error("Full URL search string:", window.location.search);
+      setError(`Invalid parameters. Received: ${window.location.search}`);
       setVerifying(false);
-      setTimeout(() => navigate('/shop/payment/cancel'), 3000);
+      setTimeout(() => navigate('/shop/payment/cancel'), 5000);
       return;
     }
 

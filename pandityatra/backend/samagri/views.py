@@ -5,6 +5,7 @@ from groq import Groq
 
 from django.db import models, transaction
 from django.conf import settings
+from django.utils import timezone
 from django.http import HttpResponse
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
@@ -476,6 +477,16 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                         })
                     else:
                         raise Exception(f"eSewa Error: {payment_url}")
+
+                elif payment_method == 'COD':
+                    # Cash on Delivery - Bypass payment gateway
+                    order.transaction_id = f"COD-{order.id}-{timezone.now().timestamp()}"
+                    order.save()
+                    return Response({
+                        "order_id": order.id,
+                        "gateway": "COD",
+                        "status": "PENDING"
+                    })
 
         except SamagriItem.DoesNotExist:
             return Response({"error": "Item not found"}, status=status.HTTP_404_NOT_FOUND)

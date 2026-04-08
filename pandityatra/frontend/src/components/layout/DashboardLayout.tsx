@@ -82,18 +82,21 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
     // Chat unread count polling
     useEffect(() => {
         if (!user) return;
-        
+
+        let intervalId: any;
         const loadUnreadCount = async () => {
             try {
                 const count = await fetchUnreadChatCount();
                 setUnreadCount(count);
-            } catch (err) {
-                // Silently ignore poll errors
+            } catch (err: any) {
+                if (err?.response?.status === 401) {
+                    clearInterval(intervalId);
+                }
             }
         };
 
         loadUnreadCount();
-        const intervalId = setInterval(loadUnreadCount, 30000); // 30s
+        intervalId = setInterval(loadUnreadCount, 30000); // 30s
         return () => clearInterval(intervalId);
     }, [user]);
 
@@ -105,8 +108,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         if (!token) return;
 
         const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-        const wsHost = import.meta.env.VITE_API_URL 
-            ? new URL(import.meta.env.VITE_API_URL).host 
+        const wsHost = import.meta.env.VITE_API_URL
+            ? new URL(import.meta.env.VITE_API_URL).host
             : window.location.host;
         const wsUrl = `${wsProtocol}://${wsHost}/ws/admin/notifications/?token=${token}`;
 
@@ -158,15 +161,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
             { icon: Calendar, label: 'My Bookings', path: '/my-bookings' },
             { icon: PlayCircle, label: 'My Recordings', path: '/my-bookings?tab=recordings' },
-            { icon: Store, label: 'Marketplace', path: '/dashboard?tab=marketplace', children: [
-                { icon: ShoppingCart, label: 'My Cart', path: '/dashboard?tab=marketplace&sub=cart' },
-                { icon: Heart, label: 'My Favorites', path: '/dashboard?tab=marketplace&sub=favorites' },
-                { icon: ClipboardList, label: 'My Orders', path: '/dashboard?tab=marketplace&sub=orders' },
-            ]},
-            { icon: Receipt, label: 'My Purchases', path: '/dashboard?tab=purchases', children: [
-                { icon: Calendar, label: 'Booking History', path: '/dashboard?tab=purchases&sub=bookings' },
-                { icon: Package, label: 'Shop Orders', path: '/dashboard?tab=purchases&sub=shop-orders' },
-            ]},
+            {
+                icon: Store, label: 'Marketplace', path: '/dashboard?tab=marketplace', children: [
+                    { icon: ShoppingCart, label: 'My Cart', path: '/dashboard?tab=marketplace&sub=cart' },
+                    { icon: Heart, label: 'My Favorites', path: '/dashboard?tab=marketplace&sub=favorites' },
+                    { icon: ClipboardList, label: 'My Orders', path: '/dashboard?tab=marketplace&sub=orders' },
+                ]
+            },
+            {
+                icon: Receipt, label: 'My Purchases', path: '/dashboard?tab=purchases', children: [
+                    { icon: Calendar, label: 'Booking History', path: '/dashboard?tab=purchases&sub=bookings' },
+                    { icon: Package, label: 'Shop Orders', path: '/dashboard?tab=purchases&sub=shop-orders' },
+                ]
+            },
             { icon: MessageCircle, label: 'Messages', path: '/messages' },
             { icon: User, label: 'Profile', path: '/profile' },
             { icon: Bot, label: 'AI Preferences', path: '/profile?tab=ai-preferences' },
@@ -189,19 +196,25 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         admin: [
             { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
             { icon: Users, label: 'Users', path: '/admin/users' },
-            { icon: User, label: 'Pandits', path: '/admin/pandits-list', children: [
-                { icon: Users, label: 'All Pandits', path: '/admin/pandits-list' },
-                { icon: AlertTriangle, label: 'Verification', path: '/admin/pandits' },
-            ]},
-            { icon: Store, label: 'Vendors', path: '/admin/vendors-list', children: [
-                { icon: Users, label: 'All Vendors', path: '/admin/vendors-list' },
-                { icon: Shield, label: 'Verification', path: '/admin/vendors-verification' },
-            ]},
+            {
+                icon: User, label: 'Pandits', path: '/admin/pandits-list', children: [
+                    { icon: Users, label: 'All Pandits', path: '/admin/pandits-list' },
+                    { icon: AlertTriangle, label: 'Verification', path: '/admin/pandits' },
+                ]
+            },
+            {
+                icon: Store, label: 'Vendors', path: '/admin/vendors-list', children: [
+                    { icon: Users, label: 'All Vendors', path: '/admin/vendors-list' },
+                    { icon: Shield, label: 'Verification', path: '/admin/vendors-verification' },
+                ]
+            },
             { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
-            { icon: Package, label: 'Inventory', path: '/admin/inventory', children: [
-                { icon: Package, label: 'Samagri', path: '/admin/inventory' },
-                { icon: BookOpen, label: 'Services', path: '/admin/services' },
-            ]},
+            {
+                icon: Package, label: 'Inventory', path: '/admin/inventory', children: [
+                    { icon: Package, label: 'Samagri', path: '/admin/inventory' },
+                    { icon: BookOpen, label: 'Services', path: '/admin/services' },
+                ]
+            },
             { icon: Wallet, label: 'Payments', path: '/admin/payments' },
             { icon: ShoppingCart, label: 'Marketplace Orders', path: '/admin/marketplace-orders' },
             { icon: DollarSign, label: 'Payouts', path: '/admin/payouts' },
@@ -450,8 +463,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             </AnimatePresence>
 
             {/* Main Content Area */}
-            <main 
-                id="dashboard-main-content" 
+            <main
+                id="dashboard-main-content"
                 className={cn(
                     "flex-1 min-w-0 pt-16 md:pt-0 bg-[#FDFCFB]",
                     location.pathname.includes('/messages') ? "overflow-hidden h-screen" : "overflow-auto"

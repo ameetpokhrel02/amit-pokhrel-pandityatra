@@ -106,8 +106,10 @@ export const useNotifications = () => {
       
       setNotifications(notificationData);
       setUnreadCount(notificationData.filter((n: Notification) => !n.is_read).length);
-    } catch {
-      // Silent fail
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+         setAuthFailed(true);
+      }
     } finally {
       setLoading(false);
     }

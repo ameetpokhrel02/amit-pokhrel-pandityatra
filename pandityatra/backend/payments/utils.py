@@ -110,22 +110,29 @@ def create_video_room(booking_id, booking_date, service_name):
 def verify_khalti_payment(pidx, amount):
     try:
         response = requests.post(
-            f"{settings.KHALTI_API_URL}/payment/verify/",
-            headers={"Authorization": f"Key {settings.KHALTI_SECRET_KEY}"},
-            data={"token": pidx, "amount": int(amount * 100)},
+            f"{settings.KHALTI_API_URL}/epayment/lookup/",
+            headers={
+                "Authorization": f"Key {settings.KHALTI_SECRET_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={"pidx": pidx},
             timeout=10,
         )
 
         if response.status_code == 200:
             data = response.json()
-            return True, data.get("idx"), data
+            if data.get("status") == "Completed":
+                return True, data.get("transaction_id"), data
+            else:
+                logger.error(f"Khalti verify status not Completed: {data}")
+                return False, None, f"Payment status is {data.get('status')}"
 
-        logger.error(response.text)
-        return False, None, {}
+        logger.error(f"Khalti verify API failed: {response.text}")
+        return False, None, response.json() if "{" in response.text else response.text
 
     except Exception as e:
         logger.error(f"Khalti verify error: {e}")
-        return False, None, {}
+        return False, None, str(e)
 
 
 def initiate_khalti_payment(amount_npr, order_id, return_url, website_url, user_info=None):
@@ -303,14 +310,27 @@ def verify_esewa_payment(encoded_data):
              
         # Extract fields in the exact order requested by eSewa
         fields = signed_field_names.split(',')
-        message_parts = [f"{field}={payment_data.get(field, '')}" for field in fields]
+        message_parts = []
+        for field in fields:
+            val = payment_data.get(field, '')
+            # Guarantee strict string conversion to prevent sandbox type mismatches
+            if isinstance(val, float) and val.is_integer():
+                val = str(int(val))
+            elif isinstance(val, (int, float)):
+                val = str(val)
+            # Some old eSewa gateways send commas
+            if field == 'total_amount' and isinstance(val, str):
+                val = val.replace(',', '')
+            message_parts.append(f"{field}={val}")
+            
         expected_message = ",".join(message_parts)
         
         expected_signature = generate_esewa_signature(expected_message, secret_key)
         
         if signature != expected_signature:
             logger.error(f"eSewa signature mismatch. Expected: {expected_signature}, Got: {signature}")
-            return False, None, "Invalid signature"
+            logger.error(f"Signed string was: {expected_message}")
+            return False, None, f"Invalid signature mismatch. Signed Message: {expected_message}"
 
         configured_product_code = getattr(settings, 'ESEWA_PRODUCT_CODE', 'EPAYTEST')
         if product_code != configured_product_code:
