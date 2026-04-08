@@ -58,6 +58,7 @@ class VideoHistorySerializer(serializers.ModelSerializer):
     puja_name = serializers.CharField(source="booking.service_name", read_only=True)
     date = serializers.DateField(source="booking.booking_date", read_only=True)
     start_time = serializers.TimeField(source="booking.booking_time", read_only=True)
+    booking_id = serializers.IntegerField(source="booking.id", read_only=True)
     partner_name = serializers.SerializerMethodField()
     duration_seconds = serializers.SerializerMethodField()
     status = serializers.CharField(source="booking.status", read_only=True)
@@ -79,10 +80,17 @@ class VideoHistorySerializer(serializers.ModelSerializer):
         ]
 
     def get_partner_name(self, obj):
-        user = self.context.get("request").user
+        request = self.context.get("request")
+        if not request or not request.user:
+            return "Partner"
+            
+        user = request.user
         booking = obj.booking
-        if user.role == "pandit":
-            return booking.user.full_name
+        if not booking:
+            return "Partner"
+            
+        if getattr(user, 'role', 'user') == "pandit":
+            return booking.user.full_name if booking.user else "Customer"
         return booking.pandit.full_name if booking.pandit else "Pandit"
 
     def get_duration_seconds(self, obj):

@@ -11,7 +11,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import AccessToken
 
 from bookings.models import Booking
-from pandits.models import Pandit
+from pandits.models import PanditUser
 from services.models import Puja, PujaCategory
 from users.models import User
 from video.models import VideoRoom

@@ -149,7 +149,7 @@ class VideoJourneyTests(TransactionTestCase):
             # We manually update joined_at for the participant
             def update_participant():
                 participant = VideoParticipant.objects.get(room=self.room, user=self.ramesh_user)
-                participant.joined_at = timezone.now() - timedelta(minutes=6)
+                participant.joined_at = timezone.now() - timedelta(minutes=9)
                 participant.save()
                 
             await sync_to_async(update_participant)()

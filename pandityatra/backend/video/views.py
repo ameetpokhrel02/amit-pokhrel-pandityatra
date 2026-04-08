@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone as dt_timezone
 from pathlib import Path
 
 from rest_framework.decorators import api_view, permission_classes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -100,6 +101,7 @@ def _validate_booking_video_state(booking):
     return True, "ok"
 
 
+@extend_schema(summary="Video: Get ICE Servers")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def ice_servers(request):
@@ -150,6 +152,7 @@ def ice_servers(request):
     )
 
 
+@extend_schema(summary="Video: Auto-Create Room")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_room_auto(request):
@@ -179,6 +182,7 @@ def create_room_auto(request):
     )
 
 
+@extend_schema(summary="Video: Room Details", responses=VideoRoomDetailSerializer)
 @api_view(["GET", "PATCH"])
 @permission_classes([IsAuthenticated])
 def room_details(request, room_id):
@@ -213,6 +217,7 @@ def room_details(request, room_id):
         return Response({"error": "Unable to load room details"}, status=500)
 
 
+@extend_schema(summary="Video: Upload Recording")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def upload_recording(request, room_id):
@@ -368,6 +373,7 @@ def finalize_recording_upload(request, room_id):
     return Response({"success": True, "recording_url": room.recording_url}, status=201)
 
 
+@extend_schema(summary="Video: Validate Room Access")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def validate_room_access(request, room_id):
@@ -399,6 +405,7 @@ def validate_room_access(request, room_id):
     })
 
 
+@extend_schema(summary="Video: Start Call")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def start_room(request, room_id):
@@ -418,6 +425,7 @@ def start_room(request, room_id):
     return Response({"success": True, "room_status": room.status, "started_at": booking.puja_start_time})
 
 
+@extend_schema(summary="Video: End Call")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def end_room(request, room_id):
@@ -456,6 +464,7 @@ def get_video_room(request, booking_id):
         "recording_url": room.recording_url,
     })
 
+@extend_schema(summary="Video: Create Daily.co Token")
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_video_token(request):
@@ -606,6 +615,7 @@ def generate_video_link(request, booking_id):
         logger.error(f"Manual room creation failed: {e}")
         return Response({"error": str(e)}, status=500)
 
+@extend_schema(summary="Video: Get Call History")
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def video_history(request):
