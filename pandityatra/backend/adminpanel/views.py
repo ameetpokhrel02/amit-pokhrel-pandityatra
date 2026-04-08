@@ -8,6 +8,9 @@ from pandits.models import PanditUser
 from vendors.models import Vendor
 from adminpanel.models import PaymentErrorLog
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
+@extend_schema(summary="Admin: Get/Update Error Logs")
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated])
 def admin_error_logs(request):
@@ -55,6 +58,7 @@ def admin_error_logs(request):
 
 User = get_user_model()
 
+@extend_schema(summary="Admin: Overview Dashboard Stats")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_dashboard(request):
@@ -82,6 +86,7 @@ def admin_dashboard(request):
 
 from .models import ActivityLog
 
+@extend_schema(summary="Admin: Activity Logs")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_activity_logs(request):
@@ -147,6 +152,7 @@ from pandits.models import PanditUser
 from users.models import User
 from bookings.models import Booking, BookingStatus
 
+@extend_schema(summary="Admin: Deep Platform Analytics")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def admin_analytics_deep(request):

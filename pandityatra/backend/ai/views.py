@@ -6,11 +6,13 @@ from rest_framework.decorators import api_view, permission_classes
 from .service import AIOrchestrator
 from .tool_router import ToolRouter
 from .constants import TOOL_NAMES
+from drf_spectacular.utils import extend_schema
 
 
 class AIChatView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(summary="AI Chat Interface")
     def post(self, request):
         message = request.data.get("message", "").strip()
         if not message:
@@ -26,6 +28,7 @@ class AIChatView(APIView):
 class AIPujaSamagriView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(summary="AI Puja Samagri Recommendation")
     def post(self, request):
         puja_id = request.data.get("puja_id")
         if not puja_id:

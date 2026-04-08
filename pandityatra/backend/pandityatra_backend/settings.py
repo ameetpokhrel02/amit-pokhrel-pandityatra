@@ -35,8 +35,17 @@ def env_list(name: str, default: str = ''):
 
 
 # Quick-start development settings - unsuitable for production
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-43jvp0e$qvj%e8m&l#3@@s_pc%apgv%xg!o@_pqx&=v2&c8b@z')
+# See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = env_bool('DEBUG', False)
+
+if not DEBUG and not SECRET_KEY:
+    raise ValueError("The SECRET_KEY environment variable is required in production.")
+
+# Fallback for development ONLY
+if not SECRET_KEY:
+    SECRET_KEY = 'django-insecure-43jvp0e$qvj%e8m&l#3@@s_pc%apgv%xg!o@_pqx&=v2&c8b@z'
 
 # Host allowlist for local web + Expo/mobile development.
 # Use ALLOWED_HOSTS in .env to override.
@@ -341,9 +350,17 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # App Password n
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # CORS Configuration
-CORS_ALLOW_ALL_ORIGINS = True  # Required for Expo mobile environment flexibility
-CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS', os.getenv('FRONTEND_URL', 'http://localhost:5173'))
-CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS', f"{os.getenv('FRONTEND_URL', 'http://localhost:5173')},http://localhost:8000")
+# Standard CORS hardening: Disable wildcard in production
+CORS_ALLOW_ALL_ORIGINS = env_bool('CORS_ALLOW_ALL_ORIGINS', DEBUG)
+CORS_ALLOWED_ORIGINS = env_list('CORS_ALLOWED_ORIGINS')
+# Fallback for dev if env is empty
+if not CORS_ALLOWED_ORIGINS and DEBUG:
+    CORS_ALLOWED_ORIGINS = [os.getenv('FRONTEND_URL', 'http://localhost:5173')]
+
+# CSRF Trusted Origins
+CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+if not CSRF_TRUSTED_ORIGINS and DEBUG:
+    CSRF_TRUSTED_ORIGINS = [os.getenv('FRONTEND_URL', 'http://localhost:5173'), 'http://localhost:8000']
 
 # Mobile Absolute URL Support
 USE_X_FORWARDED_HOST = True
