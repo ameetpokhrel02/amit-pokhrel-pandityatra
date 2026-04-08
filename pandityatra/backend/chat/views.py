@@ -3,6 +3,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.utils import timezone
 from .models import ChatRoom, Message, ChatMessage
 from .serializers import ChatRoomSerializer, MessageSerializer
@@ -19,6 +20,7 @@ class UnreadMessageCountView(APIView):
     """Returns the total number of unread messages for the current user across all their chat rooms."""
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(summary="Get Total Unread Message Count")
     def get(self, request):
         user = request.user
         count = Message.objects.filter(
@@ -142,6 +144,7 @@ class QuickGuideChat(APIView):
     """
     permission_classes = [AllowAny]
 
+    @extend_schema(summary="AI Guide Chat (Post message)")
     def post(self, request):
         try:
             message = request.data.get('message')
@@ -161,7 +164,7 @@ class QuickGuideChat(APIView):
                 if active_bookings.exists():
                     booking_info = []
                     for b in active_bookings:
-                        booking_info.append(f"Booking ID {b.id}: {b.service_name} with Pandit {b.pandit.user.full_name} on {b.booking_date}")
+                        booking_info.append(f"Booking ID {b.id}: {b.service_name} with Pandit {b.pandit.full_name} on {b.booking_date}")
                     booking_context = "\nACTIVE USER BOOKINGS:\n" + "\n".join(booking_info) + "\nNote: If a user asks about their puja, suggest switching to the real-time chat mode using their Booking ID."
 
             tools = [
@@ -243,7 +246,7 @@ class QuickGuideChat(APIView):
                 ).first()
                 if active_booking:
                     service_name = active_booking.service.name if active_booking.service else active_booking.service_name
-                    pandit_name = active_booking.pandit.user.full_name if active_booking.pandit.user.full_name else active_booking.pandit.user.username
+                    pandit_name = active_booking.pandit.full_name if active_booking.pandit.full_name else active_booking.pandit.username
                     booking_context = f"The user has an ACTIVE BOOKING (ID: {active_booking.id}) for {service_name} with Pandit {pandit_name}. Mention this if relevant."
 
             PANDITYATRA_KNOWLEDGE = """
@@ -448,6 +451,7 @@ class QuickChatView(APIView):
     """
     permission_classes = [AllowAny]
     
+    @extend_schema(summary="Quick AI Chat")
     def post(self, request):
         try:
             from ai.service import AIOrchestrator
@@ -481,6 +485,7 @@ class ChatRoomInitiateView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(summary="Initiate Pandit Chat", responses={200: ChatRoomSerializer})
     def post(self, request):
         pandit_id = request.data.get('pandit_id')
         if not pandit_id:
@@ -511,6 +516,7 @@ class VendorChatRoomInitiateView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(summary="Initiate Vendor Chat", responses={200: ChatRoomSerializer})
     def post(self, request):
         vendor_id = request.data.get('vendor_id')
         order_id = request.data.get('order_id')

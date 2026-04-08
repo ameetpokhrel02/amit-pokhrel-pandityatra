@@ -3,8 +3,8 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from pandits.models import Pandit
-from vendors.models import VendorProfile
+from pandits.models import PanditUser
+from vendors.models import Vendor
 from .models import ChatRoom, Message
 
 User = get_user_model()
@@ -17,20 +17,21 @@ class ChatSystemTestCase(APITestCase):
         self.customer = User.objects.create_user(username='cust', email='cust@t.com', role='user')
         self.hacker = User.objects.create_user(username='hacker', email='hacker@t.com', role='user')
         
-        self.vendor_user = User.objects.create_user(username='vend', email='vend@t.com', role='vendor')
-        self.vendor = VendorProfile.objects.create(
-            user=self.vendor_user, shop_name='V-Shop', business_type='Shop',
+        self.vendor = Vendor.objects.create_user(
+            username='vend', email='vend@t.com', role='vendor',
+            shop_name='V-Shop', business_type='Shop',
             address='KTM', city='KTM', bank_name='B', bank_account_number='1',
             account_holder_name='V', verification_status='APPROVED', is_verified=True
         )
+        self.vendor_user = self.vendor
         
-        self.pandit_user = User.objects.create_user(username='pand', email='pand@t.com', role='pandit')
-        self.pandit = Pandit.objects.create(
-            user=self.pandit_user,
+        self.pandit = PanditUser.objects.create_user(
+            username='pand', email='pand@t.com', role='pandit',
             expertise="Ganesh Puja",
             verification_status="APPROVED",
             is_verified=True
         )
+        self.pandit_user = self.pandit
 
     def test_vendor_chat_initiation_and_messaging(self):
         """Test that a customer can start a chat with a vendor and exchange messages"""

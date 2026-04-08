@@ -132,8 +132,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         try:
             room = ChatRoom.objects.get(id=self.room_id)
             is_customer = room.customer_id == self.user.id
-            is_pandit = bool(room.pandit and room.pandit.user_id == self.user.id)
-            is_vendor = bool(room.vendor and room.vendor.user_id == self.user.id)
+            is_pandit = bool(room.pandit_id == self.user.id)
+            is_vendor = bool(room.vendor_id == self.user.id)
             return is_customer or is_pandit or is_vendor
         except ChatRoom.DoesNotExist:
             return False
@@ -333,7 +333,7 @@ class PujaConsumer(AsyncWebsocketConsumer):
             booking = Booking.objects.get(id=self.booking_id)
             # Check if user is customer or pandit for this booking
             is_customer = booking.customer_id == self.user.id
-            is_pandit = booking.pandit.user_id == self.user.id
+            is_pandit = booking.pandit_id == self.user.id
             return is_customer or is_pandit
         except Booking.DoesNotExist:
             return False
