@@ -198,6 +198,7 @@ class BookingSamagriRecommendationView(viewsets.ViewSet):
     - PUT /api/bookings/{booking_id}/samagri/{item_id}/ - Update quantity
     """
     permission_classes = [IsAuthenticated]
+    serializer_class = SamagriRecommendationSerializer
     
     def list(self, request, booking_id=None):
         """Get all samagri items in a booking"""

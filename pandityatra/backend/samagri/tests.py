@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from vendors.models import VendorProfile
+from vendors.models import Vendor
 from .models import SamagriItem, SamagriCategory, ShopOrder, ShopOrderItem
 
 User = get_user_model()
@@ -13,14 +13,13 @@ class ShopFlowTestCase(APITestCase):
         self.client = APIClient()
         
         # 1. Create a Vendor
-        self.vendor_user = User.objects.create_user(
-            username='shopowner', email='shop@test.com', password='pass', role='vendor'
-        )
-        self.vendor = VendorProfile.objects.create(
-            user=self.vendor_user, shop_name='Divine Samagri', business_type='Shop',
+        self.vendor = Vendor.objects.create_user(
+            username='shopowner', email='shop@test.com', password='pass', role='vendor',
+            shop_name='Divine Samagri', business_type='Shop',
             address='KTM', city='Kathmandu', bank_name='Test', bank_account_number='1',
             account_holder_name='Test', verification_status='APPROVED', is_verified=True
         )
+        self.vendor_user = self.vendor
         
         # 2. Create a Category and Product
         self.category = SamagriCategory.objects.create(name='Pooja', slug='pooja')

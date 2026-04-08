@@ -10,6 +10,7 @@ from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -42,6 +43,7 @@ from .serializers import (
 class AISamagriRecommendationView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(summary="AI Samagri Recommendation")
     def post(self, request):
         """
         Enhanced AI-based samagri recommendation with location context and confidence scoring.
@@ -338,8 +340,10 @@ class PujaSamagriRequirementViewSet(viewsets.ModelViewSet):
 
 class ShopCheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
-    queryset = ShopOrder.objects.all()  # Required for DRF router to resolve {pk} in detail actions
+    queryset = ShopOrder.objects.all()
+    serializer_class = ShopOrderSerializer
 
+    @extend_schema(summary="Shop: Initiate Checkout", request=ShopCheckoutSerializer)
     @action(detail=False, methods=['post'])
     def initiate(self, request):
         serializer = ShopCheckoutSerializer(data=request.data)
@@ -480,6 +484,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
 
         return Response({"error": "Unknown error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    @extend_schema(summary="Admin: Update Shop Order Status")
     @action(detail=True, methods=['patch'], permission_classes=[IsAdmin], url_path='admin-update-status')
     def admin_update_status(self, request, pk=None):
         """PATCH /api/samagri/checkout/{id}/admin-update-status/ — Admin updates global order status"""
@@ -517,6 +522,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(summary="Vendor: List Shop Orders")
     @action(detail=False, methods=['get'], url_path='vendor-orders')
     def vendor_orders(self, request):
         """GET /api/samagri/checkout/vendor-orders/ — Vendor sees orders containing their products"""
@@ -536,6 +542,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         serializer = ShopOrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @extend_schema(summary="Vendor: Update Shop Order Status")
     @action(detail=True, methods=['patch'], url_path='vendor-update-status')
     def vendor_update_status(self, request, pk=None):
         """PATCH /api/samagri/checkout/{id}/vendor-update-status/ — Vendor updates order status (Shipped/Delivered)"""
@@ -563,6 +570,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         serializer = ShopOrderSerializer(order, context={'request': request})
         return Response(serializer.data)
 
+    @extend_schema(summary="Admin: List All Shop Orders")
     @action(detail=False, methods=['get'], permission_classes=[IsAdmin], url_path='admin-all-orders')
     def admin_all_orders(self, request):
         """GET /api/samagri/checkout/admin-all-orders/ — Admin see ALL orders with filtering"""
@@ -581,6 +589,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         serializer = ShopOrderSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @extend_schema(summary="Shop: User Order History")
     @action(detail=False, methods=['get'], url_path='my-orders')
     def my_orders(self, request):
         """GET /api/samagri/checkout/my-orders/ — List current user's shop orders"""
@@ -590,6 +599,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         serializer = ShopOrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
+    @extend_schema(summary="Shop: Order Detail")
     @action(detail=True, methods=['get'], url_path='detail')
     def order_detail(self, request, pk=None):
         """GET /api/samagri/checkout/{id}/detail/ — Single order detail"""
@@ -602,6 +612,7 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
         except ShopOrder.DoesNotExist:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    @extend_schema(summary="Shop: Download Invoice PDF")
     @action(detail=True, methods=['get'], url_path='invoice')
     def invoice(self, request, pk=None):
         """GET /api/samagri/checkout/{id}/invoice/ — Download PDF invoice for a shop order"""
@@ -757,12 +768,14 @@ class WishlistViewSet(viewsets.ViewSet):
     """
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(summary="List Wishlist Items")
     def list(self, request):
         """GET /api/wishlist/ - Get user's wishlist items"""
         wishlist = Wishlist.objects.filter(user=request.user).select_related('samagri_item', 'samagri_item__category')
         serializer = WishlistSerializer(wishlist, many=True)
         return Response(serializer.data)
 
+    @extend_schema(summary="Add to Wishlist", request=WishlistAddSerializer)
     @action(detail=False, methods=['post'], url_path='add')
     def add_to_wishlist(self, request):
         """POST /api/wishlist/add/ - Add item to wishlist"""

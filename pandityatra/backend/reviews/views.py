@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema
 from django.shortcuts import get_object_or_404
 from django.db import models
 from django.db.models import Avg, Count
@@ -131,7 +132,9 @@ class PanditMyReviewsView(generics.ListAPIView):
 # ---------------------------
 class SiteReviewListCreateView(APIView):
     permission_classes = [permissions.AllowAny]
-    
+    serializer_class = SiteReviewSerializer
+
+    @extend_schema(summary="List or Create Site Reviews")
     def get(self, request):
         reviews = SiteReview.objects.filter(is_approved=True).select_related('user').order_by('-created_at')[:30]
         serializer = SiteReviewSerializer(reviews, many=True)
@@ -159,6 +162,7 @@ class SiteReviewListCreateView(APIView):
             }
         })
     
+    @extend_schema(summary="Submit Site Review")
     def post(self, request):
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -194,6 +198,7 @@ class SiteReviewListCreateView(APIView):
 class AdminAllReviewsView(APIView):
     permission_classes = [permissions.IsAdminUser]
     
+    @extend_schema(summary="Admin: Get All Reviews (Site & Pandit)")
     def get(self, request):
         review_type = request.query_params.get('type', 'all')  # 'pandit', 'site', 'all'
         
