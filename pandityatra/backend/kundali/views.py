@@ -7,8 +7,10 @@ from kundali.services.ai import get_ai_prediction
 from django.db.models import Avg, Count
 from django.conf import settings
 from reviews.models import SiteReview, Review
+from drf_spectacular.utils import extend_schema
 
 
+@extend_schema(summary="Generate Kundali Chart")
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def generate_kundali(request):
@@ -111,6 +113,7 @@ def generate_kundali(request):
     })
 
 
+@extend_schema(summary="List User Kundalis")
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def list_kundalis(request):

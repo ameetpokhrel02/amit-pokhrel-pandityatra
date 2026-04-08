@@ -7,10 +7,13 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from .models import PanchangData
 from .serializers import PanchangSerializer
+from drf_spectacular.utils import extend_schema
 
 class PanchangView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = PanchangSerializer
     
+    @extend_schema(summary="Get Panchang Data")
     def get(self, request):
         date_str = request.query_params.get('date', datetime.now().strftime('%Y-%m-%d'))
         days = int(request.query_params.get('days', 1))
