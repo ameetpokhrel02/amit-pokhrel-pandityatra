@@ -9,6 +9,8 @@ class BookingStatus(models.TextChoices):
     COMPLETED = 'COMPLETED', 'Service Completed'
     CANCELLED = 'CANCELLED', 'Cancelled'
     FAILED = 'FAILED', 'Payment Failed'
+    MISSED = 'MISSED', 'Missed by User'
+    RESCHEDULED = 'RESCHEDULED', 'Rescheduled'
 
 
 class LocationChoices(models.TextChoices):
@@ -54,7 +56,7 @@ class Booking(models.Model):
     booking_date = models.DateField()
     booking_time = models.TimeField()
     status = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=BookingStatus.choices,
         default=BookingStatus.PENDING
     )
@@ -90,6 +92,14 @@ class Booking(models.Model):
     puja_end_time = models.DateTimeField(null=True, blank=True)
     
     # Timestamps
+    rescheduled_from = models.OneToOneField(
+        'self', 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL, 
+        related_name='rescheduled_to',
+        help_text="Tracks the original booking this was rescheduled from"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     accepted_at = models.DateTimeField(blank=True, null=True)

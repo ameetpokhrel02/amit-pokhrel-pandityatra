@@ -147,9 +147,13 @@ class BookingViewSet(viewsets.ModelViewSet):
             # 🔔 Notify both parties that booking is completed
             notify_booking_completed(booking)
             
-            # Credit Pandit earnings (Wallet System)
-            pandit_wallet = booking.pandit.wallet
-            pandit_share = booking.total_fee * Decimal("0.80") # 80% Share
+            # Credit Pandit earnings (Wallet System) - Robust get_or_create
+            from pandits.models import PanditWallet
+            pandit_wallet, _ = PanditWallet.objects.get_or_create(pandit=booking.pandit)
+            
+            # Ensure total_fee is a Decimal
+            total_fee = Decimal(str(booking.total_fee or 0))
+            pandit_share = total_fee * Decimal("0.80") # 80% Share
             
             pandit_wallet.total_earned += pandit_share
             pandit_wallet.available_balance += pandit_share
@@ -224,11 +228,85 @@ class BookingViewSet(viewsets.ModelViewSet):
         })
 
     # ---------------------------
+    # CUSTOMER RESCHEDULE
+    # ---------------------------
+    @action(detail=True, methods=["post"])
+    def reschedule(self, request, pk=None):
+        original_booking = self.get_object()
+        user = request.user
+
+        if original_booking.user != user:
+            return Response({"detail": "You can only reschedule your own booking"}, status=403)
+
+        # Policy Rule: Only MISSED or user-CANCELLED bookings can be rescheduled
+        if original_booking.status not in [BookingStatus.MISSED, BookingStatus.CANCELLED]:
+            return Response({"detail": "Only missed or cancelled bookings can be rescheduled"}, status=400)
+
+        # Policy Rule: Only one free reschedule
+        if hasattr(original_booking, 'rescheduled_to'):
+            return Response({"detail": "This booking has already been rescheduled"}, status=400)
+
+        # Policy Rule: Must be within 7 days of original booking
+        # Note: In the real world, this might be 7 days from the *missed date*
+        if timezone.now().date() > (original_booking.booking_date + timedelta(days=7)):
+            return Response({"detail": "Reschedule window (7 days) has expired. Please contact support."}, status=400)
+
+        new_date = request.data.get("booking_date")
+        new_time = request.data.get("booking_time")
+
+        if not new_date or not new_time:
+            return Response({"detail": "New date and time are required"}, status=400)
+
+        # Check for conflicts for the same pandit
+        exists = Booking.objects.filter(
+            pandit=original_booking.pandit,
+            booking_date=new_date,
+            booking_time=new_time,
+            status__in=[BookingStatus.PENDING, BookingStatus.ACCEPTED]
+        ).exists()
+
+        if exists:
+            return Response({"detail": "Pandit is not available at the selected date/time"}, status=400)
+
+        # Create New Booking (Free Reschedule)
+        new_booking = Booking.objects.create(
+            user=user,
+            pandit=original_booking.pandit,
+            service=original_booking.service,
+            service_name=original_booking.service_name,
+            service_location=original_booking.service_location,
+            booking_date=new_date,
+            booking_time=new_time,
+            status=BookingStatus.PENDING, # Needs Pandit to accept again? Prompt says "New booking is created", usually implies re-verification of slot.
+            samagri_required=original_booking.samagri_required,
+            service_fee=Decimal('0.00'), # Free reschedule
+            samagri_fee=Decimal('0.00'), # Free reschedule
+            total_fee=Decimal('0.00'),
+            payment_status=original_booking.payment_status, # Carry over payment status
+            payment_method=original_booking.payment_method,
+            transaction_id=f"RESCHED-{original_booking.transaction_id}" if original_booking.transaction_id else None,
+            rescheduled_from=original_booking
+        )
+
+        # Update original booking status
+        original_booking.status = BookingStatus.RESCHEDULED
+        original_booking.save()
+
+        # 🔔 Notify Pandit about the reschedule
+        notify_booking_created(new_booking)
+
+        return Response({
+            "detail": "Booking rescheduled successfully",
+            "new_booking_id": new_booking.id,
+            "status": new_booking.status
+        })
+
+    # ---------------------------
     # USER BOOKINGS
     # ---------------------------
     @action(detail=False, methods=["get"])
     def my_bookings(self, request):
-        serializer = BookingListSerializer(self.get_queryset(), many=True)
+        serializer = BookingListSerializer(self.get_queryset(), many=True, context={'request': request})
         return Response(serializer.data)
 
     # ---------------------------

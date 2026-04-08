@@ -6,6 +6,7 @@ from rest_framework.decorators import api_view, permission_classes # 🆕 Added 
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.conf import settings
 from django.utils import timezone
 from decimal import Decimal
@@ -48,7 +49,13 @@ class CreatePaymentIntentView(APIView):
     Create payment intent for Stripe or initiate Khalti payment
     """
     permission_classes = [IsAuthenticated]
+    serializer_class = PaymentSerializer
     
+    @extend_schema(
+        summary="Create Payment Intent",
+        description="Initiate a payment for a booking using Stripe, Khalti, or eSewa.",
+        responses={200: PaymentSerializer}
+    )
     def post(self, request):
         try:
             booking_id = request.data.get('booking_id')
@@ -132,7 +139,7 @@ class CreatePaymentIntentView(APIView):
                     'price_data': {
                         'currency': 'usd',
                         'product_data': {
-                            'name': f"{booking.service_name} - {booking.pandit.user.full_name}",
+                            'name': f"{booking.service_name} - {booking.pandit.full_name}",
                             'description': f"Puja on {booking.booking_date}",
                         },
                         'unit_amount': int(amount_usd * 100),  # Cents
@@ -305,6 +312,7 @@ class StripeWebhookView(APIView):
     """
     permission_classes = []  # No authentication for webhooks
     
+    @extend_schema(exclude=True)
     def post(self, request):
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
@@ -413,6 +421,11 @@ class KhaltiVerifyView(APIView):
     """
     permission_classes = []
     
+    @extend_schema(
+        summary="Verify Khalti Payment",
+        parameters=[OpenApiParameter("pidx", str, OpenApiParameter.QUERY, description="Khalti pidx")],
+        responses={200: PaymentSerializer}
+    )
     def get(self, request):
         """Handle redirect from Khalti"""
         pidx = request.query_params.get('pidx')
@@ -533,6 +546,14 @@ class EsewaVerifyView(APIView):
     """
     permission_classes = []
     
+    @extend_schema(
+        summary="Verify eSewa Payment",
+        parameters=[
+            OpenApiParameter("data", str, OpenApiParameter.QUERY, description="Base64 encoded eSewa data"),
+            OpenApiParameter("order_id", str, OpenApiParameter.QUERY, description="Optional order ID")
+        ],
+        responses={200: PaymentSerializer}
+    )
     def get(self, request):
         """Handle redirect from eSewa"""
         # eSewa sends data as base64 encoded JSON in 'data' parameter
@@ -680,6 +701,7 @@ class GetPaymentStatusView(APIView):
     """
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(summary="Get Payment Status", responses={200: PaymentSerializer})
     def get(self, request, booking_id):
         try:
             booking = Booking.objects.get(id=booking_id, user=request.user)
@@ -714,6 +736,7 @@ class ExchangeRateView(APIView):
     """
     permission_classes = []  # Public endpoint
     
+    @extend_schema(summary="Get Exchange Rate")
     def get(self, request):
         rate = get_exchange_rate()
         npr_amount = request.query_params.get('npr')
@@ -741,6 +764,10 @@ class ExchangeRateView(APIView):
 # ---------------------------
 # ADMIN: Payment Ledger
 # ---------------------------
+@extend_schema(
+    summary="Admin: List Payments",
+    responses={200: PaymentSerializer(many=True)}
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def admin_payments(request):
@@ -758,6 +785,10 @@ def admin_payments(request):
 # ---------------------------
 # ADMIN: Refund Payment
 # ---------------------------
+@extend_schema(
+    summary="Admin: Refund Payment",
+    responses={200: PaymentSerializer}
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def refund_payment(request, payment_id):
@@ -803,6 +834,7 @@ class VerifyStripePaymentView(APIView):
     """
     permission_classes = [AllowAny]
 
+    @extend_schema(summary="Verify Stripe Payment Status")
     def get(self, request):
         session_id = request.query_params.get('session_id')
         order_id = request.query_params.get('order_id')
