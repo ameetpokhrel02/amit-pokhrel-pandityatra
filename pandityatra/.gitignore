@@ -78,9 +78,12 @@ coturn/db/
 *~
 
 # ===============================
-# 6. OS FILES
+# 7. SCRATCH & TEST FILES
 # ===============================
-.DS_Store
-Thumbs.db
-pandityatra/docs/
+test_output*.txt
+debug_*.py
+*.log
+scratch/
+.gemini/
+.antigravity/
 

@@ -5,11 +5,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_DB=pandityatra_db
-      - POSTGRES_USER=pandit_admin
-      - POSTGRES_PASSWORD=secure_password
-    ports:
-      - "5433:5432"
+      - POSTGRES_DB=${POSTGRES_DB:-pandityatra_db}
+      - POSTGRES_USER=${POSTGRES_USER:-pandit_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    # ports:
+    #   - "5433:5432"  # Closed for production security
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pandit_admin -d pandityatra_db"]
       interval: 5s
@@ -42,14 +42,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
+      - DATABASE_URL=postgres://${POSTGRES_USER:-pandit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pandityatra_db}
       - REDIS_URL=redis://redis:6379/0
-      - DEBUG=1
-      - SERVE_MEDIA_FILES=1
-      - ALLOWED_HOSTS="*"
-      - CORS_ALLOW_ALL_ORIGINS=False
-      - CORS_ALLOWED_ORIGINS=http://localhost:5173
-      - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
+      - DEBUG=${DEBUG:-0}
+      - SERVE_MEDIA_FILES=${SERVE_MEDIA_FILES:-0}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
+      - CORS_ALLOW_ALL_ORIGINS=${CORS_ALLOW_ALL_ORIGINS:-False}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
@@ -106,14 +106,14 @@ services:
     volumes:
       - ./backend:/app
     environment:
-      - DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
+      - DATABASE_URL=postgres://${POSTGRES_USER:-pandit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pandityatra_db}
       - REDIS_URL=redis://redis:6379/0
       - DEBUG=0
-      - SERVE_MEDIA_FILES=1
-      - ALLOWED_HOSTS="*"
+      - SERVE_MEDIA_FILES=${SERVE_MEDIA_FILES:-0}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
       - CORS_ALLOW_ALL_ORIGINS=False
-      - CORS_ALLOWED_ORIGINS=http://localhost:5173
-      - CSRF_TRUSTED_ORIGINS=http://localhost:5173,http://localhost:8000
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:

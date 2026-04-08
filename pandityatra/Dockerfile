@@ -22,7 +22,7 @@ RUN pip install --upgrade pip setuptools wheel && \
 COPY backend/ .
 
 # Collect static files
-RUN python manage.py collectstatic --noinput
+RUN SECRET_KEY=collectstatic_dummy python manage.py collectstatic --noinput
 
 EXPOSE 8000
 

@@ -31,3 +31,8 @@ staticfiles/
 docker-compose.yml
 Dockerfile
 README.md
+test_output*.txt
+debug_*.py
+scratch/
+.gemini/
+.antigravity/
