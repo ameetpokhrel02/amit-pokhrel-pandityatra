@@ -68,12 +68,56 @@ class VendorRegisterSerializer(serializers.ModelSerializer):
         phone_number = validated_data.pop('phone_number', None)
         profile_pic = validated_data.pop('profile_pic', None)
 
-        if not email or not password:
-            raise serializers.ValidationError({"email": "Email and password are required."})
+        if not email:
+             raise serializers.ValidationError({"email": "Email is required."})
 
-        if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError({"email": "A user with this email already exists."})
+        # Check if user already exists (MTI upgrade logic)
+        existing_user = User.objects.filter(email__iexact=email).first()
         
+        # Phone number uniqueness check
+        if phone_number:
+            phone_user = User.objects.filter(phone_number=phone_number).first()
+            if phone_user:
+                # If it's the same user as the existing email user, that's fine for an upgrade
+                if not (existing_user and phone_user.id == existing_user.id):
+                    raise serializers.ValidationError({"phone_number": "An account with this phone number already exists."})
+
+        if existing_user:
+            # Check if already a vendor
+            if hasattr(existing_user, 'vendor') and existing_user.vendor:
+                raise serializers.ValidationError({"email": "A vendor account with this email already exists."})
+            
+            from django.utils import timezone
+            # Upgrade existing User to Vendor
+            # We create specific Vendor record linked to the existing User ID
+            vendor = Vendor(
+                user_ptr=existing_user,
+                shop_name=validated_data.get('shop_name'),
+                business_type=validated_data.get('business_type'),
+                address=validated_data.get('address'),
+                city=validated_data.get('city'),
+                bank_account_number=validated_data.get('bank_account_number'),
+                bank_name=validated_data.get('bank_name'),
+                account_holder_name=validated_data.get('account_holder_name'),
+                bio=validated_data.get('bio'),
+                created_at=timezone.now(),
+                updated_at=timezone.now(),
+                role='vendor'
+            )
+            # Ensure the user's role is updated in the base table too
+            existing_user.role = 'vendor'
+            if full_name: existing_user.full_name = full_name
+            if phone_number: existing_user.phone_number = phone_number
+            if profile_pic: existing_user.profile_pic = profile_pic
+            existing_user.save()
+            
+            vendor.save() 
+            return vendor
+
+        # Standard new registration
+        if not password:
+            raise serializers.ValidationError({"password": "Password is required for new accounts."})
+
         # Unique Username Generation
         base_username = email.split('@')[0]
         username = base_username
@@ -82,11 +126,6 @@ class VendorRegisterSerializer(serializers.ModelSerializer):
             suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
             username = f"{base_username}_{suffix}"
 
-        # Create the Vendor directly (inherits create_user behavior but creates rows in both tables)
-        # Note: Vendor doesn't have create_user, we use Vendor.objects.create and then set password?
-        # Actually, best way is to create the User first or use a custom manager.
-        # But Vendor IS a User.
-        
         vendor = Vendor(
             email=email,
             username=username,

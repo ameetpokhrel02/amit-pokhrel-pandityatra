@@ -3,16 +3,15 @@ from django.urls import reverse
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from .models import Pandit, PanditWallet
+from .models import PanditUser, PanditWallet
 
 User = get_user_model()
 
 class PanditEndpointTests(APITestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(username='testpandit', email='t@t.com', password='p', role='pandit')
-        self.pandit = Pandit.objects.create(
-            user=self.user,
+        self.pandit = PanditUser.objects.create_user(
+            username='testpandit', email='t@t.com', password='p', role='pandit',
             expertise="Ganesh Puja",
             verification_status="APPROVED",
             is_verified=True
@@ -20,7 +19,7 @@ class PanditEndpointTests(APITestCase):
         self.wallet, _ = PanditWallet.objects.get_or_create(pandit=self.pandit)
         self.wallet.available_balance = 1000
         self.wallet.save()
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.pandit)
 
     def test_dashboard_stats(self):
         url = "/api/pandits/dashboard/stats/"

@@ -1,6 +1,7 @@
 from rest_framework import viewsets, permissions, status, generics, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.db.models import Sum, Count
 from django.utils import timezone
 from .models import Vendor, VendorPayout
@@ -18,6 +19,7 @@ def ping_vendors(request):
 # ---------------------------
 # ADMIN: List pending
 # ---------------------------
+@extend_schema(summary="Admin: List Pending Vendors")
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def list_pending_vendors(request):
@@ -32,6 +34,7 @@ def list_pending_vendors(request):
 # ---------------------------
 # ADMIN: All Vendors
 # ---------------------------
+@extend_schema(summary="Admin: Get All Vendors Stats")
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def admin_all_vendors(request):
@@ -58,6 +61,7 @@ def admin_all_vendors(request):
 # ---------------------------
 # ADMIN: Approve
 # ---------------------------
+@extend_schema(summary="Admin: Approve Vendor")
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def verify_vendor(request, vendor_id):
@@ -79,6 +83,7 @@ def verify_vendor(request, vendor_id):
 # ---------------------------
 # ADMIN: Reject
 # ---------------------------
+@extend_schema(summary="Admin: Reject Vendor")
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def reject_vendor(request, vendor_id):
@@ -139,13 +144,18 @@ class VendorProfileViewSet(viewsets.ModelViewSet):
             "is_active": vendor.is_active
         })
 
+    @extend_schema(summary="Vendor: Get Dashboard Stats")
     @action(detail=False, methods=['GET'])
     def stats(self, request):
         user = request.user
-        if not hasattr(user, 'vendor'):
-            return Response({"detail": "No vendor account found."}, status=status.HTTP_404_NOT_FOUND)
         
-        vendor = user.vendor
+        # Handle MTI (Multi-Table Inheritance) identity
+        if hasattr(user, 'vendor'):
+            vendor = user.vendor
+        elif isinstance(user, Vendor):
+            vendor = user
+        else:
+            return Response({"detail": "No vendor account found."}, status=status.HTTP_404_NOT_FOUND)
         
         # Sales Stats
         total_sales = ShopOrderItem.objects.filter(vendor=vendor, order__status='PAID').aggregate(Sum('price_at_purchase'))['price_at_purchase__sum'] or 0

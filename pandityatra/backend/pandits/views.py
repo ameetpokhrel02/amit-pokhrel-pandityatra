@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
@@ -31,6 +32,7 @@ class RegisterPanditView(generics.CreateAPIView):
 # ---------------------------
 # ADMIN: List pending
 # ---------------------------
+@extend_schema(summary="Admin: List Pending Pandits", responses={200: PanditSerializer(many=True)})
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
 def list_pending_pandits(request):
@@ -122,6 +124,7 @@ def request_withdrawal(request):
 # ---------------------------
 # PANDIT: Wallet & History
 # ---------------------------
+@extend_schema(summary="Get Pandit Wallet Balance")
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def get_pandit_wallet(request):
@@ -136,6 +139,7 @@ def get_pandit_wallet(request):
     except Exception as e:
         return Response({"error": "Wallet not found"}, status=404)
 
+@extend_schema(summary="Get Pandit Withdrawal History")
 @api_view(["GET"])
 @permission_classes([permissions.IsAuthenticated])
 def get_pandit_withdrawals(request):
@@ -193,6 +197,7 @@ class PujaCatalogView(generics.ListAPIView):
 class PanditCalendarView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(summary="Get Pandit Calendar Events")
     def get(self, request):
         """
         Return all events: Bookings and Availability Blocks
@@ -532,6 +537,7 @@ class PanditViewSet(viewsets.ModelViewSet):
             return PanditDetailSerializer
         return PanditSerializer
 
+    @extend_schema(summary="Public: About Us Stats")
     @action(detail=False, methods=['get'], url_path='public-stats', permission_classes=[permissions.AllowAny])
     def public_stats(self, request):
         """

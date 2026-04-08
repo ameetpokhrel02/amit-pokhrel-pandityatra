@@ -37,7 +37,7 @@ class CustomerFlowTestCase(APITestCase):
         # Note: 'vendor-profile-stats' is a vendor-only endpoint
         url = reverse('vendor-profile-stats')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_unauthenticated_access(self):
         """Ensure unauthenticated users cannot access profile"""

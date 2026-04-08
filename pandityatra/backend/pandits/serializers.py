@@ -32,12 +32,18 @@ class PanditSerializer(serializers.ModelSerializer):
 
     def get_user_details(self, obj):
         # PanditUser IS a User, so we return the user fields
+        request = self.context.get('request')
+        profile_pic_url = obj.profile_pic.url if obj.profile_pic else None
+        
+        if profile_pic_url and request:
+            profile_pic_url = request.build_absolute_uri(profile_pic_url)
+            
         return {
             'id': obj.id,
             'full_name': obj.full_name,
             'email': obj.email,
             'phone_number': obj.phone_number,
-            'profile_pic': obj.profile_pic.url if obj.profile_pic else None,
+            'profile_pic': profile_pic_url,
         }
 
 class PanditSimpleSerializer(serializers.ModelSerializer):

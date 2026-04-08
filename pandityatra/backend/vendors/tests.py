@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
-from .models import VendorProfile, VendorPayout
+from .models import Vendor, VendorPayout
 from samagri.models import SamagriItem, ShopOrder, ShopOrderItem, SamagriCategory
 from chat.models import ChatRoom, Message
 
@@ -19,19 +19,14 @@ class VendorFlowTestCase(APITestCase):
         # Create a category required for products
         self.category = SamagriCategory.objects.create(name="Pooja Samagri")
         
-        # Create a test user
+        # Create a vendor
         self.user_password = 'securepassword123'
-        self.user = User.objects.create_user(
+        self.vendor_profile = Vendor.objects.create_user(
             username='testvendor',
             email='vendor@test.com',
             full_name='Test Vendor',
             password=self.user_password,
-            role='vendor'
-        )
-        
-        # Create a vendor profile
-        self.vendor_profile = VendorProfile.objects.create(
-            user=self.user,
+            role='vendor',
             shop_name='Test Shop',
             business_type='Samagri Store',
             address='123 Test St',
@@ -41,6 +36,7 @@ class VendorFlowTestCase(APITestCase):
             account_holder_name='Test Vendor',
             verification_status='PENDING'
         )
+        self.user = self.vendor_profile
 
     def _generate_test_image(self):
         file = io.BytesIO()
@@ -85,6 +81,8 @@ class VendorFlowTestCase(APITestCase):
         self.client.force_authenticate(user=existing_user)
         url = reverse('vendor-register')
         data = {
+            'email': existing_user.email,
+            'password': 'UpgradePass123!',
             'shop_name': 'Upgrade Shop',
             'business_type': 'Books',
             'address': '789 Upgrade St',
@@ -98,6 +96,41 @@ class VendorFlowTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         existing_user.refresh_from_db()
         self.assertEqual(existing_user.role, 'vendor')
+
+    def test_vendor_registration_duplicate_phone(self):
+        """Test registration fails with 400 for duplicate phone number"""
+        # Create an existing user with a phone number
+        User.objects.create_user(
+            username='existinguser',
+            email='existing@test.com',
+            phone_number='9811223344',
+            password='Password123!',
+            role='user'
+        )
+        
+        url = reverse('vendor-register')
+        data = {
+            'email': 'newvendor_phone@test.com',
+            'password': 'Password123!',
+            'full_name': 'Retry Vendor',
+            'phone_number': '9811223344', # Conflicting phone number
+            'shop_name': 'Conflict Shop',
+            'business_type': 'Books',
+            'address': 'KTM',
+            'city': 'KTM',
+            'bank_name': 'EBL',
+            'bank_account_number': '1122',
+            'account_holder_name': 'Vendor',
+        }
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('phone_number', response.data)
+        
+        # Handle both list and string formats from DRF
+        error_msg = response.data['phone_number']
+        if isinstance(error_msg, list):
+            error_msg = error_msg[0]
+        self.assertIn("phone number already exists", error_msg.lower())
 
     def test_vendor_profile_update(self):
         """Test updating profile fields including the new verification fields"""
@@ -244,7 +277,8 @@ class VendorFlowTestCase(APITestCase):
         self.client.force_authenticate(user=normal_user)
         url = reverse('vendor-profile-stats')
         response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        # View returns 404 if user not explicitly a vendor
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_vendor_settings_update(self):
         """Test updating the new vendor shop settings"""

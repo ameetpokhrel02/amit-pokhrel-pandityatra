@@ -2,7 +2,7 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from django.urls import reverse
 from users.models import User
-from pandits.models import Pandit, PanditService
+from pandits.models import PanditUser, PanditService
 from services.models import Puja
 from reviews.models import Review
 from bookings.models import Booking
@@ -14,9 +14,12 @@ class PanditProfileAPITest(TestCase):
         self.client = APIClient()
         
         # Create Pandit User
-        self.user = User.objects.create_user(username='pandit1', email='p1@test.com', password='password', role='pandit', full_name='Pandit Ji')
-        self.pandit = Pandit.objects.create(
-            user=self.user, 
+        self.pandit = PanditUser.objects.create_user(
+            username='pandit1', 
+            email='p1@test.com', 
+            password='password', 
+            role='pandit', 
+            full_name='Pandit Ji',
             expertise="Vedic", 
             language="Hindi", 
             verification_status='APPROVED', 

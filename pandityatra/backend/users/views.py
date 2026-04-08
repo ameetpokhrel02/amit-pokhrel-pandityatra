@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework import permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes # 🚨 Fix: Import decorators
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
@@ -25,6 +26,9 @@ class RegisterUserView(APIView):
     """Handles User Registration (creates the user account) and sends OTP."""
     permission_classes = [permissions.AllowAny]
     throttle_scope = 'register'
+    serializer_class = UserRegisterSerializer
+
+    @extend_schema(summary="Register User")
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -54,6 +58,9 @@ class RequestOTPView(APIView):
     """Handles OTP request for login (for existing users via Phone or Email)."""
     permission_classes = [permissions.AllowAny]
     throttle_scope = 'otp_request'
+    serializer_class = PhoneTokenSerializer # Uses this for base schema shape
+
+    @extend_schema(summary="Request OTP")
     def post(self, request):
         phone_number = request.data.get('phone_number')
         email = request.data.get('email')
@@ -102,6 +109,7 @@ class OTPVerifyAndTokenView(APIView):
     throttle_scope = 'login_attempt'
     serializer_class = PhoneTokenSerializer
     
+    @extend_schema(summary="Verify OTP and Get Token")
     def post(self, request):
         # We need to manually handle validation or update serializer because 
         # PhoneTokenSerializer enforces phone_number.
@@ -163,6 +171,7 @@ class PasswordLoginView(APIView):
     throttle_scope = 'login_attempt'
     serializer_class = PasswordLoginSerializer
     
+    @extend_schema(summary="Login with Password")
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         
@@ -223,7 +232,7 @@ class PasswordLoginView(APIView):
                 'role': authenticated_user.role,  # Include role in response
             }, status=status.HTTP_200_OK)
         else:
-            return Response({"detail": "Invalid credentials."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
 class ForgotPasswordRequestView(APIView):
     """Handles forgot password request - sends OTP to phone or email."""
@@ -461,6 +470,7 @@ class AdminStatsView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(summary="Admin Dashboard Stats")
     def get(self, request):
         # Check if user is admin or superuser
         if not (request.user.is_superuser or request.user.role in ('admin', 'superadmin')):
@@ -735,6 +745,7 @@ class GoogleLoginView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(summary="Google OAuth Login")
     def post(self, request):
         id_token = request.data.get('id_token')
         if not id_token:

@@ -31,3 +31,36 @@ class IsAdminOrReadOnly(permissions.BasePermission):
             request.user.is_staff or 
             getattr(request.user, 'role', '') == 'admin'
         )
+
+class IsPandit(permissions.BasePermission):
+    """
+    Allow only users with role='pandit'.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            getattr(request.user, 'role', '') == 'pandit'
+        )
+
+class IsVendor(permissions.BasePermission):
+    """
+    Allow only users with role='vendor'.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            (getattr(request.user, 'role', '') == 'vendor' or hasattr(request.user, 'vendor'))
+        )
+
+class IsCustomer(permissions.BasePermission):
+    """
+    Allow only users with role='user'.
+    """
+    def has_permission(self, request, view):
+        return (
+            request.user and 
+            request.user.is_authenticated and 
+            getattr(request.user, 'role', '') == 'user'
+        )
