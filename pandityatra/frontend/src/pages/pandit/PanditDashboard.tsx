@@ -166,7 +166,11 @@ const PanditDashboard = () => {
     }
 
     const handleBookingAction = async (id: number, actionName: string) => {
-        const status = actionName === 'Accept' ? 'ACCEPTED' : 'CANCELLED'
+        // Map action names to backend status values explicitly to avoid wrong fallthrough
+        const status =
+            actionName === 'Accept' ? 'ACCEPTED' :
+            actionName === 'Completed' ? 'COMPLETED' :
+            'CANCELLED'
         try {
             await apiClient.patch(`/bookings/${id}/update_status/`, { status })
             toast({ title: "Success", description: `Booking ${status.toLowerCase()}` })
