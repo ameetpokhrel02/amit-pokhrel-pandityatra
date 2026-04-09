@@ -5,6 +5,10 @@ from rest_framework import status
 from users.models import User
 
 class UserRegistrationTests(TestCase):
+    """
+    UT02 – User Registration
+    Register new user account with details.
+    """
     def setUp(self):
         self.client = APIClient()
         self.register_url = reverse('register')
@@ -13,37 +17,24 @@ class UserRegistrationTests(TestCase):
         """Register new user successfully (UT02)"""
         data = {
             'username': 'newuser',
-            'email': 'newuser@example.com',
-            'password': 'SecurePassword123!',
+            'email': 'newuser@test.com',
             'full_name': 'New User',
+            'password': 'SecurePass123!',
             'role': 'user'
         }
         response = self.client.post(self.register_url, data, format='json')
         
-        # Depending on how the API is set up, it could return 201 Created or 200 OK
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_201_CREATED])
-        
-        # Verify user was created in the database
-        user_exists = User.objects.filter(email='newuser@example.com').exists()
-        self.assertTrue(user_exists)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email='newuser@test.com').exists())
 
     def test_ut02_register_duplicate_email(self):
-        """Attempt to register a user with an already existing email"""
-        # Create an existing user first
-        User.objects.create_user(
-            username='existinguser',
-            password='TestPassword123!',
-            email='existing@example.com',
-            full_name='Existing User'
-        )
-        
+        """Register fails with duplicate email"""
+        User.objects.create_user(username='existing', email='duplicate@test.com', password='p')
         data = {
-            'username': 'anotheruser',
-            'email': 'existing@example.com',  # Duplicate email
-            'password': 'SecurePassword123!',
-            'full_name': 'Another User'
+            'username': 'another',
+            'email': 'duplicate@test.com',
+            'password': 'p2',
+            'role': 'user'
         }
         response = self.client.post(self.register_url, data, format='json')
-        
-        # Should fail due to duplicate email
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

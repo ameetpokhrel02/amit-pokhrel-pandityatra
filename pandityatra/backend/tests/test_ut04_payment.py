@@ -1,25 +1,27 @@
+import datetime
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from unittest.mock import patch, MagicMock
 from users.models import User
-from bookings.models import Booking
 from pandits.models import PanditUser
 from services.models import Puja
-import datetime
+from bookings.models import Booking
 
 class PaymentIntegrationTests(TestCase):
+    """
+    UT04 – Payment Integration
+    Process payment via Khalti / Stripe / eSewa.
+    """
     def setUp(self):
         self.client = APIClient()
-        
         self.customer = User.objects.create_user(
-            username='pay_customer', password='123', email='pay@example.com', role='user'
+            username='pay_cust', password='123', email='pay@test.com', role='user'
         )
         self.pandit = PanditUser.objects.create_user(
             username='pay_pandit', password='123', email='p@example.com', role='pandit'
         )
-        self.pandit_user = self.pandit
         self.puja = Puja.objects.create(name='Test Puja', base_price=100)
         
         self.booking = Booking.objects.create(
@@ -71,24 +73,20 @@ class PaymentIntegrationTests(TestCase):
         response = self.client.post(self.initiate_url, data, format='json')
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        booking2 = Booking.objects.create(
-            user=self.customer,
-            pandit=self.pandit,
-            service=self.puja,
-            service_name='Test Puja 2',
-            booking_date=datetime.date.today() + datetime.timedelta(days=1),
-            booking_time='14:00:00',
-            total_fee=200.00
-        )
-        
+        self.assertTrue(response.data.get('success'))
+        self.assertEqual(response.data.get('gateway'), 'KHALTI')
+
+    @patch('stripe.checkout.Session.create')
+    def test_ut04_process_payment_via_stripe(self, mock_stripe_session):
+        """Process payment via Stripe (UT04)"""
         mock_session = MagicMock()
-        mock_session.id = 'cs_test_mock_session_789'
-        mock_session.url = 'https://checkout.stripe.com/pay/cs_test_mock_session_789'
-        mock_session.to_dict.return_value = {'id': 'cs_test_mock_session_789'}
+        mock_session.id = 'cs_test_mock_123'
+        mock_session.url = 'https://checkout.stripe.com/pay/cs_test_mock_123'
+        mock_session.to_dict.return_value = {'id': 'cs_test_mock_123'}
         mock_stripe_session.return_value = mock_session
         
         data = {
-            'booking_id': booking2.id,
+            'booking_id': self.booking.id,
             'gateway': 'STRIPE',
             'currency': 'USD'
         }
