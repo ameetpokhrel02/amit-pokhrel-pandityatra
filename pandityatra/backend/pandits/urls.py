@@ -15,8 +15,8 @@ router.register(r'', PanditViewSet, basename='pandits')
 
 urlpatterns = [
     # Dashboard Stats
-    path('dashboard/stats/', pandit_dashboard_stats),
-    path('dashboard/toggle-availability/', toggle_availability),
+    path('dashboard/stats/', pandit_dashboard_stats, name='pandit-dashboard-stats'),
+    path('dashboard/toggle-availability/', toggle_availability, name='pandit-toggle-availability'),
     
     # Calendar & Availability
     path('me/calendar/', PanditCalendarView.as_view(), name='pandit-calendar'),
@@ -33,13 +33,13 @@ urlpatterns = [
     path("withdrawal/request/", request_withdrawal),
 
     # Admin
-    path("admin/pending/", list_pending_pandits),
-    path("admin/all/", admin_all_pandits),
-    path("admin/verify/<int:pandit_id>/", verify_pandit),
-    path("admin/reject/<int:pandit_id>/", reject_pandit),
-    path("admin/withdrawals/", list_withdrawals),
-    path("admin/withdrawals/<int:withdrawal_id>/approve/", approve_withdrawal),
-    path("admin/earnings/<int:pandit_id>/", admin_pandit_earnings),
+    path("admin/pending/", list_pending_pandits, name='admin-pandit-pending'),
+    path("admin/all/", admin_all_pandits, name='admin-pandit-all'),
+    path("admin/verify/<int:pandit_id>/", verify_pandit, name='admin-pandit-verify'),
+    path("admin/reject/<int:pandit_id>/", reject_pandit, name='admin-pandit-reject'),
+    path("admin/withdrawals/", list_withdrawals, name='admin-pandit-withdrawals'),
+    path("admin/withdrawals/<int:withdrawal_id>/approve/", approve_withdrawal, name='admin-pandit-withdrawal-approve'),
+    path("admin/earnings/<int:pandit_id>/", admin_pandit_earnings, name='admin-pandit-earnings'),
 
     # Router for services management (Must be last to avoid greedy matching)
     path('', include(router.urls)),

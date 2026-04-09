@@ -35,12 +35,20 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     phone_number = serializers.CharField(max_length=15, required=False, allow_blank=True, allow_null=True)
     # Make password optional - if not provided, will generate random one
     password = serializers.CharField(write_only=True, required=False, validators=[validate_password_strength], allow_blank=True, allow_null=True)
-    # Add role field - default to 'user' if not provided (Admins cannot be created via public registration)
-    role = serializers.ChoiceField(choices=[('user', 'User'), ('pandit', 'Pandit'), ('vendor', 'Vendor')], default='user', required=False)
-    
+    # Optional fields for specialized roles (MTI)
+    expertise = serializers.CharField(required=False, allow_blank=True)
+    experience_years = serializers.IntegerField(required=False, default=0)
+    shop_name = serializers.CharField(required=False, allow_blank=True)
+    business_type = serializers.CharField(required=False, allow_blank=True, default='Ritual Samagri')
+    address = serializers.CharField(required=False, allow_blank=True, default='N/A')
+    city = serializers.CharField(required=False, allow_blank=True, default='N/A')
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'phone_number', 'full_name', 'password', 'role')
+        fields = (
+            'id', 'email', 'phone_number', 'full_name', 'password', 'role',
+            'expertise', 'experience_years', 'shop_name', 'business_type', 'address', 'city'
+        )
         read_only_fields = ('id',)
     
     def validate_email(self, value):
@@ -57,42 +65,52 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         email = validated_data['email'].strip().lower()
-        # Use email as username (standard practice when email is the unique ID)
+        # Use email as username
         username = email 
         phone_number = validated_data.get('phone_number')
         password = validated_data.get('password', '').strip() if validated_data.get('password') else ''
+        role = validated_data.get('role', 'user')
         
         # If no password provided, generate a random one
         if not password:
             password = get_random_string(RANDOM_PASSWORD_LENGTH)
         
-        # Create user data
+        # Base user data
         user_data = {
             'username': username,
             'email': email,
             'full_name': validated_data.get('full_name', ''),
             'password': password,
-            'role': validated_data.get('role', 'user'),
+            'role': role,
         }
         
         if phone_number:
             user_data['phone_number'] = phone_number
         
-        # Ensure we use the correct creation method for the custom user model
-        user = User.objects.create_user(**user_data)
+        # 🚨 Handle Multi-Table Inheritance by creating the specific model instance
+        if role == 'pandit':
+            user_data.update({
+                'expertise': validated_data.get('expertise', 'General'),
+                'experience_years': validated_data.get('experience_years', 0),
+            })
+            user = PanditUser.objects.create_user(**user_data)
+        elif role == 'vendor':
+            # Vendors need some default shop name if not provided
+            shop_name = validated_data.get('shop_name')
+            if not shop_name:
+                shop_name = f"{user_data.get('full_name', 'New Vendor')}'s Shop"
+            
+            user_data.update({
+                'shop_name': shop_name,
+                'business_type': validated_data.get('business_type', 'Ritual Samagri'),
+                'address': validated_data.get('address', 'N/A'),
+                'city': validated_data.get('city', 'N/A')
+            })
+            user = Vendor.objects.create_user(**user_data)
+        else:
+            # Regular User
+            user = User.objects.create_user(**user_data)
         
-        # 🚨 Inherited Models are handled by their own registration serializers.
-        # This generic serializer is mainly for 'user' (customer) role.
-        # But we keep this for backwards compatibility / internal use.
-        if user.role == 'pandit':
-            # Note: In MTI, we'd ideally convert the user to PanditUser
-            # But for simplicity in this generic serializer, we just ensure the record exists.
-            if not hasattr(user, 'pandituser'):
-                PanditUser.objects.get_or_create(
-                    user_ptr=user,
-                    defaults={'experience_years': 0, 'language': "Nepali, Hindi", 'expertise': "General", 'bio': "New Pandit Member"}
-                )
-
         return user
 
 class AdminUserCreateSerializer(serializers.ModelSerializer):

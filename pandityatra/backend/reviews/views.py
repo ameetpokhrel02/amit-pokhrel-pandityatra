@@ -120,11 +120,15 @@ class PanditMyReviewsView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if getattr(user, 'role', '') != 'pandit' or not hasattr(user, 'pandit_profile'):
+        # MTI: PanditUser inherits directly from User.
+        # request.user IS the PanditUser — there is no separate 'pandit_profile' attribute.
+        # The Review model's 'pandit' FK points to PanditUser, so we filter by user directly.
+        if getattr(user, 'role', '') != 'pandit':
             return Review.objects.none()
-        return Review.objects.filter(pandit=user.pandit_profile).select_related(
+        return Review.objects.filter(pandit=user).select_related(
             'customer', 'pandit', 'booking'
         ).order_by('-created_at')
+
 
 
 # ---------------------------

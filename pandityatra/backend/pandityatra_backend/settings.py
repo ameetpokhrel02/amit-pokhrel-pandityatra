@@ -58,6 +58,7 @@ default_allowed_hosts = [
     '.exp.direct',
     '.expo.dev',
     '.ngrok-free.app',
+    '.ngrok-free.dev',
 ]
 
 raw_allowed_hosts = env_list('ALLOWED_HOSTS', ','.join(default_allowed_hosts))
