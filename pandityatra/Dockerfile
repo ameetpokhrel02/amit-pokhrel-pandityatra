@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libpq-dev build-essential \
+    libpq-dev build-essential netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install requirements

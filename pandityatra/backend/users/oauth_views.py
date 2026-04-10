@@ -33,8 +33,7 @@ class GoogleLoginView(APIView):
                 defaults={
                     'full_name': idinfo.get('name', ''),
                     'role': 'user',  # Default role
-                    'is_active': True,
-                    'is_verified': True
+                    'is_active': True
                 }
             )
             
@@ -54,7 +53,6 @@ class GoogleLoginView(APIView):
                 'full_name': user.full_name,
                 'role': user.role,
                 'phone_number': user.phone_number,
-                'is_verified': user.is_verified,
             }
 
             return Response({
