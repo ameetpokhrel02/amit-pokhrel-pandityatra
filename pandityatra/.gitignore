@@ -87,3 +87,7 @@ scratch/
 .gemini/
 .antigravity/
 
+test_*
+debug_*
+*.txt
+*.out
