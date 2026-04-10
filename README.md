@@ -1,5 +1,28 @@
 # PanditYatra - AI-Powered Hindu Rituals Platform 🕉️
 
+<p align="center">
+  <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white" alt="Django" />
+  <img src="https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
+  <img src="https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS" />
+  <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
+  <img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu" />
+  <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/typescript-%230074c1.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+</p>
+
+### 🧭 Repository Navigation
+- 📁 **[Main Application Source (`/pandityatra`)](./pandityatra/)** - *Root Django project directory*
+  - 🖥️ **[Frontend Interface (`/frontend`)](./pandityatra/frontend/)** - *React + TypeScript + Vite UI code*
+  - ⚙️ **[Backend API (`/backend`)](./pandityatra/backend/)** - *Django REST Framework API code*
+  - 🔑 **[Environment Variables Example (`.env.example`)](./pandityatra/.env.example)** - *Deployment configuration variables*
+- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
+- 📖 **[View Application README (`/pandityatra/README.md`)](./pandityatra/README.md)**
+
+---
+
 **PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance.
 
 ---
