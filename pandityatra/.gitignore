@@ -44,7 +44,7 @@ frontend/.vite/
 # Ignore the UI folder (your request)
 
 # Package managers
-pnpm-lock.yaml
+# pnpm-lock.yaml (Removed from ignore to allow production builds)
 npm-debug.log*
 yarn-debug.log*
 
