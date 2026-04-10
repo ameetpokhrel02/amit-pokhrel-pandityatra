@@ -1,21 +1,5 @@
 # PanditYatra - AI-Powered Hindu Rituals Platform 🕉️
 
-<p align="center">
-  <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
-  <img src="https://img.shields.io/badge/django-%23092E20.svg?style=for-the-badge&logo=django&logoColor=white" alt="Django" />
-  <img src="https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-  <img src="https://img.shields.io/badge/nginx-%23009639.svg?style=for-the-badge&logo=nginx&logoColor=white" alt="Nginx" />
-  <img src="https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS" />
-  <img src="https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black" alt="Linux" />
-  <img src="https://img.shields.io/badge/Ubuntu-E95420?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu" />
-  <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
-  <img src="https://img.shields.io/badge/typescript-%230074c1.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-</p>
-
-
----
-
 **PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance.
 
 ---
@@ -41,28 +25,27 @@
 
 ## 🛠️ Technologies Used
 
-### Frontend
-- **React 18.2+**: Component-based UI library.
-- **Vite 5.x**: Blazing fast frontend build tool.
-- **TypeScript 5.x**: Static typing for reliability.
-- **Tailwind CSS 4.0**: Utility-first design system.
-- **Shadcn UI**: Accessible components.
+### Frontend (The Face)
+- **React 18**: Component-based UI library.
+- **Vite**: Next-generation, blazing fast frontend tooling.
+- **TypeScript**: Static typing for enterprise reliability.
+- **Tailwind CSS 4**: Utility-first premium design system.
+- **Shadcn UI**: Accessible component library.
 
-### Backend
-- **Django 5.1+**: Secure Python web framework.
-- **Django REST Framework 3.15+**: Robust API building.
-- **Django Channels 4.x**: WebSocket communication.
-- **Celery 5.x**: Asynchronous task processing.
+### Backend (The Brain)
+- **Django 5.x**: Secure and scalable Python web framework.
+- **Django REST Framework**: Building robust APIs.
+- **Django Channels**: Real-time WebSocket communication for chat and notifications.
+- **Celery**: Asynchronous task queue processing.
 
-### Database & Cache
-- **PostgreSQL 16**: Relational data management.
-- **Redis 7**: High-speed caching and message brokering.
+### Database
+- **PostgreSQL**: Robust relational data management for core records.
+- **Redis**: High-speed caching and message brokering for WebSockets.
 
-### Deployment & DevOps
-- **Docker 24+** & **Docker Compose v2**: Containerization.
-- **Nginx**: High-performance reverse proxy.
-- **AWS EC2/S3**: Cloud hosting infrastructure.
-- **Stripe / eSewa / Khalti**: Payment integrations.
+### Deployment, Cloud & DevOps
+- **Docker & Docker Compose**: Containerization for consistent environments across all machines.
+- **AWS (Amazon Web Services)**: Cloud hosting infrastructure (EC2, S3 for media).
+- **Stripe / eSewa / Khalti**: Payment gateway integrations.
 
 ---
 
@@ -133,19 +116,6 @@ pnpm install
 pnpm dev
 ```
 Access the application at `http://localhost:5173`.
-
----
-
-### 🧭 Repository Navigation
-- 📁 **[Return to Project Root (`../`)](../)**
-- 🖥️ **[Frontend Interface (`./frontend`)](./frontend/)** - *React 18 + TS + Vite*
-- ⚙️ **[Backend API (`./backend`)](./backend/)** - *Django 5.1 + DRF*
-- 🔑 **[Environment Variables (`.env.example`)](./.env.example)** - *Config template*
-- 🐳 **Docker Setup Examples:**
-  - [Development Compose (`docker-compose.yml`)](./docker-compose.yml)
-  - [Production Compose (`docker-compose.prod.yml`)](./docker-compose.prod.yml)
-  - [Application Dockerfile (`Dockerfile`)](./Dockerfile)
-- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
 
 ---
 
