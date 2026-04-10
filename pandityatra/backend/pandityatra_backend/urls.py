@@ -59,6 +59,10 @@ urlpatterns = [
     # Notifications endpoints
     path('api/notifications/', include('notifications.urls')),
 
+    # Google OAuth Endpoints
+    path('accounts/', include('allauth.urls')),
+    path('api/auth/', include('users.oauth_urls')),
+
     # Bug Reports
     path('api/bug-reports/', include('bug_reports.urls')),
 

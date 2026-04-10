@@ -87,9 +87,15 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',  # Django Channels for WebSocket support
     
-    # Required for API and JWT
+    # Required for API
     'rest_framework',
-    'rest_framework_simplejwt', 
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+    'dj_rest_auth',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist', 
     'channels_redis',  # Redis backend for Channels
     
     # Admin Enhancements
@@ -142,6 +148,34 @@ CHANNEL_LAYERS = {
 #     }
 # }
 
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID', ''),
+            'secret': os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+# dj-rest-auth JWT Flat Settings
+REST_USE_JWT = True
+REST_AUTH_TOKEN_MODEL = None
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -152,6 +186,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'pandityatra_backend.urls'

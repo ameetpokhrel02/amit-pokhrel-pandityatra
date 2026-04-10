@@ -296,7 +296,8 @@ export async function passwordLogin(payload: { phone_number?: string; email?: st
 // ----------------------
 export async function googleLogin(idToken: string, role?: string) {
     try {
-        const response = await apiClient.post('/users/google-login/', { id_token: idToken, role });
+        // Calls our custom Django view: POST /api/auth/google/ { token: <id_token> }
+        const response = await apiClient.post('/auth/google/', { token: idToken });
         return response.data;
     } catch (error: any) {
         throw handleApiError(error);

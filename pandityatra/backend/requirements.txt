@@ -24,6 +24,7 @@ pyswisseph==2.10.3.2
 # Auth
 dj-rest-auth==2.2.8
 django-allauth==0.58.2
+google-auth==2.23.0
 
 # Groq AI
 groq==0.13.0
