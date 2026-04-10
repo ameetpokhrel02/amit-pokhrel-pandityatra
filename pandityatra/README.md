@@ -13,16 +13,6 @@
   <img src="https://img.shields.io/badge/typescript-%230074c1.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
 </p>
 
-### 🧭 Repository Navigation
-- 📁 **[Return to Project Root (`../`)](../)**
-- 🖥️ **[Frontend Interface (`./frontend`)](./frontend/)** - *React 18 + TS + Vite*
-- ⚙️ **[Backend API (`./backend`)](./backend/)** - *Django 5.1 + DRF*
-- 🔑 **[Environment Variables (`.env.example`)](./.env.example)** - *Config template*
-- 🐳 **Docker Setup Examples:**
-  - [Development Compose (`docker-compose.yml`)](./docker-compose.yml)
-  - [Production Compose (`docker-compose.prod.yml`)](./docker-compose.prod.yml)
-  - [Application Dockerfile (`Dockerfile`)](./Dockerfile)
-- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
 
 ---
 
@@ -143,6 +133,19 @@ pnpm install
 pnpm dev
 ```
 Access the application at `http://localhost:5173`.
+
+---
+
+### 🧭 Repository Navigation
+- 📁 **[Return to Project Root (`../`)](../)**
+- 🖥️ **[Frontend Interface (`./frontend`)](./frontend/)** - *React 18 + TS + Vite*
+- ⚙️ **[Backend API (`./backend`)](./backend/)** - *Django 5.1 + DRF*
+- 🔑 **[Environment Variables (`.env.example`)](./.env.example)** - *Config template*
+- 🐳 **Docker Setup Examples:**
+  - [Development Compose (`docker-compose.yml`)](./docker-compose.yml)
+  - [Production Compose (`docker-compose.prod.yml`)](./docker-compose.prod.yml)
+  - [Application Dockerfile (`Dockerfile`)](./Dockerfile)
+- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
 
 ---
 

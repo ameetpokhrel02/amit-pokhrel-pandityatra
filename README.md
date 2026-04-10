@@ -13,17 +13,6 @@
   <img src="https://img.shields.io/badge/typescript-%230074c1.svg?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
 </p>
 
-### 🧭 Repository Navigation
-- 📁 **[Main Application Source (`/pandityatra`)](./pandityatra/)** - *Root Django project directory*
-  - 🖥️ **[Frontend Interface (`/frontend`)](./pandityatra/frontend/)** - *React 18 + TS + Vite*
-  - ⚙️ **[Backend API (`/backend`)](./pandityatra/backend/)** - *Django 5.x + DRF*
-  - 🔑 **[Environment Variables (`.env.example`)](./pandityatra/.env.example)** - *Config template*
-  - 🐳 **Docker Setup Examples:**
-    - [Development Compose (`docker-compose.yml`)](./pandityatra/docker-compose.yml)
-    - [Production Compose (`docker-compose.prod.yml`)](./pandityatra/docker-compose.prod.yml)
-    - [Application Dockerfile (`Dockerfile`)](./pandityatra/Dockerfile)
-- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
-- 📖 **[View Application README (`/pandityatra/README.md`)](./pandityatra/README.md)**
 
 ---
 
@@ -144,6 +133,20 @@ pnpm install
 pnpm dev
 ```
 Access the application at `http://localhost:5173`.
+
+---
+
+### 🧭 Repository Navigation
+- 📁 **[Main Application Source (`/pandityatra`)](./pandityatra/)** - *Root Django project directory*
+  - 🖥️ **[Frontend Interface (`/frontend`)](./pandityatra/frontend/)** - *React 18 + TS + Vite*
+  - ⚙️ **[Backend API (`/backend`)](./pandityatra/backend/)** - *Django 5.x + DRF*
+  - 🔑 **[Environment Variables (`.env.example`)](./pandityatra/.env.example)** - *Config template*
+  - 🐳 **Docker Setup Examples:**
+    - [Development Compose (`docker-compose.yml`)](./pandityatra/docker-compose.yml)
+    - [Production Compose (`docker-compose.prod.yml`)](./pandityatra/docker-compose.prod.yml)
+    - [Application Dockerfile (`Dockerfile`)](./pandityatra/Dockerfile)
+- 📱 **[Mobile App Repository](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app)** - *Expo Native Mobile App*
+- 📖 **[View Application README (`/pandityatra/README.md`)](./pandityatra/README.md)**
 
 ---
 
