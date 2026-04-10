@@ -4,6 +4,22 @@
 
 ---
 
+## 🛠️ Tools & Environment
+| Tool | Version / Type |
+| :--- | :--- |
+| 🐧 **Operating System** | Ubuntu 24.04 LTS |
+| 🐳 **Docker Engine** | 24.0.7+ |
+| 🚢 **Docker Compose** | v2.21.0+ |
+| 🚀 **Nginx** | Alpine (Reverse Proxy & Static Server) |
+| 🐍 **Python** | 3.11.x |
+| 📦 **Node.js** | 18.x / 20.x |
+| 📦 **Package Manager** | PNPM 10.x+ |
+| ⚛️ **React** | 18.x |
+| 📘 **TypeScript** | 5.x |
+| 🎨 **Tailwind CSS** | 4.0 |
+
+---
+
 ## 🏗️ Features
 
 ### 🤖 AI-Powered Spiritual Intelligence
@@ -31,27 +47,28 @@
 - **TypeScript**: Static typing for enterprise reliability.
 - **Tailwind CSS 4**: Utility-first premium design system.
 - **Shadcn UI**: Accessible component library.
+- **Dockerfile.prod**: Multi-stage build for Nginx deployment.
 
 ### Backend (The Brain)
 - **Django 5.x**: Secure and scalable Python web framework.
 - **Django REST Framework**: Building robust APIs.
 - **Django Channels**: Real-time WebSocket communication for chat and notifications.
 - **Celery**: Asynchronous task queue processing.
+- **Gunicorn/Uvicorn**: Production-grade WSGI/ASGI servers.
 
-### Database
+### Database & Cache
 - **PostgreSQL**: Robust relational data management for core records.
 - **Redis**: High-speed caching and message brokering for WebSockets.
 
-### Deployment, Cloud & DevOps
-- **Docker & Docker Compose**: Containerization for consistent environments across all machines.
-- **AWS (Amazon Web Services)**: Cloud hosting infrastructure (EC2, S3 for media).
+### Deployment & Cloud (DevOps)
+- **Docker & Docker Compose**: Containerization for consistent environments.
+- **Nginx**: Reverse proxy, SSL termination, and static asset serving.
+- **AWS (Amazon Web Services)**: Cloud hosting infrastructure (EC2, S3).
 - **Stripe / eSewa / Khalti**: Payment gateway integrations.
 
 ---
 
 ## 📸 Project Screenshots
-
-*(Add your project screenshots here)*
 
 <div align="center">
   <img width="800" alt="PanditYatra Dashboard" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
@@ -74,7 +91,7 @@ cd amit-pokhrel-pandityatra/pandityatra
 ```
 
 ### 2. Environment Variables (.env)
-Create a `.env` file in the root based on this example pattern:
+Create a `.env` file in the root based on the provided [`.env.example`](.env.example):
 ```env
 # Example .env configuration
 DEBUG=True
@@ -86,31 +103,19 @@ STRIPE_SECRET_KEY=your_stripe_key
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
-### 3. Start Backend & Database (Docker Setup - Linux, Mac, Windows)
-The backend and database are entirely containerized. Run the following command from the root directory:
+### 3. Start via Docker (Development)
 ```bash
 docker compose up --build -d
 ```
-*Note for Windows users: Ensure Docker Desktop is running before executing this.*
 
-**Run Initial Migrations:**
+**Run Migrations:**
 ```bash
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 ```
 
 ### 4. Start Frontend
-Open a new terminal and navigate to the frontend directory:
-
-**Mac & Linux:**
 ```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-
-**Windows (PowerShell):**
-```powershell
 cd frontend
 pnpm install
 pnpm dev
@@ -120,51 +125,37 @@ Access the application at `http://localhost:5173`.
 ---
 
 ## 🔗 Live Project URL
-
-*(Insert live deployment link here once published)*
 - **Live Demo**: [https://your-live-url.com](https://your-live-url.com)
 
 ---
 
-## 📂 Project Structure
+## 📂 Project Navigation
 
-```text
-pandityatra/
-│
-├── backend/               # Django application (APIs, Models, Auth)
-│   ├── manage.py
-│   ├── pandityatra_backend/
-│   └── (app directories: users, bookings, chat, etc.)
-│
-├── frontend/              # React/Vite application (UI components)
-│   ├── package.json
-│   ├── src/
-│   └── public/
-│
-├── docker-compose.yml     # Container orchestration for Backend, Postgres, & Redis
-├── .env.example           # Example environment variables
-└── README.md              # Project documentation
-```
+- 📁 [**Root Overview**](../README.md) - Project metadata and author info
+- 📁 [**Backend Services**](backend/) - Django API, Models, and AI logic
+- 📁 [**Frontend Portal**](frontend/) - React components and UI
+- 📁 [**Infrastructure (Nginx)**](nginx/) - Production server configurations
+- 📄 [**Environment Template**](.env.example) - Required configuration keys
+- ⚙️ [**Production Setup**](docker-compose.prod.yml) - AWS EC2 Orchestration
+- ⚙️ [**Development Setup**](docker-compose.yml) - Local Orchestration
+
 
 ---
 
 ## 🔮 Future Improvements
-
-- **Mobile Application**: A native React Native mobile application is currently in the **testing and refinement phase** for push notifications and on-the-go access. 
-  - 🔗 **Mobile App Repo**: [amit-pokhrel-pandityatra-mobile-app](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app.git)
-- **Multilingual Support enhancements**: Expanding beyond English/Nepali/Hindi to regional languages.
-- **AR/VR Integration**: Virtual temple tours and pooja participation.
-- **Advanced Astrology AI**: Predictive analytics for highly detailed daily horoscopes.
+- **Mobile Application**: A React Native app currently in testing.
+  - 🔗 **Repo**: [amit-pokhrel-pandityatra-mobile-app](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app.git)
+- **Multilingual Support**: Region-specific language enhancements.
+- **AR/VR Integration**: Virtual temple tours.
 
 ---
 
 ## 👥 Authors
-
-- **Student Name**: Amit Pokhrel
-- **Program**: BSc (Hons) Computing
-- **University**: Itahari International College (Affiliated to London Metropolitan University)
+- **Amit Pokhrel**
+- **BSc (Hons) Computing**
+- **Itahari International College** (London Metropolitan University)
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License. See [LICENSE](LICENSE) for details.
