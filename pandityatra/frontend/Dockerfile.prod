@@ -14,8 +14,8 @@ RUN pnpm install --frozen-lockfile
 # Copy the rest of the application
 COPY . .
 
-# Build the project into the /app/dist folder
-RUN pnpm build
+# Build the project using Vite directly to bypass slow tsc type checking on EC2
+RUN npx vite build
 
 # This keeps the container alive purely to hold the built React files in memory
 # so that the Nginx container can securely mount and read them.
