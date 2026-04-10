@@ -623,6 +623,22 @@ export async function getSavedKundalis() {
     return response.data;
 }
 
+export async function getExpertAIPrediction(payload: {
+    dob: string;
+    time: string;
+    place: string;
+    lagna: string | number;
+    planets: Array<{
+        planet: string;
+        rashi: string;
+        house: number;
+        longitude: number;
+    }>;
+}) {
+    const response = await apiClient.post('/kundali/expert-predict/', payload);
+    return response.data;
+}
+
 export interface KundaliPublicStats {
     total_kundalis: number;
     average_rating: number;

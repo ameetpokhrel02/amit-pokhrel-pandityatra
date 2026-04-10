@@ -1,10 +1,14 @@
 import json
+import logging
+import traceback
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from .models import ChatRoom, Message, ChatMessage
 from django.utils import timezone
 from django.db.models import Q
 from notifications.services import notify_new_message
+
+logger = logging.getLogger(__name__)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -13,34 +17,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
     """
     
     async def connect(self):
-        self.room_id = self.scope['url_route']['kwargs']['room_id']
-        self.room_group_name = f'chat_{self.room_id}'
-        self.user = self.scope['user']
-        
-        if not self.user.is_authenticated:
-            await self.close()
-            return
+        try:
+            self.room_id = self.scope['url_route']['kwargs']['room_id']
+            self.room_group_name = f'chat_{self.room_id}'
+            self.user = self.scope['user']
+            
+            if not self.user.is_authenticated:
+                logger.warning(f"Chat WS REJECT: User is not authenticated. Room: {self.room_id}")
+                await self.close()
+                return
 
-        # Verify access
-        access_granted = await self.verify_room_access()
-        if not access_granted:
+            # Verify access
+            access_granted = await self.verify_room_access()
+            if not access_granted:
+                logger.warning(f"Chat WS REJECT: Access denied for User {self.user.id} to Room {self.room_id}")
+                await self.close()
+                return
+            
+            # Join room group
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            
+            await self.accept()
+            
+            # Send recent messages on connect
+            messages = await self.get_recent_messages()
+            await self.send(text_data=json.dumps({
+                'type': 'message_history',
+                'messages': messages
+            }))
+        except Exception as e:
+            logger.error(f"CRITICAL ERROR in Chat WS Connect: {str(e)}")
+            logger.error(traceback.format_exc())
             await self.close()
-            return
-        
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        
-        await self.accept()
-        
-        # Send recent messages on connect
-        messages = await self.get_recent_messages()
-        await self.send(text_data=json.dumps({
-            'type': 'message_history',
-            'messages': messages
-        }))
     
     async def disconnect(self, close_code):
         # Leave room group
@@ -111,20 +122,25 @@ class ChatConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_recent_messages(self):
         """Get recent messages for the chat room"""
-        messages = Message.objects.filter(
-            chat_room_id=self.room_id
-        ).order_by('-timestamp')[:50]
-        
-        return [{
-            'id': msg.id,
-            'sender': msg.sender.username,
-            'sender_id': msg.sender.id,
-            'content': msg.content,
-            'content_ne': msg.content_ne,
-            'message_type': msg.message_type,
-            'timestamp': msg.timestamp.isoformat(),
-            'is_read': msg.is_read
-        } for msg in reversed(messages)]
+        try:
+            # OPTIMIZATION: select_related('sender') prevents N+1 crashes in WS context
+            messages = Message.objects.filter(
+                chat_room_id=self.room_id
+            ).select_related('sender').order_by('-timestamp')[:50]
+            
+            return [{
+                'id': msg.id,
+                'sender': msg.sender.username if msg.sender else "System",
+                'sender_id': msg.sender.id if msg.sender else 0,
+                'content': msg.content,
+                'content_ne': msg.content_ne,
+                'message_type': msg.message_type,
+                'timestamp': msg.timestamp.isoformat() if msg.timestamp else timezone.now().isoformat(),
+                'is_read': msg.is_read
+            } for msg in reversed(messages)]
+        except Exception as e:
+            logger.error(f"ERROR in get_recent_messages: {str(e)}")
+            return []
 
     @database_sync_to_async
     def verify_room_access(self):
@@ -207,41 +223,47 @@ class PujaConsumer(AsyncWebsocketConsumer):
     """
     
     async def connect(self):
-        self.booking_id = self.scope['url_route']['kwargs']['booking_id']
-        self.room_group_name = f'puja_{self.booking_id}'
-        self.user = self.scope['user']
-        
-        # Verify user has access to this booking (customer or pandit)
-        has_access = await self.verify_booking_access()
-        if not has_access:
+        try:
+            self.booking_id = self.scope['url_route']['kwargs']['booking_id']
+            self.room_group_name = f'puja_{self.booking_id}'
+            self.user = self.scope['user']
+            
+            # Verify user has access to this booking (customer or pandit)
+            has_access = await self.verify_booking_access()
+            if not has_access:
+                logger.warning(f"Puja WS REJECT: Access denied. User {self.user.id} to Booking {self.booking_id}")
+                await self.close()
+                return
+            
+            # Join puja room group
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            
+            await self.accept()
+            
+            # Send recent messages on connect
+            messages = await self.get_recent_messages()
+            await self.send(text_data=json.dumps({
+                'type': 'message_history',
+                'messages': messages,
+                'mode': 'interaction'
+            }))
+            
+            # Send join notification
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_join',
+                    'username': self.user.username,
+                    'user_id': self.user.id
+                }
+            )
+        except Exception as e:
+            logger.error(f"CRITICAL ERROR in Puja WS Connect: {str(e)}")
+            logger.error(traceback.format_exc())
             await self.close()
-            return
-        
-        # Join puja room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-        
-        await self.accept()
-        
-        # Send recent messages on connect
-        messages = await self.get_recent_messages()
-        await self.send(text_data=json.dumps({
-            'type': 'message_history',
-            'messages': messages,
-            'mode': 'interaction'
-        }))
-        
-        # Send join notification
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'user_join',
-                'username': self.user.username,
-                'user_id': self.user.id
-            }
-        )
     
     async def disconnect(self, close_code):
         # Send leave notification
@@ -355,17 +377,21 @@ class PujaConsumer(AsyncWebsocketConsumer):
     @database_sync_to_async
     def get_recent_messages(self):
         """Get recent messages for this puja"""
-        messages = ChatMessage.objects.filter(
-            booking_id=self.booking_id,
-            mode='interaction'
-        ).order_by('-timestamp')[:50]
-        
-        return [{
-            'id': msg.id,
-            'sender': msg.sender,
-            'sender_id': msg.user_id,
-            'content': msg.content,
-            'content_ne': msg.content_ne,
-            'message_type': 'TEXT',
-            'timestamp': msg.timestamp.isoformat(),
-        } for msg in reversed(messages)]
+        try:
+            messages = ChatMessage.objects.filter(
+                booking_id=self.booking_id,
+                mode='interaction'
+            ).select_related('user').order_by('-timestamp')[:50]
+            
+            return [{
+                'id': msg.id,
+                'sender': msg.sender,
+                'sender_id': msg.user_id,
+                'content': msg.content,
+                'content_ne': msg.content_ne,
+                'message_type': 'TEXT',
+                'timestamp': msg.timestamp.isoformat() if msg.timestamp else timezone.now().isoformat(),
+            } for msg in reversed(messages)]
+        except Exception as e:
+            logger.error(f"ERROR in Puja get_recent_messages: {str(e)}")
+            return []

@@ -2,96 +2,93 @@ version: '3.8'
 
 services:
   db:
-      image: postgres:16-alpine
-      restart: unless-stopped
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      environment:
-        - POSTGRES_DB=${POSTGRES_DB:-pandityatra_db}
-        - POSTGRES_USER=${POSTGRES_USER:-pandit_admin}
-        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U pandit_admin -d pandityatra_db"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-pandityatra_db}
+      - POSTGRES_USER=${POSTGRES_USER:-pandit_admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U pandit_admin -d pandityatra_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-      image: redis:7-alpine
-      restart: unless-stopped
-      command: redis-server --appendonly yes
-      volumes:
-        - redis_data:/data
-      healthcheck:
-        test: ["CMD", "redis-cli", "ping"]
-        interval: 10s
-        timeout: 5s
-        retries: 5
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
-      build:
-        context: .
-        dockerfile: Dockerfile
-      # Multi-worker Gunicorn managing Uvicorn
-      command: gunicorn pandityatra_backend.asgi:application -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000
-      restart: unless-stopped
-      env_file: .env
-      depends_on:
-        db:
-          condition: service_healthy
-        redis:
-          condition: service_healthy
-      volumes:
-        - static_volume:/app/staticfiles
-        - media_volume:/app/media
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Multi-worker Gunicorn managing Uvicorn
+    command: gunicorn pandityatra_backend.asgi:application -k uvicorn.workers.UvicornWorker -w 4 -b 0.0.0.0:8000
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
 
   video-reminder:
-      build:
-        context: .
-        dockerfile: Dockerfile
-      command: >
-        sh -c "while true; do
-        python manage.py send_video_reminders;
-        sleep 60;
-        done"
-      restart: unless-stopped
-      env_file: .env
-      depends_on:
-        db:
-          condition: service_healthy
-        redis:
-          condition: service_healthy
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "while true; do python manage.py send_video_reminders; sleep 60; done"
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   coturn:
-      image: coturn/coturn:4.6.3
-      restart: unless-stopped
-      network_mode: "host"  # Crucial for WebRTC latency on EC2
-      environment:
-        - TURN_USERNAME=${TURN_USERNAME:-pandityatra}
-        - TURN_PASSWORD=${TURN_PASSWORD:-pandityatra_turn_password}
-        - TURN_REALM=${TURN_REALM:-pandityatra.local}
+    image: coturn/coturn:4.6.3
+    restart: unless-stopped
+    network_mode: "host" # Crucial for WebRTC latency on EC2
+    environment:
+      - TURN_USERNAME=${TURN_USERNAME:-pandityatra}
+      - TURN_PASSWORD=${TURN_PASSWORD:-pandityatra_turn_password}
+      - TURN_REALM=${TURN_REALM:-pandityatra.local}
 
   nginx:
-      image: nginx:alpine
-      restart: unless-stopped
-      ports:
-        - "80:80"
-      volumes:
-        - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-        - frontend_build:/usr/share/nginx/html  # Nginx will serve the React build
-        - static_volume:/app/staticfiles
-        - media_volume:/app/media
-      depends_on:
-        - web
-        - frontend_builder
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - frontend_build:/usr/share/nginx/html # Nginx will serve the React build
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - web
+      - frontend_builder
 
   # Builds the React app once at container startup and shares it via Volume
   frontend_builder:
-      build:
-        context: ./frontend
-        dockerfile: Dockerfile.prod
-      volumes:
-        - frontend_build:/app/dist
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    volumes:
+      - frontend_build:/app/dist
 
 volumes:
   postgres_data:

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
-import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner, FaHistory, FaMap, FaSave } from 'react-icons/fa';
-import { ChevronRightIcon, MapPin, Check } from 'lucide-react';
+import { FaDownload, FaWifi, FaUserAstronaut, FaCalendarAlt, FaMapMarkerAlt, FaSpinner, FaHistory, FaMap, FaSave, FaCopy } from 'react-icons/fa';
+import { ChevronRightIcon, MapPin, Check, Sparkles, AlertCircle, Send, User } from 'lucide-react';
 import { GiStarsStack, GiSolarSystem } from 'react-icons/gi';
 import { useLocation as useGeoLocation } from '@/hooks/useLocation';
 import { useEffect as useNetworkEffect, useState as useNetworkState } from 'react';
@@ -92,6 +92,23 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
   const [pdfDownloading, setPdfDownloading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedId, setLastSavedId] = useState<number | null>(null);
+  const [expertPrediction, setExpertPrediction] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [userQuestion, setUserQuestion] = useState("");
+  const [isPredicting, setIsPredicting] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [predictionError, setPredictionError] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      scrollToBottom();
+    }
+  }, [chatHistory]);
 
   const formData = initialData;
 
@@ -365,6 +382,250 @@ const KundaliGeneratorForm = ({ initialData, setFormData, isOnline, geo, isAuthe
                     <h4 className="font-semibold text-[#3E2723] mb-2">AI Prediction</h4>
                     <div className="bg-orange-50/50 p-4 rounded-lg text-sm text-[#3E2723]/80 whitespace-pre-line border border-orange-100">{result.ai_prediction}</div>
                   </div>
+                </div>
+
+                {/* Jyotish AI Expert Prediction Section */}
+                <div className="mt-8 pt-8 border-t border-orange-100">
+                  {!expertPrediction && !isPredicting ? (
+                    <div className="text-center">
+                      <p className="text-sm text-[#3E2723]/60 mb-4 font-medium italic">
+                        Want a more detailed interpretation from our expert Ved Vyasa?
+                      </p>
+                      <Button 
+                        onClick={async () => {
+                          setIsPredicting(true);
+                          setPredictionError(null);
+                          try {
+                            const { getExpertAIPrediction } = await import('@/lib/api');
+                            
+                            let h24 = parseInt(formData.hour);
+                            const amPm = formData.amPm || 'AM';
+                            if (amPm === 'PM' && h24 < 12) h24 += 12;
+                            if (amPm === 'AM' && h24 === 12) h24 = 0;
+                            const time24 = `${h24.toString().padStart(2, '0')}:${formData.minute.padStart(2, '0')}`;
+
+                            const payload = {
+                              dob: `${formData.year}-${formData.month}-${formData.day}`,
+                              time: time24,
+                              place: formData.place || 'Unknown',
+                              lagna: result.lagna || 'Ascendant',
+                              planets: result.planets
+                            };
+
+                            const res = await getExpertAIPrediction(payload);
+                            setExpertPrediction(res.ai_prediction);
+                            setChatHistory([{ role: 'assistant', content: res.ai_prediction }]);
+                          } catch (err) {
+                            console.error("Prediction failed:", err);
+                            setPredictionError("The cosmic oracle is currently at rest, please try later.");
+                          } finally {
+                            setIsPredicting(false);
+                          }
+                        }}
+                        disabled={!isOnline}
+                        className="bg-gradient-to-r from-[#FF6F00] to-[#E65100] hover:shadow-lg transition-all text-white font-bold px-8 py-6 rounded-xl group"
+                      >
+                        {isOnline ? (
+                          <><Sparkles className="mr-2 group-hover:animate-pulse" /> Consult Jyotish AI</>
+                        ) : (
+                          <><FaWifi className="mr-2" /> Go Online for AI Prediction</>
+                        )}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <div className="flex flex-col gap-6">
+                        {/* AI Header Profile */}
+                        <div className="flex items-center gap-4 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center shrink-0 border-2 border-orange-200 shadow-sm overflow-hidden p-1">
+                            <img src="/images/AAApandityatra.png" alt="Jyotish AI" className="w-full h-full object-contain opacity-90" />
+                          </div>
+                          <div>
+                            <h5 className="font-bold text-[#E65100] text-lg flex items-center gap-2">
+                              Jyotish AI <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full uppercase tracking-widest font-black">Online Now</span>
+                            </h5>
+                            <p className="text-xs text-[#3E2723]/60 font-medium">Expert Vedic Astrologer • 25+ Years Wisdom</p>
+                          </div>
+                        </div>
+
+                        {/* Chat Experience */}
+                        <div className="space-y-4 max-w-4xl mx-auto w-full">
+                          {isPredicting && chatHistory.length === 0 ? (
+                            <div className="flex gap-4 items-start animate-pulse">
+                              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                <GiStarsStack className="w-5 h-5 text-[#FF6F00]" />
+                              </div>
+                              <div className="bg-white border border-orange-100 rounded-2xl rounded-tl-none p-6 shadow-sm flex-1">
+                                <div className="flex gap-2 mb-4">
+                                  <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce"></div>
+                                  <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce delay-75"></div>
+                                  <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce delay-150"></div>
+                                </div>
+                                <p className="text-sm text-[#3E2723]/40 font-medium italic">Consulting the celestial alignments for you...</p>
+                              </div>
+                            </div>
+                          ) : predictionError ? (
+                            <div className="p-6 bg-red-50 border border-red-100 rounded-2xl text-red-700 flex items-center gap-4 shadow-inner">
+                              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                                <AlertCircle className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="font-bold">Divine Connection Interrupted</p>
+                                <p className="text-sm opacity-80">{predictionError}</p>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="space-y-6">
+                                {chatHistory.map((msg, mIdx) => (
+                                  <div key={mIdx} className={`flex gap-3 md:gap-4 items-start ${msg.role === 'user' ? 'flex-row-reverse' : 'animate-in fade-in slide-in-from-left-4 duration-700'}`}>
+                                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 border shadow-sm ${
+                                      msg.role === 'user' 
+                                        ? 'bg-orange-600 text-white border-orange-700' 
+                                        : 'bg-[#FF6F00]/10 text-[#FF6F00] border-[#FF6F00]/20'
+                                    }`}>
+                                      {msg.role === 'user' ? <User className="w-5 h-5" /> : <FaUserAstronaut />}
+                                    </div>
+                                    <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+                                      {msg.role === 'assistant' ? (
+                                        <div className="space-y-4">
+                                          {msg.content.split(/\n(?=\d+\.\s+\*\*)/).map((section: string, sIdx: number) => {
+                                            const trimSection = section.trim();
+                                            if (!trimSection) return null;
+                                            return (
+                                              <div 
+                                                key={sIdx}
+                                                className="bg-white border border-orange-100 rounded-2xl rounded-tl-none p-4 md:p-6 shadow-sm hover:shadow-md transition-shadow relative text-left"
+                                              >
+                                                <div className="prose prose-orange max-w-none text-[#3E2723]/90 leading-relaxed whitespace-pre-line text-sm md:text-base font-medium">
+                                                  {trimSection}
+                                                </div>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <div className="bg-orange-600 text-white p-4 rounded-2xl rounded-tr-none shadow-md inline-block text-left relative">
+                                          <p className="text-sm font-medium">{msg.content}</p>
+                                          <div className="absolute -right-1 top-2 w-3 h-3 bg-orange-600 rotate-45"></div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {chatLoading && (
+                                  <div className="flex gap-4 items-start animate-pulse">
+                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                                      <GiStarsStack className="w-5 h-5 text-[#FF6F00]" />
+                                    </div>
+                                    <div className="bg-white border border-orange-100 rounded-2xl rounded-tl-none p-4 px-6 shadow-sm flex-1">
+                                      <div className="flex gap-2">
+                                        <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce"></div>
+                                        <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce delay-75"></div>
+                                        <div className="h-2 w-2 bg-orange-300 rounded-full animate-bounce delay-150"></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                                <div ref={chatEndRef} />
+                              </div>
+
+                              {/* Chat Input Area */}
+                              <div className="mt-8 pt-6 border-t border-orange-100 bg-orange-100/10 -mx-6 px-6 pb-2 rounded-b-3xl">
+                                <div className="flex gap-2 relative">
+                                  <input 
+                                    type="text"
+                                    value={userQuestion}
+                                    onChange={(e) => setUserQuestion(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' && !e.shiftKey) {
+                                        e.preventDefault();
+                                        const sendBtn = e.currentTarget.nextSibling as HTMLButtonElement;
+                                        sendBtn?.click();
+                                      }
+                                    }}
+                                    placeholder="Ask Pandit-ji about your chart... (e.g., career, marriage, health)"
+                                    className="flex-1 bg-white border-2 border-orange-100 focus:border-[#FF6F00] outline-none rounded-2xl px-6 py-4 shadow-sm transition-all text-sm md:text-base font-medium"
+                                  />
+                                  <Button 
+                                    onClick={async () => {
+                                      if (!userQuestion.trim()) return;
+                                      const question = userQuestion;
+                                      setUserQuestion("");
+                                      setChatLoading(true);
+                                      
+                                      const newHistory = [...chatHistory, { role: 'user', content: question }];
+                                      setChatHistory(newHistory);
+                                      
+                                      try {
+                                        const { getExpertAIPrediction } = await import('@/lib/api');
+                                        
+                                        let h24 = parseInt(formData.hour);
+                                        const amPm = formData.amPm || 'AM';
+                                        if (amPm === 'PM' && h24 < 12) h24 += 12;
+                                        if (amPm === 'AM' && h24 === 12) h24 = 0;
+                                        const time24 = `${h24.toString().padStart(2, '0')}:${formData.minute.padStart(2, '0')}`;
+                                        
+                                        const payload = {
+                                          dob: `${formData.year}-${formData.month}-${formData.day}`,
+                                          time: time24,
+                                          place: formData.place || 'Unknown',
+                                          lagna: result.lagna || 'Ascendant',
+                                          planets: result.planets,
+                                          messages: newHistory
+                                        };
+                                        
+                                        const res = await getExpertAIPrediction(payload);
+                                        setChatHistory([...newHistory, { role: 'assistant', content: res.ai_prediction }]);
+                                      } catch (err) {
+                                        console.error("Chat failed:", err);
+                                        setPredictionError("The cosmic oracle is temporarily disconnected.");
+                                      } finally {
+                                        setChatLoading(false);
+                                      }
+                                    }}
+                                    disabled={chatLoading || !userQuestion.trim()}
+                                    className="bg-[#FF6F00] hover:bg-[#E65100] text-white rounded-xl px-6 h-auto shadow-md hover:shadow-lg transition-all"
+                                  >
+                                    {chatLoading ? <FaSpinner className="animate-spin" /> : <Send className="h-5 w-5" />}
+                                  </Button>
+                                </div>
+                                <p className="text-[10px] text-center mt-3 text-[#3E2723]/30 uppercase tracking-widest font-bold">Divine Insights by Pandit AI</p>
+                              </div>
+
+                              {/* Action Footer */}
+                              <div className="pt-6 flex flex-wrap gap-3 items-center justify-center md:justify-start">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    const fullThread = chatHistory.map(m => `${m.role === 'user' ? 'Client' : 'Assistant'}: ${m.content}`).join('\n\n');
+                                    navigator.clipboard.writeText(fullThread);
+                                    alert("Full conversation thread saved to clipboard!");
+                                  }}
+                                  className="border-orange-200 text-[#E65100] hover:bg-orange-50 rounded-xl font-bold transition-all px-6"
+                                >
+                                  <FaCopy className="mr-2 h-4 w-4" /> Copy Entire Chat
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => {
+                                    setExpertPrediction(null);
+                                    setChatHistory([]);
+                                  }}
+                                  className="text-[#3E2723]/40 hover:text-[#FF6F00] transition-colors"
+                                >
+                                  Reset Session
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

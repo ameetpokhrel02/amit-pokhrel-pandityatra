@@ -6,4 +6,5 @@ urlpatterns = [
     path('generate/', generate_kundali),
     path('list/', views.list_kundalis),
     path('public-stats/', views.public_kundali_stats),
+    path('expert-predict/', views.predict_kundali_ai),
 ]

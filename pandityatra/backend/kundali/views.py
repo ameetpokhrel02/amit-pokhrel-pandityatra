@@ -3,7 +3,7 @@ from .services.astro import calculate_chart, get_nakshatra, get_rashi, get_house
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
-from kundali.services.ai import get_ai_prediction
+from kundali.services.ai import get_ai_prediction, get_expert_ai_prediction
 from django.db.models import Avg, Count
 from django.conf import settings
 from reviews.models import SiteReview, Review
@@ -175,4 +175,21 @@ def public_kundali_stats(request):
         "average_rating": round(combined_avg, 1),
         "total_reviews": combined_total,
         "languages_supported": len(getattr(settings, 'LANGUAGES', [])),
+    })
+
+
+@extend_schema(summary="Get Expert AI Kundali Prediction")
+@api_view(["POST"])
+@permission_classes([AllowAny]) # Allow guests to get predictions for offline charts
+def predict_kundali_ai(request):
+    """
+    Expert AI interpretation for birth charts.
+    Accepts raw data (useful for offline charts).
+    """
+    data = request.data
+    history = data.get('messages', [])
+    prediction = get_expert_ai_prediction(data, history=history)
+    
+    return Response({
+        "ai_prediction": prediction
     })

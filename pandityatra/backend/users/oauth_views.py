@@ -27,21 +27,31 @@ class GoogleLoginView(APIView):
             if not email:
                 return Response({'error': 'No email provided by Google'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Get or create user
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    'full_name': idinfo.get('name', ''),
-                    'role': 'user',  # Default role
-                    'is_active': True,
-                    'is_verified': True
-                }
-            )
+            # Get user by email
+            user = User.objects.filter(email=email).first()
             
-            # Additional update to catch changed names
-            if not created and not user.full_name and idinfo.get('name'):
-                user.full_name = idinfo.get('name')
-                user.save(update_fields=['full_name'])
+            if not user:
+                # Generate unique username from email
+                base_username = email.split('@')[0]
+                username = base_username
+                counter = 1
+                while User.objects.filter(username=username).exists():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                
+                # Create new user
+                user = User.objects.create(
+                    email=email,
+                    username=username,
+                    full_name=idinfo.get('name', ''),
+                    role='user',
+                    is_active=True
+                )
+            else:
+                # Update existing user if needed
+                if not user.full_name and idinfo.get('name'):
+                    user.full_name = idinfo.get('name')
+                    user.save(update_fields=['full_name'])
 
 
             # Generate JWT tokens
@@ -54,7 +64,6 @@ class GoogleLoginView(APIView):
                 'full_name': user.full_name,
                 'role': user.role,
                 'phone_number': user.phone_number,
-                'is_verified': user.is_verified,
             }
 
             return Response({

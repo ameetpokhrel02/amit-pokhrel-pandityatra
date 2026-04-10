@@ -74,7 +74,7 @@ export const KundaliChart: React.FC<Props> = ({ planets, lagna = 1 }) => {
 
     return (
         <div className="flex justify-center p-6 bg-gradient-to-br from-orange-50 to-white rounded-2xl shadow-xl border border-orange-200/50">
-            <svg width="100%" height="auto" viewBox="0 0 400 400" className="max-w-[450px] drop-shadow-xl overflow-visible">
+            <svg width="100%" viewBox="0 0 400 400" className="max-w-[450px] drop-shadow-xl overflow-visible">
                 {/* Background Decoration */}
                 <rect x="0" y="0" width="400" height="400" fill="white" rx="12" />
                 

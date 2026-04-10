@@ -17,7 +17,12 @@ def get_user(token_key):
         access_token = AccessToken(token_key)
         user_id = access_token['user_id']
         return User.objects.get(id=user_id)
-    except (InvalidToken, TokenError, User.DoesNotExist, KeyError):
+    except (InvalidToken, TokenError) as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"WebSocket Auth Failure: JWT Token Invalid/Expired. Error: {str(e)}")
+        return AnonymousUser()
+    except (User.DoesNotExist, KeyError) as e:
         return AnonymousUser()
 
 
