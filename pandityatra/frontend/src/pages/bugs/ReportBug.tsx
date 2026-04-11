@@ -118,27 +118,32 @@ const ReportBug = () => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="text-center space-y-6 bg-white dark:bg-gray-900 p-10 rounded-3xl shadow-2xl border border-green-100 dark:border-green-900/30"
+                        className="text-center space-y-6 bg-white dark:bg-gray-900 p-10 rounded-3xl shadow-2xl border border-orange-100 dark:border-orange-900/30"
                     >
-                        <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+                        <div className="flex justify-center mx-auto mb-2">
+                            <img
+                                src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1775122347/errro_p4ej8m.png"
+                                alt="Bug Reported"
+                                className="w-40 md:w-48 h-auto object-contain mix-blend-multiply dark:mix-blend-normal"
+                            />
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Report Submitted!</h2>
-                        <p className="text-muted-foreground text-lg backdrop-blur-sm">
-                            Your bug report has been successfully recorded.
-                            Our engineering team has been notified and we'll address this as soon as possible.
+                        <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white font-playfair text-orange-600">Report Submitted!</h2>
+                        <p className="text-muted-foreground text-lg font-medium max-w-md mx-auto">
+                            Thank you for your report! Our system has successfully received it. The PanditYatra engineering team will investigate this immediately.
                         </p>
-                        <Button
-                            onClick={() => {
-                                setSubmitted(false);
-                                setFormData({ title: '', description: '', category: 'OTHER', severity: 'MEDIUM' });
-                                setFile(null);
-                                setPreview(null);
-                            }}
-                            className="bg-orange-600 hover:bg-orange-700 h-12 px-8 rounded-full text-lg shadow-lg hover:shadow-orange-500/30 transition-all font-semibold"
-                        >
-                            Report Another Issue
-                        </Button>
+                        <div className="pt-4">
+                            <Button
+                                onClick={() => {
+                                    setSubmitted(false);
+                                    setFormData({ title: '', description: '', category: 'OTHER', severity: 'MEDIUM' });
+                                    setFile(null);
+                                    setPreview(null);
+                                }}
+                                className="bg-orange-600 hover:bg-orange-700 h-12 px-8 rounded-full text-lg shadow-lg hover:shadow-orange-500/30 transition-all font-semibold"
+                            >
+                                Report Another Issue
+                            </Button>
+                        </div>
                     </motion.div>
                 </div>
             </DashboardLayout>
