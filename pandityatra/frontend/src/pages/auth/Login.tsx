@@ -117,7 +117,7 @@ const LoginPage: React.FC = () => {
       if (hasJustLoggedIn && role) {
         // Redirect based on role
         if (role === 'admin' || role === 'superadmin') {
-          navigate('/admin/login', { replace: true });
+          navigate('/pandityatra/hidden/login', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
         } else if (role === 'vendor') {
@@ -188,10 +188,10 @@ const LoginPage: React.FC = () => {
         await logout();
         toast({
           title: "Admin Access Blocked",
-          description: "Administrators must login through the secure /admin/login portal.",
+          description: "Administrators must login through the secure /pandityatra/hidden/login portal.",
           variant: "destructive",
         });
-        navigate('/admin/login', { replace: true });
+        navigate('/pandityatra/hidden/login', { replace: true });
         return;
       }
 
@@ -527,10 +527,10 @@ const LoginPage: React.FC = () => {
                         await logout();
                         toast({
                           title: "Admin Access Blocked",
-                          description: "Administrators must login through the secure /admin/login portal.",
+                          description: "Administrators must login through the secure /pandityatra/hidden/login portal.",
                           variant: "destructive",
                         });
-                        navigate('/admin/login', { replace: true });
+                        navigate('/pandityatra/hidden/login', { replace: true });
                         return;
                       }
 

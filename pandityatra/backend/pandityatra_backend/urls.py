@@ -75,9 +75,9 @@ urlpatterns = [
         login_required(
             user_passes_test(
                 lambda user: user.is_active and user.is_staff,
-                login_url='/admin/login/',
+                login_url='/pandityatra/hidden/login/',
             )(SpectacularAPIView.as_view()),
-            login_url='/admin/login/',
+            login_url='/pandityatra/hidden/login/',
         ),
         name='schema',
     ),
@@ -86,9 +86,9 @@ urlpatterns = [
         login_required(
             user_passes_test(
                 lambda user: user.is_active and user.is_staff,
-                login_url='/admin/login/',
+                login_url='/pandityatra/hidden/login/',
             )(SpectacularSwaggerView.as_view(url_name='schema')),
-            login_url='/admin/login/',
+            login_url='/pandityatra/hidden/login/',
         ),
         name='swagger-ui',
     ),
@@ -97,9 +97,9 @@ urlpatterns = [
         login_required(
             user_passes_test(
                 lambda user: user.is_active and user.is_staff,
-                login_url='/admin/login/',
+                login_url='/pandityatra/hidden/login/',
             )(SpectacularRedocView.as_view(url_name='schema')),
-            login_url='/admin/login/',
+            login_url='/pandityatra/hidden/login/',
         ),
         name='redoc',
     ),

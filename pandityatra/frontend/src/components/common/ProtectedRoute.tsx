@@ -27,7 +27,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     }
     // If trying to access admin routes, redirect to admin login
     const isAdminRoute = allowedRoles && (allowedRoles.includes('admin') || allowedRoles.includes('superadmin'));
-    return <Navigate to={isAdminRoute ? "/admin/login" : "/login"} replace />;
+    return <Navigate to={isAdminRoute ? "/pandityatra/hidden/login" : "/login"} replace />;
   }
 
   // If authenticated, check if role is allowed (if specified)

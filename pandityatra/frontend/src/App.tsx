@@ -181,7 +181,7 @@ function App() {
                         <Route path="/otp-verification" element={<LoginOTPVerification />} />
                         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
                         <Route path="/auth/otp-verification" element={<OTPVerification />} />
-                        <Route path="/admin/login" element={<AdminLogin />} />
+                        <Route path="/pandityatra/hidden/login" element={<AdminLogin />} />
                         <Route path="/auth/change-password" element={<ChangePassword />} />
                         <Route path="/vendor/terms" element={<VendorTerms />} />
 
