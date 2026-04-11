@@ -66,6 +66,9 @@ urlpatterns = [
     # Bug Reports
     path('api/bug-reports/', include('bug_reports.urls')),
 
+    # Admin Auth & 2FA
+    path('api/admin-auth/', include('admin_auth.urls')),
+
     # Bookings (Generic api/ must be last)
     path('api/', include('bookings.urls')),
 

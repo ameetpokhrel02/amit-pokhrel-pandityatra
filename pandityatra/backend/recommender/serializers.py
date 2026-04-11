@@ -195,12 +195,15 @@ class UserSamagriPreferenceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
+            'user',
             'times_purchased',
             'last_purchased',
             'total_spent',
             'created_at',
             'updated_at'
         ]
+        # Allow upserts by removing automatic unique together validation
+        validators = []
 
 
 class RecommendationLogSerializer(serializers.ModelSerializer):

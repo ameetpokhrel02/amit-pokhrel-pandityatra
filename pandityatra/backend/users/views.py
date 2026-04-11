@@ -17,7 +17,11 @@ from .serializers import (
 )
 from .otp_utils import send_local_otp, verify_local_otp 
 import requests
+import base64
 from django.conf import settings
+from django.core.cache import cache
+from django.utils import timezone
+from django_otp.plugins.otp_totp.models import TOTPDevice
 from vendors.models import Vendor
 from samagri.models import SamagriItem, ShopOrder
 
@@ -149,6 +153,17 @@ class OTPVerifyAndTokenView(APIView):
         is_valid, message = verify_local_otp(verify_key, otp_code)
         
         if is_valid: 
+            # Check if user has 2FA enabled
+            device = TOTPDevice.objects.filter(user=user, confirmed=True).exists()
+            if device:
+                pre_auth_id = base64.b64encode(f"verify:{user.id}:{timezone.now().timestamp()}".encode()).decode()
+                cache.set(f"pre_auth_{pre_auth_id}", user.id, timeout=300)
+                return Response({
+                    "requires_2fa": True,
+                    "pre_auth_id": pre_auth_id,
+                    "detail": "Two-factor authentication code required."
+                }, status=status.HTTP_200_OK)
+
             refresh = RefreshToken.for_user(user)
             
             # Log Activity
@@ -218,6 +233,17 @@ class PasswordLoginView(APIView):
         authenticated_user = authenticate(username=user.username, password=password)
         
         if authenticated_user:
+            # Check if user has 2FA enabled
+            device = TOTPDevice.objects.filter(user=authenticated_user, confirmed=True).exists()
+            if device:
+                pre_auth_id = base64.b64encode(f"verify:{authenticated_user.id}:{timezone.now().timestamp()}".encode()).decode()
+                cache.set(f"pre_auth_{pre_auth_id}", authenticated_user.id, timeout=300)
+                return Response({
+                    "requires_2fa": True,
+                    "pre_auth_id": pre_auth_id,
+                    "detail": "Two-factor authentication code required."
+                }, status=status.HTTP_200_OK)
+
             refresh = RefreshToken.for_user(authenticated_user)
             
             # Log Activity

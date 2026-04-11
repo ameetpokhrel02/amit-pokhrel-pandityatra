@@ -32,6 +32,7 @@ class User(AbstractUser):
         ('pandit', 'Pandit'),
         ('vendor', 'Vendor'),
         ('admin', 'Admin'),
+        ('audit', 'Audit'),
         ('superadmin', 'Super Admin'),
     )
     role = models.CharField(max_length=12, choices=ROLE_CHOICES, default='user')

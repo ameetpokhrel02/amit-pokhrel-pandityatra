@@ -324,6 +324,48 @@ class SamagriRecommender:
         log.recommendations.add(recommendation)
         log.save()
 
+    @staticmethod
+    def record_purchase(user, samagri_item, quantity, spent_amount):
+        """
+        Record a successful purchase of a samagri item.
+        Updates user preferences and learning patterns.
+        """
+        if not user or not samagri_item:
+            return None
+        
+        # Use transaction-safe update_or_create logic
+        pref, created = UserSamagriPreference.objects.get_or_create(
+            user=user,
+            samagri_item=samagri_item
+        )
+        
+        # Update metrics
+        pref.times_purchased += 1
+        pref.last_purchased = timezone.now()
+        
+        # Update total spent (Ensure Decimal type safety)
+        pref.total_spent = Decimal(str(pref.total_spent)) + Decimal(str(spent_amount))
+        
+        # Simple moving average for quantity
+        total_purchases = pref.times_purchased
+        old_avg = float(pref.average_quantity)
+        pref.average_quantity = (old_avg * (total_purchases - 1) + float(quantity)) / total_purchases
+        
+        pref.save()
+        return pref
+
+    @staticmethod
+    def record_shop_order(order):
+        """Record all items in a shop order to user preferences"""
+        for item in order.items.all():
+            if item.samagri_item:
+                SamagriRecommender.record_purchase(
+                    user=order.user,
+                    samagri_item=item.samagri_item,
+                    quantity=item.quantity,
+                    spent_amount=item.price_at_purchase * item.quantity
+                )
+
 
 class RecommendationAnalytics:
     """

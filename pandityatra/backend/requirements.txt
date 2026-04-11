@@ -37,3 +37,8 @@ pywebpush==2.0.3
 # Image & File Storage (Cloudinary)
 cloudinary==1.38.0
 django-cloudinary-storage==0.3.0
+
+# Security & 2FA
+django-otp==1.5.0
+pyotp==2.9.0
+qrcode==7.4.2

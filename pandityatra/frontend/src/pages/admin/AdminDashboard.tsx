@@ -188,7 +188,7 @@ const AdminDashboard: React.FC = () => {
                             <TrendingUp className="w-5 h-5 text-green-500" />
                         </div>
                         <div className="h-[250px] w-full">
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                                 <LineChart data={sampleChartData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
                                     <XAxis

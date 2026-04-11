@@ -67,7 +67,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         // Auto-expand Marketplace if we're on a marketplace sub-tab
         if (location.search.includes('tab=marketplace')) expanded.push('Marketplace');
         if (location.search.includes('tab=purchases')) expanded.push('My Purchases');
-        // Auto-expand admin sidebar items based on path
+        if (location.pathname === '/profile') expanded.push('Settings');
         if (location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) expanded.push('Pandits');
         if (location.pathname.includes('/admin/vendors') || location.pathname.includes('/admin/vendors-list')) expanded.push('Vendors');
         if (location.pathname.includes('/admin/inventory') || location.pathname.includes('/admin/services')) expanded.push('Inventory');
@@ -145,6 +145,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
         if (location.search.includes('tab=purchases') && !expandedItems.includes('My Purchases')) {
             setExpandedItems(prev => [...prev, 'My Purchases']);
         }
+        if (location.pathname === '/profile' && !expandedItems.includes('Settings')) {
+            setExpandedItems(prev => [...prev, 'Settings']);
+        }
         if ((location.pathname.includes('/admin/pandits') || location.pathname.includes('/admin/pandits-list')) && !expandedItems.includes('Pandits')) {
             setExpandedItems(prev => [...prev, 'Pandits']);
         }
@@ -176,8 +179,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 ]
             },
             { icon: MessageCircle, label: 'Messages', path: '/messages' },
-            { icon: User, label: 'Profile', path: '/profile' },
-            { icon: Bot, label: 'AI Preferences', path: '/profile?tab=ai-preferences' },
+            {
+                icon: Settings, label: 'Settings', path: '/profile', children: [
+                    { icon: User, label: 'Edit Profile', path: '/profile?tab=personal' },
+                    { icon: Shield, label: 'Security', path: '/profile?tab=security' },
+                    { icon: Bot, label: 'AI Preferences', path: '/profile?tab=ai-preferences' },
+                ]
+            },
             { icon: BookOpen, label: 'Kundali', path: '/dashboard?tab=kundali' },
             { icon: AlertTriangle, label: 'Report Bug', path: '/report-bug' },
         ],

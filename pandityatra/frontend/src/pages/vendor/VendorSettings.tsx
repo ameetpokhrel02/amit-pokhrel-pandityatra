@@ -17,6 +17,7 @@ import {
     Save
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { TOTPSecuritySection } from "@/components/profile/TOTPSecuritySection";
 import { fetchVendorStats, updateVendorProfile } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -182,27 +183,9 @@ export default function VendorSettings() {
                         </Card>
 
                         {/* Security Section Area */}
-                        <Card className="border-none shadow-sm shadow-orange-100/50 bg-white/80 backdrop-blur-sm">
-                            <CardHeader>
-                                <div className="flex items-center gap-2 text-orange-600 mb-1">
-                                    <Lock size={18} className="font-bold" />
-                                    <CardTitle className="text-lg">Security</CardTitle>
-                                </div>
-                                <CardDescription>Keep your account safe and secure.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center justify-between p-4 bg-orange-50/50 rounded-xl border border-orange-100/50">
-                                    <div className="flex items-center gap-3">
-                                        <ShieldCheck className="text-orange-600" />
-                                        <div>
-                                            <p className="text-sm font-bold text-gray-800">Two-Factor Authentication</p>
-                                            <p className="text-xs text-muted-foreground">Add an extra layer of security to your account.</p>
-                                        </div>
-                                    </div>
-                                    <Button size="sm" className="bg-orange-600 hover:bg-orange-700" disabled>Enable</Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div id="security-section">
+                            <TOTPSecuritySection />
+                        </div>
                     </div>
                 </div>
             </div>

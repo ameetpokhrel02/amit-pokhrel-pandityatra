@@ -375,6 +375,11 @@ class StripeWebhookView(APIView):
                 order.status = ShopOrderStatus.PAID
                 order.transaction_id = session['id']
                 order.save()
+
+                # 🚨 AI Learning: Record Shop Purchase
+                from recommender.logic import SamagriRecommender
+                SamagriRecommender.record_shop_order(order)
+
                 logger.info(f"Payment completed for shop order {order_id}")
                 return
 
@@ -533,6 +538,10 @@ class KhaltiVerifyView(APIView):
             order.transaction_id = transaction_id
             order.save()
             
+            # 🚨 AI Learning: Record Shop Purchase
+            from recommender.logic import SamagriRecommender
+            SamagriRecommender.record_shop_order(order)
+
             return Response({
                 'success': True,
                 'order_id': order.id,
@@ -730,6 +739,10 @@ class EsewaVerifyView(APIView):
             if not order.transaction_id:
                 order.transaction_id = transaction_code
             order.save()
+
+            # 🚨 AI Learning: Record Shop Purchase
+            from recommender.logic import SamagriRecommender
+            SamagriRecommender.record_shop_order(order)
             
             return Response({
                 'success': True,

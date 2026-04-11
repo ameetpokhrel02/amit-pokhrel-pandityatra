@@ -35,15 +35,18 @@ export const AIPreferences = () => {
         setSaving(pref.id);
         try {
             const newValue = !pref[key];
-            const updatedData = { ...pref, [key]: newValue };
+            const payload = {
+                is_favorite: key === 'is_favorite' ? newValue : pref.is_favorite,
+                never_recommend: key === 'never_recommend' ? newValue : pref.never_recommend
+            };
             
-            // If we mark it as never_recommend, it can't be a favorite anymore, and vice versa.
-            if (key === 'is_favorite' && newValue) updatedData.never_recommend = false;
-            if (key === 'never_recommend' && newValue) updatedData.is_favorite = false;
+            // Mutual exclusivity logic
+            if (key === 'is_favorite' && newValue) payload.never_recommend = false;
+            if (key === 'never_recommend' && newValue) payload.is_favorite = false;
 
-            await recommenderApi.updatePreference(pref.samagri_item, updatedData);
+            await recommenderApi.updatePreference(pref.samagri_item.id, payload);
             
-            setPreferences(prev => prev.map(p => p.id === pref.id ? { ...p, ...updatedData } : p));
+            setPreferences(prev => prev.map(p => p.id === pref.id ? { ...p, ...payload } : p));
             toast({
                 title: "Preference Updated",
                 description: "We've adjusted your AI recommendations.",
@@ -93,7 +96,7 @@ export const AIPreferences = () => {
                             </div>
                         )}
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold">{pref.samagri_item_name || 'Sacred Item'}</CardTitle>
+                            <CardTitle className="text-base font-semibold">{pref.samagri_item.name || 'Sacred Item'}</CardTitle>
                             <CardDescription className="text-xs">
                                 Purchased {pref.times_purchased} times
                             </CardDescription>

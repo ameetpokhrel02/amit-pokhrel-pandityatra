@@ -158,6 +158,17 @@ class BookingViewSet(viewsets.ModelViewSet):
             pandit_wallet.total_earned += pandit_share
             pandit_wallet.available_balance += pandit_share
             pandit_wallet.save()
+
+            # 🚨 AI Learning: Record Samagri Purchases
+            from recommender.logic import SamagriRecommender
+            for item in booking.samagri_items.filter(is_included=True):
+                if item.samagri_item:
+                    SamagriRecommender.record_purchase(
+                        user=booking.user,
+                        samagri_item=item.samagri_item,
+                        quantity=item.quantity,
+                        spent_amount=item.total_price
+                    )
             
         if new_status == BookingStatus.CANCELLED:
             # 🔔 Notify customer that pandit cancelled

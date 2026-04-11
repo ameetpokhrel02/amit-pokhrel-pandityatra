@@ -420,6 +420,94 @@ export async function changePassword(payload: { current_password: string; new_pa
 }
 
 // ----------------------
+// Admin Auth & 2FA APIs
+// ----------------------
+export async function adminLogin(payload: { identifier: string; password: string }) {
+    try {
+        const response = await apiClient.post('/admin-auth/login/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function verifyAdminTOTP(payload: { token: string; pre_auth_id: string }) {
+    try {
+        const response = await apiClient.post('/admin-auth/verify-totp/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function setupAdminTOTP(preAuthId: string) {
+    try {
+        const response = await apiClient.post('/admin-auth/setup-totp/', { pre_auth_id: preAuthId });
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function confirmAdminTOTP(payload: { pre_auth_id: string; token: string }) {
+    try {
+        const response = await apiClient.patch('/admin-auth/setup-totp/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+// ----------------------
+// Global 2FA APIs
+// ----------------------
+export async function verifyGlobalTOTP(payload: { token: string; pre_auth_id: string }) {
+    try {
+        const response = await apiClient.post('/users/auth/2fa/verify/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function get2FAStatus() {
+    try {
+        const response = await apiClient.get('/users/auth/2fa/status/');
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function setup2FA() {
+    try {
+        const response = await apiClient.get('/users/auth/2fa/setup/');
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function confirm2FA(payload: { token: string }) {
+    try {
+        const response = await apiClient.post('/users/auth/2fa/setup/', payload);
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+export async function disable2FA(payload: { token: string }) {
+    try {
+        const response = await apiClient.delete('/users/auth/2fa/setup/', { data: payload });
+        return response.data;
+    } catch (error: any) {
+        throw handleApiError(error);
+    }
+}
+
+
+// ----------------------
 // Profile APIs
 // ----------------------
 export async function updateUserProfile(data: any) {

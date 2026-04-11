@@ -26,6 +26,9 @@ import {
     TrendingUp,
     AlertCircle,
     Loader2,
+    Users,
+    Settings,
+    Shield,
     Star,
     Send,
     MessageSquareHeart,
@@ -37,6 +40,7 @@ import {
     ExternalLink,
 } from "lucide-react"
 import { format } from "date-fns"
+import { TOTPSecuritySection } from '@/components/profile/TOTPSecuritySection'
 
 import {
     Table,
@@ -74,7 +78,7 @@ const PanditDashboard = () => {
 
     // Determine default tab from URL
     const urlTab = searchParams.get('tab')
-    const defaultTab = ['feedback', 'orders', 'calendar'].includes(urlTab || '') ? urlTab! : 'overview'
+    const defaultTab = ['feedback', 'orders', 'calendar', 'security'].includes(urlTab || '') ? urlTab! : 'overview'
 
     useEffect(() => {
         if (urlTab === 'orders') {
@@ -304,6 +308,10 @@ const PanditDashboard = () => {
                         <TabsTrigger value="feedback" className="gap-1.5">
                             <MessageSquareHeart className="h-4 w-4" />
                             <span className="hidden sm:inline">App Feedback</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="security" className="gap-1.5">
+                            <Shield className="h-4 w-4" />
+                            <span className="hidden sm:inline">Security</span>
                         </TabsTrigger>
                     </TabsList>
 
@@ -794,6 +802,13 @@ const PanditDashboard = () => {
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </TabsContent>
+
+                    {/* Security Tab */}
+                    <TabsContent value="security" className="mt-4">
+                        <div className="max-w-2xl mx-auto">
+                            <TOTPSecuritySection />
                         </div>
                     </TabsContent>
                 </Tabs>

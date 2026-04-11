@@ -10,8 +10,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { AuthLayout } from '@/components/layout/AuthLayout';
 import { Eye, EyeOff } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FaEnvelope, FaUser, FaLock, FaShieldAlt } from 'react-icons/fa';
+import { AdminTOTPInput } from '@/components/admin/AdminTOTPInput';
 import { motion } from 'framer-motion';
-import { FaEnvelope, FaUser, FaLock } from 'react-icons/fa';
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
 import { COUNTRY_OPTIONS, detectUserCountryCode, formatInternationalPhone, getCountryOption } from './country-phone';
@@ -55,7 +56,7 @@ const itemVariants = {
 };
 
 const LoginPage: React.FC = () => {
-  const { requestOtp, passwordLogin, googleLogin, token, role, logout } = useAuth();
+  const { requestOtp, passwordLogin, googleLogin, token, role, logout, verifyGlobalTOTP } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const form = useForm<LoginValues>({
@@ -82,6 +83,10 @@ const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [hasJustLoggedIn, setHasJustLoggedIn] = useState(false);
   const [isDetectingCountry, setIsDetectingCountry] = useState(false);
+  const [step, setStep] = useState<'credentials' | '2fa'>('credentials');
+  const [preAuthId, setPreAuthId] = useState<string | null>(null);
+  const [totpCode, setTotpCode] = useState('');
+  const [verifying2fa, setVerifying2fa] = useState(false);
   const selectedCountry = getCountryOption(form.watch('countryCode'));
 
   useEffect(() => {
@@ -116,7 +121,7 @@ const LoginPage: React.FC = () => {
     if (token) {
       if (hasJustLoggedIn && role) {
         // Redirect based on role
-        if (role === 'admin' || role === 'superadmin') {
+        if (role === 'admin' || role === 'superadmin' || role === 'audit') {
           navigate('/pandityatra/hidden/login', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
@@ -128,7 +133,7 @@ const LoginPage: React.FC = () => {
         setHasJustLoggedIn(false);
       } else if (!hasJustLoggedIn && !loading) {
         // Already logged in - session restore
-        if (role === 'admin' || role === 'superadmin') {
+        if (role === 'admin' || role === 'superadmin' || role === 'audit') {
           navigate('/admin/dashboard', { replace: true });
         } else if (role === 'pandit') {
           navigate('/pandit/dashboard', { replace: true });
@@ -183,8 +188,15 @@ const LoginPage: React.FC = () => {
           : formatInternationalPhone(data.phone || '', selectedCountry.dialCode);
       const resp = await passwordLogin(identifier, data.password || '');
       
+      if (resp.requires_2fa) {
+        setPreAuthId(resp.pre_auth_id);
+        setStep('2fa');
+        setLoading(false);
+        return;
+      }
+
       // If the user turns out to be an admin, log them out and redirect to correct portal
-      if (resp && (resp.role === 'admin' || resp.role === 'superadmin')) {
+      if (resp && (resp.role === 'admin' || resp.role === 'superadmin' || resp.role === 'audit')) {
         await logout();
         toast({
           title: "Admin Access Blocked",
@@ -208,6 +220,24 @@ const LoginPage: React.FC = () => {
       setLoading(false);
     }
   };
+  const handle2FAVerify = async () => {
+    if (totpCode.length !== 6 || !preAuthId) return;
+    setVerifying2fa(true);
+    setError(null);
+    try {
+      const resp = await verifyGlobalTOTP(totpCode, preAuthId);
+      
+      toast({
+        title: "Security Verified",
+        description: "Welcome back!",
+      });
+      setHasJustLoggedIn(true);
+    } catch (err: any) {
+      setError(err.message || "Invalid 2FA code.");
+    } finally {
+      setVerifying2fa(false);
+    }
+  };
 
   const onSubmit = (data: LoginValues) => {
     if (data.loginMethod === 'password') {
@@ -218,8 +248,59 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <AuthLayout title="Welcome" subtitle="Please login here">
+    <AuthLayout 
+        title={step === '2fa' ? "Security Step" : "Welcome"} 
+        subtitle={step === '2fa' ? "Enter your authenticator code" : "Please login here"}
+    >
       <motion.div className="space-y-6" variants={itemVariants}>
+        {step === '2fa' ? (
+            <motion.div className="space-y-8 animate-in fade-in slide-in-from-bottom-2" variants={itemVariants}>
+                <div className="flex flex-col items-center">
+                    <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mb-4 text-orange-600 shadow-sm">
+                        <FaShieldAlt size={32} />
+                    </div>
+                </div>
+
+                <div className="space-y-4">
+                    <Label className="text-sm font-bold text-gray-900 border-l-4 border-orange-500 pl-3">
+                        6-Digit Authenticator Code
+                    </Label>
+                    <AdminTOTPInput value={totpCode} onChange={setTotpCode} />
+                    
+                    {error && (
+                        <Alert variant="destructive" className="bg-red-50 border-red-100 py-3">
+                            <AlertDescription className="text-red-700 font-medium">
+                                {error}
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
+                    <div className="pt-2">
+                        <Button 
+                            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-14 rounded-2xl shadow-lg shadow-orange-100 transition-all text-lg"
+                            onClick={handle2FAVerify}
+                            disabled={verifying2fa || totpCode.length !== 6}
+                        >
+                            {verifying2fa ? <LoadingSpinner size={20} className="mr-2" /> : "Verify & Continue"}
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full mt-4 text-gray-500 hover:text-gray-700 font-medium rounded-xl"
+                            onClick={() => {
+                                setStep('credentials');
+                                setPreAuthId(null);
+                                setTotpCode('');
+                                setError(null);
+                            }}
+                            disabled={verifying2fa}
+                        >
+                            Back to Login
+                        </Button>
+                    </div>
+                </div>
+            </motion.div>
+        ) : (
+          <>
         {/* Login Method Toggle - styled as subtle tabs */}
         <motion.div className="flex bg-gray-100 p-1 rounded-lg" variants={itemVariants}>
           <button
@@ -523,7 +604,7 @@ const LoginPage: React.FC = () => {
                       const resp = await googleLogin(credentialResponse.credential);
                       
                       // Check for admin
-                      if (resp && (resp.role === 'admin' || resp.role === 'superadmin' || resp.user?.role === 'admin' || resp.user?.role === 'superadmin')) {
+                      if (resp && (resp.role === 'admin' || resp.role === 'superadmin' || resp.role === 'audit' || resp.user?.role === 'admin' || resp.user?.role === 'superadmin' || resp.user?.role === 'audit')) {
                         await logout();
                         toast({
                           title: "Admin Access Blocked",
@@ -579,6 +660,8 @@ const LoginPage: React.FC = () => {
             </Link>
           </div>
         </motion.div>
+        </>
+        )}
       </motion.div>
     </AuthLayout>
   );

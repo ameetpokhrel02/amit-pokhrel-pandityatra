@@ -75,9 +75,8 @@ export const recommenderApi = {
         return response.data;
     },
     updatePreference: async (itemId: number, data: { is_favorite?: boolean, never_recommend?: boolean }) => {
-        // Technically this creates or updates the specific user preference via POST or PUT
         const response = await apiClient.post('/recommender/user/preferences/', {
-            samagri_item: itemId,
+            samagri_item_id: itemId,
             ...data
         });
         return response.data;

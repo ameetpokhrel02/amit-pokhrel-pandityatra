@@ -41,15 +41,24 @@ const AdminSettings = () => {
         e.preventDefault();
         setLoading(true);
         try {
-            await axiosInstance.post('/users/admin/settings/', settings);
+            // 🚨 FIX: Convert to numeric values before sending to backend
+            const payload = {
+                commission_rate: parseFloat(settings.commission_rate),
+                video_call_rate_per_min: parseFloat(settings.video_call_rate_per_min)
+            };
+
+            // 🚨 FIX: Use proper API path
+            await axiosInstance.post('/users/admin/settings/', payload);
+            
             toast({
                 title: "Settings Updated",
                 description: "Platform settings have been saved successfully.",
             });
-        } catch (error) {
+        } catch (error: any) {
+            console.error("Settings update failed:", error);
             toast({
-                title: "Error",
-                description: "Failed to update settings.",
+                title: "Update Failed",
+                description: error.response?.data?.detail || "Failed to update platform settings.",
                 variant: "destructive"
             });
         } finally {

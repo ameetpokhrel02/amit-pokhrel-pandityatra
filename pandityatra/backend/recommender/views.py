@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 # pandityatra_backend/recommender/views.py
 
 from rest_framework import viewsets, status
@@ -333,10 +335,35 @@ class UserSamagriPreferenceViewSet(viewsets.ModelViewSet):
         """Only return current user's preferences"""
         return UserSamagriPreference.objects.filter(user=self.request.user)
     
-    def perform_create(self, serializer):
-        """Auto-set user to current user"""
-        serializer.save(user=self.request.user)
-    
+    def create(self, request, *args, **kwargs):
+        """
+        Custom create that performs an 'upsert' (update or create).
+        If a preference for this user and samagri_item already exists, update it.
+        """
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        samagri_item_id = serializer.validated_data.get('samagri_item_id')
+        
+        # Build update defaults only for fields present in the request
+        update_defaults = {}
+        for field in ['is_favorite', 'never_recommend', 'prefer_bulk']:
+            if field in request.data:
+                update_defaults[field] = serializer.validated_data.get(field)
+
+        # Perform upsert
+        obj, created = UserSamagriPreference.objects.update_or_create(
+            user=request.user,
+            samagri_item_id=samagri_item_id,
+            defaults=update_defaults
+        )
+        
+        # Re-serialize result for response
+        result_serializer = self.get_serializer(obj)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(result_serializer.data, status=status_code)
+
     @action(detail=False, methods=['get'])
     def insights(self, request):
         """Get user's preference insights"""

@@ -515,6 +515,12 @@ class ShopCheckoutViewSet(viewsets.ViewSet):
                             samagri.stock_quantity += order_item.quantity
                             samagri.save()
                             
+                # AI Learning: Record purchase if transitioning to a success state for the first time
+                success_states = [ShopOrderStatus.PAID, ShopOrderStatus.SHIPPED, ShopOrderStatus.DELIVERED]
+                if new_status in success_states and order.status not in success_states:
+                    from recommender.logic import SamagriRecommender
+                    SamagriRecommender.record_shop_order(order)
+
                 order.status = new_status
                 order.save()
                 

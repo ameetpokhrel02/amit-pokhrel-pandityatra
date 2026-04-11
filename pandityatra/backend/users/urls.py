@@ -13,6 +13,7 @@ from .views import (
     # 🚨 PASSWORD CHANGE
     admin_change_password,
 )
+from .views_2fa import GlobalTOTPVerifyView, GlobalTOTPStatusView, GlobalTOTPSetupView
 
 urlpatterns = [
     # User Creation
@@ -21,6 +22,11 @@ urlpatterns = [
     # OTP-Based Login Flow
     path('request-otp/', RequestOTPView.as_view(), name='request-otp'), # Request the OTP code
     path('login-otp/', OTPVerifyAndTokenView.as_view(), name='login-otp'),  # Verify OTP and get JWT tokens
+    
+    # 🚨 GLOBAL 2FA Security (Moved Higher to fix 404)
+    path('auth/2fa/verify/', GlobalTOTPVerifyView.as_view(), name='global-2fa-verify'),
+    path('auth/2fa/status/', GlobalTOTPStatusView.as_view(), name='global-2fa-status'),
+    path('auth/2fa/setup/', GlobalTOTPSetupView.as_view(), name='global-2fa-setup'),
 
     # Password-Based Login
     path('login-password/', PasswordLoginView.as_view(), name='login-password'),  # Login with password

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
 import { EditProfile } from '@/components/profile/EditProfile'
 import { AIPreferences } from '@/components/profile/AIPreferences'
+import { TOTPSecuritySection } from '@/components/profile/TOTPSecuritySection'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
@@ -27,7 +28,12 @@ const Profile = () => {
           <TabsList className="mb-4">
             <TabsTrigger value="personal">Personal Details</TabsTrigger>
             <TabsTrigger value="ai-preferences">AI Preferences</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="security">
+            <TOTPSecuritySection />
+          </TabsContent>
           
           <TabsContent value="personal">
             <Card>

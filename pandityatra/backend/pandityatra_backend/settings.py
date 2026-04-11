@@ -98,6 +98,11 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist', 
     'channels_redis',  # Redis backend for Channels
     
+    # Security & 2FA
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'admin_auth',
+    
     # Admin Enhancements
     'adminpanel',
     # Core Application Modules
@@ -122,6 +127,9 @@ INSTALLED_APPS = [
     'vendors',  # Multi-vendor E-commerce
     'bug_reports', # Bug reporting module
 ]
+
+# Security & 2FA Configuration
+OTP_TOTP_ISSUER = 'PanditYatra'
 
 # Django Channels Configuration
 ASGI_APPLICATION = 'pandityatra_backend.asgi.application'
@@ -184,6 +192,8 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware', # 🛡️ django-otp middleware (Must be after AuthenticationMiddleware)
+    'admin_auth.middleware.Admin2FAMiddleware', # 👑 Custom Admin 2FA Enforcement
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
