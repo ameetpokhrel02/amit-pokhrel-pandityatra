@@ -38,6 +38,7 @@ import logo from '@/assets/images/PanditYatralogo.png';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogoutConfirmationDialog } from '@/components/common/LogoutConfirmationDialog';
 import { NotificationDropdown } from '@/components/notifications/NotificationDropdown';
+import { ThemeToggle } from '@/components/layout/ThemeToggle';
 import { useToast } from '@/hooks/use-toast';
 import { fetchUnreadChatCount } from '@/lib/api';
 
@@ -288,6 +289,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         <span className="font-bold text-lg text-primary">PanditYatra</span>
                     </div>
                     <div className="flex items-center gap-2">
+                        <ThemeToggle />
                         <NotificationDropdown />
                         <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
                             {isSidebarOpen ? <X /> : <Menu />}
@@ -471,7 +473,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 )}
             >
                 {/* Desktop Top Header (Hidden on sidebars/mobile) */}
-                <div className="hidden md:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b px-8 py-3 items-center justify-end gap-4 h-16">
+                <div className="hidden md:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b px-8 py-3 items-center justify-end gap-2 h-16">
+                    <ThemeToggle />
                     <NotificationDropdown />
                     <div className="h-6 w-px bg-gray-200 mx-2" />
                     <div className="flex items-center gap-2">
