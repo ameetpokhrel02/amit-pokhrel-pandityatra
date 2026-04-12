@@ -6,7 +6,7 @@ services:
     dockerContext: .
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /api/bug-reports/  # Using an existing endpoint for health check
+    healthCheckPath: /api/bug-reports/
     envVars:
       - key: DEBUG
         value: "False"
@@ -16,38 +16,25 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: pandityatra-redis
           property: connectionString
       - key: ALLOWED_HOSTS
         value: "pandityatra-backend.onrender.com"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://pandityatra.onrender.com,https://pandityatra-backend.onrender.com"
+        # Added wildcard support for Vercel
+        value: "https://*.vercel.app,https://pandityatra-backend.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://pandityatra.onrender.com,https://pandityatra-backend.onrender.com"
+        # Added wildcard support for Vercel
+        value: "https://*.vercel.app,https://pandityatra-backend.onrender.com"
 
-  # 2. Frontend Service (React Static Site)
-  - type: web
-    name: pandityatra
-    runtime: static
+  # 2. Redis (for WebSockets/Channels)
+  - type: keyvalue
+    name: pandityatra-redis
     plan: free
-    buildCommand: "cd frontend && npm install && npm run build"
-    staticPublishPath: "frontend/dist"
-    envVars:
-      - key: VITE_API_URL
-        value: "https://pandityatra-backend.onrender.com/api"
-    routes:
-      - type: rewrite
-        source: "/*"
-        destination: "/index.html"
+    ipAllowList: [] # Only allow internal traffic
 
 # 3. PostgreSQL Database
 databases:
   - name: pandityatra-db
     plan: free
-
-# 4. Redis (for WebSockets/Channels)
-redis:
-  - name: pandityatra-redis
-    plan: free
-    ipAllowList: [] # Only allow internal traffic
