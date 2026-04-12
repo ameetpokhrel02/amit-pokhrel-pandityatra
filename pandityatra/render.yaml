@@ -1,0 +1,53 @@
+services:
+  # 1. Backend Service (Django)
+  - type: web
+    name: pandityatra-backend
+    env: docker
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/bug-reports/  # Using an existing endpoint for health check
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pandityatra-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pandityatra-redis
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: "pandityatra-backend.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://pandityatra.onrender.com,https://pandityatra-backend.onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://pandityatra.onrender.com,https://pandityatra-backend.onrender.com"
+
+  # 2. Frontend Service (React Static Site)
+  - type: static
+    name: pandityatra
+    env: static
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    publishDir: "frontend/dist"
+    envVars:
+      - key: VITE_API_URL
+        value: "https://pandityatra-backend.onrender.com/api"
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: "/index.html"
+
+# 3. PostgreSQL Database
+databases:
+  - name: pandityatra-db
+    plan: free
+
+# 4. Redis (for WebSockets/Channels)
+redis:
+  - name: pandityatra-redis
+    plan: free
+    ipAllowList: [] # Only allow internal traffic
