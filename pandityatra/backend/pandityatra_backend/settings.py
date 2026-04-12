@@ -134,12 +134,17 @@ OTP_TOTP_ISSUER = 'PanditYatra'
 # Django Channels Configuration
 ASGI_APPLICATION = 'pandityatra_backend.asgi.application'
 
+redis_url = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+parsed_redis = urlparse(redis_url)
+redis_host = parsed_redis.hostname or 'redis'
+redis_port = parsed_redis.port or 6379
+
 # Channel Layers - Redis for WebSocket backend
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [os.getenv('REDIS_URL', 'redis://redis:6379/0')],
+            "hosts": [(redis_host, redis_port)],
         },
     },
 }
@@ -216,14 +221,13 @@ WSGI_APPLICATION = 'pandityatra_backend.wsgi.application'
 
 
 # Database
-# Uses DATABASE_URL environment variable provided by Render or Docker Compose.
+# Uses DATABASE_URL environment variable provided by Docker Compose.
 # Falls back to SQLite if running locally without the environment variable.
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{os.path.join(BASE_DIR, "db.sqlite3")}', 
         conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=not DEBUG  # Force SSL in production
+        conn_health_checks=True
     )
 }
 
@@ -411,12 +415,7 @@ USE_X_FORWARDED_PORT = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = env_bool('SESSION_COOKIE_SECURE', not DEBUG)
 CSRF_COOKIE_SECURE = env_bool('CSRF_COOKIE_SECURE', not DEBUG)
-SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', not DEBUG)  # Force SSL in Production
-SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
-SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
-SECURE_HSTS_PRELOAD = not DEBUG
-SECURE_CONTENT_TYPE_NOSNIFF = not DEBUG
-SECURE_BROWSER_XSS_FILTER = not DEBUG
+SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
 
 # Security Headers for Google Identity Services / OAuth Popups
 # This allows the Google popup to communicate via postMessage

@@ -1,36 +1,30 @@
-# Dockerfile - Production Ready for Render (Python 3.12)
+# Dockerfile - Production Ready for Render
 
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     DJANGO_SETTINGS_MODULE=pandityatra_backend.settings
 
 WORKDIR /app
 
-# Install system dependencies (including those for psycopg2 and build tools)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    build-essential \
-    netcat-openbsd \
-    curl \
+    libpq-dev build-essential netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Copy and install requirements
 COPY backend/requirements.txt .
 RUN pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend code
+# Copy entire backend code
 COPY backend/ .
 
-# Create directory for static files
-RUN mkdir -p staticfiles
+# Collect static files
+RUN SECRET_KEY=collectstatic_dummy python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-# Start application:
-# 1. Collect static files at runtime (safe for Render)
-# 2. Start Daphne (ASGI) for WebSockets
-CMD ["sh", "-c", "python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} pandityatra_backend.asgi:application"]
+# Use Gunicorn (already in your requirements.txt)
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "pandityatra_backend.asgi:application"]
