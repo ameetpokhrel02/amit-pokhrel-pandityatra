@@ -28,11 +28,9 @@ COPY backend/ .
 # Create directory for static files
 RUN mkdir -p staticfiles
 
-# Pre-collect static files (using a dummy secret key)
-RUN SECRET_KEY=collectstatic_dummy_key python manage.py collectstatic --noinput
-
 EXPOSE 8000
 
-# Start application using Daphne (ASGI) to support WebSockets (Chat/Real-time)
-# Render provides the port via the $PORT environment variable
-CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} pandityatra_backend.asgi:application"]
+# Start application:
+# 1. Collect static files at runtime (safe for Render)
+# 2. Start Daphne (ASGI) for WebSockets
+CMD ["sh", "-c", "python manage.py collectstatic --noinput && daphne -b 0.0.0.0 -p ${PORT:-8000} pandityatra_backend.asgi:application"]
