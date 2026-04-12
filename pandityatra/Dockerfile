@@ -34,4 +34,5 @@ RUN SECRET_KEY=collectstatic_dummy_key python manage.py collectstatic --noinput
 EXPOSE 8000
 
 # Start application using Daphne (ASGI) to support WebSockets (Chat/Real-time)
-CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "pandityatra_backend.asgi:application"]
+# Render provides the port via the $PORT environment variable
+CMD ["sh", "-c", "daphne -b 0.0.0.0 -p ${PORT:-8000} pandityatra_backend.asgi:application"]

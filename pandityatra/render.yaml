@@ -6,7 +6,7 @@ services:
     dockerContext: .
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /api/bug-reports/
+    healthCheckPath: /api/users/site-content/  # PUBLIC endpoint (AllowAny) for health check
     envVars:
       - key: DEBUG
         value: "False"
