@@ -55,6 +55,12 @@ class Booking(models.Model):
     # Timing and Status
     booking_date = models.DateField()
     booking_time = models.TimeField()
+    
+    # Customer Contact Info (Collected during booking)
+    full_name = models.CharField(max_length=100, blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    service_address = models.TextField(blank=True, null=True, help_text="Specific address for HOME/TEMPLE/PANDIT_LOCATION rituals")
+    
     status = models.CharField(
         max_length=20,
         choices=BookingStatus.choices,

@@ -8,12 +8,12 @@ from rest_framework import status, permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from decimal import Decimal
 import stripe
 import logging
 from adminpanel.models import PaymentErrorLog
-from django.utils import timezone
 from .models import Payment, PaymentWebhook
 from .serializers import PaymentSerializer # 🆕 Added Serializer
 from video.services.room_creator import ensure_video_room_for_booking
@@ -164,6 +164,8 @@ class CreatePaymentIntentView(APIView):
                     'booking_id': booking.id,
                     'payment_id': payment.id,
                     'user_id': request.user.id,
+                    'customer_name': booking.full_name or (getattr(request.user, 'full_name', '') or request.user.username),
+                    'customer_phone': booking.phone_number or getattr(request.user, 'phone_number', ''),
                 }
             )
             
@@ -203,11 +205,11 @@ class CreatePaymentIntentView(APIView):
             website_url = settings.FRONTEND_URL
             purchase_order_id = f"BOOKING-{booking.id}"
             
-            # Prepare customer info
+            # Prepare customer info (Prioritize booking contact fields)
             user_info = {
-                "name": request.user.full_name if hasattr(request.user, 'full_name') else request.user.username,
+                "name": booking.full_name or (getattr(request.user, 'full_name', '') or request.user.username),
                 "email": request.user.email,
-                "phone": request.user.phone_number if hasattr(request.user, 'phone_number') else "9800000000"
+                "phone": booking.phone_number or (getattr(request.user, 'phone_number', '') or "9800000000")
             }
             
             success, pidx_or_error, payment_url = initiate_khalti_payment(
@@ -907,6 +909,7 @@ class VerifyStripePaymentView(APIView):
     def get(self, request):
         session_id = request.query_params.get('session_id')
         order_id = request.query_params.get('order_id')
+        booking_id = request.query_params.get('booking_id')
         
         if not session_id:
             return Response({"error": "Missing session_id"}, status=400)
@@ -916,9 +919,13 @@ class VerifyStripePaymentView(APIView):
             session = stripe.checkout.Session.retrieve(session_id)
             
             if session.payment_status == 'paid':
-                # 2. Update the order if order_id is provided
+                # 2. Update the order if order_id is provided (Shop Flow)
                 amount_npr = 0
+                transaction_type = "UNKNOWN"
+                is_first_booking = False
+
                 if order_id:
+                    transaction_type = "SHOP_ORDER"
                     from samagri.models import ShopOrder, ShopOrderStatus
                     try:
                         # Use select_for_update to handle race conditions with webhooks
@@ -930,10 +937,76 @@ class VerifyStripePaymentView(APIView):
                             order.transaction_id = session.id
                             order.save()
                             logger.info(f"Verified Stripe payment for ShopOrder #{order_id}")
+                            
+                            # AI Learning: Record Shop Purchase
+                            from recommender.logic import SamagriRecommender
+                            SamagriRecommender.record_shop_order(order)
                         else:
                             logger.info(f"ShopOrder #{order_id} already processed (status: {order.status})")
                     except ShopOrder.DoesNotExist:
                         logger.warning(f"ShopOrder #{order_id} not found during Stripe verification")
+                        pass
+
+                # 3. Handle Booking verification if booking_id is provided (Booking Flow)
+                elif booking_id:
+                    transaction_type = "BOOKING"
+                    try:
+                        with transaction.atomic():
+                            booking = Booking.objects.select_for_update().get(id=booking_id)
+                            amount_npr = float(booking.total_fee)
+
+                            if not booking.payment_status:
+                                # Update booking
+                                booking.payment_status = True
+                                booking.payment_method = 'STRIPE'
+                                booking.status = 'ACCEPTED'
+                                booking.transaction_id = session.id
+                                
+                                # Handle video room for online puja
+                                if booking.service_location == 'ONLINE':
+                                    from video.services.room_creator import ensure_video_room_for_booking
+                                    try:
+                                        ensure_video_room_for_booking(booking)
+                                    except Exception as e:
+                                        logger.error(f"Failed to create video room: {e}")
+                                
+                                booking.save()
+
+                                # Update corresponding Payment record
+                                from .models import Payment
+                                payment = Payment.objects.filter(booking=booking).first()
+                                if payment:
+                                    payment.status = 'COMPLETED'
+                                    payment.completed_at = timezone.now()
+                                    payment.transaction_id = session.id
+                                    payment.gateway_response = session.to_dict()
+                                    payment.save()
+
+                                # 🚨 CHECK FOR FIRST TIME BOOKING (New User for Puja)
+                                is_first_booking = not Payment.objects.filter(
+                                    user=booking.user, 
+                                    status='COMPLETED', 
+                                    booking__isnull=False
+                                ).exclude(booking=booking).exists()
+
+                                if is_first_booking:
+                                    from adminpanel.utils import log_activity
+                                    log_activity(
+                                        user=booking.user,
+                                        action_type="NEW_USER_PUJA",
+                                        details=f"First time booking Pandit Puja: {booking.service_name}",
+                                        request=request
+                                    )
+                                
+                                # 🔔 Notify success
+                                from notifications.services import notify_payment_success
+                                notify_payment_success(booking, booking.total_fee)
+                                
+                                logger.info(f"Verified Stripe payment for Booking #{booking_id}")
+                            else:
+                                logger.info(f"Booking #{booking_id} already paid")
+                    except Booking.DoesNotExist:
+                        logger.warning(f"Booking #{booking_id} not found during Stripe verification")
                         pass
 
                 return Response({
@@ -941,8 +1014,11 @@ class VerifyStripePaymentView(APIView):
                     "status": "PAID",
                     "payment_method": "STRIPE",
                     "order_id": order_id,
+                    "booking_id": booking_id,
                     "transaction_id": session.id,
                     "amount": amount_npr,
+                    "type": transaction_type,
+                    "is_first_booking": is_first_booking,
                     "date": session.created # Use Stripe session creation time
                 })
             else:

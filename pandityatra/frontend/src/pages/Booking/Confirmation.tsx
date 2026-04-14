@@ -202,6 +202,29 @@ const Confirmation = () => {
                                 </div>
                             </div>
 
+                            {/* Contact & Location Details */}
+                            <div className="bg-white/50 rounded-2xl p-6 border border-orange-100 shadow-sm space-y-4">
+                                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-widest border-b border-orange-50 pb-2">Client & Ritual Location</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-orange-600/60 uppercase tracking-tighter">Host Name</p>
+                                        <p className="text-lg font-bold text-gray-900">{bookingData.full_name}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-bold text-orange-600/60 uppercase tracking-tighter">Contact Number</p>
+                                        <p className="text-lg font-bold text-gray-900">{bookingData.phone_number}</p>
+                                    </div>
+                                    {bookingData.service_location !== 'ONLINE' && (
+                                        <div className="md:col-span-2 space-y-1">
+                                            <p className="text-[10px] font-bold text-orange-600/60 uppercase tracking-tighter">Ritual Address ({bookingData.service_location})</p>
+                                            <p className="text-base font-medium text-gray-800 bg-orange-50/30 p-3 rounded-lg border border-orange-100/50 italic">
+                                                {bookingData.service_address}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             {/* Samagri & Items */}
                             {bookingData.samagri_required && (
                                 <div className="bg-orange-50/30 rounded-2xl p-6 border border-orange-100">

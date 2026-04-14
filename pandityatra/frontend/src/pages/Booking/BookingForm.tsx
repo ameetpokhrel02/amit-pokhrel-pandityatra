@@ -55,8 +55,13 @@ const bookingSchema = z.object({
     return val >= today;
   }, 'Booking date must be today or in the future'),
   booking_time: z.string().min(1, 'Please select a booking time slot'),
-  service_location: z.enum(['ONLINE', 'HOME', 'VENUE'], {
+  service_location: z.enum(['ONLINE', 'HOME', 'VENUE', 'TEMPLE', 'PANDIT_LOCATION'], {
     message: 'Please select a service location',
+  }),
+  full_name: z.string().min(2, 'Full name is required'),
+  phone_number: z.string().min(10, 'Valid phone number is required'),
+  service_address: z.string().optional().refine((val) => {
+    return true; // Simple optional for now, handled in UI
   }),
 });
 
@@ -117,6 +122,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
     service_location: 'ONLINE',
     samagri_required: true,
     notes: '',
+    full_name: user?.full_name || '',
+    phone_number: user?.phone_number || '',
+    service_address: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -408,12 +416,21 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
       booking_date: formData.booking_date,
       booking_time: formData.booking_time,
       service_location: formData.service_location,
+      full_name: formData.full_name,
+      phone_number: formData.phone_number,
     });
 
     if (!validation.success) {
+      console.log('Validation failed:', validation.error.format());
       const firstError = validation.error.issues[0]?.message || 'Please fill all required fields';
       setError(firstError);
       return;
+    }
+
+    // Additional check for address if not online
+    if (formData.service_location !== 'ONLINE' && !formData.service_address) {
+        setError('Service address is required for on-site rituals');
+        return;
     }
 
     setLoading(true);
@@ -435,6 +452,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
         booking_time: formData.booking_time,
         samagri_required: formData.samagri_required,
         notes: formData.notes,
+        full_name: formData.full_name,
+        phone_number: formData.phone_number,
+        service_address: formData.service_address,
         customer_timezone: timezone,
         customer_location: latitude && longitude ? `${latitude},${longitude}` : null,
       };
@@ -576,6 +596,57 @@ const BookingForm: React.FC<BookingFormProps> = ({ panditId, serviceId, onBookin
                   )}
                 </div>
               )}
+
+              {/* Personal Details Section */}
+              <div className="bg-orange-50/20 p-6 rounded-2xl border border-orange-100/50 space-y-4">
+                <h3 className="text-sm font-bold text-orange-900 uppercase tracking-wider mb-2">Personal & Contact Details</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="full_name" className="text-orange-900 font-medium">Full Name *</Label>
+                    <Input
+                      id="full_name"
+                      placeholder="Enter your full name"
+                      value={formData.full_name}
+                      onChange={(e) => handleInputChange('full_name', e.target.value)}
+                      className="h-11 border-orange-100 focus:ring-orange-500 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone_number" className="text-orange-900 font-medium">WhatsApp / Phone *</Label>
+                    <Input
+                      id="phone_number"
+                      placeholder="e.g. +977 98XXXXXXXX"
+                      value={formData.phone_number}
+                      onChange={(e) => handleInputChange('phone_number', e.target.value)}
+                      className="h-11 border-orange-100 focus:ring-orange-500 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {formData.service_location !== 'ONLINE' && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="space-y-2 pt-2"
+                  >
+                    <Label htmlFor="service_address" className="text-orange-900 font-medium font-playfair italic"> Ritual Location / Address *</Label>
+                    <textarea
+                      id="service_address"
+                      placeholder={
+                        formData.service_location === 'HOME' ? "Your home address for the Pandit visit..." :
+                        formData.service_location === 'TEMPLE' ? "Name and location of the Temple..." :
+                        "Specific address instructions..."
+                      }
+                      value={formData.service_address}
+                      onChange={(e) => handleInputChange('service_address', e.target.value)}
+                      className="w-full h-20 border border-orange-100 rounded-xl p-3 text-sm focus:ring-2 focus:ring-orange-500 outline-none transition-all resize-none"
+                    />
+                  </motion.div>
+                )}
+              </div>
 
               {/* Date Selection */}
               <div className="space-y-2">

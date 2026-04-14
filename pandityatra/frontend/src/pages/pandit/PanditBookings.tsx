@@ -14,6 +14,10 @@ interface Booking {
   booking_time: string;
   status: string;
   user_full_name: string;
+  full_name: string;
+  phone_number: string;
+  service_address: string;
+  service_location: string;
   payment_status: boolean;
   payment_method?: string;
   transaction_id?: string;
@@ -143,10 +147,11 @@ const PanditBookings = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-muted-foreground mb-4">
-                    <p><span className="font-semibold">Client:</span> {booking.user_full_name}</p>
-                    <p><span className="font-semibold">Date:</span> {booking.booking_date}</p>
-                    <p><span className="font-semibold">Time:</span> {booking.booking_time}</p>
-                    <div className="flex items-center gap-2">
+                    <p><span className="font-semibold">Host / Participant:</span> {booking.full_name || booking.user_full_name}</p>
+                    <p><span className="font-semibold">Contact:</span> {booking.phone_number || 'N/A'}</p>
+                    <p><span className="font-semibold">Ritual Location:</span> {booking.service_location} {booking.service_address ? `(${booking.service_address})` : ''}</p>
+                    <p><span className="font-semibold">Date:</span> {booking.booking_date} at {booking.booking_time}</p>
+                    <div className="flex items-center gap-2 my-2">
                       <span className="font-semibold text-gray-700">Payment:</span>{' '}
                       {booking.payment_status ? (
                         <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">Paid {booking.payment_method ? `(${booking.payment_method})` : ''}</Badge>

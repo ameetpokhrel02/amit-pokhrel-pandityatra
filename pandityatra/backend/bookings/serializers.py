@@ -16,6 +16,7 @@ class BookingCreateSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'pandit', 'service', 'service_name', 'service_location', 
             'booking_date', 'booking_time', 'notes', 'samagri_required',
+            'full_name', 'phone_number', 'service_address',
             'customer_timezone', 'customer_location', 'status', 'user'
         ]
         read_only_fields = ['id', 'user']
@@ -114,6 +115,7 @@ class BookingListSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user_full_name', 'pandit', 'pandit_full_name', 'pandit_expertise', 'pandit_id',
             'service_name', 'service_location', 'booking_date', 'booking_time',
+            'full_name', 'phone_number', 'service_address',
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status',
             'payment_method', 'transaction_id',
             'service_duration', 'service_image', 'created_at', 'is_reviewed',
@@ -176,6 +178,7 @@ class BookingDetailSerializer(serializers.ModelSerializer):
             'pandit_expertise', 'pandit_language',
             'service', 'service_name', 'service_duration', 'service_description', 'service_image',
             'service_location', 'booking_date', 'booking_time', 'status',
+            'full_name', 'phone_number', 'service_address',
             'notes', 'samagri_required',
             'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'payment_method',
             'customer_timezone', 'customer_location',
@@ -226,6 +229,7 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'user', 'user_full_name', 'pandit', 'pandit_full_name', 
             'service_name', 'service_image', 'service_location', 'booking_date', 'booking_time', 
+            'full_name', 'phone_number', 'service_address',
             'status', 'service_fee', 'samagri_fee', 'total_fee', 'payment_status', 'created_at', 'is_reviewed',
             'daily_room_url', 'video_room_url', 'recording_url', 'recording_available'
         ]
