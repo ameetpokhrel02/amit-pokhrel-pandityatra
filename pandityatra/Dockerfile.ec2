@@ -1,0 +1,31 @@
+# Dockerfile.ec2 - Optimized for AWS Free Tier (1GB RAM)
+
+FROM python:3.11-slim
+
+# Prevent Python from writing .pyc files and enable unbuffered logging
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DJANGO_SETTINGS_MODULE=pandityatra_backend.settings
+
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev build-essential netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install
+COPY backend/requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy backend code
+COPY backend/ .
+
+# Collect static files with a dummy secret key
+RUN SECRET_KEY=collectstatic_dummy python manage.py collectstatic --noinput
+
+EXPOSE 8000
+
+# Execute Daphne (Supports HTTP + WebSockets)
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "pandityatra_backend.asgi:application"]
