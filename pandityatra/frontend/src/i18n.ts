@@ -9,7 +9,11 @@ i18n
   .use(initReactI18next)
   .init({
     fallbackLng: 'en',
-    debug: true,
+    debug: import.meta.env.DEV, // Only log in development, not production
+
+    // Only load these exact languages — strips region codes (en-US → en)
+    supportedLngs: ['en', 'hi', 'ne'],
+    nonExplicitSupportedLngs: true, // en-US will match 'en'
     
     // Namespaces
     ns: ['common', 'auth', 'dashboard', 'about', 'home', 'shop'],
@@ -17,7 +21,7 @@ i18n
     keySeparator: '.', 
 
     interpolation: {
-      escapeValue: false, // not needed for react as it escapes by default
+      escapeValue: false,
     },
     
     backend: {

@@ -91,3 +91,18 @@ test_*
 debug_*
 *.txt
 *.out
+
+# ===============================
+# 8. DATABASE DUMPS (NEVER COMMIT)
+# ===============================
+*.sql
+*.dump
+*.pg_dump
+*_backup*
+*_clean*
+*_neon*
+*_full_backup*
+pandityatra_backup.dump
+pandityatra_clean.sql
+pandityatra_full_backup.sql
+pandityatra_neon.sql
