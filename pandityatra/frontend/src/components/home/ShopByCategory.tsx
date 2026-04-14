@@ -6,6 +6,8 @@ import { ShoppingBag, Book, ArrowRight, Sparkles } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import hero2 from '@/assets/images/hero_2.webp';
+import booksImg from '@/assets/images/books_ite.webp';
 
 const ShopByCategory: React.FC = () => {
     const { t } = useTranslation();
@@ -15,7 +17,7 @@ const ShopByCategory: React.FC = () => {
             title: t('puja_samagri'),
             description: t('samagri_desc'),
             icon: <ShoppingBag className="w-8 h-8" />,
-            image: '/src/assets/images/hero_2.webp',
+            image: hero2,
             link: '/shop/samagri',
             color: 'from-orange-500 to-amber-600',
             tag: 'Essentials'
@@ -25,7 +27,7 @@ const ShopByCategory: React.FC = () => {
             title: t('spiritual_books'),
             description: t('books_desc'),
             icon: <Book className="w-8 h-8" />,
-            image: '/src/assets/images/books_ite.webp',
+            image: booksImg,
             link: '/shop/books',
             color: 'from-amber-700 to-orange-800',
             tag: 'Wisdom'

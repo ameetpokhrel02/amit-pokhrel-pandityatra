@@ -143,7 +143,7 @@ const Navbar: React.FC = () => {
         <div className="flex justify-center mb-4">
           <div className="relative">
             <img
-              src="/src/assets/images/PanditYatralogo.png"
+              src={logo}
               alt="PanditYatra Mascot"
               className="w-24 h-24 object-contain"
             />
