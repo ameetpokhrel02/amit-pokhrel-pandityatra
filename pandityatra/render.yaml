@@ -1,0 +1,53 @@
+version: "1"
+
+services:
+  - type: web
+    name: pandityatra-backend
+    env: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: CURRENT_DOMAIN
+        value: "https://pandityatra.onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pandityatra-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: pandityatra-redis
+          property: connectionString
+      # Add this if you use Celery for Redis
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: pandityatra-redis
+          property: connectionString
+
+  - type: web
+    name: pandityatra-frontend
+    env: static
+    buildCommand: npm install -g pnpm && cd frontend && pnpm install && pnpm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: "https://pandityatra-backend.onrender.com"
+      - key: VITE_API_URL
+        value: "https://pandityatra-backend.onrender.com"
+      - key: VITE_WS_URL
+        value: "wss://pandityatra-backend.onrender.com"
+
+  - type: redis
+    name: pandityatra-redis
+    ipAllowList: [] # Allows internal connections within Render
+
+databases:
+  - name: pandityatra-db
+    databaseName: pandityatra_db
+    user: pandit_admin
