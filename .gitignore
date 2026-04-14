@@ -1,0 +1,8 @@
+# Database dumps — NEVER commit these
+*.sql
+*.dump
+*.pg_dump
+*_backup*
+*_clean*
+*_neon*
+*_full_backup*
