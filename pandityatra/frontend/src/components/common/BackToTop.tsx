@@ -9,7 +9,8 @@ const BackToTop = () => {
 
     // List of dashboard path prefixes where we DON'T want the button
     const dashboardPaths = ['/admin', '/pandit', '/vendor', '/dashboard', '/profile', '/my-bookings', '/messages'];
-    const isDashboardPage = dashboardPaths.some(path => location.pathname.startsWith(path));
+    const authPaths = ['/login', '/register', '/pandit/register', '/vendor/register', '/auth'];
+    const isExcludedPage = [...dashboardPaths, ...authPaths].some(path => location.pathname.startsWith(path));
 
     useEffect(() => {
         const handleScroll = () => {
@@ -23,7 +24,7 @@ const BackToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    if (isDashboardPage) return null;
+    if (isExcludedPage) return null;
 
     return (
         <AnimatePresence>

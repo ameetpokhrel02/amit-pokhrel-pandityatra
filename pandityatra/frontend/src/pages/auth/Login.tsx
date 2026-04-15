@@ -634,7 +634,6 @@ const LoginPage: React.FC = () => {
                 theme="outline"
                 shape="pill"
                 size="large"
-                width={400}
                 text="continue_with"
               />
             </div>

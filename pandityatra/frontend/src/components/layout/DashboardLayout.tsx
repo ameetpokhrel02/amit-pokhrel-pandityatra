@@ -315,7 +315,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         exit={{ x: -250 }}
                         transition={{ duration: 0.2 }}
                         className={`
-                    fixed md:sticky top-0 left-0 h-screen w-64 bg-background border-r shadow-sm z-40
+                    fixed md:sticky top-0 left-0 h-screen w-64 bg-background border-r shadow-sm z-[60]
                     flex flex-col
                     ${isSidebarOpen ? 'block' : 'hidden md:block'}
                 `}

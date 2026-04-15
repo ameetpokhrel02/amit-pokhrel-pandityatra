@@ -21,6 +21,9 @@ const Offline: React.FC = () => {
 
     if (isOnline) return null;
 
+    // Allow offline access to specific routes (e.g. Offline Kundali)
+    if (window.location.pathname.includes('/kundali')) return null;
+
     return (
         <div className="fixed inset-0 z-[100] bg-[#F5F5F5] flex flex-col items-center justify-center p-6 text-left overflow-hidden">
             <div className="max-w-5xl w-full flex flex-col md:flex-row items-center justify-between gap-12 animate-fade-in-up relative z-10">

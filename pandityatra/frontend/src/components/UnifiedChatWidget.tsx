@@ -172,7 +172,7 @@ const UnifiedChatWidget: React.FC<UnifiedChatWidgetProps> = ({ bookingId, pandit
 
   // 🛡️ Guard: Only show for customers (users) or guests. Hide for Pandits and Admins.
   // Also hide on pages where chat is already the main interface to avoid redundancy.
-  const hiddenPaths = ['/messages', '/chat', '/pandit/messages', '/vendor/messages', '/admin/support', '/puja-room', '/video'];
+  const hiddenPaths = ['/messages', '/chat', '/pandit/messages', '/vendor/messages', '/admin/support', '/puja-room', '/video', '/login', '/register', '/pandit/register', '/vendor/register', '/auth'];
   const isHiddenPath = hiddenPaths.some(path => location.pathname.startsWith(path));
 
   if (role === 'pandit' || role === 'admin' || isHiddenPath) {
