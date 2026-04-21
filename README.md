@@ -160,7 +160,7 @@ Access the application at `http://localhost:5173`.
 ---
 
 ## 🔗 Live Project URL
-- **Live Demo**: [https://amit-pokhrel-pandityatra-ybv9.vercel.app/](https://pandityatra.vercel.app/)
+- **Live Demo**: [(https://pandityatra.vercel.app/)]
 
 ---
 
