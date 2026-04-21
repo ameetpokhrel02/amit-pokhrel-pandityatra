@@ -1,6 +1,6 @@
 # PanditYatra – AI-Powered Global Pandit Booking Platform with Offline JyotishAI 🕉️
 
-**PanditYatra** is a comprehensive, production-grade digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
+**PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
 
 ---
 
@@ -28,123 +28,169 @@
 
 ---
 
-## 🎯 Project Objective
-The goal of PanditYatra is to modernize the accessibility of Hindu spiritual services. It addresses the challenges of finding qualified pandits, managing ritual logistics, and accessing accurate astrological data in a fast-paced digital world. By integrating AI and real-time communication, it ensures that tradition remains accessible anywhere, anytime.
+## 🏗️ Features
 
----
-
-## 🏗️ Key Features
-
-### 🤖 AI & Spiritual Intelligence
-- **Intelligent Ritual Assistant**: A context-aware AI chatbot for ritual guidance and philosophical queries.
-- **Offline JyotishAI (Kundali)**: A specialized engine that generates accurate horoscopes entirely on the client-side using WebAssembly—ensuring 100% data privacy.
+### 🤖 AI-Powered Spiritual Intelligence
+- **Intelligent Ritual Assistant**: A context-aware AI chatbot that guides users through complex ritual procedures and provides philosophical insights.
+- **Offline JyotishAI (Kundali)**: A specialized WebAssembly-based engine that generates accurate horizontal and North-Indian style horoscopes entirely on the client side—ensuring 100% data privacy.
 - **AI Samagri Recommender**: Automatically suggests required ritual items based on the booked puja.
 
-### 📅 Booking & Management
-- **Multi-Role Dashboards**: Specialized interfaces for **Customers**, **Pandits**, **Vendors**, and **Admins**.
-- **Real-Time Scheduling**: Instant booking confirmation with automated calendar sync.
-- **Flexible Locations**: Support for **Home-based**, **Temple**, or **Online (Video)** rituals.
+### 📅 Comprehensive Booking Ecosystem
+- **Multi-Role Integration**: Dedicated dashboards for **Customers**, **Pandits**, **Vendors**, and **Administrators**.
+- **Real-Time Scheduling**: Conflict-free booking with instant confirmation and automated calendar synchronization.
+- **Flexible Service Locations**: Support for Online (Video), Temple, or Home-based rituals.
 
-### 🎥 Communication & Real-time Features
-- **Professional Video Consultations**: High-definition, low-latency video calls powered by **WebRTC** and **Coturn TURN Server**.
-- **Real-Time Chat**: Instant messaging between users and pandits via **Django Channels (WebSockets)**.
+### 🎥 Professional Video Consultations & Chat
+- **HD Video Integration**: High-definition, low-latency video calls powered by Daily.co/WebRTC and **Coturn TURN Server**.
+- **Real-Time Chat**: Instant messaging via Django Channels (WebSockets) for seamless user-pandit coordination.
+
+### 🛍️ Marketplace & Global Notifications
+- **Vendor Shop**: A dedicated marketplace for puja samagri and spiritual items.
 - **Global Notifications**: Real-time push notifications and branded email alerts via **Mailjet**.
 
-### 🛍️ Marketplace & Payments
-- **Vendor Shop**: A dedicated marketplace for puja samagri and spiritual items.
-- **Multi-Gateway Payments**: Secure transactions via **Stripe**, **eSewa**, and **Khalti**.
-- **Admin Email Center**: Centralized dashboard for managing bulk campaigns and transmission logs.
+---
+
+## 📸 Project Screenshots
+
+<div align="center">
+  <h3>1. Customer Dashboard</h3>
+  <img width="800" alt="Customer Dashboard" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
+  <p><i>The complete digital gateway to Hindu rituals and spiritual wellbeing.</i></p>
+  
+  <h3>2. Pandit Management</h3>
+  <!-- [Insert Pandit Screenshot Here] -->
+  
+  <h3>3. Marketplace (Vendor Shop)</h3>
+  <!-- [Insert Shop Screenshot Here] -->
+  
+  <h3>4. AI Jyotish (Kundali)</h3>
+  <!-- [Insert Kundali Screenshot Here] -->
+</div>
+
+
+## 🌳 Project Structure
+
+```text
+pandityatra/
+├── backend/                  # Django REST API & Core Logic
+│   ├── manage.py             # Django entry point
+│   ├── requirements.txt      # Python dependencies
+│   ├── pandityatra_backend/  # Main Django settings
+│   ├── users/                # User & Auth app
+│   ├── bookings/             # Appointments & Bookings
+│   ├── payments/             # Stripe, Khalti, eSewa integrations
+│   ├── chat/                 # WebSocket chat logic
+│   ├── ai/                   # AI Chatbot & Recommender models
+│   └── notifications/        # Mailjet & Push logic
+├── frontend/                 # React & Vite Frontend
+│   ├── package.json          # Node dependencies
+│   ├── src/                  # React components, contexts, and pages
+│   ├── public/               # Static frontend assets
+│   └── Dockerfile.prod       # Frontend Nginx container config
+├── nginx/                    # Reverse Proxy configurations
+├── .env.example              # Environment variables template
+├── docker-compose.yml        # Local development orchestration
+└── render.yaml               # Render deployment specifications
+```
+
 
 ---
 
-## 💻 System Requirements
-- **OS**: Linux (Ubuntu 22.04+ recommended), macOS, or Windows (WSL2).
-- **Hardware**: 4GB RAM (8GB recommended), 2 vCPUs.
-- **Software**: 
-  - Docker & Docker Compose (v2.21.0+)
-  - Node.js 18+ (for local frontend development)
-  - Python 3.11+ (for local backend development)
+## 🚀 Installation & Setup
 
----
+### General Requirements
+- **Python** 3.11+
+- **pnpm** (Required for Frontend)
+- **Docker** & **Docker Compose**
 
-## 🚀 Installation and Setup
-
-### 1. Clone the Repository
+### 1. Clone & Initialize
 ```bash
 git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra.git
 cd amit-pokhrel-pandityatra/pandityatra
 ```
 
-### 2. Configure Environment Variables
-Create a `.env` file in the `pandityatra/` directory:
+### 2. Environment Variables (.env)
+Create a `.env` file in the root based on the provided [`.env.example`](.env.example):
 ```env
+# Example .env configuration
 DEBUG=True
-SECRET_KEY=your_secret_key
-DATABASE_URL=postgres://pandit_admin:secure_password@db:5432/pandityatra_db
-REDIS_URL=redis://redis:6379/0
+SECRET_KEY=your_django_secret_key
+DATABASE_URL=postgres://postgres:password@db:5432/pandityatra
 
-# Services
-MAILJET_API_KEY=your_key
-MAILJET_SECRET_KEY=your_secret
+# Third-party Services
 STRIPE_SECRET_KEY=your_stripe_key
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
-### 3. Deploy with Docker
+### 3. Start via Docker (Development)
 ```bash
-# Build and start all services (Web, Worker, Beat, DB, Redis)
 docker compose up --build -d
+```
 
-# Run database migrations
+**Run Migrations:**
+```bash
 docker compose exec web python manage.py migrate
-
-# Create an admin account
 docker compose exec web python manage.py createsuperuser
 ```
 
-### 4. Access the Platform
-- **Web Frontend**: `http://localhost:5173`
-- **Admin Dashboard**: `http://localhost:8000/admin`
-- **API Documentation**: `http://localhost:8000/api/docs`
-
----
-
-## 🌍 Live Project
-- **Production URL**: [https://amit-pokhrel-pandityatra.onrender.com/](https://amit-pokhrel-pandityatra.onrender.com/)
-- **Mobile APK**: *Available in the Releases section*
-
----
-
-## 📂 Project Structure
-```text
-pandityatra/
-├── backend/                  # Django REST API & Celery Tasks
-│   ├── pandityatra_backend/  # Core Settings & ASGI/WSGI
-│   ├── notifications/        # Mailjet & Push logic
-│   ├── bookings/             # Service & Appointment logic
-│   ├── users/                # Multi-role Auth & Profile management
-│   └── payments/             # Stripe, Khalti, eSewa adapters
-├── frontend/                 # React (Vite) + shadcn/ui
-│   ├── src/components/       # Reusable UI components
-│   ├── src/pages/            # Dashboard & Marketplace views
-│   └── public/               # PWA assets & Icons
-├── docker-compose.yml        # Main orchestration file
-└── render.yaml               # Blueprint for Render deployment
+### 4. Start Frontend
+```bash
+cd frontend
+pnpm install
+pnpm dev
 ```
+Access the application at `http://localhost:5173`.
+
+
+## 🌍 Deployment Guide
+
+### Option 1: Render (PaaS Deployment)
+1. Connect you GitHub repository to Render.
+2. The project contains a `render.yaml` file (Blueprint). Render will automatically detect services.
+3. Configure your API keys (Stripe, Google, Mailjet) in the Render dashboard.
+
+### Option 2: AWS ECS / EC2 (Production Recommended)
+1. Provision an **AWS EC2 Ubuntu 24.04** instance with Docker installed.
+2. Start the production containers:
+   ```bash
+   docker compose -f docker-compose.ec2.yml up --build -d
+   ```
+
+
+---
+
+## 🔗 Live Project URL
+- **Live Demo**: [https://amit-pokhrel-pandityatra-ybv9.vercel.app/](https://amit-pokhrel-pandityatra-ybv9.vercel.app/)
+
+---
+
+## 📂 Project Navigation
+
+- 📁 [**Project Core**](pandityatra/) - Main source code directory
+- 📂 [**Backend Services**](pandityatra/backend/) - Django API, Models, and AI logic
+- 📂 [**Frontend Portal**](pandityatra/frontend/) - React components and UI
+- 📂 [**Infrastructure (Nginx)**](pandityatra/nginx/) - Production server configurations
+- 📄 [**Environment Template**](pandityatra/.env.example) - Required configuration keys
+- ⚙️ [**Production Setup**](pandityatra/docker-compose.prod.yml) - AWS EC2 Orchestration
+- ⚙️ [**Development Setup**](pandityatra/docker-compose.yml) - Local Orchestration
+
 
 ---
 
 ## 🔮 Future Improvements
-- **AR Ritual Visualization**: Augmented reality overlays for guided home rituals.
-- **Expanded Global Language Support**: Nepali, Hindi, and Sanskrit localization.
-- **Smart Puja Kits**: IoT-enabled inventory tracking for vendors.
+- **Mobile Application**: A React Native app currently in testing.
+  - 🔗 **Repo**: [amit-pokhrel-pandityatra-mobile-app](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app.git)
+- **Multilingual Support**: Region-specific language enhancements.
+- **AR/VR Integration**: Virtual temple tours.
 
 ---
 
 ## 👥 Authors
 - **Amit Pokhrel**
-- BSc (Hons) Computing student at **Itahari International College** (London Metropolitan University).
+- **BSc (Hons) Computing**
+- **Itahari International College** (London Metropolitan University)
 
 ---
 
 ## 📄 License
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+MIT License. See [LICENSE](LICENSE) for details.
