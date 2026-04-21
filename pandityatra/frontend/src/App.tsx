@@ -97,6 +97,7 @@ const AdminErrorLogs = lazy(() => import('./pages/admin/AdminErrorLogs'))
 const ManageAdmins = lazy(() => import('./pages/admin/ManageAdmins'))
 const AdminBugReports = lazy(() => import('./pages/admin/AdminBugReports'))
 const AdminCreateUser = lazy(() => import('./pages/admin/AdminCreateUser'))
+const AdminEmailCenter = lazy(() => import('./pages/admin/AdminEmailCenter'))
 
 // Misc
 const ReportBug = lazy(() => import('./pages/bugs/ReportBug'))
@@ -464,6 +465,7 @@ function App() {
                         <Route path="/admin/manage-admins" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><ManageAdmins /></ProtectedRoute>} />
                         <Route path="/admin/error-logs" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminErrorLogs /></ProtectedRoute>} />
                         <Route path="/admin/bugs" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminBugReports /></ProtectedRoute>} />
+                        <Route path="/admin/email-center" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><AdminEmailCenter /></ProtectedRoute>} />
 
                         {/* 🐛 Bug Reports (All Roles) */}
                         <Route path="/report-bug" element={

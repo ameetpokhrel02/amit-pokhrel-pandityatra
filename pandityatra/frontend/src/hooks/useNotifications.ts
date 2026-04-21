@@ -104,8 +104,13 @@ export const useNotifications = () => {
       const response = await apiClient.get('/notifications/');
       const notificationData = response.data.results || response.data;
       
-      setNotifications(notificationData);
-      setUnreadCount(notificationData.filter((n: Notification) => !n.is_read).length);
+      if (Array.isArray(notificationData)) {
+          setNotifications(notificationData);
+          setUnreadCount(notificationData.filter((n: Notification) => !n.is_read).length);
+      } else {
+          console.error("Notifications API did not return an array:", notificationData);
+          setNotifications([]);
+      }
     } catch (error: any) {
       if (error.response?.status === 401) {
          setAuthFailed(true);

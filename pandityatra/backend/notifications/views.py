@@ -6,8 +6,11 @@ from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
 from django.utils import timezone
 from django.conf import settings
-from .models import Notification, PushNotificationToken
-from .serializers import NotificationSerializer, PushTokenSerializer
+from .models import Notification, PushNotificationToken, EmailTemplate, EmailNotification
+from .serializers import (
+    NotificationSerializer, PushTokenSerializer,
+    EmailTemplateSerializer, EmailNotificationSerializer, SendEmailSerializer
+)
 
 class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
@@ -91,3 +94,91 @@ class PushVapidPublicKeyView(APIView):
             {'vapid_public_key': getattr(settings, 'VAPID_PUBLIC_KEY', '')},
             status=status.HTTP_200_OK
         )
+
+
+class EmailTemplateViewSet(viewsets.ModelViewSet):
+    serializer_class = EmailTemplateSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Admin sees all, Others see nothing or specific public templates
+        if self.request.user.role == 'admin' or self.request.user.is_superuser:
+            return EmailTemplate.objects.all()
+        return EmailTemplate.objects.filter(template_type__in=['BOOKING_CONFIRMATION', 'PUJA_REMINDER'])
+
+
+class EmailLogViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = EmailNotificationSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.role == 'admin' or self.request.user.is_superuser:
+            return EmailNotification.objects.all()
+        return EmailNotification.objects.filter(sender=self.request.user)
+
+
+class SendEmailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(summary="Send Role-Based Email")
+    def post(self, request):
+        serializer = SendEmailSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        user = request.user
+        role = user.role
+        
+        # Role-based validation
+        if role == 'user':
+            return Response({'detail': 'Users are not authorized to send emails.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check permissions
+        if data.get('bulk') and role != 'admin' and not user.is_superuser:
+            return Response({'detail': 'Only admins can send bulk emails.'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Implementation of sending logic
+        template = None
+        if data.get('template_id'):
+            template = EmailTemplate.objects.filter(id=data['template_id']).first()
+
+        from .tasks import send_email_task
+        
+        if data.get('bulk'):
+            # Bulk logic for admin
+            from users.models import User as AppUser
+            target_roles = data.get('target_roles', ['user'])
+            recipients = AppUser.objects.filter(role__in=target_roles, is_active=True)
+            
+            for recipient in recipients:
+                notif = EmailNotification.objects.create(
+                    sender=user,
+                    sender_role='ADMIN',
+                    recipient_email=recipient.email,
+                    recipient_user=recipient,
+                    template=template,
+                    subject=data['subject'],
+                    message=data.get('content'),
+                    status='PENDING'
+                )
+                send_email_task.delay(notif.id)
+            
+            return Response({'detail': f'Bulk email queued for {recipients.count()} recipients.'})
+        
+        else:
+            # Single email logic
+            # Verify if vendor/pandit can send to this recipient
+            # (In production, you'd check booking/order relations here)
+            
+            notif = EmailNotification.objects.create(
+                sender=user,
+                sender_role=role.upper(),
+                recipient_email=data['recipient_email'],
+                template=template,
+                subject=data['subject'],
+                message=data.get('content'),
+                status='PENDING'
+            )
+            send_email_task.delay(notif.id)
+            
+            return Response({'detail': 'Email queued successfully.'})

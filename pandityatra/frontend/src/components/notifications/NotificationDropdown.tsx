@@ -48,12 +48,12 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ trig
   const [filter, setFilter] = useState<'inbox' | 'general'>('inbox');
 
   // Filter notifications by type
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = Array.isArray(notifications) ? notifications.filter(notification => {
     if (filter === 'inbox') {
       return ['booking', 'payment', 'puja', 'message', 'video'].includes(notification.type);
     }
     return ['system', 'reminder', 'update'].includes(notification.type);
-  });
+  }) : [];
 
   const getTypeIcon = (type: string) => {
     switch (type) {

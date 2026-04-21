@@ -126,6 +126,10 @@ INSTALLED_APPS = [
     'banners',  # New Dynamic Banner Module
     'vendors',  # Multi-vendor E-commerce
     'bug_reports', # Bug reporting module
+    
+    # Background Tasks
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 # Security & 2FA Configuration
@@ -394,6 +398,21 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'pandityatra9@gmail.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # App Password needed here
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# Mailjet Configuration
+MAILJET_API_KEY = os.environ.get('MAILJET_API_KEY', '')
+MAILJET_SECRET_KEY = os.environ.get('MAILJET_SECRET_KEY', '')
+MAILJET_SENDER_EMAIL = os.environ.get('MAILJET_SENDER_EMAIL', 'pandityatra9@gmail.com')
+MAILJET_SENDER_NAME = os.environ.get('MAILJET_SENDER_NAME', 'Pandityatra')
+
+# Celery Configuration
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # CORS Configuration
 # Standard CORS hardening: Disable wildcard in production

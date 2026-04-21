@@ -15,6 +15,7 @@ import { AdminTOTPInput } from '@/components/admin/AdminTOTPInput';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { GoogleLogin } from '@react-oauth/google';
+import { useTheme } from '@/components/theme/ThemeProvider';
 import { COUNTRY_OPTIONS, detectUserCountryCode, formatInternationalPhone, getCountryOption } from './country-phone';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,6 +60,7 @@ const LoginPage: React.FC = () => {
   const { requestOtp, passwordLogin, googleLogin, token, role, logout, verifyGlobalTOTP } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme } = useTheme();
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -585,19 +587,20 @@ const LoginPage: React.FC = () => {
           {/* Separator */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">or</span>
+              <span className="px-4 bg-white dark:bg-gray-950 text-gray-500 dark:text-gray-400 font-medium">or</span>
             </div>
           </div>
 
           {/* Google Login Section */}
           <div className="flex flex-col items-center gap-4 pt-2">
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-bold">Or Continue With</p>
-            <div className="w-full flex justify-center">
-              <GoogleLogin
-                onSuccess={async (credentialResponse) => {
+            <p className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold">Or Continue With</p>
+            <div className="w-full flex justify-center overflow-hidden px-2">
+              <div className="max-w-full">
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
                   if (credentialResponse.credential) {
                     setLoading(true);
                     try {
@@ -630,14 +633,15 @@ const LoginPage: React.FC = () => {
                 onError={() => {
                   setError("Google Login failed. Please try again.");
                 }}
-                useOneTap
-                theme="outline"
+                theme={theme === 'dark' ? 'filled_black' : 'outline'}
                 shape="pill"
                 size="large"
+                width="320px"
                 text="continue_with"
               />
             </div>
           </div>
+        </div>
 
           {/* Register as Pandit or Vendor Buttons */}
           <div className="pt-4 grid grid-cols-2 gap-4">

@@ -179,7 +179,7 @@ export default function VendorProducts() {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">My Products</h1>
+            <h1 className="text-3xl font-bold tracking-tight dark:text-gray-100">My Products</h1>
             <p className="text-muted-foreground">Manage your samagri inventory and status</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -275,14 +275,14 @@ export default function VendorProducts() {
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search products..." 
-              className="pl-9"
+              className="pl-9 dark:bg-gray-800 dark:border-gray-700"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
 
-        <Card className="border-none shadow-sm bg-card/50 backdrop-blur-sm">
+        <Card className="border-none shadow-sm bg-card/50 dark:bg-gray-900/50 backdrop-blur-sm overflow-hidden">
           <CardContent className="p-0">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -324,7 +324,7 @@ export default function VendorProducts() {
                                   <div className="h-10 w-10 bg-muted rounded-lg flex items-center justify-center text-[10px] text-muted-foreground border">No Img</div>
                               )}
                           </TableCell>
-                          <TableCell className="font-semibold text-gray-800">{item.name}</TableCell>
+                          <TableCell className="font-semibold text-gray-800 dark:text-gray-200">{item.name}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="font-normal">
                               {categories.find(c => c.id === item.category)?.name || 'Uncategorized'}
@@ -403,7 +403,7 @@ export default function VendorProducts() {
         </Card>
         
         {/* Help Tip */}
-        <div className="flex items-start gap-3 p-4 bg-blue-50 text-blue-800 rounded-xl border border-blue-100">
+        <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 text-blue-800 dark:text-blue-300 rounded-xl border border-blue-100 dark:border-blue-900/30">
           <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
           <div className="text-sm">
             <p className="font-bold">Important Information:</p>

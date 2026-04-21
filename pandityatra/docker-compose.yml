@@ -95,15 +95,11 @@ services:
       - TURN_REALM=${TURN_REALM:-pandityatra.local}
       - TURN_EXTERNAL_IP_LINE=${TURN_EXTERNAL_IP_LINE:-}
 
-  video-reminder:
+  celery-worker:
     build:
       context: .
       dockerfile: Dockerfile
-    command: >
-      sh -c "while true; do
-      python manage.py send_video_reminders;
-      sleep 60;
-      done"
+    command: celery -A pandityatra_backend worker -l info
     env_file:
       - .env
     volumes:
@@ -111,14 +107,24 @@ services:
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER:-pandit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pandityatra_db}
       - REDIS_URL=redis://redis:6379/0
-      - DEBUG=0
-      - SERVE_MEDIA_FILES=${SERVE_MEDIA_FILES:-0}
-      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-*}
-      - CORS_ALLOW_ALL_ORIGINS=False
-      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS}
-      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A pandityatra_backend beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-pandit_admin}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-pandityatra_db}
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy

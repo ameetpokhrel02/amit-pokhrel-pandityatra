@@ -42,3 +42,9 @@ django-cloudinary-storage==0.3.0
 django-otp==1.5.0
 pyotp==2.9.0
 qrcode==7.4.2
+
+# Email & Background Tasks
+django-celery-beat
+django-celery-results
+mailjet-rest
+celery[redis]

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .header { background: #fff; padding: 30px; text-align: center; border-bottom: 4px solid #F97316; }
+        .content { padding: 40px; background: #fff; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #999; }
+        .button { display: inline-block; padding: 12px 24px; background: #F97316; color: #fff !important; text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 20px; }
+        .logo { width: 180px; height: auto; }
+        .highlight { color: #F97316; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ logo_url }}" alt="PanditYatra" class="logo">
+        </div>
+        <div class="content">
+            <h2>Namaste, <span class="highlight">{{ recipient_name }}</span>! 🙏</h2>
+            <p>Your booking for <span class="highlight">{{ puja_name }}</span> has been confirmed.</p>
+            
+            <div style="background: #FFF7ED; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px inset #FFEDD5;">
+                <p style="margin: 5px 0;"><strong>Date:</strong> {{ booking_date }}</p>
+                <p style="margin: 5px 0;"><strong>Time:</strong> {{ booking_time }}</p>
+                <p style="margin: 5px 0;"><strong>Pandit:</strong> {{ pandit_name }}</p>
+            </div>
+
+            <p>You can view your booking details and join the session (if online) through your dashboard.</p>
+            
+            <a href="{{ frontend_url }}/my-bookings" class="button">View Dashboard</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2026 PanditYatra. All rights reserved.</p>
+            <p>Kathmandu, Nepal | support@pandityatra.com</p>
+        </div>
+    </div>
+</body>
+</html>

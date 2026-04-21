@@ -182,8 +182,8 @@ const Navbar: React.FC = () => {
       <LogoutConfirmDialog />
       <header
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${scrolled
-          ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md shadow-sm border-b border-orange-100'
-          : 'bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm'
+          ? 'bg-white/90 dark:bg-gray-950/90 backdrop-blur-md shadow-sm border-b border-orange-100 dark:border-gray-800'
+          : 'bg-white/50 dark:bg-gray-950/50 backdrop-blur-sm'
           }`}
       >
         <div className="container mx-auto px-2 sm:px-4 h-20 flex items-center justify-between gap-2 lg:gap-4">
@@ -369,9 +369,9 @@ const Navbar: React.FC = () => {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 p-2 shadow-xl border-orange-100">
-                  <div className="flex items-center gap-3 p-2 mb-2 bg-gradient-to-br from-orange-50 to-white rounded-lg border border-orange-100/50">
-                    <Avatar className="h-10 w-10 border border-white shadow-sm">
+                <DropdownMenuContent align="end" className="w-56 p-2 shadow-2xl border-orange-100 dark:border-gray-800 dark:bg-gray-950">
+                  <div className="flex items-center gap-3 p-2 mb-2 bg-gradient-to-br from-orange-50 to-white dark:from-orange-950/20 dark:to-gray-900 rounded-lg border border-orange-100/50 dark:border-orange-900/20">
+                    <Avatar className="h-10 w-10 border border-white dark:border-gray-800 shadow-sm">
                       <AvatarImage src={user.profile_pic} />
                       <AvatarFallback className="bg-orange-200 text-orange-700">
                         {user.full_name?.charAt(0)}
@@ -500,8 +500,8 @@ const Navbar: React.FC = () => {
                   <Menu className="w-6 h-6 text-gray-700" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[85%] sm:w-[350px] p-0 border-r-orange-100">
-                <SheetHeader className="text-left border-b border-orange-100 p-6 bg-orange-50/30">
+              <SheetContent side="left" className="w-[85%] sm:w-[350px] p-0 border-r-orange-100 dark:border-r-gray-800 dark:bg-gray-950">
+                <SheetHeader className="text-left border-b border-orange-100 dark:border-b-gray-800 p-6 bg-orange-50/30 dark:bg-orange-950/20">
                   <SheetTitle className="flex items-center gap-2 font-playfair text-xl text-orange-600">
                     <img src={logo} alt="Logo" className="w-8 h-8" />
                     PanditYatra

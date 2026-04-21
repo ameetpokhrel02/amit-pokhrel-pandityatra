@@ -92,21 +92,21 @@ const VendorDashboard = () => {
     return (
         <DashboardLayout userRole="vendor">
             <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-orange-100">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-orange-100 dark:border-gray-800">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-800">Shop Dashboard</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-gray-100">Shop Dashboard</h1>
                         <p className="text-muted-foreground mt-1 font-medium">Welcome back! Here's how your business is doing today.</p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" className="border-orange-200 hover:bg-orange-50 text-orange-700 font-semibold" onClick={() => navigate('/vendor/products')}>
+                        <Button variant="outline" className="border-orange-200 dark:border-orange-900/50 hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-700 dark:text-orange-400 font-semibold" onClick={() => navigate('/vendor/products')}>
                             Manage Shop
                         </Button>
-                        <Button asChild variant="outline" className="border-blue-200 hover:bg-blue-50 text-blue-700 font-semibold shadow-sm">
+                        <Button asChild variant="outline" className="border-blue-200 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-semibold shadow-sm">
                             <Link to="/shop/samagri">
                                 <ShoppingBag className="mr-2 h-4 w-4" /> Preview Shop
                             </Link>
                         </Button>
-                        <Button className="bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100" onClick={() => navigate('/vendor/products')}>
+                        <Button className="bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-100 dark:shadow-none" onClick={() => navigate('/vendor/products')}>
                             <Plus className="mr-2 h-4 w-4" /> Add Product
                         </Button>
                     </div>
@@ -116,15 +116,15 @@ const VendorDashboard = () => {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     {statCards.map((stat, i) => (
                         <Link key={i} to={stat.link}>
-                            <Card className="hover:shadow-md transition-all border-none shadow-sm h-full group">
+                            <Card className="hover:shadow-md transition-all border-none shadow-sm h-full group bg-white dark:bg-gray-900">
                                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                                     <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{stat.title}</CardTitle>
-                                    <div className={`p-2 rounded-xl ${stat.bg} group-hover:scale-110 transition-transform`}>
+                                    <div className={`p-2 rounded-xl ${stat.bg} dark:bg-opacity-10 group-hover:scale-110 transition-transform`}>
                                         <stat.icon className={`h-4 w-4 ${stat.color}`} />
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-gray-800">{stat.value}</div>
+                                    <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stat.value}</div>
                                 </CardContent>
                             </Card>
                         </Link>

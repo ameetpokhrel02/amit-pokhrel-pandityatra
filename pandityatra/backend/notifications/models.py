@@ -109,3 +109,74 @@ class PushNotificationToken(models.Model):
 
     def __str__(self):
         return f"PushToken<{self.user_id}:{self.device_type}>"
+
+
+class EmailTemplate(models.Model):
+    """
+    Reusable email templates with placeholders
+    """
+    TEMPLATE_TYPES = [
+        ('BOOKING_CONFIRMATION', 'Booking Confirmation'),
+        ('ORDER_PLACED', 'Shop Order Placed'),
+        ('PUJA_REMINDER', 'Puja Reminder'),
+        ('RESCHEDULE_NOTIFICATION', 'Reschedule Notification'),
+        ('BULK_OFFER', 'Bulk Offer/Marketing'),
+        ('CUSTOM', 'Custom/Direct Message'),
+    ]
+
+    name = models.CharField(max_length=100, unique=True)
+    template_type = models.CharField(max_length=30, choices=TEMPLATE_TYPES)
+    subject = models.CharField(max_length=255)
+    html_content = models.TextField()
+    plain_content = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.get_template_type_display()} - {self.name}"
+
+
+class EmailNotification(models.Model):
+    """
+    Log of sent emails for audit and tracking
+    """
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('SENT', 'Sent'),
+        ('FAILED', 'Failed'),
+    ]
+    
+    SENDER_ROLES = [
+        ('ADMIN', 'Admin'),
+        ('VENDOR', 'Vendor'),
+        ('PANDIT', 'Pandit'),
+        ('SYSTEM', 'System'),
+    ]
+
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='sent_emails'
+    )
+    sender_role = models.CharField(max_length=10, choices=SENDER_ROLES, default='SYSTEM')
+    recipient_email = models.EmailField()
+    recipient_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='received_emails'
+    )
+    template = models.ForeignKey(EmailTemplate, on_delete=models.SET_NULL, null=True, blank=True)
+    subject = models.CharField(max_length=255)
+    message = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    error_message = models.TextField(blank=True, null=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.recipient_email} - {self.subject} ({self.status})"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Notification, PushNotificationToken
+from .models import Notification, PushNotificationToken, EmailTemplate, EmailNotification
 
 class NotificationSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
@@ -55,3 +55,39 @@ class PushTokenSerializer(serializers.ModelSerializer):
         if attrs.get('device_type') == 'web' and not attrs.get('subscription'):
             raise serializers.ValidationError({'subscription': 'Web device requires subscription payload.'})
         return attrs
+
+
+class EmailTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EmailTemplate
+        fields = '__all__'
+
+
+class EmailNotificationSerializer(serializers.ModelSerializer):
+    template_name = serializers.CharField(source='template.name', read_only=True)
+    sender_name = serializers.CharField(source='sender.full_name', read_only=True)
+    
+    class Meta:
+        model = EmailNotification
+        fields = [
+            'id', 'sender', 'sender_name', 'sender_role', 'recipient_email', 
+            'recipient_user', 'template', 'template_name', 'subject', 
+            'status', 'error_message', 'sent_at', 'created_at'
+        ]
+
+
+class SendEmailSerializer(serializers.Serializer):
+    recipient_email = serializers.EmailField(required=False, allow_blank=True)
+    subject = serializers.CharField(max_length=255)
+    content = serializers.CharField(required=False, allow_blank=True)
+    template_id = serializers.IntegerField(required=False, allow_null=True)
+    bulk = serializers.BooleanField(default=False)
+    target_roles = serializers.ListField(
+        child=serializers.CharField(),
+        required=False
+    )
+
+    def validate(self, data):
+        if not data.get('bulk') and not data.get('recipient_email'):
+            raise serializers.ValidationError("Recipient email is required for non-bulk emails.")
+        return data

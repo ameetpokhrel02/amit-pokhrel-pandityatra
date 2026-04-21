@@ -30,7 +30,8 @@ import {
     FileText,
     Shield,
     Bot,
-    PlayCircle
+    PlayCircle,
+    Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -231,6 +232,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
             { icon: FileText, label: 'Site Content', path: '/admin/site-content' },
             { icon: Megaphone, label: 'Banners', path: '/admin/banners' },
             { icon: MessageCircle, label: 'Support Enquiries', path: '/admin/support' },
+            { icon: Mail, label: 'Email Center', path: '/admin/email-center' },
             { icon: AlertTriangle, label: 'Error Logs', path: '/admin/error-logs' },
             { icon: Menu, label: 'Activity Logs', path: '/admin/activity-logs' },
             // Manage Admins — only visible if superadmin (injected below)
@@ -299,7 +301,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                     <div className="flex items-center gap-2">
                         <ThemeToggle />
                         <NotificationDropdown />
-                        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                        <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="dark:text-gray-300">
                             {isSidebarOpen ? <X /> : <Menu />}
                         </Button>
                     </div>
@@ -315,13 +317,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         exit={{ x: -250 }}
                         transition={{ duration: 0.2 }}
                         className={`
-                    fixed md:sticky top-0 left-0 h-screen w-64 bg-background border-r shadow-sm z-[60]
+                    fixed md:sticky top-0 left-0 h-screen w-64 bg-background dark:bg-gray-950 border-r dark:border-gray-800 shadow-sm z-[60]
                     flex flex-col
                     ${isSidebarOpen ? 'block' : 'hidden md:block'}
                 `}
                     >
                         {/* Logo Area - Clickable to Home */}
-                        <Link to="/" className="h-16 flex items-center gap-3 px-6 border-b hover:bg-orange-50 transition-colors group">
+                        <Link to="/" className="h-16 flex items-center gap-3 px-6 border-b dark:border-gray-800 hover:bg-orange-50 dark:hover:bg-gray-900 transition-colors group">
                             <img
                                 src={logo}
                                 alt="PanditYatra"
@@ -356,8 +358,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                                 className={`
                                                     w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                                                     ${isParentActive
-                                                        ? 'bg-orange-50 text-primary font-medium'
-                                                        : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
+                                                        ? 'bg-orange-50 text-primary font-medium dark:bg-orange-950/20 dark:text-orange-400'
+                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-200'}
                                                 `}
                                                 onClick={() => {
                                                     toggleExpanded(item.label);
@@ -383,8 +385,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                                 <div className={`
                                                     flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                                                     ${isDirectActive
-                                                        ? 'bg-orange-50 text-primary font-medium'
-                                                        : 'text-gray-600 hover:bg-orange-50 hover:text-gray-900'}
+                                                        ? 'bg-orange-50 text-primary font-medium dark:bg-orange-950/20 dark:text-orange-400'
+                                                        : 'text-gray-600 dark:text-gray-400 hover:bg-orange-50 hover:text-gray-900 dark:hover:bg-gray-900 dark:hover:text-gray-200'}
                                                 `}>
                                                     <Icon size={20} />
                                                     <span>{item.label}</span>
@@ -408,7 +410,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                                         transition={{ duration: 0.2 }}
                                                         className="overflow-hidden"
                                                     >
-                                                        <div className="ml-5 pl-4 border-l-2 border-orange-200 mt-1 space-y-0.5">
+                                                        <div className="ml-5 pl-4 border-l-2 border-orange-200 dark:border-orange-950 mt-1 space-y-0.5">
                                                             {item.children!.map((child: NavItem, idx: number) => {
                                                                 const ChildIcon = child.icon;
                                                                 const isChildActive = location.pathname + location.search === child.path;
@@ -424,11 +426,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                                                                         <div className={`
                                                                             relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm
                                                                             ${isChildActive
-                                                                                ? 'bg-orange-50 text-primary font-medium'
-                                                                                : 'text-gray-500 hover:bg-orange-50/60 hover:text-gray-800'}
+                                                                                ? 'bg-orange-50 text-primary font-medium dark:bg-orange-950/20 dark:text-orange-400'
+                                                                                : 'text-gray-500 dark:text-gray-500 hover:bg-orange-50/60 hover:text-gray-800 dark:hover:bg-gray-900/60 dark:hover:text-gray-300'}
                                                                         `}>
                                                                             {/* Tree branch line */}
-                                                                            <div className="absolute -left-4 top-1/2 w-3 h-px bg-orange-200" />
+                                                                            <div className="absolute -left-4 top-1/2 w-3 h-px bg-orange-200 dark:bg-orange-950" />
                                                                             <ChildIcon size={16} />
                                                                             <span>{child.label}</span>
                                                                         </div>
@@ -446,22 +448,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                         </nav>
 
                         {/* Footer Area */}
-                        <div className="p-4 border-t bg-orange-50/50">
+                        <div className="p-4 border-t dark:border-gray-800 bg-orange-50/50 dark:bg-gray-950/50">
                             <div className="flex items-center gap-3 px-4 py-3 mb-2">
-                                <Avatar className="w-10 h-10 border-2 border-white shadow-sm ring-1 ring-orange-100">
+                                <Avatar className="w-10 h-10 border-2 border-white dark:border-gray-800 shadow-sm ring-1 ring-orange-100 dark:ring-orange-900/30">
                                     <AvatarImage src={user?.profile_pic} />
-                                    <AvatarFallback className="bg-orange-100 text-orange-600 font-bold">
+                                    <AvatarFallback className="bg-orange-100 text-orange-600 dark:bg-orange-900/50 dark:text-orange-400 font-bold">
                                         {user?.full_name?.[0] || 'U'}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{user?.full_name}</p>
-                                    <p className="text-xs text-gray-500 capitalize">{actualRole === 'superadmin' ? 'Super Admin' : userRole}</p>
+                                    <p className="text-sm font-medium truncate dark:text-gray-200">{user?.full_name}</p>
+                                    <p className="text-xs text-gray-500 capitalize dark:text-gray-400">{actualRole === 'superadmin' ? 'Super Admin' : userRole}</p>
                                 </div>
                             </div>
                             <Button
                                 variant="ghost"
-                                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30"
                                 onClick={handleLogoutClick}
                             >
                                 <LogOut size={20} className="mr-2" />
@@ -481,12 +483,12 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, user
                 )}
             >
                 {/* Desktop Top Header (Hidden on sidebars/mobile) */}
-                <div className="hidden md:flex sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b px-8 py-3 items-center justify-end gap-2 h-16">
+                <div className="hidden md:flex sticky top-0 z-20 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b dark:border-gray-800 px-8 py-3 items-center justify-end gap-2 h-16">
                     <ThemeToggle />
                     <NotificationDropdown />
-                    <div className="h-6 w-px bg-gray-200 mx-2" />
+                    <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-2" />
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700 capitalize px-2 py-1 bg-gray-100 rounded-md">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 capitalize px-2 py-1 bg-gray-100 dark:bg-gray-900 rounded-md">
                             {actualRole === 'superadmin' ? 'Super Admin' : userRole} Mode
                         </span>
                     </div>
