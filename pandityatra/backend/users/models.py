@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
+from core.validators import validate_file_size, validate_image_extension
 
 class User(AbstractUser):
     # Validator for Nepali Phone Numbers
@@ -24,7 +25,12 @@ class User(AbstractUser):
     # 3. Email field (Mandatory for Login/OTP)
     email = models.EmailField(unique=True, blank=False, null=False)
     
-    profile_pic = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_pic = models.ImageField(
+        upload_to='profile_pics/', 
+        blank=True, 
+        null=True,
+        validators=[validate_file_size, validate_image_extension]
+    )
     
     # 3. Roles
     ROLE_CHOICES = (

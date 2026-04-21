@@ -21,7 +21,7 @@ def send_email_task(notification_id):
         return False
 
     try:
-        mailjet = Client(auth=(settings.MAILJET_API_KEY, settings.MAILJET_SECRET_KEY), version='v3.1')
+        from django.core.mail import EmailMultiAlternatives
         
         # Branding context
         logo_url = f"{settings.FRONTEND_URL}/images/AAApandityatra.png"
@@ -61,46 +61,30 @@ def send_email_task(notification_id):
             """
             rendered_plain = strip_tags(rendered_html)
 
-        data = {
-            'Messages': [
-                {
-                    "From": {
-                        "Email": settings.MAILJET_SENDER_EMAIL,
-                        "Name": settings.MAILJET_SENDER_NAME
-                    },
-                    "To": [
-                        {
-                            "Email": notification.recipient_email,
-                            "Name": notification.recipient_user.full_name if notification.recipient_user else ""
-                        }
-                    ],
-                    "Subject": notification.subject,
-                    "TextPart": rendered_plain,
-                    "HTMLPart": rendered_html
-                }
-            ]
-        }
-
-        result = mailjet.send.create(data=data)
+        # Create the email using Django's SMTP backend
+        msg = EmailMultiAlternatives(
+            subject=notification.subject,
+            body=rendered_plain,
+            from_email=settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER,
+            to=[notification.recipient_email]
+        )
+        msg.attach_alternative(rendered_html, "text/html")
         
-        if result.status_code == 200:
-            notification.status = 'SENT'
-            notification.sent_at = timezone.now()
-            notification.save()
-            logger.info(f"Successfully sent email to {notification.recipient_email}")
-            return True
-        else:
-            notification.status = 'FAILED'
-            notification.error_message = str(result.json())
-            notification.save()
-            logger.error(f"Mailjet failed to send email to {notification.recipient_email}: {result.json()}")
-            return False
+        # Send the email
+        msg.send()
+        
+        # Update notification status
+        notification.status = 'SENT'
+        notification.sent_at = timezone.now()
+        notification.save()
+        logger.info(f"Successfully sent SMTP email to {notification.recipient_email}")
+        return True
 
     except Exception as e:
         notification.status = 'FAILED'
         notification.error_message = str(e)
         notification.save()
-        logger.error(f"Error in send_email_task for notification {notification_id}: {str(e)}", exc_info=True)
+        logger.error(f"SMTP failed to send email to {notification.recipient_email}: {str(e)}", exc_info=True)
         return False
 
 @shared_task(name='notifications.tasks.booking_notification_task')

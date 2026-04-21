@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from users.models import User
+from core.validators import validate_file_size, validate_document_extension
 
 class Vendor(User):
     shop_name = models.CharField(max_length=255)
@@ -10,7 +11,12 @@ class Vendor(User):
     bank_account_number = models.CharField(max_length=50)
     bank_name = models.CharField(max_length=100)
     account_holder_name = models.CharField(max_length=150)
-    id_proof = models.FileField(upload_to="vendor_ids/", blank=True, null=True)
+    id_proof = models.FileField(
+        upload_to="vendor_ids/", 
+        blank=True, 
+        null=True,
+        validators=[validate_file_size, validate_document_extension]
+    )
     is_verified = models.BooleanField(default=False)
     verification_status = models.CharField(max_length=10, default='PENDING')
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)

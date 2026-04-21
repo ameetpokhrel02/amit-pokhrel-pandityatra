@@ -3,6 +3,7 @@ from django.conf import settings
 from decimal import Decimal
 
 from django.utils.text import slugify
+from core.validators import validate_file_size, validate_image_extension
 
 class SamagriCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -35,7 +36,12 @@ class SamagriItem(models.Model):
     stock_quantity = models.PositiveIntegerField(default=0)
     unit = models.CharField(max_length=50, default="pcs")
     # Image for the item
-    image = models.ImageField(upload_to='samagri_images/', blank=True, null=True)
+    image = models.ImageField(
+        upload_to='samagri_images/', 
+        blank=True, 
+        null=True,
+        validators=[validate_file_size, validate_image_extension]
+    )
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

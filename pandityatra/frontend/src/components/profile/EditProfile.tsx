@@ -45,6 +45,27 @@ export const EditProfile = () => {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            // 1. Validate File Type
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!validTypes.includes(file.type)) {
+                toast({
+                    title: 'Invalid file type',
+                    description: 'Please upload a JPG, PNG or WEBP image.',
+                    variant: 'destructive'
+                });
+                return;
+            }
+
+            // 2. Validate File Size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast({
+                    title: 'File too large',
+                    description: 'The maximum file size allowed is 5MB.',
+                    variant: 'destructive'
+                });
+                return;
+            }
+
             setSelectedFile(file);
             const reader = new FileReader();
             reader.onloadend = () => {
@@ -139,14 +160,14 @@ export const EditProfile = () => {
                         type="file"
                         ref={fileInputRef}
                         onChange={handleFileChange}
-                        accept="image/*"
+                        accept=".jpg,.jpeg,.png,.webp"
                         className="hidden"
                     />
                 </div>
                 <div className="text-center sm:text-left space-y-1">
                     <h3 className="font-bold text-[#3E2723]">Profile Photo</h3>
                     <p className="text-xs text-muted-foreground">
-                        JPG, PNG or WEBP. Max 2MB.
+                        JPG, PNG or WEBP. Max 5MB.
                     </p>
                     <Button
                         type="button"

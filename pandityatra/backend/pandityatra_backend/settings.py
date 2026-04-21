@@ -406,8 +406,17 @@ MAILJET_SENDER_EMAIL = os.environ.get('MAILJET_SENDER_EMAIL', 'pandityatra9@gmai
 MAILJET_SENDER_NAME = os.environ.get('MAILJET_SENDER_NAME', 'Pandityatra')
 
 # Celery Configuration
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+REDIS_URL = os.getenv('REDIS_URL', 'redis://redis:6379/0')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', REDIS_URL)
+if CELERY_BROKER_URL and not CELERY_BROKER_URL.startswith('redis://'):
+    CELERY_BROKER_URL = f"redis://{CELERY_BROKER_URL}:6379/0"
+
+# SKIP CELERY FOR FREE PLAN (Runs tasks instantly in the same process)
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+
 CELERY_RESULT_BACKEND = 'django-db'
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
