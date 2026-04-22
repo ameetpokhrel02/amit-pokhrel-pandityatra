@@ -1,243 +1,69 @@
+# PanditYatra – AI-Powered Global Pandit Booking Platform 🕉️
+
 <div align="center">
-  <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="900" alt="PanditYatra Banner" />
+  <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776834201/bdff48c6-fd94-4f76-8835-ca20c9a7321f.png" width="1000" alt="PanditYatra Introduction" />
+  <br />
+  <p><b>Bridging ancient Hindu traditions with modern AI technology.</b></p>
 </div>
 
-# PanditYatra – AI-Powered Global Pandit Booking Platform with Offline JyotishAI 🕉️
+---
 
-**PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
+## 🏗️ Project Overview
+**PanditYatra** is a state-of-the-art digital ecosystem designed to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
+
+---
+
+## 📸 Platform Showcase
+
+### **Mobile App Experience (React Native)**
+<div align="center">
+  <table style="width:100%">
+    <tr>
+      <td align="center" width="33%">
+        <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="100%" alt="Onboarding" /><br />
+        <b>Smart Onboarding</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833379/books_ite_ohwntm.webp" width="100%" alt="Home" /><br />
+        <b>Ritual Discovery</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776834201/bdff48c6-fd94-4f76-8835-ca20c9a7321f.png" width="100%" alt="AI Chat" /><br />
+        <b>AI Ritual Guide</b>
+      </td>
+    </tr>
+  </table>
+</div>
+
+---
+
+## 🛡️ Security Hardening
+- **XSS Protection**: Full input sanitization via HTML escaping.
+- **Secure Uploads**: 5MB cap and strict `.jpg/.png/.webp` validation.
+- **SQLi Immunity**: 100% Parameterized queries via Django ORM.
+- **Role Isolation**: RBAC for Customer, Pandit, Vendor, and Admin.
 
 ---
 
 ## 🛠️ Technologies Used
-
-### **Web & Backend Infrastructure**
-![Django](https://img.shields.io/badge/Django-5.1.2-092E20?style=for-the-badge&logo=django)
-![DRF](https://img.shields.io/badge/DRF-3.15.2-A30000?style=for-the-badge&logo=django)
-![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql)
-![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)
-![Docker](https://img.shields.io/badge/Docker-24.x-2496ED?style=for-the-badge&logo=docker)
-![Celery](https://img.shields.io/badge/Celery-5.x-37814A?style=for-the-badge&logo=celery)
-![Tailwind](https://img.shields.io/badge/Tailwind-4.0-06B6D4?style=for-the-badge&logo=tailwindcss)
-![WebRTC](https://img.shields.io/badge/WebRTC-LATEST-FF6F00?style=for-the-badge&logo=webrtc)
-![Mailjet](https://img.shields.io/badge/Mailjet-API-FF9F00?style=for-the-badge&logo=mailjet)
-
-### **Mobile App (React Native)**
-![React Native](https://img.shields.io/badge/React_Native-0.81.5-61DAFB?style=for-the-badge&logo=react)
-![Expo](https://img.shields.io/badge/Expo-~54.0.30-000020?style=for-the-badge&logo=expo)
-![TypeScript](https://img.shields.io/badge/TypeScript-~5.9.2-3178C6?style=for-the-badge&logo=typescript)
-![Zustand](https://img.shields.io/badge/Zustand-^5.0.9-443E38?style=for-the-badge)
-![TailwindCSS](https://img.shields.io/badge/TailwindCSS-^3.4.19-38B2AC?style=for-the-badge&logo=tailwindcss)
-
-<div align="center">
-  <table style="width:100%">
-    <tr>
-      <td align="center" width="33%">
-        <img src="mobile_onboarding.png" width="100%" alt="Onboarding" /><br />
-        <b>Smart Onboarding</b>
-      </td>
-      <td align="center" width="33%">
-        <img src="mobile_home.png" width="100%" alt="Home" /><br />
-        <b>Ritual Discovery</b>
-      </td>
-      <td align="center" width="33%">
-        <img src="mobile_ai.png" width="100%" alt="AI Chat" /><br />
-        <b>AI Ritual Guide</b>
-      </td>
-    </tr>
-    <tr>
-      <td align="center" width="33%">
-        <img src="mobile_shop.png" width="100%" alt="Shop" /><br />
-        <b>Sacred Market</b>
-      </td>
-      <td align="center" width="33%">
-        <img src="mobile_cart.png" width="100%" alt="Cart" /><br />
-        <b>Secure Checkout</b>
-      </td>
-      <td align="center" width="33%">
-        <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="100%" /><br />
-        <b>PanditYatra AI</b>
-      </td>
-    </tr>
-  </table>
-</div>
+- **Backend**: Django 5.1, DRF 3.15, PostgreSQL 16, Redis 7
+- **Frontend**: React 18, TypeScript 5, TailwindCSS 4
+- **Mobile**: React Native (Expo SDK 54)
+- **Real-Time**: WebSockets (Channels), HD Video (Daily.co)
+- **AI**: Custom Ritual Assistant & Offline JyotishAI (WASM)
 
 ---
 
-## 🏗️ Features
-
-### 🤖 AI-Powered Spiritual Intelligence
-- **Intelligent Ritual Assistant**: A context-aware AI chatbot that guides users through complex ritual procedures and provides philosophical insights.
-  <br /><img src="ai_bot.png" width="300" alt="AI Guide Bot" /><br />
-- **Offline JyotishAI (Kundali)**: A specialized WebAssembly-based engine that generates accurate horizontal and North-Indian style horoscopes entirely on the client side—ensuring 100% data privacy.
-- **AI Samagri Recommender**: Automatically suggests required ritual items based on the booked puja.
-
-### 📅 Comprehensive Booking Ecosystem
-- **Multi-Role Integration**: Dedicated dashboards for **Customers**, **Pandits**, **Vendors**, and **Administrators**.
-- **Real-Time Scheduling**: Conflict-free booking with instant confirmation and automated calendar synchronization.
-- **Flexible Service Locations**: Support for Online (Video), Temple, or Home-based rituals.
-
-### 🎥 Professional Video Consultations & Chat
-- **HD Video Integration**: High-definition, low-latency video calls powered by Daily.co/WebRTC and **Coturn TURN Server**.
-- **Real-Time Chat**: Instant messaging via Django Channels (WebSockets) for seamless user-pandit coordination.
-
-### 🛍️ Marketplace & Global Notifications
-- **Vendor Shop**: A dedicated marketplace for puja samagri and spiritual items.
-- **Global Notifications**: Real-time push notifications and branded email alerts via **Mailjet**.
+## 🚀 Infrastructure
+- **Production Stable**: Optimized for Render Free Tier with Celery Eager Mode.
+- **SMTP Gateway**: Reliable email delivery via verified Gmail SMTP.
 
 ---
 
-## 📸 Project Screenshots
-
-<div align="center">
-  <h3>1. Main Interface & AI Guidance</h3>
-  <table style="width:100%">
-    <tr>
-      <td align="center" width="50%">
-        <img src="kundali.png" width="100%" alt="AI Jyotish" /><br />
-        <b>AI Jyotish (Kundali Generator)</b>
-      </td>
-      <td align="center" width="50%">
-        <img src="login.png" width="100%" alt="Login Page" /><br />
-        <b>Secure Login Portal</b>
-      </td>
-    </tr>
-  </table>
-
-  <br />
-
-  <br />
-
-  <h3>2. Samagri Marketplace & Spiritual Library</h3>
-  <img src="shop_categories.png" width="900" alt="Shop by Category" />
-  <p><i>Premium Category-based Discovery for Ritual Essentials and Vedic Literature.</i></p>
-</div>
-
-
-## 🌳 Project Structure
-
-```text
-pandityatra/
-├── backend/                  # Django REST API & Core Logic
-│   ├── manage.py             # Django entry point
-│   ├── requirements.txt      # Python dependencies
-│   ├── pandityatra_backend/  # Main Django settings
-│   ├── users/                # User & Auth app
-│   ├── bookings/             # Appointments & Bookings
-│   ├── payments/             # Stripe, Khalti, eSewa integrations
-│   ├── chat/                 # WebSocket chat logic
-│   ├── ai/                   # AI Chatbot & Recommender models
-│   └── notifications/        # Mailjet & Push logic
-├── frontend/                 # React & Vite Frontend
-│   ├── package.json          # Node dependencies
-│   ├── src/                  # React components, contexts, and pages
-│   ├── public/               # Static frontend assets
-│   └── Dockerfile.prod       # Frontend Nginx container config
-├── nginx/                    # Reverse Proxy configurations
-├── .env.example              # Environment variables template
-├── docker-compose.yml        # Local development orchestration
-└── render.yaml               # Render deployment specifications
-```
-
-
----
-
-## 🚀 Installation & Setup
-
-### General Requirements
-- **Python** 3.11+
-- **pnpm** (Required for Frontend)
-- **Docker** & **Docker Compose**
-
-### 1. Clone & Initialize
-```bash
-git clone https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra.git
-cd amit-pokhrel-pandityatra/pandityatra
-```
-
-### 2. Environment Variables (.env)
-Create a `.env` file in the root based on the provided [`.env.example`](.env.example):
-```env
-# Example .env configuration
-DEBUG=True
-SECRET_KEY=your_django_secret_key
-DATABASE_URL=postgres://postgres:password@db:5432/pandityatra
-
-# Third-party Services
-STRIPE_SECRET_KEY=your_stripe_key
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
-```
-
-### 3. Start via Docker (Development)
-```bash
-docker compose up --build -d
-```
-
-**Run Migrations:**
-```bash
-docker compose exec web python manage.py migrate
-docker compose exec web python manage.py createsuperuser
-```
-
-### 4. Start Frontend
-```bash
-cd frontend
-pnpm install
-pnpm dev
-```
-Access the application at `http://localhost:5173`.
-
-
-## 🌍 Deployment Guide
-
-### Option 1: Render (PaaS Deployment)
-1. Connect you GitHub repository to Render.
-2. The project contains a `render.yaml` file (Blueprint). Render will automatically detect services.
-3. Configure your API keys (Stripe, Google, Mailjet) in the Render dashboard.
-
-### Option 2: AWS ECS / EC2 (Production Recommended)
-1. Provision an **AWS EC2 Ubuntu 24.04** instance with Docker installed.
-2. Start the production containers:
-   ```bash
-   docker compose -f docker-compose.ec2.yml up --build -d
-   ```
-
-
----
-
-## 🔗 Live Project URL
-- **Live Demo**: [(https://pandityatra.vercel.app/)]
-
----
-
-## 📂 Project Navigation
-
-- 📁 [**Project Core**](pandityatra/) - Main source code directory
-- 📂 [**Backend Services**](pandityatra/backend/) - Django API, Models, and AI logic
-- 📂 [**Frontend Portal**](pandityatra/frontend/) - React components and UI
-- 📂 [**Infrastructure (Nginx)**](pandityatra/nginx/) - Production server configurations
-- 📄 [**Environment Template**](pandityatra/.env.example) - Required configuration keys
-- ⚙️ [**Production Setup**](pandityatra/docker-compose.prod.yml) - AWS EC2 Orchestration
-- ⚙️ [**Development Setup**](pandityatra/docker-compose.yml) - Local Orchestration
-
-
----
-
-## 🔮 Future Improvements
-- **Mobile Application**: A React Native app currently in testing.
-  - 🔗 **Repo**: [amit-pokhrel-pandityatra-mobile-app](https://github.com/ameetpokhrel02/amit-pokhrel-pandityatra-mobile-app.git)
-- **Multilingual Support**: Region-specific language enhancements.
-- **AR/VR Integration**: Virtual temple tours.
+## 📂 Project Structure
+- 📁 [**Backend**](backend/) | 📁 [**Frontend**](frontend/) | 📁 [**Nginx**](nginx/)
 
 ---
 
 ## 👥 Authors
-- **Amit Pokhrel**
-- **BSc (Hons) Computing**
-- **Itahari International College** (London Metropolitan University)
-
----
-
-## 📄 License
-MIT License. See [LICENSE](LICENSE) for details.
+- **Amit Pokhrel** - London Metropolitan University.
