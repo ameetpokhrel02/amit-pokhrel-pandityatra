@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="900" alt="PanditYatra Banner" />
+</div>
+
 # PanditYatra – AI-Powered Global Pandit Booking Platform with Offline JyotishAI 🕉️
 
 **PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
@@ -26,12 +30,46 @@
 ![Zustand](https://img.shields.io/badge/Zustand-^5.0.9-443E38?style=for-the-badge)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-^3.4.19-38B2AC?style=for-the-badge&logo=tailwindcss)
 
+<div align="center">
+  <table style="width:100%">
+    <tr>
+      <td align="center" width="33%">
+        <img src="mobile_onboarding.png" width="100%" alt="Onboarding" /><br />
+        <b>Smart Onboarding</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="mobile_home.png" width="100%" alt="Home" /><br />
+        <b>Ritual Discovery</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="mobile_ai.png" width="100%" alt="AI Chat" /><br />
+        <b>AI Ritual Guide</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" width="33%">
+        <img src="mobile_shop.png" width="100%" alt="Shop" /><br />
+        <b>Sacred Market</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="mobile_cart.png" width="100%" alt="Cart" /><br />
+        <b>Secure Checkout</b>
+      </td>
+      <td align="center" width="33%">
+        <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="100%" /><br />
+        <b>PanditYatra AI</b>
+      </td>
+    </tr>
+  </table>
+</div>
+
 ---
 
 ## 🏗️ Features
 
 ### 🤖 AI-Powered Spiritual Intelligence
 - **Intelligent Ritual Assistant**: A context-aware AI chatbot that guides users through complex ritual procedures and provides philosophical insights.
+  <br /><img src="ai_bot.png" width="300" alt="AI Guide Bot" /><br />
 - **Offline JyotishAI (Kundali)**: A specialized WebAssembly-based engine that generates accurate horizontal and North-Indian style horoscopes entirely on the client side—ensuring 100% data privacy.
 - **AI Samagri Recommender**: Automatically suggests required ritual items based on the booked puja.
 
@@ -53,18 +91,27 @@
 ## 📸 Project Screenshots
 
 <div align="center">
-  <h3>1. Customer Dashboard</h3>
-  <img width="800" alt="Customer Dashboard" src="https://github.com/user-attachments/assets/3775643d-1eb7-4b79-8acf-d9a71f5e5b92" />
-  <p><i>The complete digital gateway to Hindu rituals and spiritual wellbeing.</i></p>
-  
-  <h3>2. Pandit Management</h3>
-  <!-- [Insert Pandit Screenshot Here] -->
-  
-  <h3>3. Marketplace (Vendor Shop)</h3>
-  <!-- [Insert Shop Screenshot Here] -->
-  
-  <h3>4. AI Jyotish (Kundali)</h3>
-  <!-- [Insert Kundali Screenshot Here] -->
+  <h3>1. Main Interface & AI Guidance</h3>
+  <table style="width:100%">
+    <tr>
+      <td align="center" width="50%">
+        <img src="kundali.png" width="100%" alt="AI Jyotish" /><br />
+        <b>AI Jyotish (Kundali Generator)</b>
+      </td>
+      <td align="center" width="50%">
+        <img src="login.png" width="100%" alt="Login Page" /><br />
+        <b>Secure Login Portal</b>
+      </td>
+    </tr>
+  </table>
+
+  <br />
+
+  <br />
+
+  <h3>2. Samagri Marketplace & Spiritual Library</h3>
+  <img src="shop_categories.png" width="900" alt="Shop by Category" />
+  <p><i>Premium Category-based Discovery for Ritual Essentials and Vedic Literature.</i></p>
 </div>
 
 

@@ -15,7 +15,7 @@ const ShopByCategory: React.FC = () => {
             title: t('puja_samagri'),
             description: t('samagri_desc'),
             icon: <ShoppingBag className="w-8 h-8" />,
-            image: '/src/assets/images/hero_2.webp',
+            image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp',
             link: '/shop/samagri',
             color: 'from-orange-500 to-amber-600',
             tag: 'Essentials'
@@ -25,7 +25,7 @@ const ShopByCategory: React.FC = () => {
             title: t('spiritual_books'),
             description: t('books_desc'),
             icon: <Book className="w-8 h-8" />,
-            image: '/src/assets/images/books_ite.webp',
+            image: 'https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833379/books_ite_ohwntm.webp',
             link: '/shop/books',
             color: 'from-amber-700 to-orange-800',
             tag: 'Wisdom'

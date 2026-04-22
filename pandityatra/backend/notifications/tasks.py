@@ -42,7 +42,8 @@ def send_email_task(notification_id):
             rendered_plain = plain_template.render(Context(context_data)) if notification.template.plain_content else strip_tags(rendered_html)
         else:
             # Fallback for custom emails without database templates
-            msg_body = notification.message or ""
+            from django.utils.html import escape, strip_tags
+            msg_body = escape(notification.message or "")
             rendered_html = f"""
             <html>
                 <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
@@ -50,7 +51,7 @@ def send_email_task(notification_id):
                         <img src="{logo_url}" width="150" alt="PanditYatra">
                     </div>
                     <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-                        <h2 style="color: #ff9933;">{notification.subject}</h2>
+                        <h2 style="color: #ff9933;">{escape(notification.subject)}</h2>
                         <div style="white-space: pre-wrap;">{msg_body}</div>
                     </div>
                     <div style="text-align: center; padding: 20px; font-size: 12px; color: #999;">

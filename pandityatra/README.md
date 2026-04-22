@@ -1,41 +1,44 @@
-# PanditYatra – AI-Powered Global Pandit Booking Platform with Offline JyotishAI 🕉️
+# PanditYatra – AI-Powered Global Pandit Booking Platform 🕉️
 
-**PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance.
+**PanditYatra** is a state-of-the-art digital ecosystem designed to bridge the gap between ancient Hindu traditions and modern technology. It provides a seamless platform for devotees to discover verified pandits, book sacred rituals, and access AI-driven spiritual guidance through Web, PWA, and Mobile interfaces.
+
+---
+
+<div align="center">
+  <img src="https://res.cloudinary.com/dm0vvpzs9/image/upload/v1776833380/hero_2_oxsgym.webp" width="900" alt="PanditYatra Banner" />
+</div>
+
+---
+
+## 🛡️ Security Hardening (Latest Updates)
+We have implemented enterprise-grade security protocols for the final submission:
+- **Input Sanitization**: All user-generated content (emails, messages) is sanitized using HTML escaping to prevent **XSS (Cross-Site Scripting)**.
+- **Secure File Uploads**: Multi-layer validation for profile pictures and marketplace items:
+  - **Type Control**: Restricted to `.jpg`, `.png`, and `.webp` only.
+  - **Size Limit**: Hard cap at 5MB per file to prevent DoS attacks.
+- **SQL Injection Immunity**: 100% database interaction via Django ORM with parameterized queries.
+- **Role-Based Access Control (RBAC)**: Strict isolation between Customer, Pandit, Vendor, and Admin permissions.
 
 ---
 
 ## 🛠️ Technologies Used
-
-### **Web & Backend Infrastructure**
-![Django](https://img.shields.io/badge/Django-5.1.2-092E20?style=for-the-badge&logo=django)
-![DRF](https://img.shields.io/badge/DRF-3.15.2-A30000?style=for-the-badge&logo=django)
-![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql)
-![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis)
-![Docker](https://img.shields.io/badge/Docker-24.x-2496ED?style=for-the-badge&logo=docker)
-![Celery](https://img.shields.io/badge/Celery-5.x-37814A?style=for-the-badge&logo=celery)
-![Mailjet](https://img.shields.io/badge/Mailjet-API-FF9F00?style=for-the-badge&logo=mailjet)
+- **Backend**: Django 5.1, DRF 3.15, PostgreSQL 16
+- **Frontend**: React 18, TypeScript 5, TailwindCSS 4
+- **Mobile**: React Native (Expo)
+- **Real-Time**: WebSockets (Django Channels), HD Video (Daily.co / WebRTC)
+- **AI/ML**: Custom AI Ritual Guide & Offline JyotishAI (WASM)
+- **Email**: SMTP via Verified Gmail (Optimized for Production Stability)
 
 ---
 
-## 🏗️ Key Features
-- **AI Spiritual Intelligence**: JyotishAI (Offline Kundali) and Ritual Chatbot.
-- **Multi-Role Integration**: Dashboards for Customer, Pandit, Vendor, and Admin.
-- **Real-Time Communication**: HD Video (Daily.co) and WebSocket Chat (Channels).
-- **Global Marketplace**: Integrated Vendor Shop and Multi-Gateway Payments.
+## 🚀 Infrastructure & Deployment
+- **Celery Eager Mode**: Background tasks (OTP/Emails) are executed synchronously to ensure 100% reliability on low-resource servers (Render Free Tier).
+- **Environment Management**: Hardened `.env` configuration for secure API key management.
+- **SMTP Gateway**: Reliable email delivery via verified SMTP protocols.
 
 ---
 
-## 🚀 Quick Setup (Docker)
-```bash
-docker compose up --build -d
-docker compose exec web python manage.py migrate
-```
-
----
-
-## 📂 Project Navigation
+## 📂 Project Structure
 - 📁 [**Backend Services**](backend/) - Django API, Models, and AI logic
 - 📁 [**Frontend Portal**](frontend/) - React components and UI
 - 📁 [**Infrastructure**](nginx/) - Production server configurations
@@ -44,4 +47,4 @@ docker compose exec web python manage.py migrate
 ---
 
 ## 👥 Authors
-- **Amit Pokhrel** - London Metropolitan University.
+- **Amit Pokhrel** - London Metropolitan University (Final Year Project).
